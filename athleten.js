@@ -163,6 +163,7 @@ function filterZeit_50retten(eintrag, kaderArray) {
   } else {
     return false;
   }
+  console.log(`Name: ${eintrag.name}, 50m-Zeit: ${zeit_50retten}, richtzeit_50retten: ${richtzeit_50retten}`);
   return zeit_50retten <= richtzeit_50retten;
 }
 
@@ -179,6 +180,7 @@ function filterZeit_100retten(eintrag, kaderArray) {
   } else {
     return false;
   }
+  console.log(`Name: ${eintrag.name}, 50m-Zeit: ${zeit_100retten}, richtzeit_50retten: ${richtzeit_100retten}`);
   return zeit_100retten <= richtzeit_100retten;
 }
 
@@ -254,6 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err));
   });
 });
+
 
 
 
