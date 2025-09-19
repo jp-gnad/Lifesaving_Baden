@@ -2,6 +2,9 @@
 
 const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/BadenBank_Light/main/test.xlsx";
 
+
+
+
 // Tabelle erstellen
 function erstelleAthletenTabelle(athletenDaten) {
   const container = document.getElementById("athletenTableContainer");
@@ -53,6 +56,11 @@ function erstelleAthletenTabelle(athletenDaten) {
   table.appendChild(tbody);
   container.appendChild(table);
 }
+
+
+
+
+
 
 // Hilfsfunktion: verschiedene Zeitformate in Sekunden (float) umwandeln
 function parseTimeToSeconds(input) {
@@ -109,17 +117,29 @@ function getKaderArray() {
   return array2D;
 }
 
+
+
+
+
+
+
+
 /* ===========================
    Filterfunktionen
    =========================== */
 
-// Überfunktion: prüft, ob alle Bedingungen erfüllt sind
+// MAIN-FILTER: prüft, ob alle Bedingungen erfüllt sind
 function alleFilterErfüllt(eintrag, kaderArray) {
   return (
     filterAltersklasse(eintrag) &&
     filterZeit(eintrag, kaderArray)
   );
 }
+
+
+/* ===========================
+   Sekundär-Filter
+   =========================== */
 
 // Altersklasse-Filter
 function filterAltersklasse(eintrag) {
@@ -204,3 +224,4 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err));
   });
 });
+
