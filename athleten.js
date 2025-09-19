@@ -132,7 +132,7 @@ function getKaderArray() {
 function alleFilterErfüllt(eintrag, kaderArray) {
   return (
     filterAltersklasse(eintrag) &&
-    filterZeit(eintrag, kaderArray)
+    filterZeit_50retten(eintrag, kaderArray)
   );
 }
 
@@ -148,21 +148,21 @@ function filterAltersklasse(eintrag) {
 }
 
 // Zeit-Filter
-function filterZeit(eintrag, kaderArray) {
-  const zeit50m = parseFloat(eintrag.zeit50m?.toString().replace(",", "."));
-  if (isNaN(zeit50m)) return false;
+function filterZeit_50retten(eintrag, kaderArray) {
+  const zeit_50retten = parseFloat(eintrag.zeit_50retten?.toString().replace(",", "."));
+  if (isNaN(zeit_50retten)) return false;
 
-  let richtzeit;
+  let richtzeit_50retten;
   if (eintrag.geschlecht === "m") {
-    richtzeit = kaderArray[1][2];
+    richtzeit_50retten = kaderArray[1][2];
   } else if (eintrag.geschlecht === "w") {
-    richtzeit = kaderArray[1][3];
+    richtzeit_50retten = kaderArray[1][3];
   } else {
     return false;
   }
 
-  console.log(`Name: ${eintrag.name}, 50m-Zeit: ${zeit50m}, Richtzeit: ${richtzeit}`);
-  return zeit50m <= richtzeit;
+  console.log(`Name: ${eintrag.name}, 50m-Zeit: ${zeit_50retten}, richtzeit_50retten: ${richtzeit_50retten}`);
+  return zeit_50retten <= richtzeit_50retten;
 }
 
 // Excel laden, filtern und vorbereiten
@@ -190,9 +190,9 @@ async function ladeAthleten() {
     const jahrgangRaw = row[11];
     const kriterium = row[2];
     const ortsgruppe = row[12];
-    const zeit50mRaw = row[4];
+    const zeit_50rettenRaw = row[4];
 
-    if (!name || !geschlecht || !jahrgangRaw || !zeit50mRaw) return;
+    if (!name || !geschlecht || !jahrgangRaw || !zeit_50rettenRaw) return;
 
     const jahrgang = String(jahrgangRaw).padStart(2, "0");
 
@@ -202,7 +202,7 @@ async function ladeAthleten() {
       jahrgang,
       kriterium,
       ortsgruppe,
-      zeit50m: zeit50mRaw
+      zeit_50retten: zeit_50rettenRaw
     };
 
     if (!alleFilterErfüllt(eintrag, kaderArray)) return;
@@ -224,4 +224,5 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err));
   });
 });
+
 
