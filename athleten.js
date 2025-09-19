@@ -224,61 +224,62 @@ async function ladeAthleten() {
   const athletenMap = new Map();
 
   jsonData.reverse().forEach((row, index) => {
-    if (index === 0) return;
+  if (index === 0) return;
 
-    const geschlecht = row[0]?.toString().toLowerCase();
-    const name = row[1];
-    const jahrgangRaw = row[11];
-    const kriterium = row[2];
-    const ortsgruppe = row[12];
-    const zeit_50rettenRaw = row[4];  
-    const zeit_100rettenRaw = row[7];
-    const jahrRaw = row[9];
+  const geschlecht = row[0]?.toString().toLowerCase();
+  const name = row[1];
+  const jahrgangRaw = row[11];
+  const kriterium = row[2];
+  const ortsgruppe = row[12];
+  const zeit_50rettenRaw = row[4];  
+  const zeit_100rettenRaw = row[7];
+  const jahrRaw = row[9];
 
+  if (!name || !geschlecht || !jahrgangRaw) return;
 
-    if (!name || !geschlecht || !jahrgangRaw) return;
+  const jahrgang = String(jahrgangRaw).padStart(2, "0");
 
-    const jahrgang = String(jahrgangRaw).padStart(2, "0");
+  const eintrag = {
+    name,
+    geschlecht,
+    jahrgang,
+    kriterium,
+    ortsgruppe,
+    zeit_50retten: zeit_50rettenRaw,
+    zeit_100retten: zeit_100rettenRaw,
+    jahr: jahrRaw
+  };
 
-    const eintrag = {
-      name,
-      geschlecht,
-      jahrgang,
-      kriterium,
-      ortsgruppe,
+  if (!alleFilterErfüllt(eintrag, kaderArray)) return;
+
+  const kader = "17/18";
+
+  // Zeit in Sekunden umwandeln für Vergleich
+  const neueZeit50 = parseTimeToSeconds(zeit_50rettenRaw);
+
+  // Prüfen ob Athlet schon existiert
+  if (athletenMap.has(name)) {
+    const vorhandener = athletenMap.get(name);
+    const alteZeit50 = parseTimeToSeconds(vorhandener.zeit_50retten);
+
+    // nur ersetzen, wenn neue Zeit besser (kleiner)
+    if (!isNaN(neueZeit50) && (isNaN(alteZeit50) || neueZeit50 < alteZeit50)) {
+      vorhandener.zeit_50retten = zeit_50rettenRaw;
+      vorhandener.zeit_100retten = zeit_100rettenRaw; // kannst du auch updaten falls sinnvoll
+    }
+  } else {
+    athletenMap.set(name, {
+      kader,
+      name: eintrag.name,
+      geschlecht: eintrag.geschlecht,
+      jahrgang: eintrag.jahrgang,
+      ortsgruppe: eintrag.ortsgruppe,
       zeit_50retten: zeit_50rettenRaw,
-      zeit_100retten: zeit_100rettenRaw,
-      jahr: jahrRaw
-    };
-
-    if (!alleFilterErfüllt(eintrag, kaderArray)) return;
-
-    const kader = "17/18";
-  athletenMap.set(name, {
-  kader,
-  name: eintrag.name,
-  geschlecht: eintrag.geschlecht,
-  jahrgang: eintrag.jahrgang,
-  ortsgruppe: eintrag.ortsgruppe,
-  zeit_50retten: zeit_50rettenRaw,
-  zeit_100retten: zeit_100rettenRaw
+      zeit_100retten: zeit_100rettenRaw
+    });
+  }
 });
 
-  });
-
-  const athletenDaten = Array.from(athletenMap.values());
-  erstelleAthletenTabelle(athletenDaten);
-}
-
-// Klick-Event am existierenden HTML-Button
-document.addEventListener("DOMContentLoaded", () => {
-  const button = document.getElementById("aktualisierenBtn");
-  if (!button) return;
-
-  button.addEventListener("click", () => {
-    ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err));
-  });
-});
 
 
 
