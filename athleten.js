@@ -345,20 +345,7 @@ async function ladeAthleten() {
       vorhandener.zeit_100LS = zeit_100LSRaw;
     }
 
-  } else {
-    // Fall 2: Athlet neu
-    athletenMap.set(name, {
-      kader,
-      name: eintrag.name,
-      geschlecht: eintrag.geschlecht,
-      jahrgang: eintrag.jahrgang,
-      ortsgruppe: eintrag.ortsgruppe,
-      zeit_50retten: zeit_50rettenRaw,
-      zeit_100retten: zeit_100rettenRaw,
-      zeit_100kombi: zeit_100kombiRaw,
-      zeit_100LS: zeit_100LSRaw
-    });
-  }
+  } 
 });
   const athletenDaten = Array.from(athletenMap.values());
   erstelleAthletenTabelle(athletenDaten); 
@@ -370,6 +357,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
