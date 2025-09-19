@@ -55,23 +55,23 @@ kaderTable.innerHTML = `
         <td rowspan="2">U17</td>
         <td class="weiblich">Weiblich</td>
         <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
-        <td><input type="number" min="400" max="1000" value="750"></td>
+        <td><input type="number" min="400" max="1000" value="680"></td>
       </tr>
       <tr>
         <td class="maennlich">Männlich</td>
         <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
-        <td><input type="number" min="400" max="1000" value="750"></td>
+        <td><input type="number" min="400" max="1000" value="680"></td>
       </tr>
       <tr>
         <td rowspan="2">17/18</td>
         <td class="weiblich">Weiblich</td>
         <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
-        <td><input type="number" min="400" max="1000" value="750"></td>
+        <td><input type="number" min="400" max="1000" value="725"></td>
       </tr>
       <tr>
         <td class="maennlich">Männlich</td>
         <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
-        <td><input type="number" min="400" max="1000" value="750"></td>
+        <td><input type="number" min="400" max="1000" value="725"></td>
       </tr>
 
       <!-- Badenkader (2 Zeilen) -->
@@ -161,5 +161,6 @@ function fuelleKaderTabelle() {
 
 // Initialisierung (wird auf DOMContentLoaded ausgeführt)
 document.addEventListener("DOMContentLoaded", fuelleKaderTabelle);
+
 
 const richtzeit50m = parseFloat(document.querySelector("#kaderTable table tbody tr:nth-child(3) td:nth-child(3)").textContent.replace(",", "."));
