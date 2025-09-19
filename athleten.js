@@ -315,7 +315,7 @@ async function ladeAthleten() {
   const zeit_100rettenRaw = row[7];
   const zeit_100kombiRaw = row[6];
   const zeit_100LSRaw = row[3];
-  const zeit_200SLS = row[5]
+  const zeit_200SLSRaw = row[5]
   const jahrRaw = row[9];
 
   if (!name || !geschlecht || !jahrgangRaw) return;
@@ -398,6 +398,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
