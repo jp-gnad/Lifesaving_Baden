@@ -32,6 +32,10 @@ function erstelleAthletenTabelle(athletenDaten) {
     tr.appendChild(tdKader);
 
     const tdName = document.createElement("td");
+    if (!eintrag.geschlecht) {
+      console.warn("Eintrag ohne Geschlecht:", eintrag);
+      return; // oder Standardwert setzen
+    }
     tdName.className = eintrag.geschlecht.toLowerCase() === "w" ? "weiblich" : "maennlich";
     tdName.textContent = `${eintrag.name} (${eintrag.jahrgang})`;
 
@@ -224,6 +228,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err));
   });
 });
+
 
 
 
