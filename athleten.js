@@ -142,7 +142,7 @@ function getKaderArray() {
 function alleFilterErfüllt(eintrag, kaderArray) {
   return (
     filterAltersklasse(eintrag) &&
-    filterZeit_50retten(eintrag, kaderArray) &&
+    mindestensZweiFilterErfüllt(eintrag, kaderArray) &&
     filterAktuellesJahr(eintrag)
   );
 }
@@ -167,6 +167,22 @@ function filterAltersklasse(eintrag) {
   const jahrgang = String(eintrag.jahrgang).padStart(2, "0");
   return ["07", "08"].includes(jahrgang);
 }
+
+
+function mindestensZweiFilterErfüllt(eintrag, kaderArray) {
+  const filterErgebnisse = [
+    filterZeit_50retten(eintrag, kaderArray),
+    filterZeit_100retten(eintrag, kaderArray),
+    filterZeit_100kombi(eintrag, kaderArray),
+    filterZeit_100LS(eintrag, kaderArray),
+    filterZeit_200SLS(eintrag, kaderArray),
+    filterZeit_200H?.(eintrag, kaderArray) // falls du die Funktion schon hast
+  ];
+
+  const trueCount = filterErgebnisse.filter(Boolean).length;
+  return trueCount >= 2;
+}
+
 
 // Zeit-Filter: 50m Retten 
 function filterZeit_50retten(eintrag, kaderArray) {
@@ -415,6 +431,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
