@@ -179,8 +179,14 @@ function filterZeit_50retten(eintrag, kaderArray) {
   } else {
     return false;
   }
-  console.log(`Name: ${eintrag.name}, 50m-Zeit: ${zeit_50retten}, richtzeit_50retten: ${richtzeit_50retten}`);
-  return zeit_50retten <= richtzeit_50retten;
+
+  if (zeit_50retten <= richtzeit_50retten) {
+    return true;
+  } else {
+    // Zeit löschen, wenn nicht erfüllt
+    eintrag.zeit_50retten = "";
+    return false;
+  }
 }
 
 // Zeit-Filter: 100m Retten
@@ -196,7 +202,6 @@ function filterZeit_100retten(eintrag, kaderArray) {
   } else {
     return false;
   }
-  console.log(`Name: ${eintrag.name}, 50m-Zeit: ${zeit_100retten}, richtzeit_50retten: ${richtzeit_100retten}`);
   return zeit_100retten <= richtzeit_100retten;
 }
 
@@ -213,7 +218,6 @@ function filterZeit_100kombi(eintrag, kaderArray) {
   } else {
     return false;
   }
-  console.log(`Name: ${eintrag.name}, 50m-Zeit: ${zeit_100kombi}, richtzeit_50retten: ${richtzeit_100kombi}`);
   return zeit_100kombi <= richtzeit_100kombi;
 }
 
@@ -230,8 +234,16 @@ function filterZeit_100LS(eintrag, kaderArray) {
   } else {
     return false;
   }
-  console.log(`Name: ${eintrag.name}, 50m-Zeit: ${zeit_100kombi}, richtzeit_50retten: ${richtzeit_100kombi}`);
-  return zeit_100LS <= richtzeit_100LS;
+
+  console.log(`Name: ${eintrag.name}, 100LS-Zeit: ${zeit_100LS}, richtzeit_100LS: ${richtzeit_100LS}`);
+
+  if (zeit_100LS <= richtzeit_100LS) {
+    return true;
+  } else {
+    // Zeit löschen, wenn nicht erfüllt
+    eintrag.zeit_100LS = "";
+    return false;
+  }
 }
 
 /* ===========================
@@ -358,6 +370,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
