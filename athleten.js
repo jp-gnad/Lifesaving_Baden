@@ -223,7 +223,7 @@ async function ladeAthleten() {
 
   const athletenMap = new Map();
 
-  jsonData.reverse().forEach((row, index) => {
+ jsonData.reverse().forEach((row, index) => {
   if (index === 0) return;
 
   const geschlecht = row[0]?.toString().toLowerCase();
@@ -277,30 +277,17 @@ async function ladeAthleten() {
       zeit_50retten: zeit_50rettenRaw,
       zeit_100retten: zeit_100rettenRaw
     });
-  }
+  });
+  const athletenDaten = Array.from(athletenMap.values());
+  erstelleAthletenTabelle(athletenDaten); 
+} 
+// Klick-Event am existierenden HTML-Button
+document.addEventListener("DOMContentLoaded", () => {
+  const button = document.getElementById("aktualisierenBtn"); 
+  if (!button) return; button.addEventListener("click", () => {
+    ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
+  }); 
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
