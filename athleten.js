@@ -135,7 +135,8 @@ function getKaderArray() {
 function alleFilterErfüllt(eintrag, kaderArray) {
   return (
     filterAltersklasse(eintrag) &&
-    filterZeit_50retten(eintrag, kaderArray)
+    filterZeit_50retten(eintrag, kaderArray) &&
+    filterAktuellesJahr(eintrag)
   );
 }
 
@@ -143,6 +144,14 @@ function alleFilterErfüllt(eintrag, kaderArray) {
 /* ===========================
    Sekundär-Filter
    =========================== */
+
+// Jahresfilter: nur Einträge aus dem aktuellen Jahr
+function filterAktuellesJahr(eintrag) {
+  // eintrag.jahr ist die Zahl aus Spalte J
+  const aktuellesJahr = new Date().getFullYear();
+  return Number(eintrag.jahr) === aktuellesJahr;
+}
+
 
 // Altersklasse-Filter
 function filterAltersklasse(eintrag) {
@@ -212,6 +221,7 @@ async function ladeAthleten() {
     const ortsgruppe = row[12];
     const zeit_50rettenRaw = row[4];  
     const zeit_100rettenRaw = row[7];
+    const jahr: jahrRaw
 
 
     if (!name || !geschlecht || !jahrgangRaw) return;
@@ -225,7 +235,8 @@ async function ladeAthleten() {
       kriterium,
       ortsgruppe,
       zeit_50retten: zeit_50rettenRaw,
-      zeit_100retten: zeit_100rettenRaw
+      zeit_100retten: zeit_100rettenRaw,
+      jahr: jahrRaw
     };
 
     if (!alleFilterErfüllt(eintrag, kaderArray)) return;
@@ -256,6 +267,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err));
   });
 });
+
 
 
 
