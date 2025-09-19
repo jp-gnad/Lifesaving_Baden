@@ -50,7 +50,7 @@ function erstelleAthletenTabelle(athletenDaten) {
     tr.appendChild(tdName);
 
     const tdKriterien = document.createElement("td");
-    tdKriterien.textContent = eintrag.zeit_50retten || "-";
+tdKriterien.textContent = `50 m: ${eintrag.zeit_50retten || "-"} / 100 m: ${eintrag.zeit_100retten || "-"}`;
     tr.appendChild(tdKriterien);
 
     tbody.appendChild(tr);
@@ -150,7 +150,7 @@ function filterAltersklasse(eintrag) {
   return ["07", "08"].includes(jahrgang);
 }
 
-// Zeit-Filter
+// Zeit-Filter: 50m Retten
 function filterZeit_50retten(eintrag, kaderArray) {
   const zeit_50retten = parseTimeToSeconds(eintrag.zeit_50retten);
   if (isNaN(zeit_50retten)) return false;
@@ -163,10 +163,25 @@ function filterZeit_50retten(eintrag, kaderArray) {
   } else {
     return false;
   }
-
-  console.log(`Name: ${eintrag.name}, 50m-Zeit: ${zeit_50retten}, richtzeit_50retten: ${richtzeit_50retten}`);
   return zeit_50retten <= richtzeit_50retten;
 }
+
+// Zeit-Filter: 100m Retten
+function filterZeit_100retten(eintrag, kaderArray) {
+  const zeit_100retten = parseTimeToSeconds(eintrag.zeit_100retten);
+  if (isNaN(zeit_100retten)) return false;
+
+  let richtzeit_100retten;
+  if (eintrag.geschlecht === "m") {
+    richtzeit_100retten = kaderArray[3][1];
+  } else if (eintrag.geschlecht === "w") {
+    richtzeit_100retten = kaderArray[2][1];
+  } else {
+    return false;
+  }
+  return zeit_100retten <= richtzeit_100retten;
+}
+
 
 // Excel laden, filtern und vorbereiten
 async function ladeAthleten() {
@@ -193,7 +208,9 @@ async function ladeAthleten() {
     const jahrgangRaw = row[11];
     const kriterium = row[2];
     const ortsgruppe = row[12];
-    const zeit_50rettenRaw = row[4];
+    const zeit_50rettenRaw = row[4];  
+    const zeit_100rettenRaw = row[7];
+
 
     if (!name || !geschlecht || !jahrgangRaw) return;
 
@@ -206,6 +223,7 @@ async function ladeAthleten() {
       kriterium,
       ortsgruppe,
       zeit_50retten: zeit_50rettenRaw
+      zeit_100retten: zeit_100rettenRaw
     };
 
     if (!alleFilterErfüllt(eintrag, kaderArray)) return;
@@ -217,7 +235,8 @@ athletenMap.set(name, {
   geschlecht: eintrag.geschlecht,
   jahrgang: eintrag.jahrgang,
   ortsgruppe: eintrag.ortsgruppe,
-  zeit_50retten: zeit_50rettenRaw
+  zeit_50retten: zeit_50rettenRaw,
+  zeit_100retten: zeit_100rettenRaw
 });
 
   });
@@ -235,6 +254,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err));
   });
 });
+
 
 
 
