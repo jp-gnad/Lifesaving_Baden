@@ -352,9 +352,9 @@ async function ladeAthleten() {
     const vorhandener = athletenMap.get(name);
     const alteZeit_50retten = parseTimeToSeconds(vorhandener.zeit_50retten);
     const alteZeit_100retten = parseTimeToSeconds(vorhandener.zeit_100retten);
-    const alteZeit_100kombi = parseTimeToSeconds(vorhandener.zeit_100kombiRaw);
-    const alteZeit_100LS = parseTimeToSeconds(vorhandener.zeit_100LSRaw);
-    const alteZeit_200SLS = parseTimeToSeconds(vorhandener.zeit_200SLSRaw);
+    const alteZeit_100kombi = parseTimeToSeconds(vorhandener.zeit_100kombi);
+    const alteZeit_100LS = parseTimeToSeconds(vorhandener.zeit_100LS);
+    const alteZeit_200SLS = parseTimeToSeconds(vorhandener.zeit_200SLS);
 
     // bessere 50m Retten Zeit übernehmen
     if (!isNaN(neueZeit_50retten) && (isNaN(alteZeit_50retten) || neueZeit_50retten < alteZeit_50retten)) {
@@ -410,6 +410,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
