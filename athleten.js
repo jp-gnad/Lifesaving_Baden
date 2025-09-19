@@ -254,20 +254,28 @@ async function ladeAthleten() {
 
   const kader = "17/18";
 
-  // Zeit in Sekunden umwandeln für Vergleich
-  const neueZeit50 = parseTimeToSeconds(zeit_50rettenRaw);
+  // Zeiten in Sekunden umwandeln
+  const neueZeit_50retten = parseTimeToSeconds(zeit_50rettenRaw);  
+  const neueZeit_100retten = parseTimeToSeconds(zeit_100rettenRaw);
 
-  // Prüfen ob Athlet schon existiert
   if (athletenMap.has(name)) {
+    // Fall 1: Athlet existiert schon
     const vorhandener = athletenMap.get(name);
-    const alteZeit50 = parseTimeToSeconds(vorhandener.zeit_50retten);
+    const alteZeit_50retten = parseTimeToSeconds(vorhandener.zeit_50retten);
+    const alteZeit_100retten = parseTimeToSeconds(vorhandener.zeit_100retten);
 
-    // nur ersetzen, wenn neue Zeit besser (kleiner)
-    if (!isNaN(neueZeit50) && (isNaN(alteZeit50) || neueZeit50 < alteZeit50)) {
+    // bessere 50m Zeit übernehmen
+    if (!isNaN(neueZeit_50retten) && (isNaN(alteZeit_50retten) || neueZeit_50retten < alteZeit_50retten)) {
       vorhandener.zeit_50retten = zeit_50rettenRaw;
-      vorhandener.zeit_100retten = zeit_100rettenRaw; // kannst du auch updaten falls sinnvoll
     }
+
+    // bessere 100m Zeit übernehmen
+    if (!isNaN(neueZeit_100retten) && (isNaN(alteZeit_100retten) || neueZeit_100retten < alteZeit_100retten)) {
+      vorhandener.zeit_100retten = zeit_100rettenRaw;
+    }
+
   } else {
+    // Fall 2: Athlet neu
     athletenMap.set(name, {
       kader,
       name: eintrag.name,
@@ -276,7 +284,7 @@ async function ladeAthleten() {
       ortsgruppe: eintrag.ortsgruppe,
       zeit_50retten: zeit_50rettenRaw,
       zeit_100retten: zeit_100rettenRaw
-   });
+    });
   }
 });
   const athletenDaten = Array.from(athletenMap.values());
@@ -289,6 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
