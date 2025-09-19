@@ -50,7 +50,7 @@ function erstelleAthletenTabelle(athletenDaten) {
     tr.appendChild(tdName);
 
     const tdKriterien = document.createElement("td");
-tdKriterien.textContent = `50 m: ${eintrag.zeit_50retten || "-"} / 100 m: ${eintrag.zeit_100retten || "-"}`;
+tdKriterien.textContent = `50 m Retten: ${eintrag.zeit_50retten || "-"} / 100 m Retten: ${eintrag.zeit_100retten || "-"}/ 100 m Kombi: ${eintrag.zeit_100kombi || "-"}`;
     tr.appendChild(tdKriterien);
 
     tbody.appendChild(tr);
@@ -145,6 +145,7 @@ function alleFilterErfüllt(eintrag, kaderArray) {
    Sekundär-Filter
    =========================== */
 
+// Aktuelles Jahr - Filter
 function filterAktuellesJahr(eintrag) {
   if (!eintrag.jahr) return false;
 
@@ -160,7 +161,7 @@ function filterAltersklasse(eintrag) {
   return ["07", "08"].includes(jahrgang);
 }
 
-// Zeit-Filter: 50m Retten
+// Zeit-Filter: 50m Retten 
 function filterZeit_50retten(eintrag, kaderArray) {
   const zeit_50retten = parseTimeToSeconds(eintrag.zeit_50retten);
   if (isNaN(zeit_50retten)) return false;
@@ -192,6 +193,23 @@ function filterZeit_100retten(eintrag, kaderArray) {
   }
   console.log(`Name: ${eintrag.name}, 50m-Zeit: ${zeit_100retten}, richtzeit_50retten: ${richtzeit_100retten}`);
   return zeit_100retten <= richtzeit_100retten;
+}
+
+// Zeit-Filter: 100m Kombi
+function filterZeit_100kombi(eintrag, kaderArray) {
+  const zeit_100kombi = parseTimeToSeconds(eintrag.zeit_100kombi);
+  if (isNaN(zeit_100kombi)) return false;
+
+  let richtzeit_100kombi;
+  if (eintrag.geschlecht === "m") {
+    richtzeit_100kombi = kaderArray[3][2];
+  } else if (eintrag.geschlecht === "w") {
+    richtzeit_100kombi = kaderArray[2][2];
+  } else {
+    return false;
+  }
+  console.log(`Name: ${eintrag.name}, 50m-Zeit: ${zeit_100kombi}, richtzeit_50retten: ${richtzeit_100kombi}`);
+  return zeit_100kombi <= richtzeit_100kombi;
 }
 
 /* ===========================
@@ -233,6 +251,7 @@ async function ladeAthleten() {
   const ortsgruppe = row[12];
   const zeit_50rettenRaw = row[4];  
   const zeit_100rettenRaw = row[7];
+  const zeit_100kombiRaw = row[6];
   const jahrRaw = row[9];
 
   if (!name || !geschlecht || !jahrgangRaw) return;
@@ -247,6 +266,7 @@ async function ladeAthleten() {
     ortsgruppe,
     zeit_50retten: zeit_50rettenRaw,
     zeit_100retten: zeit_100rettenRaw,
+    zeit_100kombi: zeit_100kombiRaw,
     jahr: jahrRaw
   };
 
@@ -257,21 +277,28 @@ async function ladeAthleten() {
   // Zeiten in Sekunden umwandeln
   const neueZeit_50retten = parseTimeToSeconds(zeit_50rettenRaw);  
   const neueZeit_100retten = parseTimeToSeconds(zeit_100rettenRaw);
+   const neueZeit_100kombi = parseTimeToSeconds(zeit_100kombiRaw);
 
   if (athletenMap.has(name)) {
     // Fall 1: Athlet existiert schon
     const vorhandener = athletenMap.get(name);
     const alteZeit_50retten = parseTimeToSeconds(vorhandener.zeit_50retten);
     const alteZeit_100retten = parseTimeToSeconds(vorhandener.zeit_100retten);
+    const alteZeit_100kombi = parseTimeToSeconds(vorhandener.zeit_100kombi);
 
-    // bessere 50m Zeit übernehmen
+    // bessere 50m retten Zeit übernehmen
     if (!isNaN(neueZeit_50retten) && (isNaN(alteZeit_50retten) || neueZeit_50retten < alteZeit_50retten)) {
       vorhandener.zeit_50retten = zeit_50rettenRaw;
     }
 
-    // bessere 100m Zeit übernehmen
+    // bessere 100m retten Zeit übernehmen
     if (!isNaN(neueZeit_100retten) && (isNaN(alteZeit_100retten) || neueZeit_100retten < alteZeit_100retten)) {
       vorhandener.zeit_100retten = zeit_100rettenRaw;
+    }
+
+    // bessere 100m kombi Zeit übernehmen
+    if (!isNaN(neueZeit_100kombi) && (isNaN(alteZeit_100kombi) || neueZeit_100kombi < alteZeit_100kombi)) {
+      vorhandener.zeit_100kombi = zeit_100kombiRaw;
     }
 
   } else {
@@ -283,7 +310,8 @@ async function ladeAthleten() {
       jahrgang: eintrag.jahrgang,
       ortsgruppe: eintrag.ortsgruppe,
       zeit_50retten: zeit_50rettenRaw,
-      zeit_100retten: zeit_100rettenRaw
+      zeit_100retten: zeit_100rettenRaw,
+      zeit_100kombi: zeit_100kombiRaw
     });
   }
 });
@@ -297,6 +325,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
