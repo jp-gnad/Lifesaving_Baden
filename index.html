@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Tabellen Übersicht</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="header">
+  <img class="header-logo" src="images/logo.png" alt="Logo">
+  <span class="header-text">Lifesaving Baden</span>
+
+  <nav class="header-menu">
+  <a href="#punkterechner" class="menu-item">Punkterechner</a>
+  <a href="#landeskader" class="menu-item active">Landeskader</a>
+  <a href="#wettkaempfe" class="menu-item">Wettkämpfe</a>
+  <a href="#datenbank" class="menu-item">Datenbank</a>
+  <div class="menu-underline"></div> <!-- beweglicher Unterstrich -->
+</nav>
+</div>
+
+  <div id="wrContainer">
+    <h2>World Records</h2>
+    <div id="wrTable"></div>
+  </div>
+
+  <div id="kaderContainer">
+    <h2>Richtzeiten Landeskader Baden</h2>
+    <div id="kaderTable"></div>
+  </div>
+
+<div id="athletenContainer">
+  <h2>Athleten</h2>
+  <div id="athletenTableContainer" style="position: relative;">
+ 
+  </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="header.js"></script>
+  <script src="kader.js"></script>
+  <script src="wr.js"></script>
+  <script src="athleten.js"></script>
+  <script src="button.js"></script>
+
+</body>
+</html>
