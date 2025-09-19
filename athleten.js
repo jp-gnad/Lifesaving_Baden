@@ -259,9 +259,9 @@ function filterZeit_200SLS(eintrag, kaderArray) {
 
   let richtzeit_200SLS;
   if (eintrag.geschlecht === "m") {
-    richtzeit_200SLS = kaderArray[3][3];
+    richtzeit_200SLS = kaderArray[3][4];
   } else if (eintrag.geschlecht === "w") {
-    richtzeit_200SLS = kaderArray[2][3];
+    richtzeit_200SLS = kaderArray[2][4];
   } else {
     return false;
   }
@@ -276,9 +276,9 @@ function filterZeit_200H(eintrag, kaderArray) {
 
   let richtzeit_200H;
   if (eintrag.geschlecht === "m") {
-    richtzeit_200H = kaderArray[3][3];
+    richtzeit_200H = kaderArray[3][5];
   } else if (eintrag.geschlecht === "w") {
-    richtzeit_200H = kaderArray[2][3];
+    richtzeit_200H = kaderArray[2][5];
   } else {
     return false;
   }
@@ -431,6 +431,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
