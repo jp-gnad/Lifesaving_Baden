@@ -338,17 +338,15 @@ async function ladeAthleten() {
     }
 
   } else {
-    // neuer Athlet
+
     athletenMap.set(name, {
       kader,
       name: eintrag.name,
       geschlecht: eintrag.geschlecht,
       jahrgang: eintrag.jahrgang,
       ortsgruppe: eintrag.ortsgruppe,
-      zeit_50retten: (filterZeit_50retten(eintrag, kaderArray) ? eintrag.zeit_50retten : ""),
-      zeit_100retten: (filterZeit_100retten(eintrag, kaderArray) ? eintrag.zeit_100retten : ""),
-      zeit_100kombi: (filterZeit_100kombi(eintrag, kaderArray) ? eintrag.zeit_100kombi : ""),
-      zeit_100LS: (filterZeit_100LS(eintrag, kaderArray) ? eintrag.zeit_100LS : "")
+      zeit_50retten: zeit_50rettenRaw,
+      zeit_100retten: zeit_100rettenRaw
     });
   }
 });
@@ -364,6 +362,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
