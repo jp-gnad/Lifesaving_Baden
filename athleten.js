@@ -63,7 +63,7 @@ function erstelleAthletenTabelle(athletenDaten) {
 
 
 // Hilfsfunktion: verschiedene Zeitformate in Sekunden (float) umwandeln
-function parseTimeToSeconds(input) {
+  function parseTimeToSeconds(input) {
   if (input === undefined || input === null) return NaN;
   let s = String(input).trim();
   if (s === "" || s === "-" || s.toLowerCase() === "nan") return NaN;
@@ -149,7 +149,7 @@ function filterAltersklasse(eintrag) {
 
 // Zeit-Filter
 function filterZeit_50retten(eintrag, kaderArray) {
-  const zeit_50retten = parseFloat(eintrag.zeit_50retten?.toString().replace(",", "."));
+  const zeit_50retten = parseTimeToSeconds(eintrag.zeit_50retten);
   if (isNaN(zeit_50retten)) return false;
 
   let richtzeit_50retten;
@@ -224,5 +224,6 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err));
   });
 });
+
 
 
