@@ -3,10 +3,8 @@
 const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/BadenBank_Light/main/test.xlsx";
 
 
-
-
-// Tabelle erstellen
-function erstelleAthletenTabelle(athletenDaten) {
+// Tabelle erstellen (kaderArray muss übergeben werden, weil die Filter es brauchen)
+function erstelleAthletenTabelle(athletenDaten, kaderArray) {
   const container = document.getElementById("athletenTableContainer");
   const existingTable = container.querySelector("table");
   if (existingTable) existingTable.remove();
@@ -27,15 +25,16 @@ function erstelleAthletenTabelle(athletenDaten) {
   athletenDaten.forEach(eintrag => {
     const tr = document.createElement("tr");
 
+    // Kader
     const tdKader = document.createElement("td");
     tdKader.textContent = eintrag.kader;
     tr.appendChild(tdKader);
 
+    // Name + OG
     const tdName = document.createElement("td");
-
-    console.log("eintrag.geschlecht / Eintrag", eintrag.geschlecht, "Eintrag:", eintrag);
-
-    tdName.className = eintrag.geschlecht.toLowerCase() === "w" ? "weiblich" : "maennlich";
+    // sicherer Zugriff auf geschlecht
+    const geschlechtNorm = (eintrag.geschlecht || "").toString().toLowerCase();
+    tdName.className = geschlechtNorm === "w" ? "weiblich" : "maennlich";
     tdName.textContent = `${eintrag.name} (${eintrag.jahrgang})`;
 
     if (eintrag.ortsgruppe) {
@@ -49,15 +48,31 @@ function erstelleAthletenTabelle(athletenDaten) {
 
     tr.appendChild(tdName);
 
+    // Kriterien-Zelle (wird nur mit den bestanden Disziplinen befüllt)
     const tdKriterien = document.createElement("td");
-tdKriterien.innerHTML = `
-  <div>50 m Retten: ${eintrag.zeit_50retten || "-"}</div>
-  <div>100 m Retten: ${eintrag.zeit_100retten || "-"}</div>
-  <div>100 m Kombi: ${eintrag.zeit_100kombi || "-"}</div>
-  <div>100 m Lifesaver: ${eintrag.zeit_100LS || "-"}</div>
-  <div>200 m Superlifesaver: ${eintrag.zeit_200SLS || "-"}</div>
-  <div>200 m Hindernis: ${eintrag.zeit_200H || "-"}</div>
-`;
+    let kriterienHtml = "";
+
+    // Prüfe Existenz der Filterfunktionen bevor aufgerufen wird (sicherer)
+    if (typeof filterZeit_50retten === "function" && filterZeit_50retten(eintrag, kaderArray)) {
+      kriterienHtml += `<div>50 m Retten: ${eintrag.zeit_50retten}</div>`;
+    }
+    if (typeof filterZeit_100retten === "function" && filterZeit_100retten(eintrag, kaderArray)) {
+      kriterienHtml += `<div>100 m Retten: ${eintrag.zeit_100retten}</div>`;
+    }
+    if (typeof filterZeit_100kombi === "function" && filterZeit_100kombi(eintrag, kaderArray)) {
+      kriterienHtml += `<div>100 m Kombi: ${eintrag.zeit_100kombi}</div>`;
+    }
+    if (typeof filterZeit_100LS === "function" && filterZeit_100LS(eintrag, kaderArray)) {
+      kriterienHtml += `<div>100 m Lifesaver: ${eintrag.zeit_100LS}</div>`;
+    }
+    if (typeof filterZeit_200SLS === "function" && filterZeit_200SLS(eintrag, kaderArray)) {
+      kriterienHtml += `<div>200 m Superlifesaver: ${eintrag.zeit_200SLS}</div>`;
+    }
+    if (typeof filterZeit_200H === "function" && filterZeit_200H(eintrag, kaderArray)) {
+      kriterienHtml += `<div>200 m Hindernis: ${eintrag.zeit_200H}</div>`;
+    }
+
+    tdKriterien.innerHTML = kriterienHtml || "-";
     tr.appendChild(tdKriterien);
 
     tbody.appendChild(tr);
@@ -66,9 +81,6 @@ tdKriterien.innerHTML = `
   table.appendChild(tbody);
   container.appendChild(table);
 }
-
-
-
 
 
 
@@ -170,17 +182,31 @@ function filterAltersklasse(eintrag) {
 
 
 function mindestensZweiFilterErfüllt(eintrag, kaderArray) {
-  const filterErgebnisse = [
-    filterZeit_50retten(eintrag, kaderArray),
-    filterZeit_100retten(eintrag, kaderArray),
-    filterZeit_100kombi(eintrag, kaderArray),
-    filterZeit_100LS(eintrag, kaderArray),
-    filterZeit_200SLS(eintrag, kaderArray),
-    filterZeit_200H?.(eintrag, kaderArray) // falls du die Funktion schon hast
-  ];
+  const filterErgebnisse = {
+    "50m Retten": filterZeit_50retten(eintrag, kaderArray),
+    "100m Retten": filterZeit_100retten(eintrag, kaderArray),
+    "100m Kombi": filterZeit_100kombi(eintrag, kaderArray),
+    "100m LS": filterZeit_100LS(eintrag, kaderArray),
+    "200m SLS": filterZeit_200SLS(eintrag, kaderArray),
+    "200m Hindernis": typeof filterZeit_200H === "function" 
+                        ? filterZeit_200H(eintrag, kaderArray) 
+                        : false
+  };
 
-  const trueCount = filterErgebnisse.filter(Boolean).length;
-  return trueCount >= 2;
+  const erfolgreicheFilter = Object.keys(filterErgebnisse).filter(key => filterErgebnisse[key]);
+
+  // Gruppierte Ausgabe
+  console.group(`Athlet: ${eintrag.name} (${eintrag.jahrgang})`);
+  Object.entries(filterErgebnisse).forEach(([disziplin, result]) => {
+    if (result) {
+      console.log(`✅ ${disziplin} bestanden`);
+    } else {
+      console.log(`❌ ${disziplin} nicht bestanden`);
+    }
+  });
+  console.groupEnd();
+
+  return erfolgreicheFilter.length >= 2;
 }
 
 
@@ -197,7 +223,7 @@ function filterZeit_50retten(eintrag, kaderArray) {
   } else {
     return false;
   }
-  console.log(`Name: ${eintrag.name}, 50m-Zeit: ${zeit_50retten}, richtzeit_50retten: ${richtzeit_50retten}`);
+  
   return zeit_50retten <= richtzeit_50retten;
 }
 
@@ -214,7 +240,7 @@ function filterZeit_100retten(eintrag, kaderArray) {
   } else {
     return false;
   }
-  console.log(`Name: ${eintrag.name}, 50m-Zeit: ${zeit_100retten}, richtzeit_50retten: ${richtzeit_100retten}`);
+  
   return zeit_100retten <= richtzeit_100retten;
 }
 
@@ -231,7 +257,7 @@ function filterZeit_100kombi(eintrag, kaderArray) {
   } else {
     return false;
   }
-  console.log(`Name: ${eintrag.name}, 100m-Kombi Zeit: ${zeit_100kombi}, richtzeit_100kombi: ${richtzeit_100kombi}`);
+  
   return zeit_100kombi <= richtzeit_100kombi;
 }
 
@@ -248,7 +274,7 @@ function filterZeit_100LS(eintrag, kaderArray) {
   } else {
     return false;
   }
-  console.log(`Name: ${eintrag.name}, 100m-LS Zeit: ${zeit_100LS}, richtzeit_100LS: ${richtzeit_100LS}`);
+  
   return zeit_100LS <= richtzeit_100LS;
 }
 
@@ -265,7 +291,7 @@ function filterZeit_200SLS(eintrag, kaderArray) {
   } else {
     return false;
   }
-  console.log(`Name: ${eintrag.name}, 200m-SLSZeit: ${zeit_200SLS}, richtzeit_200SLS: ${richtzeit_200SLS}`);
+  
   return zeit_200SLS <= richtzeit_200SLS;
 }
 
@@ -282,7 +308,7 @@ function filterZeit_200H(eintrag, kaderArray) {
   } else {
     return false;
   }
-  console.log(`Name: ${eintrag.name}, 200m-SLSZeit: ${zeit_200H}, richtzeit_200H: ${richtzeit_200H}`);
+  
   return zeit_200H <= richtzeit_200H;
 }
 
@@ -422,7 +448,7 @@ async function ladeAthleten() {
   }
 });
   const athletenDaten = Array.from(athletenMap.values());
-  erstelleAthletenTabelle(athletenDaten); 
+erstelleAthletenTabelle(athletenDaten, kaderArray); 
 } 
 // Klick-Event am existierenden HTML-Button
 document.addEventListener("DOMContentLoaded", () => {
@@ -431,8 +457,6 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
-
-
 
 
 
