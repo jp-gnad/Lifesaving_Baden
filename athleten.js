@@ -213,6 +213,7 @@ async function ladeAthleten() {
     const kader = "17/18";
 athletenMap.set(name, {
   kader,
+   name: eintrag.name,
   geschlecht: eintrag.geschlecht,
   zeit_50retten: zeit_50rettenRaw
 });
@@ -232,6 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err));
   });
 });
+
 
 
 
