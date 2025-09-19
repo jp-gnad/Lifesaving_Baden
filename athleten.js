@@ -353,7 +353,7 @@ async function ladeAthleten() {
 
 const athletenDaten = Array.from(athletenMap.values());
 erstelleAthletenTabelle(athletenDaten);
-
+}
   
 // Klick-Event am existierenden HTML-Button
 document.addEventListener("DOMContentLoaded", () => {
@@ -362,6 +362,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
