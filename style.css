@@ -1,6 +1,6 @@
 /* Hintergrundbild für die gesamte Seite */
 body {
-  background-image: url('./hintergrund.jpg');
+  background-image: url("./hintergrund.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -201,3 +201,4 @@ h1, h2 {
   margin-left: 30px;
 
 }
+
