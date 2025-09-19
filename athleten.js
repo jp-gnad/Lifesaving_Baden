@@ -50,7 +50,11 @@ function erstelleAthletenTabelle(athletenDaten) {
     tr.appendChild(tdName);
 
     const tdKriterien = document.createElement("td");
-tdKriterien.textContent = `50 m Retten: ${eintrag.zeit_50retten || "-"} / 100 m Retten: ${eintrag.zeit_100retten || "-"}/ 100 m Kombi: ${eintrag.zeit_100kombi || "-"}`;
+tdKriterien.innerHTML = `
+  <div>50 m Retten: ${eintrag.zeit_50retten || "-"}</div>
+  <div>100 m Retten: ${eintrag.zeit_100retten || "-"}</div>
+  <div>100 m Kombi: ${eintrag.zeit_100kombi || "-"}</div>
+`;
     tr.appendChild(tdKriterien);
 
     tbody.appendChild(tr);
@@ -325,6 +329,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
