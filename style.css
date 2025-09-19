@@ -1,6 +1,6 @@
 /* Hintergrundbild für die gesamte Seite */
 body {
-  background-image: url("./hintergrund.jpg");
+  background-image: url('images/hintergrund.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -199,6 +199,12 @@ h1, h2 {
   position: absolute;
   top: -32px;    /* Abstand von oben */
   margin-left: 30px;
-
+}
+/* Zebra-Style für Tabellenzeilen im tbody */
+#athletenTableContainer table tbody tr:nth-child(even) {
+  background-color: #f9f9f9; /* ganz hellgrau für ungerade Zeilen */
 }
 
+#athletenTableContainer table tbody tr:nth-child(odd) {
+  background-color: #ffffff; /* weiß für gerade Zeilen */
+}
