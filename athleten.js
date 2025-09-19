@@ -145,11 +145,12 @@ function alleFilterErfüllt(eintrag, kaderArray) {
    Sekundär-Filter
    =========================== */
 
-// Jahresfilter: nur Einträge aus dem aktuellen Jahr
 function filterAktuellesJahr(eintrag) {
-  // eintrag.jahr ist die Zahl aus Spalte J
+  if (!eintrag.jahr) return false;
+
+  const jsDate = excelDateToJSDate(Number(eintrag.jahr));
   const aktuellesJahr = new Date().getFullYear();
-  return Number(eintrag.jahr) === aktuellesJahr;
+  return jsDate.getFullYear() === aktuellesJahr;
 }
 
 
@@ -193,6 +194,17 @@ function filterZeit_100retten(eintrag, kaderArray) {
   return zeit_100retten <= richtzeit_100retten;
 }
 
+/* ===========================
+   Hilfsfunktionen
+   =========================== */
+
+function excelDateToJSDate(serial) {
+  // Excel zählt ab 1900-01-01, aber in JS ist 1970 das Basisjahr
+  const utc_days = Math.floor(serial - 25569); // 25569 = 1970-01-01
+  const utc_value = utc_days * 86400; // Sekunden
+  const date_info = new Date(utc_value * 1000); // ms
+  return date_info;
+}
 
 // Excel laden, filtern und vorbereiten
 async function ladeAthleten() {
@@ -267,6 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err));
   });
 });
+
 
 
 
