@@ -345,10 +345,22 @@ async function ladeAthleten() {
     // bessere 100m LS Zeit übernehmen
     if (!isNaN(neueZeit_100LS) && (isNaN(alteZeit_100LS) || neueZeit_100LS < alteZeit_100LS)) {
       vorhandener.zeit_100LS = zeit_100LSRaw;
-    }
-
-  } 
-});
+    } 
+    
+    else {
+    // neuer Athlet
+    athletenMap.set(name, {
+        kader,
+        name: eintrag.name,
+        geschlecht: eintrag.geschlecht,
+        jahrgang: eintrag.jahrgang,
+        ortsgruppe: eintrag.ortsgruppe,
+        zeit_50retten: (filterZeit_50retten(eintrag, kaderArray) ? eintrag.zeit_50retten : ""),
+        zeit_100retten: (filterZeit_100retten(eintrag, kaderArray) ? eintrag.zeit_100retten : ""),
+        zeit_100kombi: (filterZeit_100kombi(eintrag, kaderArray) ? eintrag.zeit_100kombi : ""),
+        zeit_100LS: (filterZeit_100LS(eintrag, kaderArray) ? eintrag.zeit_100LS : "")
+    });
+}
   const athletenDaten = Array.from(athletenMap.values());
   erstelleAthletenTabelle(athletenDaten); 
 } 
@@ -359,6 +371,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
