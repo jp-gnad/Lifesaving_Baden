@@ -34,7 +34,7 @@ function erstelleAthletenTabelle(athletenDaten) {
     const tdName = document.createElement("td");
 
     console.log("eintrag.geschlecht / Eintrag", eintrag.geschlecht, "Eintrag:", eintrag);
-    
+
     tdName.className = eintrag.geschlecht.toLowerCase() === "w" ? "weiblich" : "maennlich";
     tdName.textContent = `${eintrag.name} (${eintrag.jahrgang})`;
 
@@ -55,7 +55,6 @@ tdKriterien.innerHTML = `
   <div>100 m Retten: ${eintrag.zeit_100retten || "-"}</div>
   <div>100 m Kombi: ${eintrag.zeit_100kombi || "-"}</div>
   <div>100 m Lifesaver: ${eintrag.zeit_100LS || "-"}</div>
-  <div>200 m Superlifesaver: ${eintrag.zeit_200SLS || "-"}</div>
 `;
     tr.appendChild(tdKriterien);
 
@@ -180,16 +179,8 @@ function filterZeit_50retten(eintrag, kaderArray) {
   } else {
     return false;
   }
-
   console.log(`Name: ${eintrag.name}, 50m-Zeit: ${zeit_50retten}, richtzeit_50retten: ${richtzeit_50retten}`);
-
-  if (zeit_50retten <= richtzeit_50retten) {
-    return true;
-  } else {
-    // Zeit löschen, wenn nicht erfüllt
-    eintrag.zeit_50retten = "";
-    return false;
-  }
+  return zeit_50retten <= richtzeit_50retten;
 }
 
 // Zeit-Filter: 100m Retten
@@ -205,6 +196,7 @@ function filterZeit_100retten(eintrag, kaderArray) {
   } else {
     return false;
   }
+  console.log(`Name: ${eintrag.name}, 50m-Zeit: ${zeit_100retten}, richtzeit_50retten: ${richtzeit_100retten}`);
   return zeit_100retten <= richtzeit_100retten;
 }
 
@@ -221,6 +213,7 @@ function filterZeit_100kombi(eintrag, kaderArray) {
   } else {
     return false;
   }
+  console.log(`Name: ${eintrag.name}, 50m-Zeit: ${zeit_100kombi}, richtzeit_50retten: ${richtzeit_100kombi}`);
   return zeit_100kombi <= richtzeit_100kombi;
 }
 
@@ -237,41 +230,8 @@ function filterZeit_100LS(eintrag, kaderArray) {
   } else {
     return false;
   }
-
-  console.log(`Name: ${eintrag.name}, 100LS-Zeit: ${zeit_100LS}, richtzeit_100LS: ${richtzeit_100LS}`);
-
-  if (zeit_100LS <= richtzeit_100LS) {
-    return true;
-  } else {
-    // Zeit löschen, wenn nicht erfüllt
-    eintrag.zeit_100LS = "";
-    return false;
-  }
-}
-
-// Zeit-Filter: 200 SLS
-function filterZeit_200SLS(eintrag, kaderArray) {
-  const zeit_200SLS = parseTimeToSeconds(eintrag.zeit_200SLS);
-  if (isNaN(zeit_200SLS)) return false;
-
-  let richtzeit_200SLS;
-  if (eintrag.geschlecht === "m") {
-    richtzeit_200SLS = kaderArray[3][4];
-  } else if (eintrag.geschlecht === "w") {
-    richtzeit_200SLS = kaderArray[2][4];
-  } else {
-    return false;
-  }
-
-  console.log(`Name: ${eintrag.name}, 200SLS-Zeit: ${zeit_200SLS}, richtzeit_200SLS: ${richtzeit_200SLS}`);
-
-  if (zeit_200SLS <= richtzeit_200SLS) {
-    return true;
-  } else {
-    // Zeit löschen, wenn nicht erfüllt
-    eintrag.zeit_200SLS = "";
-    return false;
-  }
+  console.log(`Name: ${eintrag.name}, 50m-Zeit: ${zeit_100kombi}, richtzeit_50retten: ${richtzeit_100kombi}`);
+  return zeit_100LS <= richtzeit_100LS;
 }
 
 /* ===========================
@@ -315,7 +275,6 @@ async function ladeAthleten() {
   const zeit_100rettenRaw = row[7];
   const zeit_100kombiRaw = row[6];
   const zeit_100LSRaw = row[3];
-  const zeit_200SLSRaw = row[5];
   const jahrRaw = row[9];
 
   if (!name || !geschlecht || !jahrgangRaw) return;
@@ -332,7 +291,6 @@ async function ladeAthleten() {
     zeit_100retten: zeit_100rettenRaw,
     zeit_100kombi: zeit_100kombiRaw,
     zeit_100LS: zeit_100LSRaw,
-    zeit_200SLS: zeit_200SLSRaw,
     jahr: jahrRaw
   };
 
@@ -345,7 +303,7 @@ async function ladeAthleten() {
   const neueZeit_100retten = parseTimeToSeconds(zeit_100rettenRaw);
   const neueZeit_100kombi = parseTimeToSeconds(zeit_100kombiRaw);
   const neueZeit_100LS = parseTimeToSeconds(zeit_100LSRaw);
-  const neueZeit_200SLS = parseTimeToSeconds(zeit_200SLSRaw);
+
 
   if (athletenMap.has(name)) {
     // Fall 1: Athlet existiert schon
@@ -354,19 +312,18 @@ async function ladeAthleten() {
     const alteZeit_100retten = parseTimeToSeconds(vorhandener.zeit_100retten);
     const alteZeit_100kombi = parseTimeToSeconds(vorhandener.zeit_100kombi);
     const alteZeit_100LS = parseTimeToSeconds(vorhandener.zeit_100LS);
-    const alteZeit_200SLS = parseTimeToSeconds(vorhandener.zeit_200SLS);
 
-    // bessere 50m Retten Zeit übernehmen
+    // bessere 50m retten Zeit übernehmen
     if (!isNaN(neueZeit_50retten) && (isNaN(alteZeit_50retten) || neueZeit_50retten < alteZeit_50retten)) {
       vorhandener.zeit_50retten = zeit_50rettenRaw;
     }
 
-    // bessere 100m Retten Zeit übernehmen
+    // bessere 100m retten Zeit übernehmen
     if (!isNaN(neueZeit_100retten) && (isNaN(alteZeit_100retten) || neueZeit_100retten < alteZeit_100retten)) {
       vorhandener.zeit_100retten = zeit_100rettenRaw;
     }
-    
-    // bessere 100m Kombi Zeit übernehmen
+
+    // bessere 100m kombi Zeit übernehmen
     if (!isNaN(neueZeit_100kombi) && (isNaN(alteZeit_100kombi) || neueZeit_100kombi < alteZeit_100kombi)) {
       vorhandener.zeit_100kombi = zeit_100kombiRaw;
     }
@@ -374,11 +331,6 @@ async function ladeAthleten() {
     // bessere 100m LS Zeit übernehmen
     if (!isNaN(neueZeit_100LS) && (isNaN(alteZeit_100LS) || neueZeit_100LS < alteZeit_100LS)) {
       vorhandener.zeit_100LS = zeit_100LSRaw;
-    }
-
-    // bessere 200 SLS  Zeit übernehmen
-    if (!isNaN(neueZeit_200SLS) && (isNaN(alteZeit_200SLS) || neueZeit_200SLS < alteZeit_200SLS)) {
-      vorhandener.zeit_200SLS = zeit_200SLSRaw;
     }
 
   } else {
@@ -392,17 +344,13 @@ async function ladeAthleten() {
       zeit_50retten: zeit_50rettenRaw,
       zeit_100retten: zeit_100rettenRaw,
       zeit_100kombi: zeit_100kombiRaw,
-      zeit_100LS: zeit_100LSRaw,
-      zeit_200SLS: zeit_200SLSRaw
+      zeit_100LS: zeit_100LSRaw
     });
   }
 });
-
-// nach der Schleife
-const athletenDaten = Array.from(athletenMap.values());
-erstelleAthletenTabelle(athletenDaten);
-
-  
+  const athletenDaten = Array.from(athletenMap.values());
+  erstelleAthletenTabelle(athletenDaten); 
+} 
 // Klick-Event am existierenden HTML-Button
 document.addEventListener("DOMContentLoaded", () => {
   const button = document.getElementById("aktualisierenBtn"); 
@@ -410,29 +358,4 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
