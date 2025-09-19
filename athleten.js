@@ -180,6 +180,8 @@ function filterZeit_50retten(eintrag, kaderArray) {
     return false;
   }
 
+    console.log(`Name: ${eintrag.name}, 50 Retten: ${zeit_50retten}, richtzeit_50 Retten: ${richtzeit_50rettten}`);
+
   if (zeit_50retten <= richtzeit_50retten) {
     return true;
   } else {
@@ -357,6 +359,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
