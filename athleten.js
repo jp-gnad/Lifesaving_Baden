@@ -208,7 +208,7 @@ async function ladeAthleten() {
     if (!alleFilterErfüllt(eintrag, kaderArray)) return;
 
     const kader = "17/18";
-    athletenMap.set(name, { kader, zeit_50retten: eintrag.zeit_50retten });
+athletenMap.set(name, { kader, zeit_50retten: zeit_50rettenRaw });
   });
 
   const athletenDaten = Array.from(athletenMap.values());
@@ -224,6 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err));
   });
 });
+
 
 
 
