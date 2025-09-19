@@ -1,6 +1,6 @@
 /* Hintergrundbild für die gesamte Seite */
 body {
-  background-image: url('images/hintergrund.jpg');
+  background-image: url('./hintergrund.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -199,4 +199,5 @@ h1, h2 {
   position: absolute;
   top: -32px;    /* Abstand von oben */
   margin-left: 30px;
+
 }
