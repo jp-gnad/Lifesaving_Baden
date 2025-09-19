@@ -158,9 +158,9 @@ function filterZeit_50retten(eintrag, kaderArray) {
 
   let richtzeit_50retten;
   if (eintrag.geschlecht === "m") {
-    richtzeit_50retten = kaderArray[3][1];
+    richtzeit_50retten = kaderArray[3][0];
   } else if (eintrag.geschlecht === "w") {
-    richtzeit_50retten = kaderArray[2][0];
+    richtzeit_50retten = kaderArray[3][0];
   } else {
     return false;
   }
@@ -228,6 +228,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err));
   });
 });
+
 
 
 
