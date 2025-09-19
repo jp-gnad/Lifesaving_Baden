@@ -315,7 +315,7 @@ async function ladeAthleten() {
   const zeit_100rettenRaw = row[7];
   const zeit_100kombiRaw = row[6];
   const zeit_100LSRaw = row[3];
-  const zeit_200SLSRaw = row[5]
+  const zeit_200SLS = row[5];
   const jahrRaw = row[9];
 
   if (!name || !geschlecht || !jahrgangRaw) return;
@@ -336,10 +336,11 @@ async function ladeAthleten() {
     jahr: jahrRaw
   };
 
-   if (!alleFilterErfüllt(eintrag, kaderArray)) return;
+  if (!alleFilterErfüllt(eintrag, kaderArray)) return;
 
   const kader = "17/18";
 
+  // Zeiten in Sekunden umwandeln
   const neueZeit_50retten = parseTimeToSeconds(zeit_50rettenRaw);  
   const neueZeit_100retten = parseTimeToSeconds(zeit_100rettenRaw);
   const neueZeit_100kombi = parseTimeToSeconds(zeit_100kombiRaw);
@@ -347,31 +348,41 @@ async function ladeAthleten() {
   const neueZeit_200SLS = parseTimeToSeconds(zeit_200SLSRaw);
 
   if (athletenMap.has(name)) {
+    // Fall 1: Athlet existiert schon
     const vorhandener = athletenMap.get(name);
     const alteZeit_50retten = parseTimeToSeconds(vorhandener.zeit_50retten);
     const alteZeit_100retten = parseTimeToSeconds(vorhandener.zeit_100retten);
-    const alteZeit_100kombi = parseTimeToSeconds(vorhandener.zeit_100kombi);
-    const alteZeit_100LS = parseTimeToSeconds(vorhandener.zeit_100LS);
-    const alteZeit_200SLS = parseTimeToSeconds(vorhandener.zeit_200SLS);
+    const alteZeit_100kombi = parseTimeToSeconds(vorhandener.zeit_100kombiRaw);
+    const alteZeit_100LS = parseTimeToSeconds(vorhandener.zeit_100LSRaw);
+    const alteZeit_200SLS = parseTimeToSeconds(vorhandener.zeit_200SLSRaw);
 
+    // bessere 50m Retten Zeit übernehmen
     if (!isNaN(neueZeit_50retten) && (isNaN(alteZeit_50retten) || neueZeit_50retten < alteZeit_50retten)) {
       vorhandener.zeit_50retten = zeit_50rettenRaw;
     }
+
+    // bessere 100m Retten Zeit übernehmen
     if (!isNaN(neueZeit_100retten) && (isNaN(alteZeit_100retten) || neueZeit_100retten < alteZeit_100retten)) {
       vorhandener.zeit_100retten = zeit_100rettenRaw;
     }
+    
+    // bessere 100m Kombi Zeit übernehmen
     if (!isNaN(neueZeit_100kombi) && (isNaN(alteZeit_100kombi) || neueZeit_100kombi < alteZeit_100kombi)) {
       vorhandener.zeit_100kombi = zeit_100kombiRaw;
     }
+
+    // bessere 100m LS Zeit übernehmen
     if (!isNaN(neueZeit_100LS) && (isNaN(alteZeit_100LS) || neueZeit_100LS < alteZeit_100LS)) {
       vorhandener.zeit_100LS = zeit_100LSRaw;
     }
+
+    // bessere 200 SLS  Zeit übernehmen
     if (!isNaN(neueZeit_200SLS) && (isNaN(alteZeit_200SLS) || neueZeit_200SLS < alteZeit_200SLS)) {
       vorhandener.zeit_200SLS = zeit_200SLSRaw;
     }
 
   } else {
-
+    // Fall 2: Athlet neu
     athletenMap.set(name, {
       kader,
       name: eintrag.name,
@@ -387,9 +398,10 @@ async function ladeAthleten() {
   }
 });
 
+// nach der Schleife
 const athletenDaten = Array.from(athletenMap.values());
 erstelleAthletenTabelle(athletenDaten);
-}
+
   
 // Klick-Event am existierenden HTML-Button
 document.addEventListener("DOMContentLoaded", () => {
@@ -398,6 +410,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
