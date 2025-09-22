@@ -59,21 +59,28 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
 
     // Name + OG
     const tdName = document.createElement("td");
-    // sicherer Zugriff auf geschlecht
+    
+    // Geschlecht für Klassennamen
     const geschlechtNorm = (eintrag.geschlecht || "").toString().toLowerCase();
     tdName.className = geschlechtNorm === "w" ? "weiblich" : "maennlich";
+    
+    // Name + Jahrgang
     tdName.textContent = `${eintrag.name} (${eintrag.jahrgang})`;
-
+    tdName.style.fontSize = "16px"; // Schriftgröße erhöht
+    
+    // Ortsgruppe anzeigen
     if (eintrag.ortsgruppe) {
       const ortDiv = document.createElement("div");
       ortDiv.textContent = `DLRG ${eintrag.ortsgruppe}`;
-      ortDiv.style.fontSize = "8px";
+      ortDiv.style.fontSize = "10px"; // vorher 8px → jetzt +2
       ortDiv.style.color = "#555555";
+    
       tdName.appendChild(document.createElement("br"));
       tdName.appendChild(ortDiv);
     }
-
+    
     tr.appendChild(tdName);
+
 
     // Kriterien-Zelle (wird nur mit den bestanden Disziplinen befüllt)
     const tdKriterien = document.createElement("td");
@@ -484,6 +491,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
