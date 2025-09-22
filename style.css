@@ -1,6 +1,6 @@
 /* Hintergrundbild für die gesamte Seite */
 body {
-  background-image: url("./hintergrund.jpg");
+  background-image: url("./images/hintergrund.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -208,4 +208,5 @@ h1, h2 {
 #athletenTableContainer table tbody tr:nth-child(odd) {
   background-color: #ffffff; /* weiß für gerade Zeilen */
 }
+
 
