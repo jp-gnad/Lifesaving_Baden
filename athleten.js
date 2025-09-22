@@ -49,6 +49,8 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
       bildName = "Cap-Weil am Rhein.png";
     } else if (eintrag.ortsgruppe === "Durlach") {
       bildName = "Cap-Durlach.png";
+    } else if (eintrag.ortsgruppe === "Wettersbach") {
+      bildName = "Cap-Wettersbach.png";
     }
 
     img.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/images/${bildName}`;
@@ -492,6 +494,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
