@@ -38,8 +38,6 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     
     const img = document.createElement("img");
 
-    let bildName = "placeholder.png";
-
     const ortsgruppe = eintrag.ortsgruppe || "placeholder";
     const bildName = `Cap-${ortsgruppe}.png`;
     const encodedBildName = encodeURIComponent(bildName);
@@ -486,6 +484,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
