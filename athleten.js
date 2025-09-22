@@ -39,7 +39,7 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     const img = document.createElement("img");
 
     const ortsgruppe = eintrag.ortsgruppe || "placeholder";
-    const bildName = `Cap-${ortsgruppe}_smal.png`;
+    const bildName = `Cap-${ortsgruppe}.svg`;
     const encodedBildName = encodeURIComponent(bildName);
 
     img.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/images/${encodedBildName}`;
@@ -491,6 +491,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
