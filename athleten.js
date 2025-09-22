@@ -31,6 +31,20 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     tdKader.textContent = eintrag.kader;
     tr.appendChild(tdKader);
 
+    // Cap
+    const tdCap = document.createElement("td");
+    const img = document.createElement("img");
+
+    const bildName = eintrag.name.toLowerCase().replace(/\s+/g, "_") + ".png";
+    img.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/images/${Waghäusel}`;
+    
+    img.style.width = "40px";
+    img.style.height = "auto";
+    img.alt = `Cap von ${eintrag.name}`;
+
+    tdCap.appendChild(img);
+    tr.appendChild(tdCap);
+
     // Name + OG
     const tdName = document.createElement("td");
     // sicherer Zugriff auf geschlecht
@@ -458,6 +472,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
