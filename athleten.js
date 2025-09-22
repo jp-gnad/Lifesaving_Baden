@@ -51,7 +51,7 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
       bildName = "Cap-Durlach.png";
     }
 
-    img.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/images/${Cap-Baden_light}`;
+    img.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/images/${bildName}`;
     
     img.style.width = "35px";
     img.style.height = "auto";
@@ -59,7 +59,7 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
 
     // Fallback bei Ladefehler
     img.onerror = () => {
-      img.src = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/images/Cap-Baden.png";
+      img.src = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/images/Cap-Baden_light.png";
     };
 
     tdCap.appendChild(img);
@@ -492,6 +492,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
