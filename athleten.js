@@ -14,8 +14,8 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
   thead.innerHTML = `
     <tr>
       <th>Kader</th>
-      <th style="width: 45px;">Cap</th>
-      <th>Name</th>
+      <th style="width: 45px; padding: 0; border: none;"></th>
+      <th colspan="1">Name</th>
       <th>Kriterien</th>
     </tr>
   `;
@@ -484,6 +484,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
