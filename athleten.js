@@ -198,14 +198,13 @@ function alleFilterErfüllt(eintrag, kaderArray) {
    Sekundär-Filter
    =========================== */
 
-// Aktuelles Jahr - Filter
-function filterAktuellesJahr(eintrag) {
+function filterNachJahr(eintrag, gewuenschtesJahr = 2014) {
   if (!eintrag.jahr) return false;
 
   const jsDate = excelDateToJSDate(Number(eintrag.jahr));
-  const aktuellesJahr = new Date().getFullYear();
-  return jsDate.getFullYear() === aktuellesJahr;
+  return jsDate.getFullYear() === gewuenschtesJahr;
 }
+
 
 
 // Altersklasse-Filter
@@ -491,6 +490,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
