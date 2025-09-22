@@ -36,7 +36,7 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     const img = document.createElement("img");
 
     const bildName = eintrag.name.toLowerCase().replace(/\s+/g, "_") + ".png";
-    img.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/images/${Waghäusel}`;
+    img.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/images/Waghäusel.png`;
     
     img.style.width = "40px";
     img.style.height = "auto";
@@ -472,6 +472,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
