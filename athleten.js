@@ -33,27 +33,18 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
 
     // Cap
     const tdCap = document.createElement("td");
+
+    tdCap.style.textAlign = "center"; 
+    
     const img = document.createElement("img");
 
     let bildName = "placeholder.png";
 
-    if (eintrag.ortsgruppe === "Karlsruhe") {
-      bildName = "Cap-Karlsruhe.png";
-    } else if (eintrag.ortsgruppe === "Ettlingen") {
-      bildName = "Cap-Ettlingen.png";
-    } else if (eintrag.ortsgruppe === "Waghäusel") {
-      bildName = "Cap-Waghäusel.png";
-    } else if (eintrag.ortsgruppe === "Malsch") {
-      bildName = "Cap-Malsch.png";
-    } else if (eintrag.ortsgruppe === "Weil am Rhein") {
-      bildName = "Cap-Weil am Rhein.png";
-    } else if (eintrag.ortsgruppe === "Durlach") {
-      bildName = "Cap-Durlach.png";
-    } else if (eintrag.ortsgruppe === "Wettersbach") {
-      bildName = "Cap-Wettersbach.png";
-    }
+    const ortsgruppe = eintrag.ortsgruppe || "placeholder";
+    const bildName = `Cap-${ortsgruppe}.png`;
+    const encodedBildName = encodeURIComponent(bildName);
 
-    img.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/images/${bildName}`;
+    img.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/images/${encodedBildName}`;
     
     img.style.width = "35px";
     img.style.height = "auto";
@@ -61,6 +52,7 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
 
     // Fallback bei Ladefehler
     img.onerror = () => {
+      img.onerror = null;
       img.src = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/images/Cap-Baden_light.png";
     };
 
@@ -494,6 +486,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
