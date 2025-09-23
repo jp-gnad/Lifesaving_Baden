@@ -75,6 +75,22 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     imgIcon_time.alt = "Icon1_grey";
     
     tdIcon_time.appendChild(imgIcon_time);
+
+    // Icon_comp
+    const tdIcon_comp = document.createElement("td");
+    tdIcon_comp.style.textAlign = "center"; 
+    
+    const imgIcon_comp = document.createElement("img");
+    
+    const bildNameIcon = "icon_medal_grey.svg";
+    const encodedBildNameIcon = encodeURIComponent(bildNameIcon);
+    
+    imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon}`;
+    imgIcon_time.style.width = "35px";
+    imgIcon_time.style.height = "auto";
+    imgIcon_time.alt = "Icon2_grey";
+    
+    tdIcon_time.appendChild(imgIcon_comp);
     
 
     
@@ -102,6 +118,7 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     
     tr.appendChild(tdName);
     tr.appendChild(tdIcon_time);
+    tr.appendChild(tdIcon_comp);
 
     // Kriterien-Zelle (wird nur mit den bestanden Disziplinen befüllt)
     const tdKriterien = document.createElement("td");
@@ -513,6 +530,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
