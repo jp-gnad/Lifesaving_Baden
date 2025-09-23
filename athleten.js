@@ -31,16 +31,16 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     tdKader.textContent = eintrag.kader;
     tr.appendChild(tdKader);
 
-      // Cap
+    // Cap
     const tdCap = document.createElement("td");
-    tdCap.style.textAlign = "center"; 
-    
+    tdCap.style.textAlign = "center";
+
     const imgCap = document.createElement("img");
-    
+
     const ortsgruppe = eintrag.ortsgruppe || "placeholder";
     const bildNameCap = `Cap-${ortsgruppe}.svg`;
     const encodedBildNameCap = encodeURIComponent(bildNameCap);
-    
+
     imgCap.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameCap}`;
     imgCap.style.width = "35px";
     imgCap.style.height = "auto";
@@ -50,17 +50,17 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
       imgCap.onerror = null;
       imgCap.src = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/Cap-Baden_light.svg";
     };
-    
+
     tdCap.appendChild(imgCap);
     tr.appendChild(tdCap);
-    
-    
+
+
     // Icon_time
     const tdIcon_time = document.createElement("td");
-    tdIcon_time.style.textAlign = "center"; 
-    
+    tdIcon_time.style.textAlign = "center";
+
     const imgIcon_time = document.createElement("img");
-    
+
     let bildNameIcon1;
     if (mindestensZweiFilterErfüllt(eintrag, kaderArray) === true) {
       bildNameIcon1 = "icon_time_green.svg";
@@ -68,7 +68,7 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
       bildNameIcon1 = "icon_time_grey.svg";
     }
     const encodedBildNameIcon1 = encodeURIComponent(bildNameIcon1);
-    
+
     imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon1}`;
     imgIcon_time.style.width = "35px";
     imgIcon_time.style.height = "auto";
@@ -80,84 +80,82 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
       showInfoBox(event.currentTarget, kriterienText);
     });
 
-    
+
     tdIcon_time.appendChild(imgIcon_time);
 
     // Icon_comp
     const tdIcon_comp = document.createElement("td");
-    tdIcon_comp.style.textAlign = "center"; 
-    
+    tdIcon_comp.style.textAlign = "center";
+
     const imgIcon_comp = document.createElement("img");
-    
+
     const bildNameIcon2 = "icon_medal_grey.svg";
     const encodedBildNameIcon2 = encodeURIComponent(bildNameIcon2);
-    
+
     imgIcon_comp.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon2}`;
     imgIcon_comp.style.width = "35px";
     imgIcon_comp.style.height = "auto";
     imgIcon_comp.alt = "Icon2_grey";
-    
+
     tdIcon_comp.appendChild(imgIcon_comp);
 
 
     // Icon_ocean
     const tdIcon_ocean = document.createElement("td");
-    tdIcon_ocean.style.textAlign = "center"; 
-    
+    tdIcon_ocean.style.textAlign = "center";
+
     const imgIcon_ocean = document.createElement("img");
-    
+
     const bildNameIcon3 = "icon_ocean_grey.svg";
     const encodedBildNameIcon3 = encodeURIComponent(bildNameIcon3);
-    
+
     imgIcon_ocean.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon3}`;
     imgIcon_ocean.style.width = "35px";
     imgIcon_ocean.style.height = "auto";
     imgIcon_ocean.alt = "Icon3_grey";
-    
+
     tdIcon_ocean.appendChild(imgIcon_ocean);
 
-    
+
     // Icon_coach
     const tdIcon_coach = document.createElement("td");
-    tdIcon_coach.style.textAlign = "center"; 
-    
+    tdIcon_coach.style.textAlign = "center";
+
     const imgIcon_coach = document.createElement("img");
-    
+
     const bildNameIcon4 = "icon_trainer_grey.svg";
     const encodedBildNameIcon4 = encodeURIComponent(bildNameIcon4);
-    
+
     imgIcon_coach.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon4}`;
     imgIcon_coach.style.width = "35px";
     imgIcon_coach.style.height = "auto";
     imgIcon_coach.alt = "Icon4_grey";
-    
+
     tdIcon_coach.appendChild(imgIcon_coach);
 
-    
 
-    
     // Name + OG
     const tdName = document.createElement("td");
-    
+
     // Geschlecht für Klassennamen
     const geschlechtNorm = (eintrag.geschlecht || "").toString().toLowerCase();
     tdName.className = geschlechtNorm === "w" ? "weiblich" : "maennlich";
-    
+
     // Name + Jahrgang
     tdName.textContent = `${eintrag.name} (${eintrag.jahrgang})`;
     tdName.style.fontSize = "16px"; // Schriftgröße erhöht
-    
+
     // Ortsgruppe anzeigen
     if (eintrag.ortsgruppe) {
       const ortDiv = document.createElement("div");
       ortDiv.textContent = `DLRG ${eintrag.ortsgruppe}`;
       ortDiv.style.fontSize = "10px"; // vorher 8px → jetzt +2
       ortDiv.style.color = "#555555";
-    
+
       tdName.appendChild(document.createElement("br"));
       tdName.appendChild(ortDiv);
     }
-    
+
     tr.appendChild(tdName);
     tr.appendChild(tdIcon_time);
     tr.appendChild(tdIcon_comp);
@@ -165,26 +163,26 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     tr.appendChild(tdIcon_coach);
 
     // Kriterien (werden nur mit den bestandenen Disziplinen befüllt)
-    let kriterienHtml = `<div><strong>Erreichte Normzeiten:</strong></div>`;
+    let kriterienHtml = `<div><strong>Erreichte Normzeiten</strong></div>`;
 
 // Prüfe Existenz der Filterfunktionen bevor aufgerufen wird (sicherer)
     if (typeof filterZeit_50retten === "function" && filterZeit_50retten(eintrag, kaderArray)) {
-      kriterienHtml += `<div>50 m Retten: ${eintrag.zeit_50retten}</div>`;
+      kriterienHtml += `<div>50m <span style="margin-left: 9px;">Retten: </span><span style="margin-left: 55px;">${eintrag.zeit_50retten}</span></div>`;
     }
     if (typeof filterZeit_100retten === "function" && filterZeit_100retten(eintrag, kaderArray)) {
-      kriterienHtml += `<div>100 m Retten: ${eintrag.zeit_100retten}</div>`;
+      kriterienHtml += `<div>100m Retten: <span style="margin-left: 55px;">${eintrag.zeit_100retten}</span></div>`;
     }
     if (typeof filterZeit_100kombi === "function" && filterZeit_100kombi(eintrag, kaderArray)) {
-      kriterienHtml += `<div>100 m Kombi: ${eintrag.zeit_100kombi}</div>`;
+      kriterienHtml += `<div>100m Kombi: <span style="margin-left: 56.5px;">${eintrag.zeit_100kombi}</span></div>`;
     }
     if (typeof filterZeit_100LS === "function" && filterZeit_100LS(eintrag, kaderArray)) {
-      kriterienHtml += `<div>100 m Lifesaver: ${eintrag.zeit_100LS}</div>`;
+      kriterienHtml += `<div>100m Lifesaver: <span style="margin-left: 37px;">${eintrag.zeit_100LS}</span></div>`;
     }
     if (typeof filterZeit_200SLS === "function" && filterZeit_200SLS(eintrag, kaderArray)) {
-      kriterienHtml += `<div>200 m Superlifesaver: ${eintrag.zeit_200SLS}</div>`;
+      kriterienHtml += `<div>200m Superlifesaver: ${eintrag.zeit_200SLS}</div>`;
     }
     if (typeof filterZeit_200H === "function" && filterZeit_200H(eintrag, kaderArray)) {
-      kriterienHtml += `<div>200 m Hindernis: ${eintrag.zeit_200H}</div>`;
+      kriterienHtml += `<div>200m Hindernis: <span style="margin-left: 35px;">${eintrag.zeit_200H}</span></div>`;
     }
 
 // Kriterien-HTML direkt am Icon speichern
@@ -202,11 +200,10 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
         document.body.appendChild(infobox);
       }
 
-      infobox.innerHTML = text;
-
+      infobox.innerHTML = text; // egal ob Text oder HTML
       const rect = iconElement.getBoundingClientRect();
-      infobox.style.left = rect.right + 10 + "px"; // fester Abstand rechts neben dem Icon
-      infobox.style.top = rect.top + "px";         // direkt auf Icon-Höhe
+      infobox.style.left = rect.right + 10 + "px";
+      infobox.style.top = rect.top + window.scrollY + "px";
       infobox.style.display = "block";
 
       // Klick außerhalb schließt Infobox
@@ -217,21 +214,19 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
         }
       }
 
+      // Listener mit kleinem Timeout hinzufügen,
+      // damit der Klick auf das Icon selbst nicht sofort schließt
       setTimeout(() => {
         document.addEventListener("click", handleOutsideClick);
       }, 0);
     }
-
 
 // Klick-Event für das Icon
     imgIcon_time.addEventListener("click", (event) => {
       const text = event.currentTarget.dataset.infotext || "Keine Kriterien vorhanden";
       showInfoBox(event.currentTarget, text);
     });
-
-
   });
-
   table.appendChild(tbody);
   container.appendChild(table);
 }

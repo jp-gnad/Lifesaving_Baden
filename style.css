@@ -211,7 +211,7 @@ h1, h2 {
 
 
 .infobox {
-  position: fixed;   /* statt absolute */
+  position: absolute;   /* statt absolute */
   background: white;
   border: 1px solid #ccc;
   padding: 8px;
