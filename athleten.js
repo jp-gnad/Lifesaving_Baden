@@ -12,16 +12,12 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
   const table = document.createElement("table");
   const thead = document.createElement("thead");
   thead.innerHTML = `
-    <tr>
-      <th>Kader</th>
-      <th style="width: 45px; padding: 0; border: none;"></th>
-      <th colspan="1">Athlet</th>
-      <th>Icon_Time</th>
-      <th>Icon_Comp</th>
-      <th>Icon_Ocean</th>
-      <th>Icon_Coach</th>
-      <th>Kriterien</th>
-    </tr>
+   <tr>
+     <th rowspan="2">Kader</th>
+     <th rowspan="2" style="width: 45px; padding: 0; border: none;"></th>
+     <th rowspan="2" colspan="1">Athlet</th>
+     <th colspan="4">Kriterien</th>
+  </tr>
   `;
   table.appendChild(thead);
 
@@ -168,11 +164,10 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     tr.appendChild(tdIcon_ocean);
     tr.appendChild(tdIcon_coach);
 
-    // Kriterien-Zelle (wird nur mit den bestanden Disziplinen befüllt)
-    const tdKriterien = document.createElement("td");
-    let kriterienHtml = "";
+    // Kriterien (werden nur mit den bestandenen Disziplinen befüllt)
+    let kriterienHtml = `<div><strong>Erreichte Normzeiten:</strong></div>`;
 
-    // Prüfe Existenz der Filterfunktionen bevor aufgerufen wird (sicherer)
+// Prüfe Existenz der Filterfunktionen bevor aufgerufen wird (sicherer)
     if (typeof filterZeit_50retten === "function" && filterZeit_50retten(eintrag, kaderArray)) {
       kriterienHtml += `<div>50 m Retten: ${eintrag.zeit_50retten}</div>`;
     }
@@ -192,40 +187,48 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
       kriterienHtml += `<div>200 m Hindernis: ${eintrag.zeit_200H}</div>`;
     }
 
-    tdKriterien.innerHTML = kriterienHtml || "-";
-    tr.appendChild(tdKriterien);
+// Kriterien-HTML direkt am Icon speichern
+    imgIcon_time.dataset.infotext = kriterienHtml || "-";
 
+// Zeile zur Tabelle hinzufügen
     tbody.appendChild(tr);
 
-  //Infobox Funktionen
-  function showInfoBox(iconElement, text) {
-    let infobox = document.querySelector(".infobox");
-    if (!infobox) {
-      infobox = document.createElement("div");
-      infobox.className = "infobox";
-      document.body.appendChild(infobox);
+// Infobox Funktionen
+    function showInfoBox(iconElement, text) {
+      let infobox = document.querySelector(".infobox");
+      if (!infobox) {
+        infobox = document.createElement("div");
+        infobox.className = "infobox";
+        document.body.appendChild(infobox);
+      }
+
+      infobox.innerHTML = text; // egal ob Text oder HTML
+      const rect = iconElement.getBoundingClientRect();
+      infobox.style.left = rect.right + 10 + "px";
+      infobox.style.top = rect.top + window.scrollY + "px";
+      infobox.style.display = "block";
+
+      // Klick außerhalb schließt Infobox
+      function handleOutsideClick(event) {
+        if (!infobox.contains(event.target) && event.target !== iconElement) {
+          infobox.style.display = "none";
+          document.removeEventListener("click", handleOutsideClick);
+        }
+      }
+
+      // Listener mit kleinem Timeout hinzufügen,
+      // damit der Klick auf das Icon selbst nicht sofort schließt
+      setTimeout(() => {
+        document.addEventListener("click", handleOutsideClick);
+      }, 0);
     }
 
-    infobox.innerHTML = text; // egal ob Text oder HTML
-    const rect = iconElement.getBoundingClientRect();
-    infobox.style.left = rect.right + 10 + "px";
-    infobox.style.top = rect.top + window.scrollY + "px";
-    infobox.style.display = "block";
-  }
+// Klick-Event für das Icon
+    imgIcon_time.addEventListener("click", (event) => {
+      const text = event.currentTarget.dataset.infotext || "Keine Kriterien vorhanden";
+      showInfoBox(event.currentTarget, text);
+    });
 
-  imgIcon_time.addEventListener("click", (event) => {
-    // die Tabellenzeile, zu der das Icon gehört
-    const tr = event.currentTarget.closest("tr");
-
-    // die letzte Zelle der Zeile (Kriterien-Spalte)
-    const tdKriterien = tr.querySelector("td:last-child");
-
-    // Inhalt der Kriterien-Zelle holen
-    const text = tdKriterien ? tdKriterien.innerHTML : "Keine Kriterien vorhanden";
-
-    // in die Infobox schreiben
-    showInfoBox(event.currentTarget, text);
-  });
 
   });
 
