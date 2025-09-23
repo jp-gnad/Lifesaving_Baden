@@ -46,6 +46,11 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     imgCap.style.width = "35px";
     imgCap.style.height = "auto";
     imgCap.alt = `Cap von ${eintrag.ortsgruppe}`;
+
+    imgCap.onerror = () => {
+      imgCap.onerror = null;
+      imgCap.src = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/Cap-Baden_light.svg";
+    };
     
     tdCap.appendChild(imgCap);
     tr.appendChild(tdCap);
@@ -66,7 +71,7 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     imgIcon_time.alt = "Icon1_grey";
     
     tdIcon_time.appendChild(imgIcon_time);
-    tr.appendChild(tdIcon_time);
+    
 
     
     // Name + OG
@@ -92,7 +97,7 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     }
     
     tr.appendChild(tdName);
-
+    tr.appendChild(tdIcon_time);
 
     // Kriterien-Zelle (wird nur mit den bestanden Disziplinen befüllt)
     const tdKriterien = document.createElement("td");
@@ -504,6 +509,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
