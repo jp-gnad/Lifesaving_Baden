@@ -57,7 +57,7 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     
     const imgIcon_time = document.createElement("img");
     
-    const bildNameIcon = "icon_time_grey";
+    const bildNameIcon = "icon_time_grey.svg";
     const encodedBildNameIcon = encodeURIComponent(bildNameIcon);
     
     imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon}`;
@@ -504,6 +504,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
