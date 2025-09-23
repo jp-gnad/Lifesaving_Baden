@@ -123,7 +123,7 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     imgIcon_coach.style.height = "auto";
     imgIcon_coach.alt = "Icon4_grey";
     
-    tdIcon_ocean.appendChild(imgIcon_coach);
+    tdIcon_coach.appendChild(imgIcon_coach);
 
     
 
@@ -566,6 +566,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
