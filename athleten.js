@@ -65,7 +65,12 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     
     const imgIcon_time = document.createElement("img");
     
-    const bildNameIcon1 = "icon_time_grey.svg";
+    let bildNameIcon1;
+    if (mindestensZweiFilterErfüllt(eintrag, kaderArray) === true) {
+      bildNameIcon1 = "icon_time_green.svg";
+    } else {
+      bildNameIcon1 = "icon_time_grey.svg";
+    }
     const encodedBildNameIcon1 = encodeURIComponent(bildNameIcon1);
     
     imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon1}`;
@@ -566,6 +571,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
