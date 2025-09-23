@@ -85,12 +85,12 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     const bildNameIcon2 = "icon_medal_grey.svg";
     const encodedBildNameIcon2 = encodeURIComponent(bildNameIcon2);
     
-    imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon2}`;
-    imgIcon_time.style.width = "35px";
-    imgIcon_time.style.height = "auto";
-    imgIcon_time.alt = "Icon2_grey";
+    imgIcon_comp.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon2}`;
+    imgIcon_comp.style.width = "35px";
+    imgIcon_comp.style.height = "auto";
+    imgIcon_comp.alt = "Icon2_grey";
     
-    tdIcon_time.appendChild(imgIcon_comp);
+    tdIcon_comp.appendChild(imgIcon_comp);
     
 
     
@@ -530,6 +530,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
