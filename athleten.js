@@ -77,6 +77,13 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     imgIcon_time.style.width = "35px";
     imgIcon_time.style.height = "auto";
     imgIcon_time.alt = "Icon1_grey";
+    imgIcon_time.dataset.kriterien = eintrag.kriterien;
+
+    imgIcon_time.addEventListener("click", (event) => {
+      const kriterienText = event.currentTarget.dataset.kriterien;
+      showInfoBox(event.currentTarget, kriterienText);
+    });
+
     
     tdIcon_time.appendChild(imgIcon_time);
 
@@ -253,8 +260,29 @@ function getKaderArray() {
 }
 
 
+//Infobox Funktionen
+function showInfoBox(iconElement, text) {
+  let infobox = document.querySelector(".infobox");
+  if (!infobox) {
+    infobox = document.createElement("div");
+    infobox.className = "infobox";
+    document.body.appendChild(infobox);
+  }
+  
+  infobox.textContent = text;
 
+  const rect = iconElement.getBoundingClientRect();
+  infobox.style.left = rect.right + 10 + "px";   // 10px Abstand rechts vom Icon
+  infobox.style.top = rect.top + window.scrollY + "px";
+  infobox.style.display = "block";
+}
 
+document.addEventListener("click", (e) => {
+  const infobox = document.querySelector(".infobox");
+  if (infobox && !infobox.contains(e.target) && e.target.tagName !== "IMG") {
+    infobox.style.display = "none";
+  }
+});
 
 
 

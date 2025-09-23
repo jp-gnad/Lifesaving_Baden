@@ -210,3 +210,14 @@ h1, h2 {
 }
 
 
+.infobox {
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  display: none; /* erst unsichtbar */
+  max-width: 250px;
+  z-index: 1000;
+}
