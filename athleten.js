@@ -101,7 +101,7 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     const bildNameIcon3 = "icon_surf_grey.svg";
     const encodedBildNameIcon3 = encodeURIComponent(bildNameIcon3);
     
-    imgIcon_ocean.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon2}`;
+    imgIcon_ocean.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon3}`;
     imgIcon_ocean.style.width = "35px";
     imgIcon_ocean.style.height = "auto";
     imgIcon_ocean.alt = "Icon3_grey";
@@ -118,10 +118,10 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     const bildNameIcon4 = "icon_trainer_grey.svg";
     const encodedBildNameIcon4 = encodeURIComponent(bildNameIcon4);
     
-    imgIcon_coach.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon2}`;
+    imgIcon_coach.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon4}`;
     imgIcon_coach.style.width = "35px";
     imgIcon_coach.style.height = "auto";
-    imgIcon_coach.alt = "Icon3_grey";
+    imgIcon_coach.alt = "Icon4_grey";
     
     tdIcon_ocean.appendChild(imgIcon_coach);
 
@@ -566,6 +566,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
