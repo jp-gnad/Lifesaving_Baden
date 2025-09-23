@@ -19,7 +19,6 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
       <th>Icon_Time</th>
       <th>Icon_Comp</th>
       <th>Icon_Ocean</th>
-      <th>Icon_lastyear</th>
       <th>Icon_Coach</th>
       <th>Kriterien</th>
     </tr>
@@ -108,6 +107,24 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     imgIcon_ocean.alt = "Icon3_grey";
     
     tdIcon_ocean.appendChild(imgIcon_ocean);
+
+    
+    // Icon_coach
+    const tdIcon_coach = document.createElement("td");
+    tdIcon_coach.style.textAlign = "center"; 
+    
+    const imgIcon_coach = document.createElement("img");
+    
+    const bildNameIcon4 = "icon_trainer_grey.svg";
+    const encodedBildNameIcon4 = encodeURIComponent(bildNameIcon4);
+    
+    imgIcon_coach.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon2}`;
+    imgIcon_coach.style.width = "35px";
+    imgIcon_coach.style.height = "auto";
+    imgIcon_coach.alt = "Icon3_grey";
+    
+    tdIcon_ocean.appendChild(imgIcon_coach);
+
     
 
     
@@ -137,6 +154,7 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     tr.appendChild(tdIcon_time);
     tr.appendChild(tdIcon_comp);
     tr.appendChild(tdIcon_ocean);
+    tr.appendChild(tdIcon_coach);
 
     // Kriterien-Zelle (wird nur mit den bestanden Disziplinen befüllt)
     const tdKriterien = document.createElement("td");
@@ -548,6 +566,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
