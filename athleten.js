@@ -202,10 +202,11 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
         document.body.appendChild(infobox);
       }
 
-      infobox.innerHTML = text; // egal ob Text oder HTML
+      infobox.innerHTML = text;
+
       const rect = iconElement.getBoundingClientRect();
-      infobox.style.left = rect.right + 10 + "px";
-      infobox.style.top = rect.top + window.scrollY + "px";
+      infobox.style.left = rect.right + 10 + "px"; // fester Abstand rechts neben dem Icon
+      infobox.style.top = rect.top + "px";         // direkt auf Icon-Höhe
       infobox.style.display = "block";
 
       // Klick außerhalb schließt Infobox
@@ -216,12 +217,11 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
         }
       }
 
-      // Listener mit kleinem Timeout hinzufügen,
-      // damit der Klick auf das Icon selbst nicht sofort schließt
       setTimeout(() => {
         document.addEventListener("click", handleOutsideClick);
       }, 0);
     }
+
 
 // Klick-Event für das Icon
     imgIcon_time.addEventListener("click", (event) => {
