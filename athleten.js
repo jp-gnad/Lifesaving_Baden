@@ -16,6 +16,7 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
       <th>Kader</th>
       <th style="width: 45px; padding: 0; border: none;"></th>
       <th colspan="1">Athlet</th>
+      <th>Icon_Time</th>
       <th>Kriterien</th>
     </tr>
   `;
@@ -31,32 +32,43 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     tdKader.textContent = eintrag.kader;
     tr.appendChild(tdKader);
 
-    // Cap
+      // Cap
     const tdCap = document.createElement("td");
-
     tdCap.style.textAlign = "center"; 
     
-    const img = document.createElement("img");
-
-    const ortsgruppe = eintrag.ortsgruppe || "placeholder";
-    const bildName = `Cap-${ortsgruppe}.svg`;
-    const encodedBildName = encodeURIComponent(bildName);
-
-    img.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildName}`;
+    const imgCap = document.createElement("img");
     
-    img.style.width = "35px";
-    img.style.height = "auto";
-    img.alt = `Cap von ${eintrag.ortsgruppe}`;
-
-    // Fallback bei Ladefehler
-    img.onerror = () => {
-      img.onerror = null;
-      img.src = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/Cap-Baden_light.svg";
-    };
-
-    tdCap.appendChild(img);
+    const ortsgruppe = eintrag.ortsgruppe || "placeholder";
+    const bildNameCap = `Cap-${ortsgruppe}.svg`;
+    const encodedBildNameCap = encodeURIComponent(bildNameCap);
+    
+    imgCap.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameCap}`;
+    imgCap.style.width = "35px";
+    imgCap.style.height = "auto";
+    imgCap.alt = `Cap von ${eintrag.ortsgruppe}`;
+    
+    tdCap.appendChild(imgCap);
     tr.appendChild(tdCap);
+    
+    
+    // Icon_time
+    const tdIcon_time = document.createElement("td");
+    tdIcon_time.style.textAlign = "center"; 
+    
+    const imgIcon_time = document.createElement("img");
+    
+    const bildNameIcon = "icon_time_grey";
+    const encodedBildNameIcon = encodeURIComponent(bildNameIcon);
+    
+    imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon}`;
+    imgIcon_time.style.width = "35px";
+    imgIcon_time.style.height = "auto";
+    imgIcon_time.alt = "Icon1_grey";
+    
+    tdIcon_time.appendChild(imgIcon_time);
+    tr.appendChild(tdIcon_time);
 
+    
     // Name + OG
     const tdName = document.createElement("td");
     
@@ -492,6 +504,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
