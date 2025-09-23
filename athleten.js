@@ -66,10 +66,10 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     
     const imgIcon_time = document.createElement("img");
     
-    const bildNameIcon = "icon_time_grey.svg";
-    const encodedBildNameIcon = encodeURIComponent(bildNameIcon);
+    const bildNameIcon1 = "icon_time_grey.svg";
+    const encodedBildNameIcon1 = encodeURIComponent(bildNameIcon1);
     
-    imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon}`;
+    imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon1}`;
     imgIcon_time.style.width = "35px";
     imgIcon_time.style.height = "auto";
     imgIcon_time.alt = "Icon1_grey";
@@ -82,10 +82,10 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     
     const imgIcon_comp = document.createElement("img");
     
-    const bildNameIcon = "icon_medal_grey.svg";
-    const encodedBildNameIcon = encodeURIComponent(bildNameIcon);
+    const bildNameIcon2 = "icon_medal_grey.svg";
+    const encodedBildNameIcon2 = encodeURIComponent(bildNameIcon2);
     
-    imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon}`;
+    imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon2}`;
     imgIcon_time.style.width = "35px";
     imgIcon_time.style.height = "auto";
     imgIcon_time.alt = "Icon2_grey";
@@ -530,6 +530,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
