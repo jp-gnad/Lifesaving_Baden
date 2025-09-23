@@ -17,6 +17,10 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
       <th style="width: 45px; padding: 0; border: none;"></th>
       <th colspan="1">Athlet</th>
       <th>Icon_Time</th>
+      <th>Icon_Comp</th>
+      <th>Icon_Ocean</th>
+      <th>Icon_Coach</th>
+      <th>Icon_lastyear</th>
       <th>Kriterien</th>
     </tr>
   `;
@@ -509,6 +513,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
