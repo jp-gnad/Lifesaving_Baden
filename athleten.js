@@ -103,7 +103,7 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     
     const imgIcon_ocean = document.createElement("img");
     
-    const bildNameIcon3 = "icon_surf_grey.svg";
+    const bildNameIcon3 = "icon_ocean_grey.svg";
     const encodedBildNameIcon3 = encodeURIComponent(bildNameIcon3);
     
     imgIcon_ocean.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon3}`;
@@ -571,6 +571,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
+
 
 
 
