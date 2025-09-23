@@ -196,6 +196,37 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     tr.appendChild(tdKriterien);
 
     tbody.appendChild(tr);
+
+  //Infobox Funktionen
+  function showInfoBox(iconElement, text) {
+    let infobox = document.querySelector(".infobox");
+    if (!infobox) {
+      infobox = document.createElement("div");
+      infobox.className = "infobox";
+      document.body.appendChild(infobox);
+    }
+
+    infobox.innerHTML = text; // egal ob Text oder HTML
+    const rect = iconElement.getBoundingClientRect();
+    infobox.style.left = rect.right + 10 + "px";
+    infobox.style.top = rect.top + window.scrollY + "px";
+    infobox.style.display = "block";
+  }
+
+  imgIcon_time.addEventListener("click", (event) => {
+    // die Tabellenzeile, zu der das Icon gehört
+    const tr = event.currentTarget.closest("tr");
+
+    // die letzte Zelle der Zeile (Kriterien-Spalte)
+    const tdKriterien = tr.querySelector("td:last-child");
+
+    // Inhalt der Kriterien-Zelle holen
+    const text = tdKriterien ? tdKriterien.innerHTML : "Keine Kriterien vorhanden";
+
+    // in die Infobox schreiben
+    showInfoBox(event.currentTarget, text);
+  });
+
   });
 
   table.appendChild(tbody);
@@ -260,29 +291,6 @@ function getKaderArray() {
 }
 
 
-//Infobox Funktionen
-function showInfoBox(iconElement, text) {
-  let infobox = document.querySelector(".infobox");
-  if (!infobox) {
-    infobox = document.createElement("div");
-    infobox.className = "infobox";
-    document.body.appendChild(infobox);
-  }
-  
-  infobox.textContent = text;
-
-  const rect = iconElement.getBoundingClientRect();
-  infobox.style.left = rect.right + 10 + "px";   // 10px Abstand rechts vom Icon
-  infobox.style.top = rect.top + window.scrollY + "px";
-  infobox.style.display = "block";
-}
-
-document.addEventListener("click", (e) => {
-  const infobox = document.querySelector(".infobox");
-  if (infobox && !infobox.contains(e.target) && e.target.tagName !== "IMG") {
-    infobox.style.display = "none";
-  }
-});
 
 
 
@@ -599,7 +607,6 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
-
 
 
 
