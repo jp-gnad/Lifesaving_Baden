@@ -41,14 +41,14 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     const bildNameCap = `Cap-${ortsgruppe}.svg`;
     const encodedBildNameCap = encodeURIComponent(bildNameCap);
 
-    imgCap.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameCap}`;
+    imgCap.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/${encodedBildNameCap}`;
     imgCap.style.width = "35px";
     imgCap.style.height = "auto";
     imgCap.alt = `Cap von ${eintrag.ortsgruppe}`;
 
     imgCap.onerror = () => {
       imgCap.onerror = null;
-      imgCap.src = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/Cap-Baden_light.svg";
+      imgCap.src = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/Cap-Baden_light.svg";
     };
 
     tdCap.appendChild(imgCap);
@@ -69,7 +69,7 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     }
     const encodedBildNameIcon1 = encodeURIComponent(bildNameIcon1);
 
-    imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon1}`;
+    imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/${encodedBildNameIcon1}`;
     imgIcon_time.style.width = "35px";
     imgIcon_time.style.height = "auto";
     imgIcon_time.alt = "Icon1_grey";
@@ -92,7 +92,7 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     const bildNameIcon2 = "icon_medal_grey.svg";
     const encodedBildNameIcon2 = encodeURIComponent(bildNameIcon2);
 
-    imgIcon_comp.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon2}`;
+    imgIcon_comp.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/${encodedBildNameIcon2}`;
     imgIcon_comp.style.width = "35px";
     imgIcon_comp.style.height = "auto";
     imgIcon_comp.alt = "Icon2_grey";
@@ -109,7 +109,7 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     const bildNameIcon3 = "icon_ocean_grey.svg";
     const encodedBildNameIcon3 = encodeURIComponent(bildNameIcon3);
 
-    imgIcon_ocean.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon3}`;
+    imgIcon_ocean.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/${encodedBildNameIcon3}`;
     imgIcon_ocean.style.width = "35px";
     imgIcon_ocean.style.height = "auto";
     imgIcon_ocean.alt = "Icon3_grey";
@@ -126,7 +126,7 @@ function erstelleAthletenTabelle(athletenDaten, kaderArray) {
     const bildNameIcon4 = "icon_trainer_grey.svg";
     const encodedBildNameIcon4 = encodeURIComponent(bildNameIcon4);
 
-    imgIcon_coach.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/svg/${encodedBildNameIcon4}`;
+    imgIcon_coach.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/${encodedBildNameIcon4}`;
     imgIcon_coach.style.width = "35px";
     imgIcon_coach.style.height = "auto";
     imgIcon_coach.alt = "Icon4_grey";
@@ -605,39 +605,4 @@ document.addEventListener("DOMContentLoaded", () => {
     ladeAthleten().catch(err => console.error("Fehler beim Laden der Excel:", err)); 
   }); 
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
