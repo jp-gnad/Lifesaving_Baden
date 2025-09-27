@@ -1,10 +1,14 @@
 body {
+  background-image: url("./images/hintergrund.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   display: flex;
   flex-direction: column;
   align-items: center;   /* horizontal zentrieren */
   margin: 20px;
   font-family: Arial, sans-serif;
-  background: #ffffff;
 }
 
 #switch-container {
@@ -28,6 +32,28 @@ table {
   max-width: 1000px;
   background: white;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  overflow: hidden;   /* sorgt dafür, dass Inhalte den Radius nicht überdecken */
+}
+
+/* obere linke Ecke */
+table tr:first-child th:first-child {
+  border-top-left-radius: 8px;
+}
+
+/* obere rechte Ecke */
+table tr:first-child th:last-child {
+  border-top-right-radius: 8px;
+}
+
+/* untere linke Ecke */
+table tr:last-child td:first-child {
+  border-bottom-left-radius: 8px;
+}
+
+/* untere rechte Ecke */
+table tr:last-child td:last-child {
+  border-bottom-right-radius: 8px;
 }
 
 th, td {
@@ -37,8 +63,8 @@ th, td {
 }
 
 th {
-  background-color: #d3d3d3;
-  color: white;
+  background-color: #f0f0f0;
+  color: rgb(68, 68, 69);
 }
 
 tr:nth-child(even) {
