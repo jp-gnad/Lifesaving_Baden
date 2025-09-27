@@ -34,7 +34,7 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
 
 
     async function ladePflichtzeiten(aktuellesJahr) {
-      const response = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/data/records_kriterien.xlsx");
+      const response = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/data/records_kriterien.xlsx");
       const arrayBuffer = await response.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: "array" });
 
@@ -71,8 +71,6 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         PFLICHTZEITEN.maennlich.U19[jahr] = rows[1].slice(6, 12).map(parsePflichtzeit);
         PFLICHTZEITEN.maennlich.Offen[jahr] = rows[2].slice(6, 12).map(parsePflichtzeit);
       }
-
-      console.log("Pflichtzeiten geladen:", PFLICHTZEITEN);
     }
 
     let PLATZIERUNGS_KRITERIEN = {};
@@ -120,7 +118,6 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         }
 
         PLATZIERUNGS_KRITERIEN[jahr] = out;
-        console.log(`Kriterien ${jahr}:`, out.length, out);
       }
     }
 
@@ -236,70 +233,51 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
     }
 
     function pruefePlatzierungsKriterien(eintrag, aktuellesJahr) {
-      console.log("=== Starte Prüfung für Eintrag ===");
-      console.log("Eintrag:", eintrag);
-      console.log("Aktuelles Jahr:", aktuellesJahr);
 
       const jahr = eintrag.jahr;
-      console.log("Jahr des Eintrags:", jahr);
 
       const kriterienListe = PLATZIERUNGS_KRITERIEN[jahr] || [];
-      console.log("Kriterienliste für dieses Jahr:", kriterienListe);
 
       if (!kriterienListe.length) {
-        console.log("Keine Kriterien vorhanden → Rückgabe leer");
         return { icon: "", kader: "" };
       }
 
       const ageAtEvent = eintrag.alter;
-      console.log("Alter beim Wettkampf:", ageAtEvent);
 
       if (ageAtEvent == null) {
-        console.log("Kein Alter vorhanden → Rückgabe leer");
         return { icon: "", kader: "" };
       }
 
       for (const kriterium of kriterienListe) {
-        console.log("--- Prüfe Kriterium ---", kriterium);
 
         // 1) Wettkampf
         if (eintrag.wettkampf !== kriterium.wettkampf) {
-          console.log("Wettkampf passt nicht:", eintrag.wettkampf, "!=", kriterium.wettkampf);
           continue;
         } else {
-          console.log("Wettkampf passt:", eintrag.wettkampf);
         }
 
         // 2) Altersbereich
         if (ageAtEvent < kriterium.minAlter || ageAtEvent > kriterium.maxAlter) {
-          console.log("Alter passt nicht:", ageAtEvent, "nicht zwischen", kriterium.minAlter, "-", kriterium.maxAlter);
           continue;
         } else {
-          console.log("Alter passt:", ageAtEvent);
         }
 
         // 3) Einzelkampf ignorieren
         if (kriterium.wertung === "Einzelkampf") {
-          console.log("Kriterium ist Einzelkampf → wird ignoriert");
           continue;
         }
 
         // 4) Mehrkampf
         if (kriterium.wertung === "Mehrkampf") {
           const platz = parseInt(eintrag.mehrkampfPlatzierung, 10);
-          console.log("Mehrkampf-Platzierung:", platz, "gegen Kriterium ≤", kriterium.platzierung);
 
           if (Number.isFinite(platz) && platz <= kriterium.platzierung) {
             const icon = (jahr === aktuellesJahr) ? "green" : "yellow";
-            console.log("Kriterium erfüllt! Rückgabe:", { icon, kader: kriterium.kader });
             return { icon, kader: kriterium.kader };
           } else {
-            console.log("Platzierung erfüllt Kriterium nicht.");
           }
         }
       }
-
-      console.log("Kein Kriterium erfüllt → Rückgabe leer");
       return { icon: "", kader: "" };
     }
 
@@ -482,10 +460,8 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         const timesStatus = bestimmeKaderstatus(person.matrix, person.alter);
         const beforeTimes = person.Kaderstatus;
         person.Kaderstatus = promoteStatus(person.Kaderstatus, timesStatus);
-        console.log(`[${eintrag.name}] TimesStatus:`, { before: beforeTimes, fromTimes: timesStatus, after: person.Kaderstatus });
 
         const check = pruefePlatzierungsKriterien(eintrag, aktuellesJahr);
-        console.log("Ergebnis Platzierungsprüfung:", check);
 
         // Icon_Comp mergen (green > yellow > grey/"")
         person.Icon_Comp = hoechsteFarbe(person.Icon_Comp, check.icon || "");
@@ -493,7 +469,6 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         // Kaderstatus aus Wettkampf-Kriterium nur promoten
         const beforeComp = person.Kaderstatus;
         person.Kaderstatus = promoteStatus(person.Kaderstatus, check.kader || "");
-        console.log(`[${eintrag.name}] CompStatus:`, { before: beforeComp, fromComp: check.kader || "", after: person.Kaderstatus });
 
       }
 
