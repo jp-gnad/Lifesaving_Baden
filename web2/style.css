@@ -12,7 +12,7 @@ body {
 }
 
 #kader-container {
-  width: 100%;
+  width: 90%;
   display: flex;
   justify-content: center; /* sorgt dafür, dass die Tabelle in der Mitte bleibt */
 }
