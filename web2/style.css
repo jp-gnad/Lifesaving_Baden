@@ -84,26 +84,30 @@ table tr.odd {
 /* style.css */
 .btn-group {
   display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
+  gap: 20px;
+  margin-bottom: 25px;
 }
 
 .btn-group button {
-  padding: 8px 16px;
-  font-size: 14px;
-  border: 1px solid #0056b3;
-  background-color: white;
-  color: #0056b3;
-  border-radius: 5px;
+  padding: 10px 26px;
+  width: 200px;
+  font-size: 20px;
+  border: 1px solid rgba(163, 163, 163, 0.5);
+  background-color: rgba(255, 255, 255, 0.5);
+  color: rgba(68, 68, 69, 0.5);
+  border-radius: 50px;
   cursor: pointer;
   transition: 0.3s;
+  font-weight: bold;
 }
 
 .btn-group button:hover {
-  background-color: #e6f0ff;
+  background-color: #f9f9f9;
+  width: 240px;
 }
 
 .btn-group button.active {
-  background-color: #0056b3;
-  color: white;
+  background-color: rgba(68, 68, 69, 0.75);
+  border: 1px solid rgba(68, 68, 69, 0.5);
+  color: rgb(255, 255, 255);
 }
