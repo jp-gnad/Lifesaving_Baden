@@ -405,29 +405,83 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
 
       // Kopfzeile (1. Spalte leer, 2. Person, 3. Kaderstatus)
       const header = document.createElement("tr");
-      header.innerHTML = "<th></th><th>Person</th><th>Kaderstatus</th>";
+      header.innerHTML = "<th></th><th>Sportler / Ortsgruppe</th><th>Ico_Time</th><th>Ico_Comp</th><th>Ico_Ocean</th><th>Ico_Coach</th>";
       table.appendChild(header);
 
       // Zeilen füllen
       for (const [name, person] of personenArray) {
         const tr = document.createElement("tr");
-        const farbe = person.geschlecht === "maennlich" ? "blue" : "deeppink";
+        tr.dataset.kaderstatus = person.Kaderstatus;
+        const farbe = person.geschlecht === "maennlich" ? "#1e90ff" : "#ff69b4";
+        
+        // Erste Spalte: Cap-SVG
+        const tdCap = document.createElement("td");
+        tdCap.style.textAlign = "center";
 
-        tr.innerHTML = `
-          <td></td>
-          <td>
-            <span style="color:${farbe}; font-weight:bold;">
-              ${name} (${person.jahrgang})
-            </span><br>
-            <small>DLRG ${person.ortsgruppe || ""}</small>
-          </td>
-          <td>${person.Kaderstatus}</td>
+        const imgCap = document.createElement("img");
+
+        const ortsgruppe = person.ortsgruppe || "placeholder";
+        const bildNameCap = `Cap-${ortsgruppe}.svg`;
+        const encodedBildNameCap = encodeURIComponent(bildNameCap);
+
+        imgCap.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/${encodedBildNameCap}`;
+        imgCap.style.width = "35px";
+        imgCap.style.height = "auto";
+        imgCap.alt = `Cap von ${person.ortsgruppe}`;
+
+        imgCap.onerror = () => {
+          imgCap.onerror = null;
+          imgCap.src = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/Cap-Baden_light.svg";
+        };
+
+        tdCap.appendChild(imgCap);
+        tr.appendChild(tdCap);
+
+        // Zweite Spalte: Name + Jahrgang + Ortsgruppe
+        const tdName = document.createElement("td");
+        tdName.innerHTML = `
+          <span style="color:${farbe}; font-weight:bold;">
+            ${name} (${person.jahrgang})
+          </span><br>
+          <small>DLRG ${person.ortsgruppe || ""}</small>
         `;
+        tr.appendChild(tdName);
+
+        // Dritte Spalte: Icon_Time
+        const tdIcon_time = document.createElement("td");
+        tdIcon_time.style.textAlign = "center";
+
+        const imgIcon_time = document.createElement("img");
+
+        let bildNameIcon1;
+        if (person.Icon_Time === "green") {
+          bildNameIcon1 = "icon_time_green.svg";
+        } else if (person.Icon_Time === "yellow") {
+          bildNameIcon1 = "icon_time_yellow.svg";
+        } else {
+          bildNameIcon1 = "icon_time_grey.svg";
+        }
+
+        const encodedBildNameIcon1 = encodeURIComponent(bildNameIcon1);
+        imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/${encodedBildNameIcon1}`;
+        imgIcon_time.style.width = "35px";
+        imgIcon_time.style.height = "auto";
+
+        tdIcon_time.appendChild(imgIcon_time);
+        tr.appendChild(tdIcon_time);
+
+
 
         table.appendChild(tr);
       }
 
       container.appendChild(table);
+
+      // Nach Tabellenbau aktuellen Filter anwenden (falls Switch schon gebunden)
+      if (window.applyKaderFilter) {
+        window.applyKaderFilter();
+      }
+
 
       console.log("Excel geladen, Einträge:", datenbank.length);
       // Diese Funktion baut die Tabelle -> ein Return ist nicht zwingend nötig
