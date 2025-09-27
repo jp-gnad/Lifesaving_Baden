@@ -466,14 +466,14 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         const bildNameCap = `Cap-${ortsgruppe}.svg`;
         const encodedBildNameCap = encodeURIComponent(bildNameCap);
 
-        imgCap.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/${encodedBildNameCap}`;
+        imgCap.src = `./svg/${encodedBildNameCap}`;
         imgCap.style.width = "35px";
         imgCap.style.height = "auto";
         imgCap.alt = `Cap von ${person.ortsgruppe}`;
 
         imgCap.onerror = () => {
           imgCap.onerror = null;
-          imgCap.src = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/Cap-Baden_light.svg";
+          imgCap.src = imgCap.src = `./svg/Cap-Baden_light.svg`;
         };
 
         tdCap.appendChild(imgCap);
