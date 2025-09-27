@@ -57,6 +57,47 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
       console.log("Pflichtzeiten geladen:", PFLICHTZEITEN);
     }
 
+    let PLATZIERUNGS_KRITERIEN = {}; 
+    async function ladePlatzierungsKriterien(aktuellesJahr) {
+      const response = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/data/records_kriterien.xlsx");
+      const arrayBuffer = await response.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+
+      const jahre = [aktuellesJahr, aktuellesJahr - 1];
+
+      for (const jahr of jahre) {
+        const sheetName = jahr.toString();
+        const sheet = workbook.Sheets[sheetName];
+        if (!sheet) {
+          PLATZIERUNGS_KRITERIEN[jahr] = [];
+          continue;
+        }
+
+        // 👉 Debug: Alle Zeilen des Arbeitsblatts loggen
+        const allRows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        console.log("Alle Rohdaten für Jahr", jahr, allRows);
+
+        // Nur Bereich A17:F200 lesen
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, range: "A17:F200" });
+
+        PLATZIERUNGS_KRITERIEN[jahr] = rows
+          .filter(r => r[0])
+          .map(r => ({
+            wettkampf: r[0].toString().trim(),
+            minAlter: parseInt(r[1], 10),
+            maxAlter: parseInt(r[2], 10),
+            platzierung: parseInt(r[3], 10),
+            wertung: r[4]?.toString().trim(),
+            kader: r[5]?.toString().trim()
+          }));
+      }
+
+      console.log("Platzierungs-Kriterien geladen:", PLATZIERUNGS_KRITERIEN);
+    }
+
+
+
+
     const AK_INDEX = { U17: 0, U19: 1, Offen: 2 };
     function getAltersklasse(alter) {
       if (alter < 17) return "U17";
@@ -167,6 +208,57 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
       return ""; // sonst leer
     }
 
+    function pruefePlatzierungsKriterien(eintrag, aktuellesJahr) {
+      const jahr = eintrag.jahr;
+      const kriterienListe = PLATZIERUNGS_KRITERIEN[jahr] || [];
+
+      //console.log("Prüfe Eintrag:", eintrag.wettkampf, "Alter:", eintrag.alter, "Jahr:", jahr);
+      //console.log("Gegen Kriterien:", kriterienListe);
+
+      if (!kriterienListe.length) return { icon: "", kader: "" };
+
+      for (const kriterium of kriterienListe) {
+        console.log("Vergleiche mit Kriterium:", kriterium);
+
+        if (eintrag.wettkampf !== kriterium.wettkampf) {
+          console.log("❌ Wettkampf stimmt nicht überein");
+          continue;
+        }
+
+        if (eintrag.aktuellesAlter < kriterium.minAlter || eintrag.aktuellesAlter > kriterium.maxAlter) {
+          console.log("❌ Alter passt nicht:", eintrag.aktuellesAlter, "erwartet:", kriterium.minAlter, "-", kriterium.maxAlter);
+          continue;
+        }
+
+        // Mehrkampf prüfen
+        if (kriterium.wertung === "Mehrkampf") {
+          const platz = parseInt(eintrag.mehrkampfPlatzierung, 10);
+          console.log("Mehrkampfplatz:", platz, "muss ≤", kriterium.platzierung);
+          if (platz && platz <= kriterium.platzierung) {
+            const icon = (jahr === aktuellesJahr) ? "green" : "yellow";
+            console.log("✅ Bedingung erfüllt, Icon:", icon, "Kader:", kriterium.kader);
+            return { icon: icon, kader: kriterium.kader };
+          }
+        }
+
+        // Einzelkampf prüfen
+        if (kriterium.wertung === "Einzelkampf") {
+          const platz = parseInt(eintrag.einzelPlatzierung, 10);
+          console.log("Einzelkampfplatz:", platz, "muss ≤", kriterium.platzierung);
+          if (platz && platz <= kriterium.platzierung) {
+            const icon = (jahr === aktuellesJahr) ? "green" : "yellow";
+            console.log("✅ Bedingung erfüllt, Icon:", icon, "Kader:", kriterium.kader);
+            return { icon: icon, kader: kriterium.kader };
+          }
+        }
+      }
+
+      console.log("❌ Keine Kriterien erfüllt für", eintrag.wettkampf);
+      return { icon: "", kader: "" };
+    }
+
+
+
     function bestimmeKaderstatus(matrix, alter) {
       function countFilled(yIndex, zIndex) {
         let count = 0;
@@ -243,8 +335,10 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
           "| Alter:", daten.alter,
           "| Aktuelles Alter:", daten.aktuellesAlter,
           "| Ortsgruppe:", daten.ortsgruppe,
+          "| Landesverband:", daten.landesverband,
           "| Letzter Wettkampf:", formatDatum(daten.datumLetzterStart),
           "| Icon_Time:", daten.Icon_Time,
+          "| Icon_Comp:", daten.Icon_Comp,
           "| Kaderstatus:", daten.Kaderstatus
         );
         console.log("Matrix:", daten.matrix);
@@ -266,6 +360,10 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
           continue;
         }
 
+        if (eintrag.landesverband && eintrag.landesverband.toUpperCase() !== "BA") {
+          continue;
+        }
+
         if (!personenMap.has(eintrag.name)) {
           personenMap.set(eintrag.name, {
             matrix: createEmptyMatrix(),
@@ -274,6 +372,7 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
             aktuellesAlter: eintrag.aktuellesAlter,
             jahrgang: eintrag.jahrgang,
             ortsgruppe: eintrag.ortsgruppe,
+            landesverband: eintrag.landesverband,
             datumLetzterStart: eintrag.datum
           });
         }
@@ -318,6 +417,24 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
           person.Kaderstatus = bestimmeKaderstatus(person.matrix, person.alter); // neu
         }
 
+        const check = pruefePlatzierungsKriterien(eintrag, aktuellesJahr);
+        console.log("Ergebnis Platzierungsprüfung:", check);
+
+        // Icon_Comp setzen
+        if (check.icon) {
+          person.Icon_Comp = check.icon;
+        } else {
+          person.Icon_Comp = person.Icon_Comp || "";
+        }
+
+        // Kaderstatus anpassen
+        if (check.kader) {
+          if (!person.Kaderstatus) {
+            person.Kaderstatus = check.kader;
+          } else if (person.Kaderstatus === "Juniorenkader" && check.kader === "Badenkader") {
+            person.Kaderstatus = "Badenkader";
+          }
+        }
 
       }
 
@@ -359,6 +476,8 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         const alter = berechneAlter(jahrRaw, jahrgangRaw);
         const ortsgruppe = row[12] || "";
         const wettkampfName = row[10] ? row[10].toString() : "";
+        const landesverband = row[13] || "";
+        const mehrkampfPlatzierung = row[14];
 
         // Excel-Datum -> korrektes Datum (UTC, Excel-Basis inkl. 1900-Bug-Korrektur)
         const excelBase = new Date(Date.UTC(1900, 0, 1));
@@ -399,8 +518,10 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
               jahr,
               zeit,
               ortsgruppe,
+              landesverband,
               datum: wettkampfDatum,
-              wettkampf: wettkampfName
+              wettkampf: wettkampfName,
+              mehrkampfPlatzierung,
             });
           }
         }
