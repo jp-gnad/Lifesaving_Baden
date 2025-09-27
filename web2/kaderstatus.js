@@ -440,7 +440,7 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
 
       // Kopfzeile (1. Spalte leer, 2. Person, 3. Kaderstatus)
       const header = document.createElement("tr");
-      header.innerHTML = "<th>Status</th><th></th><th>Sportler / Ortsgruppe</th><th>Ico_Time</th><th>Ico_Comp</th><th>Ico_Ocean</th><th>Ico_Coach</th>";
+      header.innerHTML = "<th></th><th>Sportler / Ortsgruppe</th><th>Ico_Time</th><th>Ico_Comp</th><th>Ico_Ocean</th><th>Ico_Coach</th><th>Status</th>";
       table.appendChild(header);
 
       // Zeilen füllen
@@ -450,15 +450,9 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         tr.dataset.aktuellesalter = person.aktuellesAlter;
         const farbe = person.geschlecht === "maennlich" ? "#1e90ff" : "#ff69b4";
         
-        // Erste Spalte: Status
-        const tdStatus = document.createElement("td");
-        tdStatus.style.textAlign = "center";
-        
-        tr.appendChild(tdStatus);
-        
-        // Zweite Spalte: Cap-SVG
+        // Erste Spalte: Cap-SVG
         const tdCap = document.createElement("td");
-        tdCap.style.textAlign = "center";
+        tdCap.style.textAlign = "right";
 
         const imgCap = document.createElement("img");
 
@@ -479,7 +473,7 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         tdCap.appendChild(imgCap);
         tr.appendChild(tdCap);
 
-        // Dritte Spalte: Name + Jahrgang + Ortsgruppe
+        // Zweite Spalte: Name + Jahrgang + Ortsgruppe
         const tdName = document.createElement("td");
         tdName.innerHTML = `
           <span style="color:${farbe}; font-weight:bold;">
@@ -489,7 +483,7 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         `;
         tr.appendChild(tdName);
 
-        // Vierte Spalte: Icon_Time
+        // Dritte Spalte: Icon_Time
         const tdIcon_time = document.createElement("td");
         tdIcon_time.style.textAlign = "center";
 
