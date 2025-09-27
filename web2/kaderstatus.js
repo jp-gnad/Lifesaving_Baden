@@ -15,6 +15,24 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
       return isNaN(sekunden) ? null : sekunden;
     }
 
+    // === Prioritäten / Merge-Regeln ===
+    const STATUS_RANK = { "": 0, "Juniorenkader": 1, "Badenkader": 2 };
+    function promoteStatus(current = "", incoming = "") {
+      // Regeln:
+      // "" bleibt bei "" = ""
+      // "" -> Juniorenkader/Badenkader: übernehmen
+      // Juniorenkader -> Badenkader: hochstufen
+      // Badenkader bleibt immer Badenkader
+      if (!incoming) return current;
+      return (STATUS_RANK[incoming] || 0) > (STATUS_RANK[current] || 0) ? incoming : current;
+    }
+
+    const COLOR_RANK = { "": 0, grey: 0, yellow: 1, green: 2 };
+    function hoechsteFarbe(alt = "", neu = "") {
+      return (COLOR_RANK[neu] || 0) > (COLOR_RANK[alt] || 0) ? neu : alt;
+    }
+
+
     async function ladePflichtzeiten(aktuellesJahr) {
       const response = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/data/records_kriterien.xlsx");
       const arrayBuffer = await response.arrayBuffer();
@@ -123,10 +141,7 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         )
       );
     }
-    function bessereZeit(alt, neu) {
-      if (alt === null) return neu;
-      return Math.min(alt, neu);
-    }
+    
 
     function berechneAlter(jahrRaw, jahrgangRaw) {
       if (!jahrRaw || !jahrgangRaw) return null;
@@ -413,7 +428,15 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
             jahrgang: eintrag.jahrgang,
             ortsgruppe: eintrag.ortsgruppe,
             landesverband: eintrag.landesverband,
-            datumLetzterStart: eintrag.datum
+            datumLetzterStart: eintrag.datum,
+
+            // NEU: saubere Defaults, damit merge sicher funktioniert
+            Icon_Time: "",
+            Icon_Comp: "",
+            Icon_Ocean: "",
+            Icon_Coach: "",
+            Kaderstatus: ""
+
           });
         }
 
@@ -452,29 +475,25 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
             bessereZeit(person.matrix[eintrag.disziplin - 1][AK_INDEX.U17][jahrIndex], zeit);
         }
 
-        for (const [name, person] of personenMap.entries()) {
-          person.Icon_Time = bestimmeIconTime(person.matrix);        // dein alter Code
-          person.Kaderstatus = bestimmeKaderstatus(person.matrix, person.alter); // neu
-        }
+        // Nach dem eventuellen Schreiben in person.matrix:
+        person.Icon_Time = bestimmeIconTime(person.matrix);
+
+        // Zeit-basierter Status ermitteln und NUR hochstufen
+        const timesStatus = bestimmeKaderstatus(person.matrix, person.alter);
+        const beforeTimes = person.Kaderstatus;
+        person.Kaderstatus = promoteStatus(person.Kaderstatus, timesStatus);
+        console.log(`[${eintrag.name}] TimesStatus:`, { before: beforeTimes, fromTimes: timesStatus, after: person.Kaderstatus });
 
         const check = pruefePlatzierungsKriterien(eintrag, aktuellesJahr);
         console.log("Ergebnis Platzierungsprüfung:", check);
 
-        // Icon_Comp setzen
-        if (check.icon) {
-          person.Icon_Comp = check.icon;
-        } else {
-          person.Icon_Comp = person.Icon_Comp || "";
-        }
+        // Icon_Comp mergen (green > yellow > grey/"")
+        person.Icon_Comp = hoechsteFarbe(person.Icon_Comp, check.icon || "");
 
-        // Kaderstatus anpassen
-        if (check.kader) {
-          if (!person.Kaderstatus) {
-            person.Kaderstatus = check.kader;
-          } else if (person.Kaderstatus === "Juniorenkader" && check.kader === "Badenkader") {
-            person.Kaderstatus = "Badenkader";
-          }
-        }
+        // Kaderstatus aus Wettkampf-Kriterium nur promoten
+        const beforeComp = person.Kaderstatus;
+        person.Kaderstatus = promoteStatus(person.Kaderstatus, check.kader || "");
+        console.log(`[${eintrag.name}] CompStatus:`, { before: beforeComp, fromComp: check.kader || "", after: person.Kaderstatus });
 
       }
 
