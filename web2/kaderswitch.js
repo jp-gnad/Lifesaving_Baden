@@ -5,12 +5,24 @@
   function filterTable(selected) {
     window.currentSelection = selected;
     const rows = document.querySelectorAll("#kader-container table tr");
-    const target = selected.toLowerCase();
 
-    rows.forEach((row) => {
-      const status = (row.dataset?.kaderstatus || "").toLowerCase();
-      if (!status) return; // Header oder Zeilen ohne Status nicht anfassen
-      row.style.display = (status === target) ? "" : "none";
+    rows.forEach((row, index) => {
+      if (index === 0) return; // Header nicht filtern
+
+      const status = row.dataset?.kaderstatus || "";
+      const aktuellesAlter = parseInt(row.dataset?.aktuellesalter || "0", 10);
+
+      let sichtbar = false;
+
+      if (selected === "Badenkader") {
+        sichtbar = (status === "Badenkader");
+      } else if (selected === "Juniorenkader") {
+        sichtbar = (status === "Juniorenkader") ||
+                   (status === "Badenkader" && aktuellesAlter < 19);
+      }
+
+      row.style.display = sichtbar ? "" : "none";
+      applyZebraStripes();
     });
   }
 

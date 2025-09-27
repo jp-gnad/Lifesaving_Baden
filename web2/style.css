@@ -45,6 +45,15 @@ tr:nth-child(even) {
   background-color: #f2f2f2;
 }
 
+table tr.even {
+  background-color: #ffffff;
+}
+
+table tr.odd {
+  background-color: #f9f9f9;
+}
+
+
 /* Button-Gruppe */
 /* style.css */
 .btn-group {

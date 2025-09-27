@@ -200,6 +200,26 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
       return "";
     }
 
+    function applyZebraStripes() {
+      const rows = document.querySelectorAll("#kader-container table tr");
+      let visibleIndex = 0;
+
+      rows.forEach((row, index) => {
+        if (index === 0) return; // Header auslassen
+
+        if (row.style.display === "none") {
+          row.classList.remove("odd", "even");
+          return;
+        }
+
+        // abwechselnd odd/even
+        row.classList.remove("odd", "even");
+        row.classList.add(visibleIndex % 2 === 0 ? "even" : "odd");
+        visibleIndex++;
+      });
+    }
+
+
     (async function main() {
       const aktuellesJahr = 2025; // oder dynamisch new Date().getFullYear()
 
@@ -221,6 +241,7 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
           "Geschlecht:", daten.geschlecht,
           "| Jahrgang:", daten.jahrgang,
           "| Alter:", daten.alter,
+          "| Aktuelles Alter:", daten.aktuellesAlter,
           "| Ortsgruppe:", daten.ortsgruppe,
           "| Letzter Wettkampf:", formatDatum(daten.datumLetzterStart),
           "| Icon_Time:", daten.Icon_Time,
@@ -250,6 +271,7 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
             matrix: createEmptyMatrix(),
             geschlecht: eintrag.geschlecht,
             alter: eintrag.alter,
+            aktuellesAlter: eintrag.aktuellesAlter,
             jahrgang: eintrag.jahrgang,
             ortsgruppe: eintrag.ortsgruppe,
             datumLetzterStart: eintrag.datum
@@ -352,6 +374,18 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
           { zeit: row[8], nr: 6 }
         ];
 
+        // Jahrgang (zweistellig) in 4-stelliges Jahr umwandeln
+        let jahrgangNum = parseInt(jahrgangRaw, 10);
+        if (isNaN(jahrgangNum)) {
+          jahrgangNum = null;
+        } else {
+          jahrgangNum += 1900;
+          while (new Date().getFullYear() - jahrgangNum > 100) {
+            jahrgangNum += 100; // Jahrhundert-Korrektur
+          }
+        }
+
+
         for (const d of disziplinen) {
           const zeit = parseZeit(d.zeit);
           if (zeit !== null) {
@@ -359,6 +393,7 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
               name,
               geschlecht,
               alter,
+              aktuellesAlter: jahrgangNum ? new Date().getFullYear() - jahrgangNum : null,
               jahrgang,
               disziplin: d.nr,
               jahr,
@@ -405,16 +440,23 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
 
       // Kopfzeile (1. Spalte leer, 2. Person, 3. Kaderstatus)
       const header = document.createElement("tr");
-      header.innerHTML = "<th></th><th>Sportler / Ortsgruppe</th><th>Ico_Time</th><th>Ico_Comp</th><th>Ico_Ocean</th><th>Ico_Coach</th>";
+      header.innerHTML = "<th>Status</th><th></th><th>Sportler / Ortsgruppe</th><th>Ico_Time</th><th>Ico_Comp</th><th>Ico_Ocean</th><th>Ico_Coach</th>";
       table.appendChild(header);
 
       // Zeilen füllen
       for (const [name, person] of personenArray) {
         const tr = document.createElement("tr");
         tr.dataset.kaderstatus = person.Kaderstatus;
+        tr.dataset.aktuellesalter = person.aktuellesAlter;
         const farbe = person.geschlecht === "maennlich" ? "#1e90ff" : "#ff69b4";
         
-        // Erste Spalte: Cap-SVG
+        // Erste Spalte: Status
+        const tdStatus = document.createElement("td");
+        tdStatus.style.textAlign = "center";
+        
+        tr.appendChild(tdStatus);
+        
+        // Zweite Spalte: Cap-SVG
         const tdCap = document.createElement("td");
         tdCap.style.textAlign = "center";
 
@@ -437,7 +479,7 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         tdCap.appendChild(imgCap);
         tr.appendChild(tdCap);
 
-        // Zweite Spalte: Name + Jahrgang + Ortsgruppe
+        // Dritte Spalte: Name + Jahrgang + Ortsgruppe
         const tdName = document.createElement("td");
         tdName.innerHTML = `
           <span style="color:${farbe}; font-weight:bold;">
@@ -447,7 +489,7 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         `;
         tr.appendChild(tdName);
 
-        // Dritte Spalte: Icon_Time
+        // Vierte Spalte: Icon_Time
         const tdIcon_time = document.createElement("td");
         tdIcon_time.style.textAlign = "center";
 
