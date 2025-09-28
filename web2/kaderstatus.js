@@ -141,25 +141,25 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
     
 
     function berechneAlter(jahrRaw, jahrgangRaw) {
-      if (!jahrRaw || !jahrgangRaw) return null;
+      // Nur "null"/"undefined"/"" abfangen – 0 ist erlaubt!
+      if (jahrRaw == null || jahrgangRaw == null || jahrgangRaw === "") return null;
 
-      // Excel-Datum (row[9]) ist "Tage seit 1900"
-      const excelBase = new Date(1900, 0, 1);
-      const wettkampfDatum = new Date(excelBase.getTime() + (jahrRaw - 2) * 24 * 60 * 60 * 1000);
-      const jahrWettkampf = wettkampfDatum.getFullYear();
+      // Excel-Seriennummer -> Datum (einheitlich, -1 Tag Korrektur)
+      const excelBase = new Date(Date.UTC(1900, 0, 1));
+      const wettkampfDatum = new Date(excelBase.getTime() + (jahrRaw - 1) * 24*60*60*1000);
+      const jahrWettkampf = wettkampfDatum.getUTCFullYear();
 
-      // Jahrgang aus "JJ"
+      // "JJ" -> Zahl (00..99)
       let jahrgang = parseInt(jahrgangRaw, 10);
-      if (isNaN(jahrgang)) return null;
-      jahrgang += 1900;
+      if (Number.isNaN(jahrgang)) return null;
 
-      // Wenn Differenz unrealistisch hoch, korrigieren
-      while (jahrWettkampf - jahrgang > 100) {
-        jahrgang += 100;
-      }
+      // In Jahrhundert heben (1900er starten, dann bei Bedarf +100)
+      jahrgang += 1900;
+      while (jahrWettkampf - jahrgang > 100) jahrgang += 100;
 
       return jahrWettkampf - jahrgang;
     }
+
 
     // Beispiel: "1:05,23" → 65.23 Sekunden
     function parseZeit(zeitRaw) {
