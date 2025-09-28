@@ -438,7 +438,9 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         // 4) Mehrkampf
         if (kriterium.wertung === "Mehrkampf") {
           const platz = parseInt(eintrag.mehrkampfPlatzierung, 10);
-
+            console.log(
+              `[Mehrkampf] Name: ${eintrag.name} | Platzierung: ${platz} | Wettkampf: ${eintrag.wettkampf} | Mindestplatzierung (≤): ${kriterium.platzierung}`
+            );
           if (Number.isFinite(platz) && platz <= kriterium.platzierung) {
             const icon = (jahr === aktuellesJahr) ? "green" : "yellow";
             return { icon, kader: kriterium.kader };
@@ -819,7 +821,17 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
 
       // Kopfzeile (1. Spalte leer, 2. Person, 3. Kaderstatus)
       const header = document.createElement("tr");
-      header.innerHTML = "<th></th><th>Sportler / Ortsgruppe</th><th>Ico_Time</th><th>Ico_Comp</th><th>Ico_Ocean</th><th>Ico_Coach</th><th>Status</th>";
+      // Kopf neu (eine Zeile, "Kriterien" spannt 4 Spalten)
+      const thead = document.createElement("thead");
+      const trHead = document.createElement("tr");
+      trHead.innerHTML = `
+        <th></th>
+        <th>Sportler / Ortsgruppe</th>
+        <th colspan="4" style="text-align:center;">Kriterien</th>
+        <th style="text-align:center;">Status</th>
+      `;
+      thead.appendChild(trHead);
+      table.appendChild(thead);
       table.appendChild(header);
 
       // Zeilen füllen
