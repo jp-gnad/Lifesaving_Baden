@@ -16,6 +16,45 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
     }
 
     // === global:
+    let SONDERREGELN_TRAINER = {}; // { [jahr]: Map(lowerName -> { kader: "Badenkader"|"Juniorenkader"|"" }) }
+
+    function findeSonderregelTrainer(name, jahr) {
+      const m = SONDERREGELN_TRAINER[jahr];
+      return m ? (m.get((name || "").toString().trim().toLowerCase()) || null) : null;
+    }
+
+    async function ladeSonderregelnTrainer(aktuellesJahr) {
+      const res = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/data/records_kriterien.xlsx");
+      const buf = await res.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+
+      for (const jahr of [aktuellesJahr, aktuellesJahr - 1]) {
+        const ws = wb.Sheets[jahr.toString()];
+        if (!ws) { SONDERREGELN_TRAINER[jahr] = new Map(); continue; }
+
+        // H17:J500 einlesen
+        const rows = XLSX.utils.sheet_to_json(ws, {
+          header: 1, range: "H17:J500", defval: null, blankrows: false
+        });
+
+        const map = new Map();
+        for (const r of rows) {
+          const name = (r[0] ?? "").toString().trim();
+          const kriterium = (r[1] ?? "").toString().trim().toLowerCase();
+          const kader = (r[2] ?? "").toString().trim(); // "", "Juniorenkader", "Badenkader"
+
+          if (!name) continue;
+          if (kriterium !== "sondernominierung") continue;
+
+          map.set(name.toLowerCase(), { kader });
+        }
+        SONDERREGELN_TRAINER[jahr] = map;
+        console.log(`Sonderregeln Trainer ${jahr}:`, map.size, "Einträge");
+      }
+    }
+
+
+    // === global:
     let SONDERREGELN_OCEAN = {}; // { [jahr]: Map(lowerName -> { kader: "Badenkader"|"Juniorenkader"|"" }) }
 
     // Helfer:
@@ -393,7 +432,8 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
       await Promise.all([
         ladePflichtzeiten(aktuellesJahr),
         ladePlatzierungsKriterien(aktuellesJahr),
-        ladeSonderregelnOcean(aktuellesJahr)
+        ladeSonderregelnOcean(aktuellesJahr),
+        ladeSonderregelnTrainer(aktuellesJahr)
       ]);
 
         console.log(`Kriterien ${aktuellesJahr} geladen:`,
@@ -536,6 +576,24 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
           person.Kaderstatus = promoteStatus(person.Kaderstatus, oceanKader); // nie downgraden
           console.log(`[${eintrag.name}] OceanSonderregel`, { oceanColor, oceanKader, Kaderstatus: person.Kaderstatus });
         }
+
+
+        // --- Trainer/Coach-Sonderregel (aktuelles Jahr vs. Vorjahr) ---
+        let coachColor = "";   // "" | "yellow" | "green"
+        let coachKader = "";   // "" | "Juniorenkader" | "Badenkader"
+
+        const trPrev = findeSonderregelTrainer(eintrag.name, aktuellesJahr - 1);
+        if (trPrev) { coachColor = "yellow"; coachKader = trPrev.kader || ""; }
+
+        const trCurr = findeSonderregelTrainer(eintrag.name, aktuellesJahr);
+        if (trCurr) { coachColor = "green"; coachKader = trCurr.kader || coachKader; } // green > yellow
+
+        if (coachColor) {
+          person.Icon_Coach = hoechsteFarbe(person.Icon_Coach, coachColor);   // green > yellow > ""
+          person.Kaderstatus = promoteStatus(person.Kaderstatus, coachKader);  // nie downgraden
+          console.log(`[${eintrag.name}] TrainerSonderregel`, { coachColor, coachKader, Kaderstatus: person.Kaderstatus });
+        }
+
 
       }
 
@@ -761,7 +819,7 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         tdIcon_comp.appendChild(imgIcon_comp);
         tr.appendChild(tdIcon_comp);
 
-        
+
         // Fünfte Spalte: Icon_Ocean
         const tdIcon_ocean = document.createElement("td");
         tdIcon_ocean.style.textAlign = "center";
@@ -782,6 +840,28 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
 
         tdIcon_ocean.appendChild(imgIcon_ocean);
         tr.appendChild(tdIcon_ocean);
+
+
+        // Sechste Spalte: Icon_Coach (Trainer)
+        const tdIcon_coach = document.createElement("td");
+        tdIcon_coach.style.textAlign = "center";
+
+        const imgIcon_coach = document.createElement("img");
+        let bildNameIcon4;
+        if (person.Icon_Coach === "green") {
+          bildNameIcon4 = "icon_trainer_green.svg";
+        } else if (person.Icon_Coach === "yellow") {
+          bildNameIcon4 = "icon_trainer_yellow.svg";
+        } else {
+          bildNameIcon4 = "icon_trainer_grey.svg"; // Fallback
+        }
+        imgIcon_coach.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/${encodeURIComponent(bildNameIcon4)}`;
+        imgIcon_coach.style.width = "35px";
+        imgIcon_coach.style.height = "auto";
+
+        tdIcon_coach.appendChild(imgIcon_coach);
+        tr.appendChild(tdIcon_coach);
+
 
         table.appendChild(tr);
       }
