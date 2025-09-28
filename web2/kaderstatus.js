@@ -8,12 +8,92 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
       maennlich: { U17: {}, U19: {}, Offen: {} }
     };
 
+    // === Anmeldungen (nur aktuelles Jahr) ===
+    let ANMELDUNGEN = {}; // { [jahr]: Set<lowerName> }
+
+    function istAngemeldet(name, jahr) {
+      const set = ANMELDUNGEN[jahr];
+      if (!set) return false;
+      const key = (name || "").toString().trim().toLowerCase();
+      return set.has(key);
+    }
+
+    async function ladeAnmeldungen(aktuellesJahr) {
+      const res = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/data/records_kriterien.xlsx");
+      const buf = await res.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+
+      const jahr = aktuellesJahr; // nur aktuelles Jahr relevant
+      const ws = wb.Sheets[jahr.toString()];
+      const set = new Set();
+
+      if (ws) {
+        // L17:L500 lesen (Namenliste)
+        const rows = XLSX.utils.sheet_to_json(ws, {
+          header: 1, range: "L17:L500", defval: null, blankrows: false
+        });
+        for (const r of rows) {
+          const name = (r[0] ?? "").toString().trim();
+          if (name) set.add(name.toLowerCase());
+        }
+      }
+
+      ANMELDUNGEN[jahr] = set;
+      console.log(`Anmeldungen ${jahr}:`, set.size, "Namen");
+    }
+
+
+    function berechneKaderBis(person, aktuellesJahr) {
+      const anyGreen = [person.Icon_Time, person.Icon_Comp, person.Icon_Ocean, person.Icon_Coach]
+        .some(c => c === "green");
+      const year = anyGreen ? (aktuellesJahr + 1) : aktuellesJahr;
+      return `31.12.${year}`;
+    }
+
+
     function parsePflichtzeit(zeitRaw) {
       if (!zeitRaw) return null;
       let str = zeitRaw.toString().trim().replace(",", ".");
       const sekunden = parseFloat(str);
       return isNaN(sekunden) ? null : sekunden;
     }
+
+    // === Entfernen (Blacklist) ===
+    let SONDERREGELN_ENTFERNEN = {}; // { [jahr]: Set<lowerName> }
+
+    function istEntferntImJahr(name, jahr) {
+      const set = SONDERREGELN_ENTFERNEN[jahr];
+      if (!set) return false;
+      const key = (name || "").toString().trim().toLowerCase();
+      return set.has(key);
+    }
+
+    async function ladeSonderregelnEntfernen(aktuellesJahr) {
+      const res = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/data/records_kriterien.xlsx");
+      const buf = await res.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+
+      // Nur aktuelles Jahr relevant (Anforderung)
+      const jahr = aktuellesJahr;
+      const ws = wb.Sheets[jahr.toString()];
+      const set = new Set();
+      if (ws) {
+        const rows = XLSX.utils.sheet_to_json(ws, {
+          header: 1, range: "H17:J500", defval: null, blankrows: false
+        });
+        for (const r of rows) {
+          const name = (r[0] ?? "").toString().trim();
+          const kriterium = (r[1] ?? "").toString().trim().toLowerCase();
+          if (!name) continue;
+          if (kriterium === "entfernen") {
+            set.add(name.toLowerCase());
+          }
+        }
+      }
+      SONDERREGELN_ENTFERNEN[jahr] = set;
+      console.log(`Entfernen-Liste ${jahr}:`, set.size, "Namen");
+    }
+
 
     // === global:
     let SONDERREGELN_TRAINER = {}; // { [jahr]: Map(lowerName -> { kader: "Badenkader"|"Juniorenkader"|"" }) }
@@ -433,7 +513,9 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         ladePflichtzeiten(aktuellesJahr),
         ladePlatzierungsKriterien(aktuellesJahr),
         ladeSonderregelnOcean(aktuellesJahr),
-        ladeSonderregelnTrainer(aktuellesJahr)
+        ladeSonderregelnTrainer(aktuellesJahr),
+        ladeSonderregelnEntfernen(aktuellesJahr),
+        ladeAnmeldungen(aktuellesJahr)
       ]);
 
         console.log(`Kriterien ${aktuellesJahr} geladen:`,
@@ -475,19 +557,23 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
     // =====================
     function verarbeiteDatenbank(datenbank, aktuellesJahr) {
       const personenMap = new Map();
+      const excludeSet = SONDERREGELN_ENTFERNEN[aktuellesJahr] || new Set();
 
       for (const eintrag of datenbank) {
+        // NEU: Entfernen-Regel (nur aktuelles Jahr)
+        const nameKey = (eintrag.name || "").toString().trim().toLowerCase();
+        if (excludeSet.has(nameKey)) {
+          continue;
+        }
+
         if (eintrag.jahr < aktuellesJahr - 1) continue;
+        if (eintrag.wettkampf && eintrag.wettkampf.substring(0, 3).toUpperCase() === "OMS") continue;
+        if (eintrag.landesverband && eintrag.landesverband.toUpperCase() !== "BA") continue;
 
-        if (eintrag.wettkampf && eintrag.wettkampf.substring(0, 3).toUpperCase() === "OMS") {
-          continue;
-        }
-
-        if (eintrag.landesverband && eintrag.landesverband.toUpperCase() !== "BA") {
-          continue;
-        }
 
         if (!personenMap.has(eintrag.name)) {
+          const angemeldet = istAngemeldet(eintrag.name, aktuellesJahr);
+
           personenMap.set(eintrag.name, {
             matrix: createEmptyMatrix(),
             geschlecht: eintrag.geschlecht,
@@ -503,7 +589,10 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
             Icon_Comp: "",
             Icon_Ocean: "",
             Icon_Coach: "",
-            Kaderstatus: ""
+            Kaderstatus: "",
+
+            angemeldet,
+            Status_Anmeldung: angemeldet ? "angemeldet" : ""
 
           });
         }
@@ -861,6 +950,27 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
 
         tdIcon_coach.appendChild(imgIcon_coach);
         tr.appendChild(tdIcon_coach);
+
+
+        // Siebte Spalte: Status (Datum nur bei Anmeldung, sonst Icon)
+        const tdStatus = document.createElement("td");
+        tdStatus.style.whiteSpace = "nowrap";
+
+        if (person.angemeldet) {
+          tdStatus.textContent = berechneKaderBis(person, aktuellesJahr);
+          tdStatus.style.textAlign = "center";
+        } else {
+          const imgStatus = document.createElement("img");
+          imgStatus.src = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/icon_status_yellow.svg";
+          imgStatus.style.width = "20px";
+          imgStatus.style.height = "auto";
+          imgStatus.alt = "Keine Anmeldung";
+          tdStatus.appendChild(imgStatus);
+          tdStatus.style.textAlign = "center";
+        }
+
+        tr.appendChild(tdStatus);
+
 
 
         table.appendChild(tr);

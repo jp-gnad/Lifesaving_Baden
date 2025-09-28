@@ -68,7 +68,7 @@ th {
 }
 
 tr:nth-child(even) {
-  background-color: #f2f2f2;
+  background-color: #ffffff;
 }
 
 table tr.even {
@@ -76,7 +76,7 @@ table tr.even {
 }
 
 table tr.odd {
-  background-color: #f9f9f9;
+  background-color: #f1f1f1;
 }
 
 
