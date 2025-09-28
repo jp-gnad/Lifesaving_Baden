@@ -8,6 +8,27 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
       maennlich: { U17: {}, U19: {}, Offen: {} }
     };
 
+    function normWk(s) {
+      return (s || "").toString().toLowerCase()
+        .normalize("NFKD").replace(/\p{Diacritic}/gu,"")
+        .replace(/[–—−]/g, "-").replace(/\s+/g," ").trim();
+    }
+    function minNum(a, b) { return a == null ? b : (b == null ? a : Math.min(a, b)); }
+
+    // nutzt deine Ranks:
+    function pickBetter(a, b) {
+      if (!a) return b;
+      if (!b) return a;
+      const ar = (STATUS_RANK[a.kader || ""] || 0), br = (STATUS_RANK[b.kader || ""] || 0);
+      if (ar !== br) return ar > br ? a : b;
+      const ai = (COLOR_RANK[a.icon] || 0), bi = (COLOR_RANK[b.icon] || 0);
+      if (ai !== bi) return ai > bi ? a : b;
+      if ((a.reqPlatz ?? 1e9) !== (b.reqPlatz ?? 1e9)) return (a.reqPlatz < b.reqPlatz) ? a : b;
+      if ((a.achieved ?? 1e9) !== (b.achieved ?? 1e9)) return (a.achieved < b.achieved) ? a : b;
+      return a;
+    }
+
+
     // === Anmeldungen (nur aktuelles Jahr) ===
     let ANMELDUNGEN = {}; // { [jahr]: Set<lowerName> }
 
@@ -128,8 +149,6 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
 
           map.set(name.toLowerCase(), { kader });
         }
-        SONDERREGELN_TRAINER[jahr] = map;
-        console.log(`Sonderregeln Trainer ${jahr}:`, map.size, "Einträge");
       }
     }
 
@@ -168,8 +187,6 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
 
           map.set(name.toLowerCase(), { kader });
         }
-        SONDERREGELN_OCEAN[jahr] = map;
-        console.log(`Sonderregeln Ocean ${jahr}:`, map.size, "Einträge");
       }
     }
 
@@ -264,7 +281,9 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         const out = [];
         for (let i = headerRow + 1; i < grid.length; i++) {
           const r = grid[i];
-          if (!r || !r[0]) break; // Ende der Tabelle
+          if (!r) continue;
+          const wk = (r[0] ?? "").toString().trim();
+          if (!wk) continue; // statt break
           out.push({
             wettkampf: r[0].toString().trim(),
             minAlter: parseInt(r[1], 10),
@@ -390,66 +409,37 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
       return ""; // sonst leer
     }
 
-    function pruefePlatzierungsKriterien(eintrag, aktuellesJahr) {
+    function pruefePlatzierungsKriterienAusComps(person, aktuellesJahr) {
+      let best = null;
 
-      const jahr = eintrag.jahr;
+      for (const comp of person.comps.values()) {
+        const liste = PLATZIERUNGS_KRITERIEN[comp.jahr] || [];
+        const wk = normWk(comp.wettkampf);
 
-      const kriterienListe = PLATZIERUNGS_KRITERIEN[jahr] || [];
+        // nur passende Zeilen (Wettkampf + Altersfenster)
+        const matched = liste.filter(k =>
+          normWk(k.wettkampf) === wk &&
+          comp.age != null &&
+          Number.isFinite(k.minAlter) && Number.isFinite(k.maxAlter) &&
+          comp.age >= k.minAlter && comp.age <= k.maxAlter &&
+          (k.wertung === "Mehrkampf" || k.wertung === "Einzelkampf")
+        );
 
-      if (!kriterienListe.length) {
-        return { icon: "", kader: "" };
-      }
+        for (const k of matched) {
+          const req = parseInt(k.platzierung, 10);
+          const platz = (k.wertung === "Mehrkampf") ? comp.mehr : comp.einz;
+          console.log(`[Kriterium] ${person.ortsgruppe ? person.ortsgruppe + ' | ' : ''}${person?.name || ''} | ${comp.wettkampf} ${comp.jahr} | ${k.wertung} Platz=${platz} ≤ ${req} | Kader=${k.kader}`);
 
-      const ageAtEvent = eintrag.alter;
-
-      if (ageAtEvent == null) {
-        return { icon: "", kader: "" };
-      }
-
-      for (const kriterium of kriterienListe) {
-
-        // 1) Wettkampf
-        if (eintrag.wettkampf !== kriterium.wettkampf) {
-          continue;
-        } else {
-        }
-
-        // 2) Altersbereich
-        if (ageAtEvent < kriterium.minAlter || ageAtEvent > kriterium.maxAlter) {
-          continue;
-        } else {
-        }
-
-        // 3) Einzelkampf prüfen (<= mind. Platzierung)
-        if (kriterium.wertung === "Einzelkampf") {
-          const platz = parseInt(eintrag.einzelkampfPlatzierung, 10);
-          console.log("Einzelkampf-Platzierung:", platz, "gegen Kriterium ≤", kriterium.platzierung);
-
-          if (Number.isFinite(platz) && platz <= kriterium.platzierung) {
-            const icon = (jahr === aktuellesJahr) ? "green" : "yellow";
-            console.log("Einzelkampf-Kriterium erfüllt! Rückgabe:", { icon, kader: kriterium.kader });
-            return { icon, kader: kriterium.kader };
-          } else {
-            console.log("Einzelkampf-Platzierung erfüllt Kriterium nicht.");
-          }
-        }
-
-
-        // 4) Mehrkampf
-        if (kriterium.wertung === "Mehrkampf") {
-          const platz = parseInt(eintrag.mehrkampfPlatzierung, 10);
-            console.log(
-              `[Mehrkampf] Name: ${eintrag.name} | Platzierung: ${platz} | Wettkampf: ${eintrag.wettkampf} | Mindestplatzierung (≤): ${kriterium.platzierung}`
-            );
-          if (Number.isFinite(platz) && platz <= kriterium.platzierung) {
-            const icon = (jahr === aktuellesJahr) ? "green" : "yellow";
-            return { icon, kader: kriterium.kader };
-          } else {
+          if (Number.isFinite(platz) && Number.isFinite(req) && platz <= req) {
+            const icon = (comp.jahr === aktuellesJahr) ? "green" : "yellow";
+            best = pickBetter(best, { icon, kader: k.kader, reqPlatz: req, achieved: platz });
           }
         }
       }
-      return { icon: "", kader: "" };
+
+      return best ? { icon: best.icon, kader: best.kader } : { icon: "", kader: "" };
     }
+
 
 
 
@@ -586,7 +576,6 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
             landesverband: eintrag.landesverband,
             datumLetzterStart: eintrag.datum,
 
-            // NEU: saubere Defaults, damit merge sicher funktioniert
             Icon_Time: "",
             Icon_Comp: "",
             Icon_Ocean: "",
@@ -594,12 +583,39 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
             Kaderstatus: "",
 
             angemeldet,
-            Status_Anmeldung: angemeldet ? "angemeldet" : ""
+            Status_Anmeldung: angemeldet ? "angemeldet" : "",
 
+            comps: new Map()
           });
         }
 
+        // ✅ ab hier existiert person garantiert
         const person = personenMap.get(eintrag.name);
+
+        // Wettkampf-Key (pro Jahr & Wettkampf)
+        const compKey = `${eintrag.jahr}||${normWk(eintrag.wettkampf)}`;
+        let comp = person.comps.get(compKey);
+        if (!comp) {
+          comp = {
+            jahr: eintrag.jahr,
+            wettkampf: eintrag.wettkampf,
+            age: eintrag.alter,
+            mehr: null,
+            einz: null
+          };
+          person.comps.set(compKey, comp);
+        }
+
+        // Plätze sammeln (Minimum je Art)
+        const mk = parseInt(eintrag.mehrkampfPlatzierung, 10);
+        if (Number.isFinite(mk) && mk >= 1) comp.mehr = minNum(comp.mehr, mk);
+
+        const ek = parseInt(eintrag.einzelkampfPlatzierung, 10);
+        if (Number.isFinite(ek) && ek >= 1) comp.einz = minNum(comp.einz, ek);
+
+        // Debug (optional)
+        console.log(`[COMPS] ${eintrag.name} | ${eintrag.wettkampf} ${eintrag.jahr} | mehr=${comp.mehr} | einz=${comp.einz}`);
+
 
         // Ortsgruppe ggf. aktualisieren, wenn neueres Datum
         if (eintrag.datum > person.datumLetzterStart) {
@@ -642,15 +658,6 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         const beforeTimes = person.Kaderstatus;
         person.Kaderstatus = promoteStatus(person.Kaderstatus, timesStatus);
 
-        const check = pruefePlatzierungsKriterien(eintrag, aktuellesJahr);
-
-        // Icon_Comp mergen (green > yellow > grey/"")
-        person.Icon_Comp = hoechsteFarbe(person.Icon_Comp, check.icon || "");
-
-        // Kaderstatus aus Wettkampf-Kriterium nur promoten
-        const beforeComp = person.Kaderstatus;
-        person.Kaderstatus = promoteStatus(person.Kaderstatus, check.kader || "");
-
 
         // --- Ocean-Sonderregel (aktuelles Jahr vs. Vorjahr) ---
         let oceanColor = "";   // "" | "yellow" | "green"
@@ -687,6 +694,15 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
 
 
       }
+
+      for (const [name, person] of personenMap.entries()) {
+        const compRes = pruefePlatzierungsKriterienAusComps(person, aktuellesJahr);
+        person.Icon_Comp = hoechsteFarbe(person.Icon_Comp, compRes.icon || "");
+        person.Kaderstatus = promoteStatus(person.Kaderstatus, compRes.kader || "");
+        // Debug:
+        console.log(`[Comp-Ergebnis] ${name}`, compRes, 'aus', Array.from(person.comps.values()));
+      }
+
 
       return personenMap;
     }
