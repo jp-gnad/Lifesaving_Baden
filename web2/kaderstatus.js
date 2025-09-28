@@ -15,6 +15,45 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
       return isNaN(sekunden) ? null : sekunden;
     }
 
+    // === global:
+    let SONDERREGELN_OCEAN = {}; // { [jahr]: Map(lowerName -> { kader: "Badenkader"|"Juniorenkader"|"" }) }
+
+    // Helfer:
+    function findeSonderregelOcean(name, jahr) {
+      const m = SONDERREGELN_OCEAN[jahr];
+      return m ? (m.get((name || "").toString().trim().toLowerCase()) || null) : null;
+    }
+
+    async function ladeSonderregelnOcean(aktuellesJahr) {
+      const res = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/data/records_kriterien.xlsx");
+      const buf = await res.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+
+      for (const jahr of [aktuellesJahr, aktuellesJahr - 1]) {
+        const ws = wb.Sheets[jahr.toString()];
+        if (!ws) { SONDERREGELN_OCEAN[jahr] = new Map(); continue; }
+
+        // H17:J500 einlesen
+        const rows = XLSX.utils.sheet_to_json(ws, {
+          header: 1, range: "H17:J500", defval: null, blankrows: false
+        });
+
+        const map = new Map();
+        for (const r of rows) {
+          const name = (r[0] ?? "").toString().trim();
+          const kriterium = (r[1] ?? "").toString().trim().toLowerCase();
+          const kader = (r[2] ?? "").toString().trim(); // "", "Juniorenkader", "Badenkader"
+
+          if (!name) continue;
+          if (kriterium !== "ocean") continue;
+
+          map.set(name.toLowerCase(), { kader });
+        }
+        SONDERREGELN_OCEAN[jahr] = map;
+        console.log(`Sonderregeln Ocean ${jahr}:`, map.size, "Einträge");
+      }
+    }
+
     // === Prioritäten / Merge-Regeln ===
     const STATUS_RANK = { "": 0, "Juniorenkader": 1, "Badenkader": 2 };
     function promoteStatus(current = "", incoming = "") {
@@ -353,7 +392,8 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
       // 1) Normzeiten + Platzierungskriterien VORAB laden
       await Promise.all([
         ladePflichtzeiten(aktuellesJahr),
-        ladePlatzierungsKriterien(aktuellesJahr)
+        ladePlatzierungsKriterien(aktuellesJahr),
+        ladeSonderregelnOcean(aktuellesJahr)
       ]);
 
         console.log(`Kriterien ${aktuellesJahr} geladen:`,
@@ -479,6 +519,23 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         // Kaderstatus aus Wettkampf-Kriterium nur promoten
         const beforeComp = person.Kaderstatus;
         person.Kaderstatus = promoteStatus(person.Kaderstatus, check.kader || "");
+
+
+        // --- Ocean-Sonderregel (aktuelles Jahr vs. Vorjahr) ---
+        let oceanColor = "";   // "" | "yellow" | "green"
+        let oceanKader = "";   // "" | "Juniorenkader" | "Badenkader"
+
+        const srPrev = findeSonderregelOcean(eintrag.name, aktuellesJahr - 1);
+        if (srPrev) { oceanColor = "yellow"; oceanKader = srPrev.kader || ""; }
+
+        const srCurr = findeSonderregelOcean(eintrag.name, aktuellesJahr);
+        if (srCurr) { oceanColor = "green"; oceanKader = srCurr.kader || oceanKader; } // green > yellow
+
+        if (oceanColor) {
+          person.Icon_Ocean = hoechsteFarbe(person.Icon_Ocean, oceanColor);
+          person.Kaderstatus = promoteStatus(person.Kaderstatus, oceanKader); // nie downgraden
+          console.log(`[${eintrag.name}] OceanSonderregel`, { oceanColor, oceanKader, Kaderstatus: person.Kaderstatus });
+        }
 
       }
 
@@ -676,7 +733,7 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         }
 
         const encodedBildNameIcon1 = encodeURIComponent(bildNameIcon1);
-        imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/${encodedBildNameIcon1}`;
+        imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/${encodedBildNameIcon1}`;
         imgIcon_time.style.width = "35px";
         imgIcon_time.style.height = "auto";
 
@@ -697,14 +754,34 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         } else {
           bildNameIcon2 = "icon_medal_grey.svg";
         }
-        imgIcon_comp.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/${encodeURIComponent(bildNameIcon2)}`;
+        imgIcon_comp.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/${encodeURIComponent(bildNameIcon2)}`;
         imgIcon_comp.style.width = "35px";
         imgIcon_comp.style.height = "auto";
 
         tdIcon_comp.appendChild(imgIcon_comp);
         tr.appendChild(tdIcon_comp);
 
+        
+        // Fünfte Spalte: Icon_Ocean
+        const tdIcon_ocean = document.createElement("td");
+        tdIcon_ocean.style.textAlign = "center";
 
+        const imgIcon_ocean = document.createElement("img");
+        let bildNameIcon3;
+        if (person.Icon_Ocean === "green") {
+          bildNameIcon3 = "icon_ocean_green.svg";
+        } else if (person.Icon_Ocean === "yellow") {
+          bildNameIcon3 = "icon_ocean_yellow.svg";
+        } else {
+          bildNameIcon3 = "icon_ocean_grey.svg"; // Fallback, falls vorhanden
+        }
+
+        imgIcon_ocean.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/${encodeURIComponent(bildNameIcon3)}`;
+        imgIcon_ocean.style.width = "35px";
+        imgIcon_ocean.style.height = "auto";
+
+        tdIcon_ocean.appendChild(imgIcon_ocean);
+        tr.appendChild(tdIcon_ocean);
 
         table.appendChild(tr);
       }
