@@ -262,10 +262,20 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         } else {
         }
 
-        // 3) Einzelkampf ignorieren
+        // 3) Einzelkampf prüfen (<= mind. Platzierung)
         if (kriterium.wertung === "Einzelkampf") {
-          continue;
+          const platz = parseInt(eintrag.einzelkampfPlatzierung, 10);
+          console.log("Einzelkampf-Platzierung:", platz, "gegen Kriterium ≤", kriterium.platzierung);
+
+          if (Number.isFinite(platz) && platz <= kriterium.platzierung) {
+            const icon = (jahr === aktuellesJahr) ? "green" : "yellow";
+            console.log("Einzelkampf-Kriterium erfüllt! Rückgabe:", { icon, kader: kriterium.kader });
+            return { icon, kader: kriterium.kader };
+          } else {
+            console.log("Einzelkampf-Platzierung erfüllt Kriterium nicht.");
+          }
         }
+
 
         // 4) Mehrkampf
         if (kriterium.wertung === "Mehrkampf") {
@@ -288,28 +298,28 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
       function countFilled(yIndex, zIndex) {
         let count = 0;
         for (let x = 0; x < 6; x++) {
-          if (matrix[x][yIndex][zIndex] !== null) {
-            count++;
-          }
+          if (matrix[x][yIndex][zIndex] !== null) count++;
         }
         return count;
       }
 
-      // Badenkader
+      // Badenkader (unverändert)
       if (
-        countFilled(2, 1) >= 2 ||
-        countFilled(2, 0) >= 2 ||
-        (countFilled(1, 0) >= 2 && alter === 19)
+        countFilled(2, 1) >= 2 ||               // Offen, aktuelles Jahr
+        countFilled(2, 0) >= 2 ||               // Offen, Vorjahr
+        (countFilled(1, 0) >= 2 && alter === 19) // U19 im Vorjahr + jetzt 19
       ) {
         return "Badenkader";
       }
 
-      // Juniorenkader
+      // Juniorenkader: nur wenn < 19!
       if (
-        countFilled(1, 1) >= 2 ||
-        countFilled(0, 1) >= 2 ||
-        countFilled(0, 0) >= 2 ||
-        (countFilled(1, 0) >= 2 && alter < 19)
+        alter < 19 && (
+          countFilled(1, 1) >= 2 || // U19, aktuelles Jahr
+          countFilled(0, 1) >= 2 || // U17, aktuelles Jahr
+          countFilled(0, 0) >= 2 || // U17, Vorjahr
+          countFilled(1, 0) >= 2    // U19, Vorjahr
+        )
       ) {
         return "Juniorenkader";
       }
@@ -457,7 +467,7 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         person.Icon_Time = bestimmeIconTime(person.matrix);
 
         // Zeit-basierter Status ermitteln und NUR hochstufen
-        const timesStatus = bestimmeKaderstatus(person.matrix, person.alter);
+        const timesStatus = bestimmeKaderstatus(person.matrix, person.aktuellesAlter);
         const beforeTimes = person.Kaderstatus;
         person.Kaderstatus = promoteStatus(person.Kaderstatus, timesStatus);
 
@@ -512,6 +522,15 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         const wettkampfName = row[10] ? row[10].toString() : "";
         const landesverband = row[13] || "";
         const mehrkampfPlatzierung = row[14];
+        const parsePlatz = v => {
+          const n = parseInt(v, 10);
+          return Number.isFinite(n) && n >= 1 ? n : null;
+        };
+        const einzelPlaetze = [row[15], row[16], row[17], row[18], row[19], row[20]];
+        const einzelkampfPlatzierung = einzelPlaetze.reduce((min, v) => {
+          const n = parsePlatz(v);
+          return n !== null && (min === null || n < min) ? n : min;
+        }, null);
 
         // Excel-Datum -> korrektes Datum (UTC, Excel-Basis inkl. 1900-Bug-Korrektur)
         const excelBase = new Date(Date.UTC(1900, 0, 1));
@@ -556,6 +575,7 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
               datum: wettkampfDatum,
               wettkampf: wettkampfName,
               mehrkampfPlatzierung,
+              einzelkampfPlatzierung,
             });
           }
         }
@@ -634,7 +654,9 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
           <span style="color:${farbe}; font-weight:bold;">
             ${name} (${person.jahrgang})
           </span><br>
-          <small>DLRG ${person.ortsgruppe || ""}</small>
+          <small style="color: rgb(68, 68, 69); font-weight: bold;">
+            DLRG ${person.ortsgruppe || ""}
+          </small>
         `;
         tr.appendChild(tdName);
 
