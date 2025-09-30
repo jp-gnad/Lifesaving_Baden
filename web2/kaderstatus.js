@@ -11,7 +11,7 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
     function normWk(s) {
       return (s || "").toString().toLowerCase()
         .normalize("NFKD").replace(/\p{Diacritic}/gu,"")
-        .replace(/[–—−]/g, "-").replace(/\s+/g," ").trim();
+        .replace(/[–—−]/g, "-").replace(/\s+/sg," ").trim();
     }
     function minNum(a, b) { return a == null ? b : (b == null ? a : Math.min(a, b)); }
 
@@ -989,16 +989,234 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         tdStatus.style.whiteSpace = "nowrap";
 
         if (person.angemeldet) {
-          tdStatus.textContent = berechneKaderBis(person, aktuellesJahr);
-          tdStatus.style.textAlign = "center";
+          tdStatus.classList.add("status-cell");
+          tdStatus.textContent = "";
+
+          // Icon im TD
+          const wrapper = document.createElement("div");
+          wrapper.className = "status-wrapper";
+
+          const icon = document.createElement("img");
+          icon.className = "status-icon";
+          icon.src = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/icon_status_green.svg";
+          icon.alt = "Status: angemeldet";
+          icon.style.width = "27.5px";
+          icon.style.height = "auto";
+          icon.setAttribute("tabindex", "0");
+          icon.setAttribute("aria-haspopup", "true");
+          icon.setAttribute("aria-expanded", "false");
+
+          // Tooltip an <body> anhängen (Portal)
+          const tooltip = document.createElement("div");
+          tooltip.className = "status-tooltip";
+          tooltip.setAttribute("role", "tooltip");
+          tooltip.setAttribute("aria-hidden", "true");
+          tooltip.textContent = `Kaderberechtigt bis ${berechneKaderBis(person, aktuellesJahr)}`;
+          document.body.appendChild(tooltip);
+
+          wrapper.appendChild(icon);
+          tdStatus.appendChild(wrapper);
+
+          // Nur ein Tooltip global offen halten
+          let closingRef = null;
+
+          function positionTooltip() {
+            const margin = 8;
+            const r = icon.getBoundingClientRect();
+
+            // Erst anzeigen (unsichtbar), damit Höhe/Breite messbar sind
+            tooltip.style.visibility = "hidden";
+            tooltip.classList.add("is-visible");
+
+            const tW = tooltip.offsetWidth;
+            const tH = tooltip.offsetHeight;
+
+            // Standard: rechts neben dem Icon
+            let left = r.right + margin;
+            let top  = Math.round(r.top + r.height / 2 - tH / 2);
+            tooltip.classList.remove("left");
+
+            // Wenn rechts nicht genug Platz, links platzieren
+            if (left + tW > window.innerWidth - 8) {
+              left = r.left - margin - tW;
+              tooltip.classList.add("left");
+            }
+
+            // Vertikal begrenzen
+            if (top < 8) top = 8;
+            if (top + tH > window.innerHeight - 8) top = window.innerHeight - tH - 8;
+
+            tooltip.style.left = `${left}px`;
+            tooltip.style.top  = `${top}px`;
+
+            // Sichtbar schalten
+            tooltip.style.visibility = "";
+          }
+
+          const onDocClick = (e) => {
+            // Klick außerhalb von Icon UND Tooltip -> schließen
+            if (!wrapper.contains(e.target) && !tooltip.contains(e.target)) hide();
+          };
+          const onKey = (e) => { if (e.key === "Escape") hide(); };
+          const onScrollOrResize = () => { if (tooltip.classList.contains("is-visible")) positionTooltip(); };
+
+          function show() {
+            // anderen offenen Tooltip schließen
+            if (window.__closeOpenStatusTooltip && window.__closeOpenStatusTooltip !== hide) {
+              window.__closeOpenStatusTooltip();
+            }
+            positionTooltip();
+            tooltip.classList.add("is-visible");
+            tooltip.setAttribute("aria-hidden", "false");
+            icon.setAttribute("aria-expanded", "true");
+
+            document.addEventListener("click", onDocClick);
+            document.addEventListener("keydown", onKey);
+            window.addEventListener("scroll", onScrollOrResize, true);
+            window.addEventListener("resize", onScrollOrResize);
+
+            window.__closeOpenStatusTooltip = hide;
+            closingRef = hide;
+          }
+
+          function hide() {
+            tooltip.classList.remove("is-visible");
+            tooltip.setAttribute("aria-hidden", "true");
+            icon.setAttribute("aria-expanded", "false");
+
+            document.removeEventListener("click", onDocClick);
+            document.removeEventListener("keydown", onKey);
+            window.removeEventListener("scroll", onScrollOrResize, true);
+            window.removeEventListener("resize", onScrollOrResize);
+
+            if (window.__closeOpenStatusTooltip === closingRef) window.__closeOpenStatusTooltip = null;
+          }
+
+          function toggle() {
+            if (tooltip.classList.contains("is-visible")) hide(); else show();
+          }
+
+          icon.addEventListener("click", (e) => { e.stopPropagation(); toggle(); });
+          icon.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+          });
+
+          // Optional: Clean-up, falls die Zeile dynamisch entfernt wird
+          // -> tooltip.remove();
+
         } else {
-          const imgStatus = document.createElement("img");
-          imgStatus.src = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/icon_status_yellow.svg";
-          imgStatus.style.width = "20px";
-          imgStatus.style.height = "auto";
-          imgStatus.alt = "Keine Anmeldung";
-          tdStatus.appendChild(imgStatus);
-          tdStatus.style.textAlign = "center";
+          // Zelle vorbereiten
+          tdStatus.classList.add("status-cell");
+          tdStatus.textContent = "";
+
+          // Icon im TD
+          const wrapper = document.createElement("div");
+          wrapper.className = "status-wrapper";
+
+          const icon = document.createElement("img");
+          icon.className = "status-icon";
+          icon.src = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/icon_status_yellow.svg";
+          icon.alt = "Anmeldung erforderlich";
+          icon.setAttribute("tabindex", "0");
+          icon.setAttribute("aria-haspopup", "true");
+          icon.setAttribute("aria-expanded", "false");
+
+          // Tooltip an <body> anhängen (wie bei der grünen Box)
+          const tooltip = document.createElement("div");
+          tooltip.className = "status-tooltip";
+          tooltip.setAttribute("role", "tooltip");
+          tooltip.setAttribute("aria-hidden", "true");
+          tooltip.textContent = "Anmeldung erforderlich";
+          document.body.appendChild(tooltip);
+
+          wrapper.appendChild(icon);
+          tdStatus.appendChild(wrapper);
+
+          // Nur ein Tooltip global offen halten
+          let closingRef = null;
+
+          function positionTooltip() {
+            const margin = 8;
+            const r = icon.getBoundingClientRect();
+
+            // kurz sichtbar machen für Größenmessung
+            tooltip.style.visibility = "hidden";
+            tooltip.classList.add("is-visible");
+
+            const tW = tooltip.offsetWidth;
+            const tH = tooltip.offsetHeight;
+
+            // Standard: rechts neben dem Icon
+            let left = r.right + margin;
+            let top  = Math.round(r.top + r.height / 2 - tH / 2);
+            tooltip.classList.remove("left");
+
+            // Falls rechts zu wenig Platz: links anzeigen
+            if (left + tW > window.innerWidth - 8) {
+              left = r.left - margin - tW;
+              tooltip.classList.add("left");
+            }
+
+            // Vertikal begrenzen
+            if (top < 8) top = 8;
+            if (top + tH > window.innerHeight - 8) top = window.innerHeight - tH - 8;
+
+            tooltip.style.left = `${left}px`;
+            tooltip.style.top  = `${top}px`;
+
+            tooltip.style.visibility = "";
+          }
+
+          const onDocClick = (e) => {
+            if (!wrapper.contains(e.target) && !tooltip.contains(e.target)) hide();
+          };
+          const onKey = (e) => { if (e.key === "Escape") hide(); };
+          const onScrollOrResize = () => {
+            if (tooltip.classList.contains("is-visible")) positionTooltip();
+          };
+
+          function show() {
+            // anderen offenen Tooltip schließen
+            if (window.__closeOpenStatusTooltip && window.__closeOpenStatusTooltip !== hide) {
+              window.__closeOpenStatusTooltip();
+            }
+            positionTooltip();
+            tooltip.classList.add("is-visible");
+            tooltip.setAttribute("aria-hidden", "false");
+            icon.setAttribute("aria-expanded", "true");
+
+            document.addEventListener("click", onDocClick);
+            document.addEventListener("keydown", onKey);
+            window.addEventListener("scroll", onScrollOrResize, true);
+            window.addEventListener("resize", onScrollOrResize);
+
+            window.__closeOpenStatusTooltip = hide;
+            closingRef = hide;
+          }
+
+          function hide() {
+            tooltip.classList.remove("is-visible");
+            tooltip.setAttribute("aria-hidden", "true");
+            icon.setAttribute("aria-expanded", "false");
+
+            document.removeEventListener("click", onDocClick);
+            document.removeEventListener("keydown", onKey);
+            window.removeEventListener("scroll", onScrollOrResize, true);
+            window.removeEventListener("resize", onScrollOrResize);
+
+            if (window.__closeOpenStatusTooltip === closingRef) {
+              window.__closeOpenStatusTooltip = null;
+            }
+          }
+
+          function toggle() {
+            if (tooltip.classList.contains("is-visible")) hide(); else show();
+          }
+
+          icon.addEventListener("click", (e) => { e.stopPropagation(); toggle(); });
+          icon.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+          });
         }
 
         tr.appendChild(tdStatus);

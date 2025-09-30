@@ -200,40 +200,77 @@ table tr.odd {
   background: none;
   border: 0;
   color: white;
-  margin-left: auto;            /* schiebt Button nach rechts */
   cursor: pointer;
   padding: 8px;
+  margin-left: 12px;   /* Icon direkt neben dem Titel, leicht versetzt */
 }
+
 
 /* Mobile/Portrait Verhalten */
 @media (max-width: 900px), (orientation: portrait) {
-  /* Menü im Header ausblenden, Icon zeigen */
   .menu-toggle { display: block; }
   .header-menu { display: none; }
-  .header-menu .menu-underline { display: none; } /* Unterstrich auf Mobile aus */
+  .header-menu .menu-underline { display: none; }
 
-  /* Geöffnetes Menü unter dem Header einblenden */
+  /* Einspaltiges Dropdown unter dem festen Header */
   .header.open .header-menu {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr)); /* mehrere Zeilen */
+    display: flex;
+    flex-direction: column;    /* einspaltig */
     gap: 12px;
     position: fixed;
-    top: 100px;                 /* direkt unter deinem fixen Header (100px hoch) */
+    top: 100px;                /* deine Header-Höhe */
     left: 0; right: 0;
     background: rgba(0,0,0,0.96);
     padding: 16px 20px 20px;
-    z-index: 999;               /* unter dem Header (der hat 1000), über dem Inhalt */
+    z-index: 999;
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);
   }
 
-  .header-menu a {
+  .header.open .header-menu a {
     display: block;
+    width: 100%;              /* volle Breite pro Zeile */
     padding: 10px 12px;
     border-radius: 8px;
     text-decoration: none;
     background: rgba(255,255,255,0.06);
   }
-
-  /* Optional: Titel bei sehr schmalen Screens ausblenden */
-  /* @media (max-width: 420px) { .header-text { display:none; } } */
 }
+
+/* Zellen-/Icon-Styles wie gehabt */
+.status-cell { text-align: center; }
+.status-wrapper { position: relative; display: inline-block; }
+.status-icon { width: 20px; height: 20px; display: block; cursor: pointer; }
+
+/* Tooltip global (wird an <body> angehängt) */
+.status-tooltip {
+  position: fixed;               /* nicht vom Tabellen-Flow abhängig */
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333333;
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  z-index: 2000;
+  display: none;
+}
+
+/* Pfeil wenn Tooltip rechts vom Icon steht */
+.status-tooltip::before {
+  content: "";
+  position: absolute;
+  left: -6px; top: 50%;
+  transform: translateY(-50%);
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-right: 6px solid rgba(68, 68, 68, 0.9);
+}
+
+/* Pfeil wenn Tooltip links vom Icon steht (Fallback bei Platzmangel rechts) */
+.status-tooltip.left::before {
+  left: auto; right: -6px;
+  border-right: none;
+  border-left: 6px solid rgba(0,0,0,0.9);
+}
+
+.status-tooltip.is-visible { display: block; }
