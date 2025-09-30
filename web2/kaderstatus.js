@@ -133,7 +133,6 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         const ws = wb.Sheets[jahr.toString()];
         if (!ws) { SONDERREGELN_TRAINER[jahr] = new Map(); continue; }
 
-        // H17:J500 einlesen
         const rows = XLSX.utils.sheet_to_json(ws, {
           header: 1, range: "H17:J500", defval: null, blankrows: false
         });
@@ -142,15 +141,18 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         for (const r of rows) {
           const name = (r[0] ?? "").toString().trim();
           const kriterium = (r[1] ?? "").toString().trim().toLowerCase();
-          const kader = (r[2] ?? "").toString().trim(); // "", "Juniorenkader", "Badenkader"
-
+          const kader = (r[2] ?? "").toString().trim();
           if (!name) continue;
           if (kriterium !== "sondernominierung") continue;
-
           map.set(name.toLowerCase(), { kader });
         }
+
+        // ⬇️ WICHTIG: Ergebnis speichern!
+        SONDERREGELN_TRAINER[jahr] = map;
+        console.log(`Sonderregeln Trainer ${jahr}:`, map.size, "Einträge");
       }
     }
+
 
 
     // === global:
@@ -171,7 +173,6 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         const ws = wb.Sheets[jahr.toString()];
         if (!ws) { SONDERREGELN_OCEAN[jahr] = new Map(); continue; }
 
-        // H17:J500 einlesen
         const rows = XLSX.utils.sheet_to_json(ws, {
           header: 1, range: "H17:J500", defval: null, blankrows: false
         });
@@ -180,15 +181,18 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         for (const r of rows) {
           const name = (r[0] ?? "").toString().trim();
           const kriterium = (r[1] ?? "").toString().trim().toLowerCase();
-          const kader = (r[2] ?? "").toString().trim(); // "", "Juniorenkader", "Badenkader"
-
+          const kader = (r[2] ?? "").toString().trim();
           if (!name) continue;
           if (kriterium !== "ocean") continue;
-
           map.set(name.toLowerCase(), { kader });
         }
+
+        // ⬇️ WICHTIG: Ergebnis speichern!
+        SONDERREGELN_OCEAN[jahr] = map;
+        console.log(`Sonderregeln Ocean ${jahr}:`, map.size, "Einträge");
       }
     }
+
 
     // === Prioritäten / Merge-Regeln ===
     const STATUS_RANK = { "": 0, "Juniorenkader": 1, "Badenkader": 2 };
