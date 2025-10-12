@@ -7,6 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script defer src="kaderstatus.js"></script>
   <script defer src="kaderswitch.js"></script>
+  <script src="header.js"></script>
 </head>
 <body>
   <!-- HEADER -->
@@ -15,7 +16,17 @@
       <img class="header-logo" src="./images/logo.png" alt="Logo">
     </a>
     <a href="index.html" class="header-text">Lifesaving Baden</a>
-    <nav class="header-menu">
+
+    <!-- Toggle-Button bleibt direkt neben dem Titel -->
+    <button class="menu-toggle" aria-expanded="false" aria-controls="site-menu" aria-label="Menü öffnen">
+      <span class="sr-only">Menü</span>
+      <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 6h18M3 12h18M3 18h18"
+              stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+    </button>
+
+    <nav class="header-menu" id="site-menu">
       <a href="kaderberechtigung.html" class="menu-item">Kaderberechtigung</a>
       <a href="punkterechner.html" class="menu-item">Punkterechner</a>
       <a href="athleten.html" class="menu-item">Athleten</a>
