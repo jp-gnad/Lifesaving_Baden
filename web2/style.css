@@ -274,3 +274,217 @@ table tr.odd {
 }
 
 .status-tooltip.is-visible { display: block; }
+
+
+
+
+/* ================
+   ATHLETEN UI v2
+   ================ */
+#athleten-container{
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.ath-ui{
+  width: min(1100px, 94vw);
+  display: grid;
+  gap: 16px;
+}
+
+/* Hinweis */
+.ath-ui-note{
+  color: #3a3f47;
+  font-size: .98rem;
+  background: rgba(255,255,255,0.85);
+  border: 1px solid rgba(17,24,39,0.08);
+  border-radius: 14px;
+  padding: 12px 14px;
+  backdrop-filter: blur(2px);
+}
+
+/* Suche */
+.ath-search-wrap{
+  position: relative;
+}
+
+.ath-ui-search{
+  display: grid;
+  grid-template-columns: 1fr max-content max-content;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(255,255,255,0.9);
+  border: 1px solid rgba(17,24,39,0.08);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(2,6,23,.10);
+  backdrop-filter: blur(4px);
+}
+
+.ath-input{
+  border: 1px solid rgba(17,24,39,0.12);
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 1rem;
+  outline: none;
+}
+.ath-input:focus{
+  border-color: #2563eb33;
+  box-shadow: 0 0 0 4px #3b82f611;
+}
+
+.ath-btn{
+  appearance: none;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-weight: 700;
+  font-size: .95rem;
+  cursor: pointer;
+  border: 1px solid rgba(17,24,39,0.12);
+  background: #fff;
+  transition: transform .06s ease, box-shadow .2s ease, opacity .2s ease;
+}
+.ath-btn:hover{ transform: translateY(-1px); box-shadow: 0 8px 20px rgba(2,6,23,.12) }
+.ath-btn.primary{
+  background: linear-gradient(135deg, #2563eb, #60a5fa);
+  border: 1px solid transparent;
+  color: #fff;
+}
+
+/* Dropdown für Treffer */
+.ath-suggest{
+  position: absolute;
+  z-index: 40;
+  left: 10px; right: 10px;
+  top: calc(100% + 8px);
+  max-height: 320px;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid rgba(17,24,39,0.10);
+  border-radius: 12px;
+  box-shadow: 0 22px 60px rgba(2,6,23,.18);
+}
+.ath-suggest.hidden{ display: none }
+
+.ath-suggest-empty{
+  padding: 14px 14px;
+  color: #6b7280;
+  font-size: .95rem;
+}
+
+.ath-suggest-item{
+  display: grid;
+  grid-template-columns: 36px 1fr max-content;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(17,24,39,0.06);
+}
+.ath-suggest-item:last-child{ border-bottom: 0; }
+.ath-suggest-item:hover,
+.ath-suggest-item.active{
+  background: #f8fafc;
+}
+.ath-suggest-avatar{
+  width: 36px; height: 36px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-weight: 800; color: #fff;
+  background: linear-gradient(135deg, #2563eb, #10b981);
+}
+.ath-suggest-name{ font-weight: 800; color: #111827; line-height: 1.2 }
+.ath-suggest-name mark{
+  background: #fde68a;
+  color: inherit;
+  border-radius: 4px;
+  padding: 0 2px;
+}
+.ath-suggest-sub{ color: #6b7280; font-size: .9rem }
+.ath-suggest-meta{ color: #374151; font-weight: 700; font-size: .92rem }
+
+/* Profilansicht */
+.ath-profile-wrap{ margin-top: 6px; }
+
+.ath-profile{
+  background: #ffffff;
+  border: 1px solid rgba(17,24,39,0.08);
+  border-radius: 16px;
+  box-shadow: 0 14px 38px rgba(2,6,23,.12);
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.ath-profile-head{
+  display: grid;
+  grid-template-columns: 64px 1fr max-content;
+  gap: 14px;
+  align-items: center;
+}
+.ath-avatar{
+  width: 48px; height: 48px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-weight: 800; color: #fff;
+  background: linear-gradient(135deg, #2563eb, #10b981);
+}
+.ath-avatar.xl{ width: 64px; height: 64px; }
+
+.ath-profile-title h2{
+  margin: 0 0 4px;
+  font-size: 1.35rem; color: #0f172a;
+}
+.ath-profile-meta{
+  display: flex; gap: 10px; flex-wrap: wrap; font-size: .95rem;
+}
+.kv{ display: inline-flex; gap: 6px; align-items: center }
+.kv .k{ color: #6b7280 }
+.kv .v{ color: #111827 }
+
+.ath-profile-actions .ath-btn{ white-space: nowrap }
+
+.ath-profile-section{
+  background: #f8fafc;
+  border: 1px dashed rgba(17,24,39,0.12);
+  border-radius: 12px;
+  padding: 12px;
+}
+.ath-profile-section.muted{
+  color: #64748b; font-size: .95rem; background: #f9fafb;
+}
+
+.ath-badges{
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.ath-badge{
+  background: #eef2ff;
+  color: #1e3a8a;
+  border: 1px solid #c7d2fe;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+/* Responsive */
+@media (max-width: 560px){
+  .ath-ui-search{ grid-template-columns: 1fr max-content }
+  .ath-ui-search .clear{ display: none }
+  .ath-profile-head{ grid-template-columns: 48px 1fr; }
+}
+
+/* Klickbarer Name im Dropdown */
+.ath-suggest-nameBtn{
+  all: unset;                /* Button-Reset */
+  cursor: pointer;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1.2;
+}
+.ath-suggest-nameBtn:hover{ text-decoration: underline; }
+.ath-suggest-nameBtn mark{
+  background: #fde68a;
+  color: inherit;
+  border-radius: 4px;
+  padding: 0 2px;
+}
