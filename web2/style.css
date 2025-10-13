@@ -429,19 +429,42 @@ table tr.odd {
   gap: 14px 22px;
   align-items: center;
 }
+
 .ath-avatar{
-  width: 48px; height: 48px; border-radius: 50%;
+  width: 10px; height: 10px; border-radius: 50%;
   display: grid; place-items: center;
   font-weight: 800; color: #fff;
   background: linear-gradient(135deg, #2563eb, #10b981);
 }
-.ath-avatar.xl{ width: 64px; height: 64px; }
+.ath-avatar.xl{
+  width: 75px; height: 75px;
+  margin-top: -90px; 
+}
+
+@media (max-width: 720px){
+  .ath-avatar.xl{
+    width: 50px; height: 50px;
+    margin-top: -5px; 
+  }
+  .ath-profile-head{margin-top: 20px;}
+}
+
+
 
 .ath-profile-title h2{
   margin: 0 0 4px;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
   font-size: 2.00rem; color: #0f172a;
 }
+
+@media (min-width: 1000px){
+  .ath-profile-title h2{
+    margin: 0 0 4px;
+    margin-bottom: 20px;
+    font-size: 3.00rem; color: #0f172a;
+  }
+}
+
 /* Profil-Infos (Ortsgruppe, Jahrgang, Altersklasse) untereinander */
 .ath-profile-meta{
   display: grid;
@@ -483,11 +506,6 @@ table tr.odd {
   color: #64748b; font-size: .95rem; background: #f9fafb;
 }
 
-
-/* Responsive */
-@media (max-width: 560px){
-  .ath-profile-head{ grid-template-columns: 48px 1fr; }
-}
 
 /* Klickbarer Name im Dropdown */
 .ath-suggest-nameBtn{
