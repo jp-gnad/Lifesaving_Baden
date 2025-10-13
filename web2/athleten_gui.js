@@ -23,6 +23,148 @@
     return el;
   };
 
+  function activityStatusFromLast(lastISO){
+    // Kein Datum -> als Inaktiv werten
+    if (!lastISO) return { key: "inactive", label: "Inaktiv" };
+
+    const last = new Date(lastISO);
+    if (isNaN(last)) return { key: "inactive", label: "Inaktiv" };
+
+    const now  = new Date();
+    const days = Math.floor((now - last) / (1000*60*60*24));
+
+    if (days < 365)      return { key: "active",  label: "Aktiv" };
+    if (days < 365*2)    return { key: "pause",   label: "Pause" };
+    return { key: "inactive", label: "Inaktiv" };
+}
+
+
+  // ---- Format-Helfer ----
+  function fmtInt(n){ return Number.isFinite(n) ? n.toLocaleString("de-DE") : "—"; }
+  function fmtDate(dStr){
+    if (!dStr) return "—";
+    const d = new Date(dStr);
+    if (isNaN(d)) return "—";
+    return d.toLocaleDateString("de-DE");
+  }
+
+  // Summe aller DQs (50 + 25) aus stats
+  function sumAllDQ(a){
+    let total = 0;
+    const both = [ (a.stats && a.stats["50"]) || {}, (a.stats && a.stats["25"]) || {} ];
+    for (const lane of both){
+      for (const d of DISCIPLINES){
+        const s = lane[d.key];
+        if (s && Number.isFinite(+s.dq)) total += +s.dq;
+      }
+    }
+    return total;
+  }
+
+  // Wettkampf-Infos (aus a.meets)
+  function computeMeetInfo(a){
+    const meets = Array.isArray(a.meets) ? a.meets.slice() : [];
+    const total = meets.length;
+
+    let c50 = 0, c25 = 0;
+    let first = null, last = null;
+
+    for (const m of meets){
+      if (m.pool === "50") c50++;
+      else if (m.pool === "25") c25++;
+
+      const d = new Date(m.date);
+      if (!isNaN(d)){
+        if (!first || d < first) first = d;
+        if (!last  || d > last ) last  = d;
+      }
+    }
+
+    const pct50 = total ? Math.round((c50/total)*100) : 0;
+    const pct25 = total ? Math.round((c25/total)*100) : 0;
+
+    return {
+      total,
+      c50, c25, pct50, pct25,
+      first: first ? first.toISOString().slice(0,10) : null,
+      last:  last  ? last.toISOString().slice(0,10)  : null
+    };
+  }
+
+  // ---- Überblick-Section ----
+  function renderOverviewSection(a){
+    const header = h("div", { class: "ath-info-header" },
+      h("h3", {}, "Überblick")
+    );
+
+    const grid = h("div", { class: "ath-info-grid" });
+
+    // Metriken berechnen
+    const lsc = Number.isFinite(+a.lsc) ? +a.lsc : null;
+    const meets = computeMeetInfo(a);
+    const totalDisc = Number.isFinite(+a.totalDisciplines) ? +a.totalDisciplines : 20;
+    const totalDQ = sumAllDQ(a);
+
+    // Kacheln
+    grid.appendChild(infoTileBig("LSC", lsc != null ? fmtInt(lsc) : "—"));
+
+    const act = activityStatusFromLast(meets.last);
+    grid.appendChild(infoTileStatus("Aktivitätsstatus", act));
+
+    grid.appendChild(infoTile("Wettkämpfe", fmtInt(meets.total)));
+    grid.appendChild(infoTile("Total Starts", fmtInt(totalDisc)));
+    grid.appendChild(infoTile("Disqualifikationen", fmtInt(totalDQ)));
+
+    grid.appendChild(infoTileDist("Bahnverteilung", meets));
+
+    grid.appendChild(infoTile("Erster Wettkampf", fmtDate(meets.first)));
+    
+
+    return h("div", { class: "ath-profile-section info" }, header, grid);
+
+    // --- lokale UI-Bausteine ---
+    function infoTile(label, value){
+      return h("div", { class: "info-tile" },
+        h("div", { class: "info-label" }, label),
+        h("div", { class: "info-value" }, value)
+      );
+    }
+    function infoTileBig(label, value){
+      return h("div", { class: "info-tile accent" },
+        h("div", { class: "info-label" }, label),
+        h("div", { class: "info-value big" }, value)
+      );
+    }
+    function infoTileDist(label, m){
+      const wrap = h("div", { class: "info-tile dist" },
+        h("div", { class: "info-label" }, label),
+        // Progress-Balken 50/25
+        (() => {
+          const bar = h("div", { class: "info-progress" },
+            h("div", { class: "p50", style: `width:${m.pct50 || 0}%` }),
+          );
+          return bar;
+        })(),
+        // Legende
+        h("div", { class: "info-legend" },
+          h("span", { class: "l50" }, `50m ${m.pct50 || 0}%`),
+        )
+      );
+      return wrap;
+    }
+    function infoTileStatus(label, act){
+      return h("div", { class: `info-tile status ${act.key}` },
+        h("div", { class: "info-label" }, label),
+        h("div", { class: "status-line" },
+          h("span", { class: "status-dot" }),
+          h("span", { class: "status-text" }, act.label)
+        )
+      );
+    }
+
+  }
+
+
   // ---- Medaillen-Widget ------------------------------------------------
   function renderMedalStats(a) {
     const m = (a && a.medals) || {};
@@ -214,6 +356,14 @@
         jahrgang: 2007,
         poolLen: "50", // "50" | "25"
         medals: { gold: 18, silver: 6, bronze: 7, title: "Medaillen" },
+        lsc: 742, // oder beliebiger Score
+        totalDisciplines: 20,
+        meets: [
+          { date: "2023-03-16", pool: "50" },
+          { date: "2023-05-11", pool: "25" },
+          { date: "2023-06-29", pool: "50" },
+          { date: "2025-02-01", pool: "50" }
+        ],
         pbs: {
           "50": {
             "50_retten": 32.18,
@@ -503,7 +653,7 @@
   // Section erzeugen
   function renderBestzeitenSection(athlete) {
     const header = h("div", { class: "ath-bests-header" },
-      h("h3", {}, "Bestzeiten"),
+      h("h3", {}, "Bestzeiten / Info"),
       renderBahnSwitch(athlete)
     );
 
@@ -715,6 +865,8 @@
         renderMedalStats(a)
       ),
 
+      // ÜBERBLICK (neu)
+      renderOverviewSection(a),
 
       // BESTZEITEN
       renderBestzeitenSection(a),

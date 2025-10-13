@@ -440,7 +440,7 @@ table tr.odd {
 .ath-profile-title h2{
   margin: 0 0 4px;
   margin-bottom: 10px;
-  font-size: 1.35rem; color: #0f172a;
+  font-size: 2.00rem; color: #0f172a;
 }
 /* Profil-Infos (Ortsgruppe, Jahrgang, Altersklasse) untereinander */
 .ath-profile-meta{
@@ -509,7 +509,7 @@ table tr.odd {
 .gender-tag{
   /* einfach anpassbare Parameter */
   --gsize: 1.35em;   /* Kreis-Durchmesser relativ zur H2-Schrift */
-  --gfont: 0.78em;   /* Schriftgröße des w/m relativ zur H2-Schrift */
+  --gfont: 0.5em;   /* Schriftgröße des w/m relativ zur H2-Schrift */
   --gshift: -0.18em; /* vertikale Verschiebung: negativ = nach oben */
 
   display: inline-grid;
@@ -850,4 +850,117 @@ table tr.odd {
 .best-tile{
   touch-action: manipulation;           /* killt 300ms-Delay */
   -webkit-tap-highlight-color: transparent;
+}
+
+
+/* ——— Überblick Sektion ——— */
+.ath-profile-section.info{
+  background: #ffffff;
+  border: 1px solid rgba(17,24,39,0.08);
+}
+
+.ath-info-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.ath-info-header h3{ margin: 0; font-size: 2.00rem; color: #0f172a; }
+
+.ath-info-grid{
+  display: grid;
+  grid-template-columns: repeat( auto-fill, minmax(240px, 1fr) );
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.info-tile{
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid rgba(17,24,39,0.08);
+  border-radius: 12px;
+  background: #f9fafb;
+}
+.info-tile.accent{
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
+}
+.info-label{
+  font-size: .92rem;
+  font-weight: 700;
+  color: #475569;
+}
+.info-tile.accent .info-label{ color: #cbd5e1; }
+
+.info-value{
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+.info-tile.accent .info-value{ color: #fff; }
+.info-value.big{ font-size: 1.8rem; }
+
+/* Bahnverteilung */
+.info-tile.dist .info-progress{
+  display: flex;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #e5e7eb;
+  border: 1px solid rgba(17,24,39,0.08);
+}
+.info-tile.dist .info-progress .p50{
+  background: #0f172a; /* dunkel (50m) */
+}
+.info-tile.dist .info-progress .p25{
+  background: #9ca3af; /* grau (25m) */
+}
+.info-tile.dist .info-legend{
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  color: #475569;
+  margin-top: 6px;
+  font-size: .92rem;
+}
+
+/* Mobile tighter Grid */
+@media (max-width: 560px){
+  .ath-info-grid{ grid-template-columns: 1fr 1fr; }
+}
+
+/* Aktivitätsstatus-Kachel */
+.info-tile.status .status-line{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: #0f172a;
+}
+.info-tile.status .status-dot{
+  width: 10px; height: 10px; border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.04) inset;
+}
+
+/* Farblogik */
+.info-tile.status.active  { background: #ecfdf5; border-color: #a7f3d0; }
+.info-tile.status.pause   { background: #fffbeb; border-color: #fde68a; }
+.info-tile.status.inactive{ background: #fef2f2; border-color: #fecaca; }
+
+.info-tile.status.active  .status-dot{ background: #16a34a; }
+.info-tile.status.pause   .status-dot{ background: #eab308; }
+.info-tile.status.inactive .status-dot{ background: #dc2626; }
+
+/* optional kleine Unterzeile (Datum) */
+.status-sub{
+  margin-top: 4px;
+  color: #6b7280;
+  font-size: .9rem;
+  font-weight: 600;
 }
