@@ -425,7 +425,7 @@ table tr.odd {
 
 .ath-profile-head{
   display: grid;
-  grid-template-columns: 64px 1fr max-content;
+  grid-template-columns: 64px 1fr;
   gap: 14px 22px;
   align-items: center;
 }
@@ -449,7 +449,7 @@ table tr.odd {
 .kv .k{ color: #6b7280 }
 .kv .v{ color: #111827 }
 
-.ath-profile-actions .ath-btn{ white-space: nowrap }
+.ath-profile-actions{ display: none !important; }
 
 .ath-profile-section{
   background: #f8fafc;
@@ -470,8 +470,6 @@ table tr.odd {
 
 /* Responsive */
 @media (max-width: 560px){
-  .ath-ui-search{ grid-template-columns: 1fr max-content }
-  .ath-ui-search .clear{ display: none }
   .ath-profile-head{ grid-template-columns: 48px 1fr; }
 }
 

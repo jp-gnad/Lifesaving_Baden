@@ -175,7 +175,7 @@
           },
           "25": {
             "50_retten": 31.50,
-            "100_retten_flosse": 54.10
+            "100_lifesaver": 54.10
             // Rest kann fehlen -> "—"
           }
         }
@@ -528,7 +528,6 @@
   // Profile
   // ---------------------------
   function openProfile(a) {
-    // Vor dem Rendern wählen wir die aktive Bahnlänge:
     AppState.poolLen = (a && a.poolLen) ? String(a.poolLen) : (AppState.poolLen || "50");
     AppState.selectedAthleteId = a?.id || null;
     hideSuggestions();
@@ -542,84 +541,44 @@
       return;
     }
 
-    // lokales kv, damit es immer verfügbar ist
+    // lokale KV-Hilfe (falls noch nicht oben global vorhanden)
     const KV = (k, v) =>
       h("span", { class: "kv" },
         h("span", { class: "k" }, k + ":"),
         h("span", { class: "v" }, v)
       );
 
-
     const profile = h(
       "article",
       { class: "ath-profile" },
 
-      // HEAD
+      // HEAD (Avatar + Titel/Meta) — keine Actions mehr
       h(
         "div",
         { class: "ath-profile-head" },
-
-        // 1) Avatar
         h("div", { class: "ath-avatar xl" }, initials(a.name)),
-
-        // 2) Title + Meta (Name + (w)/(m), OG/Jahrgang/AK)
         h(
           "div",
           { class: "ath-profile-title" },
-          // Name + Gender-Tag
+          // Name + Gender-Kreis
           (() => {
-            const gt = genderTag(a.geschlecht); // { short: "(w)"|"(m)", cls: "w"|"m" }
-            return h(
-              "h2",
-              {},
-              a.name,
-              " ",
-              h("span", { class: `gender-tag ${gt.cls}` }, gt.short)
-            );
+            const gt = genderTag(a.geschlecht);
+            return h("h2", {}, a.name, " ", h("span", { class: `gender-tag ${gt.cls}` }, gt.short));
           })(),
-          // Meta-Zeile
-          h(
-            "div",
-            { class: "ath-profile-meta" },
+          // Meta
+          h("div", { class: "ath-profile-meta" },
             KV("Ortsgruppe", formatOrtsgruppe(a.ortsgruppe)),
             KV("Jahrgang", String(a.jahrgang)),
             KV("Altersklasse", akLabelFromJahrgang(a.jahrgang))
-
-          )
-        ),
-
-        // 3) Actions (rechts): Zurück-Button
-        h(
-          "div",
-          { class: "ath-profile-actions" },
-          h(
-            "button",
-            {
-              class: "ath-btn",
-              type: "button",
-              onclick: () => {
-                // lokal schließen, ohne closeProfile-Referenz
-                AppState.selectedAthleteId = null;
-                const mount = Refs.profileMount;
-                if (mount) {
-                  mount.classList.remove("ath-profile-wrap");
-                  mount.innerHTML = "";
-                }
-                Refs.input?.focus();
-              }
-            },
-            "Zurück"
           )
         )
       ),
 
-      // SECTION: Bestzeiten (NEU)
+      // BESTZEITEN
       renderBestzeitenSection(a),
 
-      // SECTION: Platzhalter Statistik
-      h(
-        "div",
-        { class: "ath-profile-section muted" },
+      // Platzhalter Statistik
+      h("div", { class: "ath-profile-section muted" },
         "Hier kommt später die Statistik (GUI) aus deiner Excel-Datenbank rein."
       )
     );
@@ -627,10 +586,9 @@
     mount.innerHTML = "";
     mount.classList.add("ath-profile-wrap");
     mount.appendChild(profile);
-
-    // optional: smooth scroll ins Profil
     mount.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+
 
 
   // ---------------------------
