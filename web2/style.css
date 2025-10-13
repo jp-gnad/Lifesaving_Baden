@@ -375,13 +375,20 @@ table tr.odd {
 
 .ath-suggest-item{
   display: grid;
-  grid-template-columns: 36px 1fr max-content;
+  grid-template-columns: 36px 1fr;
   gap: 10px;
   align-items: center;
   padding: 10px 12px;
   cursor: pointer;
   border-bottom: 1px solid rgba(17,24,39,0.06);
 }
+/* Jahrgang hinter dem Namen dezent */
+.ath-suggest-name .ath-year{
+  margin-left: .25rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
 .ath-suggest-item:last-child{ border-bottom: 0; }
 .ath-suggest-item:hover,
 .ath-suggest-item.active{
@@ -453,18 +460,6 @@ table tr.odd {
   color: #64748b; font-size: .95rem; background: #f9fafb;
 }
 
-.ath-badges{
-  display: flex; gap: 8px; flex-wrap: wrap;
-}
-.ath-badge{
-  background: #eef2ff;
-  color: #1e3a8a;
-  border: 1px solid #c7d2fe;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: .82rem;
-  font-weight: 700;
-}
 
 /* Responsive */
 @media (max-width: 560px){
@@ -520,5 +515,90 @@ table tr.odd {
   background: #ffe4e6;
   color: #9f1239;
   border-color: #fecdd3;
+}
+
+
+
+/* ————— Bestzeiten Sektion ————— */
+.ath-profile-section.bests{
+  background: #ffffff;
+  border: 1px solid rgba(17,24,39,0.08);
+}
+
+.ath-bests-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.ath-bests-header h3{ margin: 0; font-size: 1.55rem; color: #0f172a; }
+
+.best-empty{
+  padding: 12px;
+  border: 1px dashed rgba(17,24,39,0.12);
+  border-radius: 10px;
+  color: #6b7280;
+  background: #f9fafb;
+  font-size: .95rem;
+  grid-column: 1 / -1;
+}
+
+/* Segmented Switch */
+.seg{
+  display: inline-flex;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 4px;
+  gap: 4px;
+}
+.seg-btn{
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: .92rem;
+  color: #374151;
+  cursor: pointer;
+}
+.seg-btn.active{
+  background: #111827;
+  color: #fff;
+}
+
+/* Grid / Tiles */
+.ath-bests-grid{
+  display: grid;
+  grid-template-columns: repeat( auto-fill, minmax(220px, 1fr) );
+  gap: 10px;
+  margin-top: 8px;
+}
+.best-tile{
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid rgba(17,24,39,0.08);
+  border-radius: 12px;
+  background: #f9fafb;
+}
+.best-label{
+  color: #475569;
+  font-size: .92rem;
+  font-weight: 700;
+}
+.best-time{
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+/* Mobile Tuning */
+@media (max-width: 560px){
+  .ath-bests-grid{ grid-template-columns: 1fr 1fr; }
 }
 

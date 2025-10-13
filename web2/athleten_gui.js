@@ -90,6 +90,26 @@
     return { short: w ? "w" : "m", cls: w ? "w" : "m" };
   }
 
+  // ——— Disziplinen (Fixe Reihenfolge & interne Keys) ———
+  const DISCIPLINES = [
+    { key: "50_retten",           label: "50m Retten" },
+    { key: "100_retten_flosse",   label: "100m Retten mit Flossen" },
+    { key: "100_kombi",           label: "100 Kombi" },
+    { key: "100_lifesaver",       label: "100m Lifesaver" },
+    { key: "200_super",           label: "200m Super Lifesaver" },
+    { key: "200_hindernis",       label: "200m Hindernis" },
+  ];
+
+  // ——— Zeitformat: Sekunden (float) -> m:ss.hh ———
+  function formatSeconds(sec) {
+    if (sec == null || isNaN(sec)) return "—";
+    const tot = Math.round(Math.max(0, Number(sec)) * 100); // auf Hundertstel
+    const m = Math.floor(tot / 6000);
+    const s = Math.floor((tot % 6000) / 100);
+    const cs = tot % 100;
+    const sPart = (m ? String(s).padStart(2, "0") : String(s));
+    return (m ? `${m}:${sPart}` : sPart) + "." + String(cs).padStart(2, "0");
+  }
 
 
 
@@ -143,7 +163,22 @@
         ortsgruppe: "OG Karlsruhe",
         geschlecht: "weiblich",
         jahrgang: 2007,
-        disziplinen: ["100m Hindernis", "200m Superlifesaver"],
+        poolLen: "50", // "50" | "25"
+        pbs: {
+          "50": {
+            "50_retten": 32.18,
+            "100_retten_flosse": 55.42,
+            "100_kombi": 70.31,
+            "100_lifesaver": 63.05,
+            "200_super": 146.22,
+            "200_hindernis": 139.88
+          },
+          "25": {
+            "50_retten": 31.50,
+            "100_retten_flosse": 54.10
+            // Rest kann fehlen -> "—"
+          }
+        }
       },
       {
         id: "a2",
@@ -151,7 +186,7 @@
         ortsgruppe: "OG Mannheim",
         geschlecht: "männlich",
         jahrgang: 2006,
-        disziplinen: ["50m Retten", "100m Lifesaver"],
+        poolLen: "50", // "50" | "25"
       },
       {
         id: "a3",
@@ -159,7 +194,7 @@
         ortsgruppe: "OG Freiburg",
         geschlecht: "weiblich",
         jahrgang: 2004,
-        disziplinen: ["100m Rettungsleinen", "200m Hindernis"],
+        poolLen: "50", // "50" | "25"
       },
       {
         id: "a4",
@@ -167,7 +202,7 @@
         ortsgruppe: "OG Heidelberg",
         geschlecht: "männlich",
         jahrgang: 2009,
-        disziplinen: ["4x50m Hindernis (Team)", "100m Manikin Carry"],
+        poolLen: "50", // "50" | "25"
       },
     ],
     query: "",
@@ -338,13 +373,13 @@
   }
 
   function hideSuggestions() {
-    if (Refs.suggest) {
-      Refs.suggest.classList.add("hidden");
-      Refs.suggest.innerHTML = "";
+      if (Refs.suggest) {
+        Refs.suggest.classList.add("hidden");
+        Refs.suggest.innerHTML = "";
+      }
     }
-  }
 
-  function paintSuggestions() {
+    function paintSuggestions() {
     const box = Refs.suggest;
     if (!box) return;
     const q = AppState.query.trim();
@@ -362,7 +397,7 @@
         class: "ath-suggest-item" + (idx === AppState.activeIndex ? " active" : ""),
         role: "option",
         "aria-selected": idx === AppState.activeIndex ? "true" : "false",
-        // WICHTIG: mousedown => Profil wird geöffnet, bevor das Input blurriert
+        // mousedown fix: öffnet Profil, bevor das Input blurriert
         onmousedown: (ev) => { ev.preventDefault(); openProfile(a); },
         onmouseenter: () => { AppState.activeIndex = idx; paintSuggestions(); }
       });
@@ -370,33 +405,114 @@
       // Avatar
       item.appendChild(h("div", { class: "ath-suggest-avatar" }, initials(a.name)));
 
-      // klickbarer NAME (auch hier mousedown für sofortige Reaktion)
-      const nameBtn = h("button", {
-        class: "ath-suggest-nameBtn",
-        type: "button",
-        title: `Profil öffnen: ${a.name}`,
-        onmousedown: (ev) => { ev.preventDefault(); ev.stopPropagation(); openProfile(a); }
-      });
-      nameBtn.innerHTML = highlight(a.name, q);
+      // Name (mit Jahrgang) + OG darunter
+      const nameEl = h("div", { class: "ath-suggest-name" });
+      nameEl.innerHTML = `${highlight(a.name, q)} <span class="ath-year">(${a.jahrgang})</span>`;
 
       const sub = h("div", { class: "ath-suggest-sub" }, formatOrtsgruppe(a.ortsgruppe));
-      const text = h("div", { class: "ath-suggest-text" }, nameBtn, sub);
+      const text = h("div", { class: "ath-suggest-text" }, nameEl, sub);
       item.appendChild(text);
 
-      // Jahrgang / AK
-      {
-        const label = akLabelFromJahrgang(a.jahrgang);
-        item.appendChild(
-          h("div", { class: "ath-suggest-meta" }, `Jahrgang ${a.jahrgang} • Altersklasse: ${label}`)
-        );
-      }
-
-
-
+      // keine rechte Meta-Spalte mehr
       box.appendChild(item);
     });
 
     box.classList.remove("hidden");
+  }
+
+
+  // Refs für Bestzeiten
+  Refs.bestGrid = null;
+  Refs.bestBtn50 = null;
+  Refs.bestBtn25 = null;
+
+  // Section erzeugen
+  function renderBestzeitenSection(athlete) {
+    const header = h("div", { class: "ath-bests-header" },
+      h("h3", {}, "Bestzeiten"),
+      renderBahnSwitch(athlete)
+    );
+
+    const grid = h("div", { class: "ath-bests-grid" });
+    Refs.bestGrid = grid;
+
+    const section = h("div", { class: "ath-profile-section bests" }, header, grid);
+    paintBestzeitenGrid(athlete);
+    return section;
+  }
+
+  // Toggle 50m / 25m
+  function renderBahnSwitch(athlete) {
+    const wrap = h("div", { class: "ath-bests-switch", role: "group", "aria-label": "Bahnlänge" });
+
+    const b50 = h("button", {
+      class: "seg-btn" + (AppState.poolLen === "50" ? " active" : ""),
+      type: "button",
+      onclick: () => {
+        if (AppState.poolLen !== "50") {
+          AppState.poolLen = "50";
+          b50.classList.add("active");
+          b25.classList.remove("active");
+          paintBestzeitenGrid(athlete);
+        }
+      }
+    }, "50 m");
+
+    const b25 = h("button", {
+      class: "seg-btn" + (AppState.poolLen === "25" ? " active" : ""),
+      type: "button",
+      onclick: () => {
+        if (AppState.poolLen !== "25") {
+          AppState.poolLen = "25";
+          b25.classList.add("active");
+          b50.classList.remove("active");
+          paintBestzeitenGrid(athlete);
+        }
+      }
+    }, "25 m");
+
+    Refs.bestBtn50 = b50;
+    Refs.bestBtn25 = b25;
+
+    return h("div", { class: "seg" }, b50, b25);
+  }
+
+  // Grid der 6 Disziplinen befüllen
+  function paintBestzeitenGrid(athlete) {
+    if (!Refs.bestGrid) return;
+
+    const timesMap = (athlete.pbs && athlete.pbs[AppState.poolLen]) || {};
+    Refs.bestGrid.innerHTML = "";
+
+    // Hilfsparser: akzeptiert 32.18 oder "32,18"
+    const toSec = (v) => {
+      if (v == null) return NaN;
+      const n = parseFloat(String(v).replace(",", "."));
+      return Number.isFinite(n) ? n : NaN;
+    };
+
+    // Nur Disziplinen rendern, die wirklich eine Zeit haben
+    const toShow = DISCIPLINES.filter(d => Number.isFinite(toSec(timesMap[d.key])));
+
+    if (toShow.length === 0) {
+      Refs.bestGrid.appendChild(
+        h("div", { class: "best-empty" },
+          AppState.poolLen === "50"
+            ? "Keine Bestzeiten auf 50 m vorhanden."
+            : "Keine Bestzeiten auf 25 m vorhanden."
+        )
+      );
+      return;
+    }
+
+    toShow.forEach(d => {
+      const sec = toSec(timesMap[d.key]);
+      const tile = h("div", { class: "best-tile" },
+        h("div", { class: "best-label" }, d.label),
+        h("div", { class: "best-time" }, formatSeconds(sec))
+      );
+      Refs.bestGrid.appendChild(tile);
+    });
   }
 
 
@@ -405,6 +521,8 @@
   // Profile
   // ---------------------------
   function openProfile(a) {
+    // Vor dem Rendern wählen wir die aktive Bahnlänge:
+    AppState.poolLen = (a && a.poolLen) ? String(a.poolLen) : (AppState.poolLen || "50");
     AppState.selectedAthleteId = a?.id || null;
     hideSuggestions();
 
@@ -416,8 +534,6 @@
       mount.classList.remove("ath-profile-wrap");
       return;
     }
-
-    const chip = (t) => h("span", { class: "ath-badge" }, t);
 
     // lokales kv, damit es immer verfügbar ist
     const KV = (k, v) =>
@@ -471,19 +587,27 @@
           { class: "ath-profile-actions" },
           h(
             "button",
-            { class: "ath-btn", type: "button", onclick: () => closeProfile() },
+            {
+              class: "ath-btn",
+              type: "button",
+              onclick: () => {
+                // lokal schließen, ohne closeProfile-Referenz
+                AppState.selectedAthleteId = null;
+                const mount = Refs.profileMount;
+                if (mount) {
+                  mount.classList.remove("ath-profile-wrap");
+                  mount.innerHTML = "";
+                }
+                Refs.input?.focus();
+              }
+            },
             "Zurück"
           )
         )
       ),
 
-      // SECTION: Disziplinen
-      h(
-        "div",
-        { class: "ath-profile-section" },
-        h("h3", {}, "Disziplinen"),
-        h("div", { class: "ath-badges" }, ...(a.disziplinen || []).map(chip))
-      ),
+      // SECTION: Bestzeiten (NEU)
+      renderBestzeitenSection(a),
 
       // SECTION: Platzhalter Statistik
       h(
