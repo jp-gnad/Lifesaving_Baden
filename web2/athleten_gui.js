@@ -33,12 +33,12 @@
 
   // Deutsche AK (primär)
   function akDE(age) {
-    if (age == null) return "AK ?";
-    if (age <= 10) return "AK 10";
-    if (age <= 12) return "AK 12";
-    if (age <= 14) return "AK 13/14";
-    if (age <= 16) return "AK 15/16";
-    if (age <= 18) return "AK 17/18";
+    if (age == null) return " ?";
+    if (age <= 10) return "10";
+    if (age <= 12) return "12";
+    if (age <= 14) return "13/14";
+    if (age <= 16) return "15/16";
+    if (age <= 18) return "17/18";
     return "AK Offen"; // >=19
   }
 
