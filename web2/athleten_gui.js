@@ -147,7 +147,7 @@
     // Metriken berechnen
     const lsc = Number.isFinite(+a.lsc) ? +a.lsc : null;
     const meets = computeMeetInfo(a);
-    const totalDisc = Number.isFinite(+a.totalDisciplines) ? +a.totalDisciplines : 20;
+    const totalDisc = Number.isFinite(+a.totalDisciplines) ? +a.totalDisciplines : null;
     const totalDQ = sumAllDQ(a);
 
     // Kacheln
@@ -396,7 +396,7 @@
       {
         id: "a1",
         name: "Lena Hoffmann",
-        ortsgruppe: "OG Karlsruhe",
+        ortsgruppe: "Karlsruhe",
         geschlecht: "weiblich",
         jahrgang: 2007,
         poolLen: "50", // "50" | "25"
@@ -444,7 +444,7 @@
       {
         id: "a2",
         name: "Noah Meier",
-        ortsgruppe: "OG Mannheim",
+        ortsgruppe: "Mannheim",
         geschlecht: "männlich",
         jahrgang: 2006,
         poolLen: "50", // "50" | "25"
@@ -452,7 +452,7 @@
       {
         id: "a3",
         name: "Sofia Brandt",
-        ortsgruppe: "OG Freiburg",
+        ortsgruppe: "Freiburg",
         geschlecht: "weiblich",
         jahrgang: 2004,
         poolLen: "50", // "50" | "25"
@@ -460,7 +460,7 @@
       {
         id: "a4",
         name: "Levi Schröder",
-        ortsgruppe: "OG Heidelberg",
+        ortsgruppe: "Heidelberg",
         geschlecht: "männlich",
         jahrgang: 2009,
         poolLen: "50", // "50" | "25"

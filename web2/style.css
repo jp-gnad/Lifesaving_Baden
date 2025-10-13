@@ -441,16 +441,6 @@ table tr.odd {
   margin-top: -90px; 
 }
 
-@media (max-width: 720px){
-  .ath-avatar.xl{
-    width: 50px; height: 50px;
-    margin-top: -5px; 
-  }
-  .ath-profile-head{margin-top: 20px;}
-}
-
-
-
 .ath-profile-title h2{
   margin: 0 0 4px;
   margin-bottom: 20px;
@@ -481,12 +471,25 @@ table tr.odd {
   text-align: left;
   white-space: nowrap;
   color: #6b7280;
+  font-weight: bold;
 }
 .ath-profile-meta .v{
   text-align: left;
+  font-weight: bold;
 }
 
 .kv .v{ color: #111827 }
+
+@media (max-width: 720px){
+  .ath-avatar.xl{
+    width: 50px; height: 50px;
+    margin-top: -5px; 
+  }
+  .ath-profile-head{margin-top: 20px;}
+
+  .ath-profile-meta .k{margin-left: -65px;}
+}
+
 
 .ath-profile-actions{ display: none !important; }
 
@@ -499,7 +502,7 @@ table tr.odd {
 
 /* Mehr Abstand zwischen Profilkopf und Bestzeiten-Kasten */
 .ath-profile .ath-profile-section.bests{
-  margin-top: 20px;   /* Wert nach Geschmack anpassen (z.B. 16–28px) */
+  margin-top: 25px;   /* Wert nach Geschmack anpassen (z.B. 16–28px) */
 }
 
 .ath-profile-section.muted{
@@ -571,7 +574,12 @@ table tr.odd {
   gap: 12px;
   margin-bottom: 8px;
 }
-.ath-bests-header h3{ margin: 0; font-size: 1.55rem; color: #0f172a; }
+.ath-bests-header h3{ margin: 0; font-size: 2.00rem; color: #0f172a; }
+
+@media (max-width: 720px){
+  .ath-bests-header h3{ margin: 0; font-size: 1.6rem; color: #0f172a; }
+}
+
 
 .best-empty{
   padding: 12px;
@@ -638,7 +646,7 @@ table tr.odd {
 
 /* Mobile Tuning */
 @media (max-width: 560px){
-  .ath-bests-grid{ grid-template-columns: 1fr 1fr; }
+  .ath-bests-grid{ grid-template-columns: 1fr 1fr; };
 }
 
 /* Bessere Touch-Experience im Dropdown */
@@ -988,6 +996,7 @@ table tr.odd {
   background: #ffffff;
   border: 1px solid rgba(17,24,39,0.08);
   padding: 8px 12px;
+  margin-bottom: 25px;
 }
 .ath-flags-header{
   font-size: 0.00rem;
