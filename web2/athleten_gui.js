@@ -469,7 +469,7 @@
       {
         id: "a1",
         name: "Jan-Philipp Gnad",
-        ortsgruppe: "Karlsruhe",
+        ortsgruppe: "Ettlingen",
         geschlecht: "männlich",
         jahrgang: 2001,
         poolLen: "50", // "50" | "25"
