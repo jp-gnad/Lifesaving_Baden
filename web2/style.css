@@ -439,15 +439,43 @@ table tr.odd {
 
 .ath-profile-title h2{
   margin: 0 0 4px;
-  margin-bottom: 2px;
+  margin-bottom: 10px;
   font-size: 1.35rem; color: #0f172a;
 }
+/* Profil-Infos (Ortsgruppe, Jahrgang, Altersklasse) untereinander */
 .ath-profile-meta{
-  display: flex; gap: 6px 30px; flex-wrap: wrap; font-size: .95rem; margin-top: 2px; 
+  display: grid;
+  grid-template-columns: max-content 1fr; /* Spalte 1 so breit wie längster Key */
+  column-gap: 14px;                       /* Abstand zwischen ":" und Wert */
+  row-gap: 6px;                           /* Abstand zwischen den Zeilen */
+  align-items: baseline;
+  margin-top: 2px;
 }
-.kv{ display: inline-flex; gap: 6px; align-items: center }
-.kv .k{ color: #6b7280 }
-.kv .v{ color: #111827 }
+/* Jede Zeile als 2-spaltiges Grid: [Key:]  [Wert] */
+.ath-profile-meta .kv{ display: contents; }
+
+.ath-profile-meta .k{
+  text-align: left;
+  padding-right: 0;   /* Doppelpunkt ist Teil des Textes -> keine Extra-Padding nötig */
+  white-space: nowrap;
+  color: #6b7280;
+}
+.ath-profile-meta .v{
+  text-align: left;
+  color: #111827;
+}
+
+/* Fallback für Browser ohne display: contents (sehr selten) */
+@supports not (display: contents) {
+  .ath-profile-meta .kv{
+    display: flex;
+  }
+  .ath-profile-meta .k{
+    min-width: 140px;   /* angleichen an deine Labels */
+    text-align: right;
+    padding-right: 14px;
+  }
+}
 
 .ath-profile-actions{ display: none !important; }
 
