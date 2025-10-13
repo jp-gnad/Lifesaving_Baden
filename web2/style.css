@@ -783,8 +783,17 @@ table tr.odd {
   transform-style: preserve-3d;
   transition: transform .55s ease;
 }
+
+/* Desktop: Flip bei Hover */
+@media (hover: hover) and (pointer: fine){
+  .best-tile:hover .tile-inner { transform: rotateY(180deg); }
+}
 .best-tile.is-flipped .tile-inner{
   transform: rotateY(180deg);
+}
+
+.best-tile:focus {
+  outline: none !important;
 }
 
 .best-tile:hover .tile-inner { transform: rotateY(180deg); }

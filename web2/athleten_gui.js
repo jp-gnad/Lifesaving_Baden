@@ -586,18 +586,38 @@
       const dq     = Number(st.dq || 0);
 
       const tile = h("article", {
-        class: "best-tile",
-        role: "button",
-        tabindex: "0",
-        "aria-pressed": "false",
-        onpointerdown: (ev) => { ev.preventDefault(); toggle(); },
-        onclick:       (ev) => { ev.preventDefault(); toggle(); },
-        onkeydown: (e) => {
-          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
-        }
-      });
+      class: "best-tile",
+      role: "button",
+      tabindex: "0",
+      "aria-pressed": "false",
+      "aria-label": `${d.label} – Bestzeit ${formatSeconds(sec)}`
+    });
 
-      const inner = h("div", { class: "tile-inner" });
+    const inner = h("div", { class: "tile-inner" });
+    // ... front/back anhängen ...
+    tile.appendChild(inner);
+    Refs.bestGrid.appendChild(tile);
+
+    /* Klick/Tap = Lock/Unlock */
+    const toggleLock = (e) => {
+      e.preventDefault();
+      const locked = tile.classList.toggle("is-flipped");
+      tile.setAttribute("aria-pressed", locked ? "true" : "false");
+    };
+
+    /* Pointer deckt Maus + Touch ab; fallback für alte Browser */
+    if ("onpointerup" in window) {
+      tile.addEventListener("pointerup", toggleLock);
+    } else {
+      tile.addEventListener("click", toggleLock);
+      tile.addEventListener("touchstart", (e) => { e.preventDefault(); toggleLock(e); }, { passive: false });
+    }
+
+    /* Tastatur-Bedienung */
+    tile.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleLock(e); }
+    });
+
 
       // FRONT (Bestzeit)
       const front = h("div", { class: "tile-face tile-front" },
