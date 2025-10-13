@@ -426,7 +426,7 @@ table tr.odd {
 .ath-profile-head{
   display: grid;
   grid-template-columns: 64px 1fr max-content;
-  gap: 14px;
+  gap: 14px 22px;
   align-items: center;
 }
 .ath-avatar{
@@ -439,10 +439,11 @@ table tr.odd {
 
 .ath-profile-title h2{
   margin: 0 0 4px;
+  margin-bottom: 2px;
   font-size: 1.35rem; color: #0f172a;
 }
 .ath-profile-meta{
-  display: flex; gap: 18px 28px; flex-wrap: wrap; font-size: .95rem;
+  display: flex; gap: 6px 20px; flex-wrap: wrap; font-size: .95rem; margin-top: 2px; 
 }
 .kv{ display: inline-flex; gap: 6px; align-items: center }
 .kv .k{ color: #6b7280 }
