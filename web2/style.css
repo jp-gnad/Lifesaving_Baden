@@ -680,6 +680,7 @@ table tr.odd {
   font-weight: 700;
   color: #64748b;
   text-transform: uppercase;
+  margin-bottom: 25px;
 }
 
 .med-total{
