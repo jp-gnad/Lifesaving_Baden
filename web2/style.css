@@ -784,10 +784,7 @@ table tr.odd {
   transition: transform .55s ease;
 }
 
-/* Desktop: Flip bei Hover */
-@media (hover: hover) and (pointer: fine){
-  .best-tile:hover .tile-inner { transform: rotateY(180deg); }
-}
+
 .best-tile.is-flipped .tile-inner{
   transform: rotateY(180deg);
 }
@@ -796,7 +793,11 @@ table tr.odd {
   outline: none !important;
 }
 
-.best-tile:hover .tile-inner { transform: rotateY(180deg); }
+/* Desktop: Flip bei Hover */
+@media (min-width: 800px){
+  .best-tile:hover .tile-inner { transform: rotateY(180deg); }
+}
+
 
 .tile-face{
   position: absolute;
