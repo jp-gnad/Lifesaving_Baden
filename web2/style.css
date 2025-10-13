@@ -508,9 +508,9 @@ table tr.odd {
 /* Gender-Kreis: größer + nach oben verschoben */
 .gender-tag{
   /* einfach anpassbare Parameter */
-  --gsize: 1.35em;   /* Kreis-Durchmesser relativ zur H2-Schrift */
-  --gfont: 0.5em;   /* Schriftgröße des w/m relativ zur H2-Schrift */
-  --gshift: -0.18em; /* vertikale Verschiebung: negativ = nach oben */
+  --gsize: 1.5em;   /* Kreis-Durchmesser relativ zur H2-Schrift */
+  --gfont: 0.6em;   /* Schriftgröße des w/m relativ zur H2-Schrift */
+  --gshift: -0.3em; /* vertikale Verschiebung: negativ = nach oben */
 
   display: inline-grid;
   place-items: center;        /* w/m perfekt mittig im Kreis */
