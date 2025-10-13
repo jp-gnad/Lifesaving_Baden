@@ -30,7 +30,7 @@
   // Exakte deutschen Dateinamen ohne ".svg"
   const SUPPORTED_FLAGS_DE = new Set([
     "Spanien","Australien","Deutschland","Belgien","Italien","Frankreich",
-    "Schweiz","Polen","Japan","Dänemark","Ägypten","Großbritannien"
+    "Schweiz","Polen","Japan","Dänemark","Ägypten","Niederlande","Großbritannien"
   ]);
 
   // Nutzt a.countriesDE: ["Deutschland","Frankreich", ...]
@@ -465,8 +465,65 @@
         jahrgang: 2009,
         poolLen: "50", // "50" | "25"
         medals: { gold: 1, silver: 0, bronze: 1, title: "Medaillen" },
-
       },
+      {
+        id: "a1",
+        name: "Jan-Philipp Gnad",
+        ortsgruppe: "Karlsruhe",
+        geschlecht: "männlich",
+        jahrgang: 2001,
+        poolLen: "50", // "50" | "25"
+        medals: { gold: 4, silver: 7, bronze: 5, title: "Medaillen" },
+        lsc: 823, // oder beliebiger Score
+        totalDisciplines: 96,
+        countriesDE: ["Deutschland","Niederlande","Australien","Spanien","Belgien"],
+        meets: [
+          { date: "2023-03-16", pool: "25" },
+          { date: "2023-05-11", pool: "25" },
+          { date: "2023-06-29", pool: "50" },
+          { date: "2024-06-29", pool: "50" },
+          { date: "2025-07-27", pool: "50" }
+        ],
+        pbs: {
+          "50": {
+            "50_retten": 34.46,
+            "100_retten_flosse": 52.00,
+            "100_kombi": 73.69,
+            "100_lifesaver": 59.42,
+            "200_super": 145.55,
+            "200_hindernis": 232.85
+          },
+          "25": {
+            "50_retten": 31.50,
+            "100_retten_flosse": 56.20,
+            "100_kombi": 72.69,
+            "100_lifesaver": 58.69,
+            "200_super": 141.55,
+            "200_hindernis": 231.00
+            // Rest kann fehlen -> "—"
+          }
+        },
+        // im Athletenobjekt
+        stats: {
+          "50": {
+            "50_retten":        { starts: 12, dq: 0 },
+            "100_retten_flosse":{ starts: 12, dq: 0 },
+            "100_kombi":        { starts: 3,  dq: 0 },
+            "100_lifesaver":    { starts: 16, dq: 0 },
+            "200_super":        { starts: 18, dq: 1 },
+            "200_hindernis":    { starts: 17, dq: 0 }
+          },
+          "25": {
+            "50_retten":        { starts: 7,  dq: 0 },
+            "100_retten_flosse":{ starts: 2,  dq: 0 },
+            "100_kombi":        { starts: 2,  dq: 0 },
+            "100_lifesaver":    { starts: 6,  dq: 0 },
+            "200_super":        { starts: 6,  dq: 0 },
+            "200_hindernis":    { starts: 8,  dq: 0 }
+          }
+        }
+      },
+
     ],
     query: "",
     suggestions: [],
