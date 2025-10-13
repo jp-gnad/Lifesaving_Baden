@@ -787,6 +787,8 @@ table tr.odd {
   transform: rotateY(180deg);
 }
 
+.best-tile:hover .tile-inner { transform: rotateY(180deg); }
+
 .tile-face{
   position: absolute;
   inset: 0;
@@ -807,9 +809,6 @@ table tr.odd {
 .tile-back{
   transform: rotateY(180deg);
   background: #ffffff;
-  /* optional leichte Kontur */
-  outline: 1px dashed rgba(17,24,39,0.10);
-  outline-offset: -1px;
 }
 
 /* Stats auf der Rückseite */
