@@ -608,3 +608,10 @@ table tr.odd {
   .ath-bests-grid{ grid-template-columns: 1fr 1fr; }
 }
 
+/* Bessere Touch-Experience im Dropdown */
+.ath-suggest-item{
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation; /* verhindert 300ms-Delay */
+  user-select: none;
+}
+
