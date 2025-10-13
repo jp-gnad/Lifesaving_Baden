@@ -844,3 +844,9 @@ table tr.odd {
   outline: 2px solid #93c5fd;
   outline-offset: 2px;
 }
+
+/* Sofortiges Tap-Verhalten auf Mobile */
+.best-tile{
+  touch-action: manipulation;           /* killt 300ms-Delay */
+  -webkit-tap-highlight-color: transparent;
+}

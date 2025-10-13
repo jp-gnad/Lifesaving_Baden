@@ -580,43 +580,44 @@
     }
 
     showList.forEach(d => {
-      const sec = toSec(times[d.key]);
-      const st  = statsMap[d.key] || {};
-      const starts = Number(st.starts || 0);
-      const dq     = Number(st.dq || 0);
+        const sec = toSec(times[d.key]);
+        const st  = statsMap[d.key] || {};
+        const starts = Number(st.starts || 0);
+        const dq     = Number(st.dq || 0);
 
-      const tile = h("article", {
-      class: "best-tile",
-      role: "button",
-      tabindex: "0",
-      "aria-pressed": "false",
-      "aria-label": `${d.label} – Bestzeit ${formatSeconds(sec)}`
-    });
+        const tile = h("article", {
+        class: "best-tile",
+        role: "button",
+        tabindex: "0",
+        "aria-pressed": "false",
+        "aria-label": `${d.label} – Bestzeit ${formatSeconds(sec)}`
+      });
 
-    const inner = h("div", { class: "tile-inner" });
-    // ... front/back anhängen ...
-    tile.appendChild(inner);
-    Refs.bestGrid.appendChild(tile);
+      const inner = h("div", { class: "tile-inner" });
+      // ... front/back anhängen ...
+      tile.appendChild(inner);
+      Refs.bestGrid.appendChild(tile);
 
-    /* Klick/Tap = Lock/Unlock */
-    const toggleLock = (e) => {
-      e.preventDefault();
-      const locked = tile.classList.toggle("is-flipped");
-      tile.setAttribute("aria-pressed", locked ? "true" : "false");
-    };
+      /* Klick/Tap = Lock/Unlock */
+      const toggleLock = () => {
+        const locked = tile.classList.toggle("is-flipped");
+        tile.setAttribute("aria-pressed", locked ? "true" : "false");
+      };
 
-    /* Pointer deckt Maus + Touch ab; fallback für alte Browser */
-    if ("onpointerup" in window) {
-      tile.addEventListener("pointerup", toggleLock);
-    } else {
-      tile.addEventListener("click", toggleLock);
-      tile.addEventListener("touchstart", (e) => { e.preventDefault(); toggleLock(e); }, { passive: false });
-    }
+      /* Pointer deckt Maus + Touch ab; fallback für alte Browser */
+      if ("onpointerdown" in window) {
+        // Maus, Touch, Stift – alles über einen Kanal
+        tile.addEventListener("pointerdown", toggleLock);
+      } else {
+        // Fallback (sehr alte Browser)
+        tile.addEventListener("click", toggleLock);
+        tile.addEventListener("touchstart", toggleLock, { passive: true });
+      }
 
-    /* Tastatur-Bedienung */
-    tile.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleLock(e); }
-    });
+      // Tastatur-Bedienung (Enter/Space)
+      tile.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleLock(); }
+      });
 
 
       // FRONT (Bestzeit)
