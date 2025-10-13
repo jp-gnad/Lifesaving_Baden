@@ -23,6 +23,93 @@
     return el;
   };
 
+  // ---- Länder-Flags (SVG aus GitHub) -----------------------------------
+  const FLAG_BASE_URL =
+    "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg";
+
+  // Verfügbare Länder (Dateinamen = deutscher Name)
+  const AVAILABLE_FLAGS_DE = new Set([
+    "Spanien","Australien","Deutschland","Belgien","Italien","Frankreich",
+    "Schweiz","Polen","Japan","Dänemark","Ägypten","Großbritannien"
+  ]);
+
+  // ISO->deutscher Name (für Fallback, wenn Athlet noch ISO-Codes hat)
+  const ISO_TO_DE = {
+    DE:"Deutschland", FR:"Frankreich", NL:"Niederlande", ES:"Spanien", IT:"Italien",
+    BE:"Belgien", CH:"Schweiz", AT:"Österreich", PL:"Polen", CZ:"Tschechien",
+    JP:"Japan", DK:"Dänemark", EG:"Ägypten", GB:"Großbritannien", UK:"Großbritannien",
+    AU:"Australien"
+  };
+
+  // Emoji-Fallback (falls SVG 404 / Ladefehler)
+  function toFlagEmojiFromDE(name){
+    const map = {
+      Deutschland:"🇩🇪", Frankreich:"🇫🇷", Niederlande:"🇳🇱", Spanien:"🇪🇸", Italien:"🇮🇹",
+      Belgien:"🇧🇪", Schweiz:"🇨🇭", Polen:"🇵🇱", Japan:"🇯🇵", Dänemark:"🇩🇰",
+      Ägypten:"🇪🇬", Großbritannien:"🇬🇧", Australien:"🇦🇺", Österreich:"🇦🇹",
+      Tschechien:"🇨🇿"
+    };
+    return map[name] || "🏳️";
+  }
+
+  function buildFlagURL(deName){
+    // Dateiname ist exakt der deutsche Name + ".svg"
+    return `${FLAG_BASE_URL}/${encodeURIComponent(deName)}.svg`;
+  }
+
+  // Mischt a.countriesDE (deutsche Namen) und a.countries (ISO)
+  function getAthleteCountriesDE(a){
+    const out = new Set();
+    if (Array.isArray(a.countriesDE)) {
+      a.countriesDE.forEach(n => n && out.add(String(n)));
+    }
+    if (Array.isArray(a.countries)) {
+      a.countries.forEach(code => {
+        const de = ISO_TO_DE[String(code).toUpperCase()];
+        if (de) out.add(de);
+      });
+    }
+    // nur vorhandene SVGs anzeigen (laut Liste)
+    return [...out].filter(n => AVAILABLE_FLAGS_DE.has(n));
+  }
+
+  function renderCountryFlagsSection(a){
+    const list = getAthleteCountriesDE(a);
+    if (list.length === 0) return null;
+
+    const header = h("div", { class: "ath-flags-header" }, "Länder-Starts");
+
+    const row = h("div", { class: "ath-flags" },
+      ...list.map(deName => {
+        const wrap = h("span", {
+          class: "ath-flag",
+          title: deName,
+          "aria-label": deName
+        });
+
+        const img = h("img", {
+          class: "flag-img",
+          src: buildFlagURL(deName),
+          alt: deName,
+          loading: "lazy",
+          decoding: "async",
+          referrerpolicy: "no-referrer",
+          crossorigin: "anonymous",
+          onerror: () => {
+            // Fallback: Emoji einsetzen, wenn SVG nicht lädt
+            wrap.classList.add("fallback");
+            wrap.innerHTML = toFlagEmojiFromDE(deName);
+          }
+        });
+
+        wrap.appendChild(img);
+        return wrap;
+      })
+    );
+
+    return h("div", { class: "ath-profile-section flags" }, header, row);
+  }
+
   function activityStatusFromLast(lastISO){
     // Kein Datum -> als Inaktiv werten
     if (!lastISO) return { key: "inactive", label: "Inaktiv" };
@@ -358,6 +445,7 @@
         medals: { gold: 18, silver: 6, bronze: 7, title: "Medaillen" },
         lsc: 742, // oder beliebiger Score
         totalDisciplines: 20,
+        countries: ["DE", "FR", "NL"],
         meets: [
           { date: "2023-03-16", pool: "50" },
           { date: "2023-05-11", pool: "25" },
@@ -864,6 +952,9 @@
         // Medaillen-Widget (rechts)
         renderMedalStats(a)
       ),
+
+      // ★ NEU: Länder-Flaggen direkt unter dem Kopf
+      renderCountryFlagsSection(a),
 
       // ÜBERBLICK (neu)
       renderOverviewSection(a),

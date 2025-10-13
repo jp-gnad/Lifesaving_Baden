@@ -964,3 +964,52 @@ table tr.odd {
   font-size: .9rem;
   font-weight: 600;
 }
+
+/* Länder-Achievements */
+.ath-profile-section.flags{
+  background: #ffffff;
+  border: 1px solid rgba(17,24,39,0.08);
+}
+
+.ath-flags-header{
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.ath-flags{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ath-flag{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid rgba(17,24,39,0.08);
+  box-shadow: 0 8px 18px rgba(2,6,23,.08);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  overflow: hidden; /* clippt das SVG sauber rund */
+}
+
+/* SVG passend einbetten (nicht abgeschnitten, schön mittig) */
+.flag-img{
+  width: 85%;
+  height: 85%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Emoji-Fallback (wenn SVG-Load fehlschlägt) etwas größer */
+.ath-flag.fallback{
+  font-size: 22px;
+  line-height: 1;
+}
+
