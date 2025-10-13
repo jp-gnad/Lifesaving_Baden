@@ -56,6 +56,42 @@
     return `${akDE(age)} (${akINT(age)})`;
   }
 
+  // ---- Ortsgruppe formatieren (DLRG + Korrekturen) -------------------
+  function formatOrtsgruppe(raw) {
+    let s = (raw || "").toString().trim();
+
+    // verbreitete Präfixe entfernen
+    s = s.replace(/^(og|dlrg)\s+/i, "");
+
+    // einfache Tippfehler-Korrekturen (erweiterbar)
+    const fixes = {
+      "karlsuhe": "Karlsruhe",
+      "karlsruhe": "Karlsruhe",
+      "mannhein": "Mannheim",
+      "mannheim": "Mannheim",
+      "heidelbrg": "Heidelberg",
+      "heidelberg": "Heidelberg",
+      "freiburg": "Freiburg",
+    };
+    const key = s.toLowerCase();
+    if (fixes[key]) {
+      s = fixes[key];
+    } else {
+      // Title-Case
+      s = s.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+    }
+
+    return "DLRG " + s;
+  }
+
+  // ---- Geschlecht -> runder Kreis mit "w" / "m" ----------------------
+  function genderTag(g) {
+    const w = (g || "").toLowerCase().startsWith("w");
+    return { short: w ? "w" : "m", cls: w ? "w" : "m" };
+  }
+
+
+
 
 
   const normalize = (s) =>
@@ -343,7 +379,7 @@
       });
       nameBtn.innerHTML = highlight(a.name, q);
 
-      const sub = h("div", { class: "ath-suggest-sub" }, a.ortsgruppe);
+      const sub = h("div", { class: "ath-suggest-sub" }, formatOrtsgruppe(a.ortsgruppe));
       const text = h("div", { class: "ath-suggest-text" }, nameBtn, sub);
       item.appendChild(text);
 
@@ -383,48 +419,76 @@
 
     const chip = (t) => h("span", { class: "ath-badge" }, t);
 
+    // lokales kv, damit es immer verfügbar ist
+    const KV = (k, v) =>
+      h("span", { class: "kv" },
+        h("span", { class: "k" }, k + ":"),
+        h("span", { class: "v" }, v)
+      );
+
+
     const profile = h(
       "article",
       { class: "ath-profile" },
+
+      // HEAD
       h(
         "div",
         { class: "ath-profile-head" },
+
+        // 1) Avatar
         h("div", { class: "ath-avatar xl" }, initials(a.name)),
-        h("div", { class: "ath-profile-title" },
-          h("h2", {}, a.name),
-          h("div", { class: "ath-profile-meta" },
-            (() => {
-              const label = akLabelFromJahrgang(a.jahrgang);
-              return [
-                kv("Ortsgruppe", a.ortsgruppe),
-                kv("Jahrgang", String(a.jahrgang)),
-                kv("Altersklasse", label),           // <-- neu: eine konsolidierte Zeile
-                kv("Geschlecht", a.geschlecht),
-              ];
-            })()
+
+        // 2) Title + Meta (Name + (w)/(m), OG/Jahrgang/AK)
+        h(
+          "div",
+          { class: "ath-profile-title" },
+          // Name + Gender-Tag
+          (() => {
+            const gt = genderTag(a.geschlecht); // { short: "(w)"|"(m)", cls: "w"|"m" }
+            return h(
+              "h2",
+              {},
+              a.name,
+              " ",
+              h("span", { class: `gender-tag ${gt.cls}` }, gt.short)
+            );
+          })(),
+          // Meta-Zeile
+          h(
+            "div",
+            { class: "ath-profile-meta" },
+            KV("Ortsgruppe", formatOrtsgruppe(a.ortsgruppe)),
+            KV("Jahrgang", String(a.jahrgang)),
+            KV("Altersklasse", akLabelFromJahrgang(a.jahrgang))
 
           )
         ),
+
+        // 3) Actions (rechts): Zurück-Button
         h(
           "div",
           { class: "ath-profile-actions" },
           h(
             "button",
-            {
-              class: "ath-btn",
-              type: "button",
-              title: "Zurück zur Suche",
-              onclick: () => closeProfile(),
-            },
+            { class: "ath-btn", type: "button", onclick: () => closeProfile() },
             "Zurück"
           )
         )
       ),
-      h("div", { class: "ath-profile-section" },
+
+      // SECTION: Disziplinen
+      h(
+        "div",
+        { class: "ath-profile-section" },
         h("h3", {}, "Disziplinen"),
         h("div", { class: "ath-badges" }, ...(a.disziplinen || []).map(chip))
       ),
-      h("div", { class: "ath-profile-section muted" },
+
+      // SECTION: Platzhalter Statistik
+      h(
+        "div",
+        { class: "ath-profile-section muted" },
         "Hier kommt später die Statistik (GUI) aus deiner Excel-Datenbank rein."
       )
     );
@@ -432,21 +496,11 @@
     mount.innerHTML = "";
     mount.classList.add("ath-profile-wrap");
     mount.appendChild(profile);
+
+    // optional: smooth scroll ins Profil
+    mount.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function closeProfile() {
-    AppState.selectedAthleteId = null;
-    const mount = Refs.profileMount;
-    if (!mount) return;
-    mount.classList.remove("ath-profile-wrap");
-    mount.innerHTML = "";
-    // Fokus zurück ins Suchfeld
-    Refs.input?.focus();
-  }
-
-  function kv(k, v) {
-    return h("span", { class: "kv" }, h("span", { class: "k" }, k + ":"), h("span", { class: "v" }, v));
-  }
 
   // ---------------------------
   // Boot
