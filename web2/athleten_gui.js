@@ -23,6 +23,55 @@
     return el;
   };
 
+  // ---- Medaillen-Widget ------------------------------------------------
+  function renderMedalStats(a) {
+    const m = (a && a.medals) || {};
+    const g = Number(m.gold || 0);
+    const s = Number(m.silver || 0);
+    const b = Number(m.bronze || 0);
+    const total = g + s + b;
+
+    const max = Math.max(g, s, b, 1);   // nie 0, damit Balken-Höhen berechenbar sind
+    const H = 72;                        // max Balkenhöhe in px
+
+    const bar = (cls, label, value) => {
+      const h = Math.round((value / max) * H);
+      return hDiv("div", { class: `med-col ${cls}` },
+        hDiv("div", { class: "med-count" }, String(value)),
+        hDiv("div", { class: "med-barWrap" },
+          hDiv("div", { class: "med-bar", style: `height:${h}px` })
+        ),
+        hDiv("div", { class: "med-label" }, label)
+      );
+    };
+
+    const card = hDiv("aside", { class: "med-card", "aria-label": "Medaillen" },
+      hDiv("div", { class: "med-head" },
+        hDiv("div", { class: "med-title" }, m.title || "Medaillen"),
+        hDiv("div", { class: "med-total" }, String(total))
+      ),
+      hDiv("div", { class: "med-grid" },
+        bar("gold", "GOLD", g),
+        bar("silver", "SILVER", s),
+        bar("bronze", "BRONZE", b),
+      )
+    );
+
+    return card;
+  }
+
+  // kleine Helfer für kürzere Schreibweise
+  function hDiv(tag, props = {}, ...children){
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(props || {})) {
+      if (k === "class") el.className = v;
+      else if (v !== false && v != null) el.setAttribute(k, v === true ? "" : v);
+    }
+    for (const c of children.flat()) el.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+    return el;
+  }
+
+
   // ---- Altersklassen (aus Jahrgang) ---------------------------------
   const REF_YEAR = new Date().getFullYear(); // ggf. auf fixes Wettkampfjahr setzen
 
@@ -164,6 +213,7 @@
         geschlecht: "weiblich",
         jahrgang: 2007,
         poolLen: "50", // "50" | "25"
+        medals: { gold: 18, silver: 6, bronze: 7, title: "Medaillen" },
         pbs: {
           "50": {
             "50_retten": 32.18,
@@ -203,6 +253,8 @@
         geschlecht: "männlich",
         jahrgang: 2009,
         poolLen: "50", // "50" | "25"
+        medals: { gold: 1, silver: 0, bronze: 1, title: "Medaillen" },
+
       },
     ],
     query: "",
@@ -552,27 +604,33 @@
       "article",
       { class: "ath-profile" },
 
-      // HEAD (Avatar + Titel/Meta) — keine Actions mehr
+      // HEAD (Avatar | Titel/Meta | Medaillen rechts)
       h(
         "div",
         { class: "ath-profile-head" },
+
+        // Avatar
         h("div", { class: "ath-avatar xl" }, initials(a.name)),
+
+        // Titel + Meta
         h(
           "div",
           { class: "ath-profile-title" },
-          // Name + Gender-Kreis
           (() => {
             const gt = genderTag(a.geschlecht);
             return h("h2", {}, a.name, " ", h("span", { class: `gender-tag ${gt.cls}` }, gt.short));
           })(),
-          // Meta
           h("div", { class: "ath-profile-meta" },
             KV("Ortsgruppe", formatOrtsgruppe(a.ortsgruppe)),
             KV("Jahrgang", String(a.jahrgang)),
             KV("Altersklasse", akLabelFromJahrgang(a.jahrgang))
           )
-        )
+        ),
+
+        // Medaillen-Widget (rechts)
+        renderMedalStats(a)
       ),
+
 
       // BESTZEITEN
       renderBestzeitenSection(a),

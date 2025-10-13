@@ -440,7 +440,7 @@ table tr.odd {
 .ath-profile-title h2{
   margin: 0 0 4px;
   margin-bottom: 10px;
-  font-size: 1.35rem; color: #0f172a;
+  font-size: 2.00rem; color: #0f172a;
 }
 /* Profil-Infos (Ortsgruppe, Jahrgang, Altersklasse) untereinander */
 .ath-profile-meta{
@@ -456,26 +456,14 @@ table tr.odd {
 
 .ath-profile-meta .k{
   text-align: left;
-  padding-right: 0;   /* Doppelpunkt ist Teil des Textes -> keine Extra-Padding nötig */
   white-space: nowrap;
   color: #6b7280;
 }
 .ath-profile-meta .v{
   text-align: left;
-  color: #111827;
 }
 
-/* Fallback für Browser ohne display: contents (sehr selten) */
-@supports not (display: contents) {
-  .ath-profile-meta .kv{
-    display: flex;
-  }
-  .ath-profile-meta .k{
-    min-width: 140px;   /* angleichen an deine Labels */
-    text-align: right;
-    padding-right: 14px;
-  }
-}
+.kv .v{ color: #111827 }
 
 .ath-profile-actions{ display: none !important; }
 
@@ -647,5 +635,136 @@ table tr.odd {
   .ath-input,
   input[type="text"], input[type="search"], select, textarea {
     font-size: 16px !important; /* >=16px ist entscheidend */
+  }
+}
+
+/* Profilkopf: mehr Breite für den Mittelteil (Name + Infos) */
+.ath-profile-head{
+  display: grid;
+  /* Avatar | Textblock (mind. 440px) | Medaillen (schmal) */
+  grid-template-columns: 64px minmax(440px, 1fr) clamp(150px, 22vw, 220px);
+  gap: 14px 22px;
+  align-items: center;
+}
+
+/* Mobile: Widget oben, dann Avatar + Text */
+@media (max-width: 720px){
+  .ath-profile-head{
+    grid-template-columns: 48px 1fr;
+    grid-auto-rows: auto;
+    align-items: start;
+  }
+  .ath-profile-head .med-card{
+    grid-column: 1 / -1;
+    margin-bottom: 8px;
+  }
+}
+
+/* —— Medaillenkarte —— */
+.med-card{
+  background: #ffffff;
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.med-head{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.med-title{
+  letter-spacing: .06em;
+  font-size: .78rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.med-total{
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.med-grid{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  align-items: end;
+}
+
+.med-col{
+  display: grid;
+  grid-template-rows: auto auto 1fr auto; /* count, barWrap, label */
+  gap: 4px;
+  justify-items: center;
+  text-align: center;
+}
+
+.med-count{
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.med-barWrap{
+  width: 100%;
+  height: 76px;        /* visuelle Maxhöhe */
+  display: flex;
+  align-items: end;
+  justify-content: center;
+}
+
+.med-bar{
+  width: 70%;
+  border-radius: 0px;
+  background: #e5e7eb; /* fallback */
+}
+
+/* Farben für Gold / Silber / Bronze */
+.med-col.gold  .med-count{ color: #b45309; }
+.med-col.silver .med-count{ color: #6b7280; }
+.med-col.bronze .med-count{ color: #8b5e34; }
+
+.med-col.gold  .med-bar{
+  background: linear-gradient(160deg,  #FCD274,#fcd17428);
+}
+.med-col.silver .med-bar{
+  background: linear-gradient(160deg, #DDDEDE, #dddede3f);
+}
+.med-col.bronze .med-bar{
+  background: linear-gradient(160deg, #C7B78E, #c7b78e3f);
+}
+
+.med-label{
+  margin-top: 2px;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: #64748b;
+}
+
+/* Optional: etwas Platz links, damit’s nicht zu nah am Text klebt */
+.ath-profile-head .med-card{ 
+  row-gap: 20px;
+  margin-right: 20px;
+  justify-self: end; 
+}
+
+/* Mobile: Widget unter den Kopf umbrechen (wie zuvor) */
+@media (max-width: 720px){
+  .ath-profile-head{
+    grid-template-columns: 48px 1fr;
+    align-items: start;
+  }
+  .ath-profile-head .med-card{
+    grid-column: 1 / -1;
+    margin-bottom: 25px;
+    margin-top: 25px;
+    margin-left: 10px;
+    margin-right: 10px;
+    justify-self: stretch;
   }
 }
