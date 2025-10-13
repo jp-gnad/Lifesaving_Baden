@@ -397,8 +397,16 @@
         class: "ath-suggest-item" + (idx === AppState.activeIndex ? " active" : ""),
         role: "option",
         "aria-selected": idx === AppState.activeIndex ? "true" : "false",
-        // mousedown fix: öffnet Profil, bevor das Input blurriert
-        onmousedown: (ev) => { ev.preventDefault(); openProfile(a); },
+
+        // ★ iOS-fest: zuerst pointerdown (deckt Touch + Maus ab)
+        onpointerdown: (ev) => { ev.preventDefault(); ev.stopPropagation(); openProfile(a); },
+
+        // ★ Fallback für sehr alte iOS-Versionen
+        ontouchstart: (ev) => { ev.preventDefault(); ev.stopPropagation(); openProfile(a); },
+
+        // ★ Desktop-Fallback
+        onclick: (ev) => { ev.preventDefault(); ev.stopPropagation(); openProfile(a); },
+
         onmouseenter: () => { AppState.activeIndex = idx; paintSuggestions(); }
       });
 
@@ -408,17 +416,16 @@
       // Name (mit Jahrgang) + OG darunter
       const nameEl = h("div", { class: "ath-suggest-name" });
       nameEl.innerHTML = `${highlight(a.name, q)} <span class="ath-year">(${a.jahrgang})</span>`;
-
       const sub = h("div", { class: "ath-suggest-sub" }, formatOrtsgruppe(a.ortsgruppe));
       const text = h("div", { class: "ath-suggest-text" }, nameEl, sub);
       item.appendChild(text);
 
-      // keine rechte Meta-Spalte mehr
       box.appendChild(item);
     });
 
     box.classList.remove("hidden");
   }
+
 
 
   // Refs für Bestzeiten

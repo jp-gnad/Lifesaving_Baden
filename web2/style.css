@@ -456,6 +456,12 @@ table tr.odd {
   border-radius: 12px;
   padding: 12px;
 }
+
+/* Mehr Abstand zwischen Profilkopf und Bestzeiten-Kasten */
+.ath-profile .ath-profile-section.bests{
+  margin-top: 20px;   /* Wert nach Geschmack anpassen (z.B. 16–28px) */
+}
+
 .ath-profile-section.muted{
   color: #64748b; font-size: .95rem; background: #f9fafb;
 }
