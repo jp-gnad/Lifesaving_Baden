@@ -228,6 +228,21 @@
             "100_lifesaver": 54.10
             // Rest kann fehlen -> "—"
           }
+        },
+        // im Athletenobjekt
+        stats: {
+          "50": {
+            "50_retten":        { starts: 12, dq: 1 },
+            "100_retten_flosse":{ starts: 8,  dq: 0 },
+            "100_kombi":        { starts: 6,  dq: 0 },
+            "100_lifesaver":    { starts: 10, dq: 2 },
+            "200_super":        { starts: 4,  dq: 0 },
+            "200_hindernis":    { starts: 7,  dq: 1 }
+          },
+          "25": {
+            "50_retten":        { starts: 9,  dq: 0 },
+            "100_lifesaver":    { starts: 5,  dq: 1 }
+          }
         }
       },
       {
@@ -540,39 +555,87 @@
   function paintBestzeitenGrid(athlete) {
     if (!Refs.bestGrid) return;
 
-    const timesMap = (athlete.pbs && athlete.pbs[AppState.poolLen]) || {};
+    const lane = AppState.poolLen || "50";
+    const times = (athlete.pbs && athlete.pbs[lane]) || {};
+    const statsMap = (athlete.stats && athlete.stats[lane]) || {};
+
     Refs.bestGrid.innerHTML = "";
 
-    // Hilfsparser: akzeptiert 32.18 oder "32,18"
     const toSec = (v) => {
       if (v == null) return NaN;
       const n = parseFloat(String(v).replace(",", "."));
       return Number.isFinite(n) ? n : NaN;
     };
 
-    // Nur Disziplinen rendern, die wirklich eine Zeit haben
-    const toShow = DISCIPLINES.filter(d => Number.isFinite(toSec(timesMap[d.key])));
+    // Nur Disziplinen mit Zeit anzeigen (wie bisher)
+    const showList = DISCIPLINES.filter(d => Number.isFinite(toSec(times[d.key])));
 
-    if (toShow.length === 0) {
+    if (showList.length === 0) {
       Refs.bestGrid.appendChild(
         h("div", { class: "best-empty" },
-          AppState.poolLen === "50"
-            ? "Keine Bestzeiten auf 50 m vorhanden."
-            : "Keine Bestzeiten auf 25 m vorhanden."
+          lane === "50" ? "Keine Bestzeiten auf 50 m vorhanden." : "Keine Bestzeiten auf 25 m vorhanden."
         )
       );
       return;
     }
 
-    toShow.forEach(d => {
-      const sec = toSec(timesMap[d.key]);
-      const tile = h("div", { class: "best-tile" },
+    showList.forEach(d => {
+      const sec = toSec(times[d.key]);
+      const st  = statsMap[d.key] || {};
+      const starts = Number(st.starts || 0);
+      const dq     = Number(st.dq || 0);
+
+      const tile = h("article", {
+        class: "best-tile",
+        role: "button",
+        tabindex: "0",
+        "aria-pressed": "false",
+        onpointerdown: (ev) => { ev.preventDefault(); toggle(); },
+        onclick:       (ev) => { ev.preventDefault(); toggle(); },
+        onkeydown: (e) => {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+        }
+      });
+
+      const inner = h("div", { class: "tile-inner" });
+
+      // FRONT (Bestzeit)
+      const front = h("div", { class: "tile-face tile-front" },
         h("div", { class: "best-label" }, d.label),
-        h("div", { class: "best-time" }, formatSeconds(sec))
+        h("div", { class: "best-time"  }, formatSeconds(sec))
       );
+
+      // BACK (Starts + DQ)
+      const back = h("div", { class: "tile-face tile-back" },
+        h("div", { class: "best-label" }, d.label),
+        h("div", { class: "tile-stats" },
+          statRow("Starts", starts),
+          statRow("DQ", dq)
+        )
+      );
+
+      inner.appendChild(front);
+      inner.appendChild(back);
+      tile.appendChild(inner);
       Refs.bestGrid.appendChild(tile);
+
+      function toggle(){
+        const flipped = tile.classList.toggle("is-flipped");
+        tile.setAttribute("aria-pressed", flipped ? "true" : "false");
+      }
     });
+
+    function statRow(k, v){
+      return h("div", { class: "stat" },
+        h("span", { class: "k" }, k),
+        h("span", { class: "v" }, String(v))
+      );
+    }
   }
+
+
+
+
 
 
 

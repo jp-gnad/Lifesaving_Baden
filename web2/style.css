@@ -767,3 +767,72 @@ table tr.odd {
     justify-self: stretch;
   }
 }
+
+/* Flipbare Bestzeiten-Tiles */
+.best-tile{
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  /* du hast bereits border/background/radius definiert – bleibt hier gültig */
+  padding: 0;                 /* Padding wandert in die Faces */
+  perspective: 900px;         /* 3D-Tiefe fürs Flip */
+}
+.best-tile .tile-inner{
+  position: relative;
+  min-height: 92px;           /* optische Mindesthöhe */
+  transform-style: preserve-3d;
+  transition: transform .55s ease;
+}
+.best-tile.is-flipped .tile-inner{
+  transform: rotateY(180deg);
+}
+
+.tile-face{
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  padding: 10px 12px;         /* übernimmt das frühere Tile-Padding */
+  border-radius: 12px;        /* folgt der Kachel */
+}
+
+/* Vorderseite nutzt deinen Kachel-Look */
+.tile-front{
+  background: #f9fafb;
+}
+
+/* Rückseite leicht anders absetzen */
+.tile-back{
+  transform: rotateY(180deg);
+  background: #ffffff;
+  /* optional leichte Kontur */
+  outline: 1px dashed rgba(17,24,39,0.10);
+  outline-offset: -1px;
+}
+
+/* Stats auf der Rückseite */
+.tile-stats{
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+}
+.tile-stats .stat{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-weight: 700;
+}
+.tile-stats .stat .k{ color: #475569; }
+.tile-stats .stat .v{
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Fokus-Style (Tastatur) */
+.best-tile:focus{
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
