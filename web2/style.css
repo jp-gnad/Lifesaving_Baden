@@ -311,7 +311,7 @@ table tr.odd {
 
 .ath-ui-search{
   display: grid;
-  grid-template-columns: 1fr max-content max-content;
+  grid-template-columns: 1fr auto auto;
   gap: 10px;
   padding: 10px;
   background: rgba(255,255,255,0.9);

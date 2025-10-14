@@ -644,27 +644,11 @@
       role: "searchbox",
       "aria-label": "Athleten suchen",
       autocomplete: "off",
+      // auf iOS gibt's beim type="search" automatisch ein kleines "x" zum Leeren
       oninput: onQueryChange,
       onkeydown: onSearchKeyDown,
     });
     Refs.input = input;
-
-    const clearBtn = h(
-      "button",
-      {
-        class: "ath-btn clear",
-        type: "button",
-        title: "Suche leeren",
-        onclick: () => {
-          input.value = "";
-          AppState.query = "";
-          AppState.suggestions = [];
-          AppState.activeIndex = -1;
-          hideSuggestions();
-        },
-      },
-      "Leeren"
-    );
 
     const searchBtn = h(
       "button",
@@ -681,7 +665,7 @@
       "Öffnen"
     );
 
-    const bar = h("div", { class: "ath-ui-search", role: "search" }, input, clearBtn, searchBtn);
+    const bar = h("div", { class: "ath-ui-search", role: "search" }, input, searchBtn);
     wrap.appendChild(bar);
 
     // Suggestion-Dropdown (leer, wird dynamisch gefüllt)
@@ -696,6 +680,7 @@
 
     return wrap;
   }
+
 
   function onQueryChange(e) {
     AppState.query = e.target.value || "";
