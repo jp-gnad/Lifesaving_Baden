@@ -437,8 +437,6 @@ table tr.odd {
   height: var(--size);
   border-radius: 999px;
   overflow: hidden;                /* rund clippen */
-  background: #fff;                /* neutraler BG hinter SVG */
-  box-shadow: 0 0 0 2px #fff, 0 4px 12px rgba(2,6,23,.12); /* optional Ring */
   display: inline-block;
 }
 

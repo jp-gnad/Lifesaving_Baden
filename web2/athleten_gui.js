@@ -87,8 +87,7 @@
 
 
   // ---- Länder-Flags (SVG-only) -----------------------------------------
-  const FLAG_BASE_URL =
-    "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg";
+  const FLAG_BASE_URL = "./svg";
 
   // Exakte deutschen Dateinamen ohne ".svg"
   const SUPPORTED_FLAGS_DE = new Set([
