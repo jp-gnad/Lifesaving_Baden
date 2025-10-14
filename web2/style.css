@@ -394,12 +394,13 @@ table tr.odd {
 .ath-suggest-item.active{
   background: #f8fafc;
 }
-.ath-suggest-avatar{
-  width: 36px; height: 36px; border-radius: 50%;
-  display: grid; place-items: center;
-  font-weight: 800; color: #fff;
-  background: linear-gradient(135deg, #2563eb, #10b981);
+.ath-avatar.ath-suggest-avatar{ --size: 36px; }
+
+.ath-suggest-avatar.ath-avatar{
+  box-shadow: none;
+  background: transparent;
 }
+
 .ath-suggest-name{ font-weight: 800; color: #111827; line-height: 1.2 }
 .ath-suggest-name mark{
   background: #fde68a;
@@ -431,14 +432,28 @@ table tr.odd {
 }
 
 .ath-avatar{
-  width: 10px; height: 10px; border-radius: 50%;
-  display: grid; place-items: center;
-  font-weight: 800; color: #fff;
-  background: linear-gradient(135deg, #2563eb, #10b981);
+  --size: 64px;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 999px;
+  overflow: hidden;                /* rund clippen */
+  background: #fff;                /* neutraler BG hinter SVG */
+  box-shadow: 0 0 0 2px #fff, 0 4px 12px rgba(2,6,23,.12); /* optional Ring */
+  display: inline-block;
 }
+
 .ath-avatar.xl{
   width: 75px; height: 75px;
   margin-top: -90px; 
+}
+
+.ath-avatar.sm{ --size: 36px; }
+
+.ath-avatar .avatar-img{
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;               /* „vollständig ausfüllen“ */
 }
 
 .ath-profile-title h2{
@@ -502,7 +517,7 @@ table tr.odd {
 
 /* Mehr Abstand zwischen Profilkopf und Bestzeiten-Kasten */
 .ath-profile .ath-profile-section.bests{
-  margin-top: 25px;   /* Wert nach Geschmack anpassen (z.B. 16–28px) */
+  margin-top: 30px;   /* Wert nach Geschmack anpassen (z.B. 16–28px) */
 }
 
 .ath-profile-section.muted{
@@ -996,7 +1011,7 @@ table tr.odd {
   background: #ffffff;
   border: 1px solid rgba(17,24,39,0.08);
   padding: 8px 12px;
-  margin-bottom: 25px;
+  margin-bottom: 50px;
 }
 .ath-flags-header{
   font-size: 0.00rem;

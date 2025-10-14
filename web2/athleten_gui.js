@@ -23,6 +23,69 @@
     return el;
   };
 
+  // ---- Vereins-Cap im Avatar laden -------------------------------------
+  function capNameVariantsFromOrtsgruppe(rawOG){
+    // Wir versuchen mehrere plausible Namensvarianten, damit Dateinamen robust gefunden werden
+    const formatted = formatOrtsgruppe(rawOG || "");           // z.B. "DLRG Karlsruhe"
+    const noPrefix  = formatted.replace(/^DLRG\s+/i, "").trim(); // "Karlsruhe"
+
+    const baseList = [formatted, rawOG || "", noPrefix].filter(Boolean);
+
+    const umlautSwap = (s) => s
+      .replaceAll("Ä","Ae").replaceAll("ä","ae")
+      .replaceAll("Ö","Oe").replaceAll("ö","oe")
+      .replaceAll("Ü","Ue").replaceAll("ü","ue")
+      .replaceAll("ß","ss");
+
+    const noDiacritics = (s) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+
+    const set = new Set();
+    for (const s of baseList){
+      const t = String(s).trim();
+      if (!t) continue;
+      set.add(t);
+      set.add(t.replace(/\s+/g, "_"));
+      set.add(umlautSwap(t));
+      set.add(umlautSwap(t).replace(/\s+/g, "_"));
+      set.add(noDiacritics(t));
+      set.add(noDiacritics(t).replace(/\s+/g, "_"));
+    }
+    return Array.from(set);
+  }
+
+  function renderCapAvatar(a, size = "xl", extraClass = ""){
+    const wrap = h("div", { class: `ath-avatar ${size} ${extraClass}` });
+
+    const variants = capNameVariantsFromOrtsgruppe(a.ortsgruppe)
+      .map(name => `Cap-${name}.svg`);
+
+    const img = h("img", {
+      class: "avatar-img",
+      alt: `Vereinskappe ${formatOrtsgruppe(a.ortsgruppe)}`,
+      decoding: "async",
+      loading: "lazy"
+    });
+
+    let idx = 0;
+    const FALLBACK = "Cap-Baden_light.svg";
+
+    function tryNext(){
+      if (idx < variants.length){
+        img.src = `${FLAG_BASE_URL}/${encodeURIComponent(variants[idx++])}`;
+      } else {
+        img.src = `${FLAG_BASE_URL}/${FALLBACK}`;
+        img.onerror = null; // Fallback nicht weiter loopen
+      }
+    }
+
+    img.onerror = tryNext;
+    tryNext();
+
+    wrap.appendChild(img);
+    return wrap;
+  }
+
+
   // ---- Länder-Flags (SVG-only) -----------------------------------------
   const FLAG_BASE_URL =
     "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg";
@@ -727,11 +790,17 @@
         // ★ Desktop-Fallback
         onclick: (ev) => { ev.preventDefault(); ev.stopPropagation(); openProfile(a); },
 
-        onmouseenter: () => { AppState.activeIndex = idx; paintSuggestions(); }
+        onmouseenter: () => {
+          if (AppState.activeIndex === idx) return;                 // nichts tun, wenn schon aktiv
+          const prev = box.querySelector('.ath-suggest-item.active');
+          prev?.classList.remove('active');                         // alte Markierung weg
+          item.classList.add('active');                             // diese Zeile markieren
+          AppState.activeIndex = idx;                               // State updaten (für Enter)
+        }
       });
 
-      // Avatar
-      item.appendChild(h("div", { class: "ath-suggest-avatar" }, initials(a.name)));
+      // Avatar (Cap-SVG, kleine Größe)
+      item.appendChild(renderCapAvatar(a, "sm", "ath-suggest-avatar"));
 
       // Name (mit Jahrgang) + OG darunter
       const nameEl = h("div", { class: "ath-suggest-name" });
@@ -946,8 +1015,9 @@
         "div",
         { class: "ath-profile-head" },
 
-        // Avatar
-        h("div", { class: "ath-avatar xl" }, initials(a.name)),
+        // Vereinscap
+        renderCapAvatar(a),
+
 
         // Titel + Meta
         h(
