@@ -1056,7 +1056,13 @@
     mount.innerHTML = "";
     mount.classList.add("ath-profile-wrap");
     mount.appendChild(profile);
-    mount.scrollIntoView({ behavior: "smooth", block: "start" });
+    // z.B. 320px vom Seitenanfang
+    function scrollToY(y = 275, smooth = true){
+      window.scrollTo({ top: Math.max(0, y), behavior: smooth ? 'smooth' : 'auto' });
+    }
+
+    // in openProfile(), direkt NACH mount.appendChild(profile):
+    requestAnimationFrame(() => scrollToY(275, true));
   }
 
 
