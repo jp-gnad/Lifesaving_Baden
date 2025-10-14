@@ -562,7 +562,11 @@ table tr.odd {
 
 /* Zeile für das Geschlecht direkt unter dem Namen */
 .gender-row{
-  margin: 2px 0 8px;  /* oben klein, unten etwas Luft zur Meta */
+  display: flex;             /* statt Inline-Flow */
+  align-items: center;       /* vertikal zentriert */
+  gap: 8px;                  /* Abstand zwischen den Chips */
+  flex-wrap: wrap;           /* bricht mobil sauber um */
+  margin: 2px 0 8px;
 }
 
 /* Abgerundeter Kasten (Pill) */
@@ -573,12 +577,12 @@ table tr.odd {
   gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;           /* Pill-Form */
-  border: 1.5px solid var(--gc);  /* „Umrandung bleibt“ */
+  border: 1px solid var(--gc);  /* „Umrandung bleibt“ */
   background: color-mix(in srgb, var(--gc) 10%, transparent);
   color: var(--gc);
   font-weight: 800;
   font-size: .92rem;
-  line-height: 1.1;
+  line-height: 1;            /* gleiche Text-Box-Höhe */
   user-select: none;
 }
 
@@ -596,15 +600,14 @@ table tr.odd {
   align-items: center;
   padding: 4px 10px;
   border-radius: 999px;
-  border: 1.5px solid var(--ac);
+  border: 1px solid var(--ac);
   background: color-mix(in srgb, var(--ac) 12%, transparent);
   color: var(--ac);
   font-weight: 800;
   font-size: .92rem;
-  line-height: 1.1;
+  line-height: 1;
   user-select: none;
   white-space: nowrap;
-  margin-left: 5px;
 }
 
 /* Youth (≤18): weiches Blau */
@@ -622,6 +625,40 @@ table tr.odd {
 .ak-chip.akoffen{
   --ac: #94a3b8; /* soft slate */
 }
+
+
+/* Status-Chip (dezente Farben, Punkt davor) */
+.status-chip{
+  --sc: #94a3b8; /* Default, wird in Varianten überschrieben */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--sc) 30%, transparent);
+  background: color-mix(in srgb, var(--sc) 10%, transparent);
+  color: color-mix(in srgb, var(--sc) 80%, black);
+  font-weight: 800;
+  font-size: .92rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* farbiger Punkt */
+.status-dot{
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex: 0 0 8px;             /* fixe Größe im Flex-Layout */
+  align-self: center;        /* Sicherheit: mittig im Chip */
+  background: var(--sc);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sc) 25%, transparent);
+}
+
+/* Varianten (gleiches Farbschema wie vorher): */
+.status-chip.active  { --sc: #10b981; } /* grün  */
+.status-chip.pause   { --sc: #f59e0b; } /* gelb  */
+.status-chip.inactive{ --sc: #ef4444; } /* rot   }
 
 
 /* ————— Bestzeiten Sektion ————— */

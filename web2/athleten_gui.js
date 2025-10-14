@@ -215,9 +215,6 @@
     // Kacheln
     grid.appendChild(infoTileBig("LSC", lsc != null ? fmtInt(lsc) : "—"));
 
-    const act = activityStatusFromLast(meets.last);
-    grid.appendChild(infoTileStatus("Aktivitätsstatus", act));
-
     grid.appendChild(infoTile("Wettkämpfe", fmtInt(meets.total)));
     grid.appendChild(infoTile("Total Starts", fmtInt(totalDisc)));
     grid.appendChild(infoTile("Disqualifikationen", fmtInt(totalDQ)));
@@ -466,7 +463,7 @@
           { date: "2023-03-16", pool: "50" },
           { date: "2023-05-11", pool: "25" },
           { date: "2023-06-29", pool: "50" },
-          { date: "2025-02-01", pool: "50" }
+          { date: "2024-02-01", pool: "50" }
         ],
         pbs: {
           "50": {
@@ -1007,16 +1004,22 @@
           // Name
           h("h2", {}, a.name),
 
-          // Chips-Zeile: Gender + AK
+          // Chips-Zeile: Gender + AK + Aktivitätsstatus
           (() => {
-            const gt = genderTag(a.geschlecht);         // { full: "weiblich"/"männlich", cls: "w"/"m" }
-            const ak = akLabelFromJahrgang(a.jahrgang); // "10" | "12" | "13/14" | "15/16" | "17/18" | "Offen"
-            const akClsMap = { "10":"ak10", "12":"ak12", "13/14":"ak1314", "15/16":"ak1516", "17/18":"ak1718", "Offen":"akoffen" };
-            const akCls = akClsMap[ak] || "akoffen";
+            const gt   = genderTag(a.geschlecht);                // { full, cls: "w"|"m" }
+            const age  = ageFromJahrgang(a.jahrgang);
+            const ak   = akLabelFromJahrgang(a.jahrgang);        // "10" | "12" | "13/14" | "15/16" | "17/18" | "Offen"
+            const band = (age != null && age <= 18) ? "youth" : "open";
 
-            return h("div", { class: "gender-row" },   // wir nutzen die existierende Zeile unter dem Namen
+            const meets = computeMeetInfo(a);                    // hat .last
+            const act   = activityStatusFromLast(meets.last);    // { key:"active"|"pause"|"inactive", label:"Aktiv"|... }
+
+            return h("div", { class: "gender-row" },
               h("span", { class: `gender-chip ${gt.cls}`, title: gt.full, "aria-label": `Geschlecht: ${gt.full}` }, gt.full),
-              h("span", { class: `ak-chip ${akCls}`, title: `Altersklasse ${ak}`, "aria-label": `Altersklasse ${ak}` }, ak)
+              h("span", { class: `ak-chip ${band}`,       title: `Altersklasse ${ak}`, "aria-label": `Altersklasse ${ak}` }, ak),
+              h("span", { class: `status-chip ${act.key}`, title: `Status: ${act.label}`, "aria-label": `Aktivitätsstatus: ${act.label}` },
+                h("span", { class: "status-dot" }), act.label
+              )
             );
           })(),
 
