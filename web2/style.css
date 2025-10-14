@@ -534,7 +534,9 @@ table tr.odd {
 
 /* Mehr Abstand zwischen Profilkopf und Bestzeiten-Kasten */
 .ath-profile .ath-profile-section.bests{
-  margin-top: 30px;   /* Wert nach Geschmack anpassen (z.B. 16–28px) */
+  padding-left: 0;
+  padding-right: 0;
+  border-color: #ffffff;
 }
 
 .ath-profile-section.muted{
@@ -915,8 +917,11 @@ table tr.odd {
 /* ——— Überblick Sektion ——— */
 .ath-profile-section.info{
   background: #ffffff;
-  border: 1px solid rgba(17,24,39,0.08);
+  padding-left: 0;
+  padding-right: 0;
+  border-color: #ffffff;
 }
+
 
 .ath-info-header{
   display: flex;
@@ -1057,4 +1062,19 @@ table tr.odd {
   height: 100%;
   object-fit: contain;
   display: block;
+}
+
+
+/* schlanker Trenner zwischen Boxen */
+.ath-sep{
+  border: 0;
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(17,24,39,0.14),
+    transparent
+  );
+  margin: 15px 0; /* Abstand oben/unten */
 }

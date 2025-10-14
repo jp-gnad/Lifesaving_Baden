@@ -1028,6 +1028,9 @@
       // ÜBERBLICK (neu)
       renderOverviewSection(a),
 
+      // Trennstrich
+      h("hr", { class: "ath-sep", role: "separator", "aria-hidden": "true" }),
+
       // BESTZEITEN
       renderBestzeitenSection(a),
 
