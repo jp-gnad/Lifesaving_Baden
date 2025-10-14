@@ -476,14 +476,14 @@ table tr.odd {
 .ath-profile-title h2{
   margin: 0 0 4px;
   margin-bottom: 20px;
-  font-size: 2.00rem; color: #0f172a;
+  font-size: 2.00rem; color: #111827;
 }
 
 @media (min-width: 1000px){
   .ath-profile-title h2{
     margin: 0 0 4px;
     margin-bottom: 20px;
-    font-size: 3.00rem; color: #0f172a;
+    font-size: 3.00rem; color: #111827;
   }
 }
 
@@ -567,6 +567,8 @@ table tr.odd {
   gap: 8px;                  /* Abstand zwischen den Chips */
   flex-wrap: wrap;           /* bricht mobil sauber um */
   margin: 2px 0 8px;
+  margin-top: -10px;
+  margin-bottom: 20px;
 }
 
 /* Abgerundeter Kasten (Pill) */
@@ -577,7 +579,7 @@ table tr.odd {
   gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;           /* Pill-Form */
-  border: 1px solid var(--gc);  /* „Umrandung bleibt“ */
+  border: 1.5px solid var(--gc);  /* „Umrandung bleibt“ */
   background: color-mix(in srgb, var(--gc) 10%, transparent);
   color: var(--gc);
   font-weight: 800;
@@ -600,7 +602,7 @@ table tr.odd {
   align-items: center;
   padding: 4px 10px;
   border-radius: 999px;
-  border: 1px solid var(--ac);
+  border: 1.5px solid var(--ac);
   background: color-mix(in srgb, var(--ac) 12%, transparent);
   color: var(--ac);
   font-weight: 800;
@@ -617,13 +619,13 @@ table tr.odd {
 .ak-chip.ak1314,
 .ak-chip.ak1516,
 .ak-chip.ak1718{
-  --ac: #60a5fa; /* soft blue */
+  --ac: #11182796; /* soft blue */
 }
 
 /* Open (≥19): dezentes Slate */
 .ak-chip.open,
 .ak-chip.akoffen{
-  --ac: #94a3b8; /* soft slate */
+  --ac: #11182796; /* soft slate */
 }
 
 
@@ -635,7 +637,7 @@ table tr.odd {
   gap: 8px;
   padding: 4px 10px;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--sc) 30%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--sc) 30%, transparent);
   background: color-mix(in srgb, var(--sc) 10%, transparent);
   color: color-mix(in srgb, var(--sc) 80%, black);
   font-weight: 800;
@@ -660,6 +662,33 @@ table tr.odd {
 .status-chip.pause   { --sc: #f59e0b; } /* gelb  */
 .status-chip.inactive{ --sc: #ef4444; } /* rot   }
 
+/* Mobile: Chips unter dem Namen kompakter darstellen */
+@media (max-width: 720px){
+  .gender-row{
+    gap: 6px;           /* weniger Abstand zwischen den Chips */
+    margin-top: 1px;
+    margin-bottom: 10px;
+    margin-left: -70px;
+  }
+
+  .gender-chip,
+  .ak-chip,
+  .status-chip{
+    font-size: .86rem;  /* kleinerer Text */
+    padding: 3px 8px;   /* schmalere Pillen */
+    border-width: 1px;  /* dünnerer Rand */
+    line-height: 1;     /* kompakt */
+  }
+
+  .status-chip .status-dot{
+    width: 6px;         /* kleinerer Punkt */
+    height: 6px;
+    /* optional: dezentere Aura auf kleineren Screens
+       box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--sc) 25%, transparent);
+    */
+  }
+}
+
 
 /* ————— Bestzeiten Sektion ————— */
 .ath-profile-section.bests{
@@ -674,10 +703,10 @@ table tr.odd {
   gap: 12px;
   margin-bottom: 8px;
 }
-.ath-bests-header h3{ margin: 0; font-size: 2.00rem; color: #0f172a; }
+.ath-bests-header h3{ margin: 0; font-size: 2.00rem; color: #111827; }
 
 @media (max-width: 720px){
-  .ath-bests-header h3{ margin: 0; font-size: 1.6rem; color: #0f172a; }
+  .ath-bests-header h3{ margin: 0; font-size: 1.6rem; color: #111827; }
 }
 
 
@@ -741,7 +770,7 @@ table tr.odd {
   font-feature-settings: "tnum";
   font-size: 1.35rem;
   font-weight: 800;
-  color: #0f172a;
+  color: #111827;
 }
 
 /* Mobile Tuning */
@@ -812,7 +841,7 @@ table tr.odd {
 .med-total{
   font-size: 1.6rem;
   font-weight: 800;
-  color: #0f172a;
+  color: #111827;
   line-height: 1;
 }
 
@@ -833,7 +862,7 @@ table tr.odd {
 
 .med-count{
   font-weight: 800;
-  color: #0f172a;
+  color: #111827;
 }
 
 .med-barWrap{
@@ -962,7 +991,7 @@ table tr.odd {
 }
 .tile-stats .stat .k{ color: #475569; }
 .tile-stats .stat .v{
-  color: #0f172a;
+  color: #111827;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
@@ -996,7 +1025,7 @@ table tr.odd {
   gap: 12px;
   margin-bottom: 8px;
 }
-.ath-info-header h3{ margin: 0; font-size: 2.00rem; color: #0f172a; }
+.ath-info-header h3{ margin: 0; font-size: 2.00rem; color: #111827; }
 
 .ath-info-grid{
   display: grid;
@@ -1028,7 +1057,7 @@ table tr.odd {
 .info-value{
   font-size: 1.35rem;
   font-weight: 800;
-  color: #0f172a;
+  color: #111827;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
@@ -1045,7 +1074,7 @@ table tr.odd {
   border: 1px solid rgba(17,24,39,0.08);
 }
 .info-tile.dist .info-progress .p50{
-  background: #0f172a; /* dunkel (50m) */
+  background: #111827; /* dunkel (50m) */
 }
 .info-tile.dist .info-progress .p25{
   background: #9ca3af; /* grau (25m) */
@@ -1071,7 +1100,7 @@ table tr.odd {
   gap: 8px;
   font-weight: 800;
   font-size: 1.15rem;
-  color: #0f172a;
+  color: #111827;
 }
 .info-tile.status .status-dot{
   width: 10px; height: 10px; border-radius: 50%;
@@ -1104,7 +1133,7 @@ table tr.odd {
 .ath-flags-header{
   font-size: 0.00rem;
   font-weight: 100;
-  color: #0f172a;
+  color: #111827;
   margin: 0 0 0px;           /* kleinerer Abstand zur Zeile */
 }
 .ath-flags{
