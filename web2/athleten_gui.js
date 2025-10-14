@@ -329,30 +329,22 @@
     return isNaN(age) ? null : age;
   }
 
-  // Deutsche AK (primär)
-  function akDE(age) {
-    if (age == null) return " ?";
+  // ---- Altersklassen (nur DE, ohne "AK "-Prefix) ----
+  function akDE(age){
+    if (age == null) return "?";
     if (age <= 10) return "10";
     if (age <= 12) return "12";
-    if (age <= 14) return "13/14";
-    if (age <= 16) return "15/16";
-    if (age <= 18) return "17/18";
-    return "AK Offen"; // >=19
+    if (age === 13 || age === 14) return "13/14";
+    if (age === 15 || age === 16) return "15/16";
+    if (age === 17 || age === 18) return "17/18";
+    return "Offen"; // >=19
   }
 
-  // Internationale AK (sekundär: nur Youth/Open/Master)
-  function akINT(age) {
-    if (age == null) return "?";
-    if (age < 19) return "Youth";
-    if (age > 40) return "Master";
-    return "Open"; // 19–40
-  }
-
-  // Für GUI: "AK DE (INT)"
-  function akLabelFromJahrgang(jahrgang) {
+  function akLabelFromJahrgang(jahrgang){
     const age = ageFromJahrgang(jahrgang);
-    return `${akDE(age)} (${akINT(age)})`;
+    return akDE(age); // z.B. "13/14" oder "Offen"
   }
+
 
   // ---- Ortsgruppe formatieren (DLRG + Korrekturen) -------------------
   function formatOrtsgruppe(raw) {
@@ -384,8 +376,12 @@
 
   // ---- Geschlecht -> runder Kreis mit "w" / "m" ----------------------
   function genderTag(g) {
-    const w = (g || "").toLowerCase().startsWith("w");
-    return { short: w ? "w" : "m", cls: w ? "w" : "m" };
+    const isW = (g || "").toLowerCase().startsWith("w");
+    return {
+      short: isW ? "w" : "m",
+      full:  isW ? "weiblich" : "männlich",
+      cls:   isW ? "w" : "m"
+    };
   }
 
   // ——— Disziplinen (Fixe Reihenfolge & interne Keys) ———
@@ -1007,17 +1003,29 @@
         h(
           "div",
           { class: "ath-profile-title" },
+
+          // Name
+          h("h2", {}, a.name),
+
+          // Chips-Zeile: Gender + AK
           (() => {
-            const gt = genderTag(a.geschlecht);
-            return h("h2", {}, a.name, " ", h("span", { class: `gender-tag ${gt.cls}` }, gt.short));
+            const gt = genderTag(a.geschlecht);         // { full: "weiblich"/"männlich", cls: "w"/"m" }
+            const ak = akLabelFromJahrgang(a.jahrgang); // "10" | "12" | "13/14" | "15/16" | "17/18" | "Offen"
+            const akClsMap = { "10":"ak10", "12":"ak12", "13/14":"ak1314", "15/16":"ak1516", "17/18":"ak1718", "Offen":"akoffen" };
+            const akCls = akClsMap[ak] || "akoffen";
+
+            return h("div", { class: "gender-row" },   // wir nutzen die existierende Zeile unter dem Namen
+              h("span", { class: `gender-chip ${gt.cls}`, title: gt.full, "aria-label": `Geschlecht: ${gt.full}` }, gt.full),
+              h("span", { class: `ak-chip ${akCls}`, title: `Altersklasse ${ak}`, "aria-label": `Altersklasse ${ak}` }, ak)
+            );
           })(),
+
+          // Meta-Zeile(n): OG / Jahrgang  (AK hier NICHT mehr anzeigen)
           h("div", { class: "ath-profile-meta" },
             KV("Ortsgruppe", formatOrtsgruppe(a.ortsgruppe)),
-            KV("Jahrgang", String(a.jahrgang)),
-            KV("Altersklasse", akLabelFromJahrgang(a.jahrgang))
+            KV("Jahrgang", String(a.jahrgang))
           )
         ),
-
         // Medaillen-Widget (rechts)
         renderMedalStats(a)
       ),

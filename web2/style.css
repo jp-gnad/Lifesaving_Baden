@@ -560,39 +560,68 @@ table tr.odd {
   padding: 0 2px;
 }
 
-/* Gender-Kreis: größer + nach oben verschoben */
-.gender-tag{
-  /* einfach anpassbare Parameter */
-  --gsize: 1.5em;   /* Kreis-Durchmesser relativ zur H2-Schrift */
-  --gfont: 0.6em;   /* Schriftgröße des w/m relativ zur H2-Schrift */
-  --gshift: -0.3em; /* vertikale Verschiebung: negativ = nach oben */
+/* Zeile für das Geschlecht direkt unter dem Namen */
+.gender-row{
+  margin: 2px 0 8px;  /* oben klein, unten etwas Luft zur Meta */
+}
 
-  display: inline-grid;
-  place-items: center;        /* w/m perfekt mittig im Kreis */
-  width: var(--gsize);
-  height: var(--gsize);
-  border-radius: 50%;
-  margin-left: 0.4rem;
-  transform: translateY(var(--gshift));  /* Kreis nach oben schieben */
-  line-height: 1;
-  font-size: var(--gfont);
+/* Abgerundeter Kasten (Pill) */
+.gender-chip{
+  --gc: #2563eb;                  /* Standardfarbe (wird vom Modifier überschrieben) */
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;           /* Pill-Form */
+  border: 1.5px solid var(--gc);  /* „Umrandung bleibt“ */
+  background: color-mix(in srgb, var(--gc) 10%, transparent);
+  color: var(--gc);
   font-weight: 800;
-  text-transform: lowercase;
-  border: 1px solid transparent;
+  font-size: .92rem;
+  line-height: 1.1;
+  user-select: none;
 }
 
-/* Farben bleiben wie gehabt */
-.gender-tag.m{
-  background: #dbeafe;
-  color: #1e3a8a;
-  border-color: #bfdbfe;
-}
-.gender-tag.w{
-  background: #ffe4e6;
-  color: #9f1239;
-  border-color: #fecdd3;
+/* Farben: m = Blau, w = Pink (wie bisher) */
+.gender-chip.m{ --gc: #2563eb; }  /* Blau */
+.gender-chip.w{ --gc: #db2777; }  /* Pink */
+
+
+/* Zeile unter dem Namen verwendest du bereits (.gender-row) */
+
+/* Basisstil für die Altersklassen-Pille */
+.ak-chip{
+  --ac: #64748b;                        /* Default-Farbe (wird unten überschrieben) */
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ac);
+  background: color-mix(in srgb, var(--ac) 12%, transparent);
+  color: var(--ac);
+  font-weight: 800;
+  font-size: .92rem;
+  line-height: 1.1;
+  user-select: none;
+  white-space: nowrap;
+  margin-left: 5px;
 }
 
+/* Youth (≤18): weiches Blau */
+.ak-chip.youth,
+.ak-chip.ak10,
+.ak-chip.ak12,
+.ak-chip.ak1314,
+.ak-chip.ak1516,
+.ak-chip.ak1718{
+  --ac: #60a5fa; /* soft blue */
+}
+
+/* Open (≥19): dezentes Slate */
+.ak-chip.open,
+.ak-chip.akoffen{
+  --ac: #94a3b8; /* soft slate */
+}
 
 
 /* ————— Bestzeiten Sektion ————— */
@@ -1050,8 +1079,8 @@ table tr.odd {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border-radius: 999px;
   background: #fff;
   box-shadow: 0 8px 18px rgba(2,6,23,.08);
