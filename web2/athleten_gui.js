@@ -21,6 +21,18 @@
   // ---------- Konstanten / Pfade ----------
   const FLAG_BASE_URL = "./svg"; // dein SVG-Ordner
 
+  // Zählt Starts je Startrecht (OG/BZ/LV/BV)
+  function countStartrechte(a){
+    const c = { OG:0, BZ:0, LV:0, BV:0 };
+    if (!Array.isArray(a?.meets)) return c;
+    for (const m of a.meets){
+      const sr = String(m?.Startrecht || "").toUpperCase();
+      if (sr in c) c[sr] += 1;
+    }
+    return c;
+  }
+
+
 
   // — Startrechte: LV/BV → Badges neben den Chips —
   function hasStartrecht(a, code){
@@ -978,7 +990,7 @@
     const totalDQ = sumAllDQ(a);
 
     grid.appendChild(infoTileBig("LSC", a.lsc != null ? fmtInt(a.lsc) : "—"));
-    grid.appendChild(infoTile("Wettkämpfe", fmtInt(meets.total)));
+    grid.appendChild(infoTileWettkaempfeFlip(a, meets));
     grid.appendChild(infoTile("Total Starts", fmtInt(totalDisc)));
     grid.appendChild(infoTile("DQ / Strafen", fmtInt(totalDQ)));
     grid.appendChild(infoTileDist("Bahnverteilung", meets));
@@ -1015,6 +1027,63 @@
         h("div", { class: "info-legend" }, h("span", { class: "l50" }, `50m ${m.pct50 || 0}%`))
       );
     }
+    function infoTileWettkaempfeFlip(a, meets){
+      const counts = countStartrechte(a);              // {OG,BZ,LV,BV}
+      const rows = Object.entries(counts).filter(([,v]) => v > 0);
+
+      const tile = h("div", {
+        class: "info-tile flip",
+        role: "button",
+        tabindex: "0",
+        "aria-pressed": "false",
+        "aria-label": "Wettkämpfe – Details nach Startrecht",
+      });
+
+      const inner = h("div", { class: "tile-inner" });
+
+      // Vorderseite (wie gehabt)
+      const front = h("div", { class: "tile-face tile-front" },
+        h("div", { class: "info-label" }, "Wettkämpfe"),
+        h("div", { class: "info-value" }, fmtInt(meets.total))
+      );
+
+      // Rückseite: NUR Liste (keine Überschrift)
+      const back = h("div", { class: "tile-face tile-back" },
+        rows.length
+          ? h("div", { class: "tile-stats" },
+              ...rows.map(([k,v]) =>
+                h("div", { class: "stat" },
+                  h("span", { class: "k" }, k),
+                  h("span", { class: "v" }, String(v))
+                )
+              )
+            )
+          : h("div", { class: "best-empty" }, "Keine Starts mit OG/BZ/LV/BV")
+      );
+
+      inner.appendChild(front);
+      inner.appendChild(back);
+      tile.appendChild(inner);
+
+      // Flip-Verhalten: Desktop hover, Klick toggelt Lock (auch mobil)
+      const toggleLock = () => {
+        const locked = tile.classList.toggle("is-flipped");
+        tile.setAttribute("aria-pressed", locked ? "true" : "false");
+      };
+      if ("onpointerdown" in window){
+        tile.addEventListener("pointerdown", toggleLock);
+      } else {
+        tile.addEventListener("click", toggleLock);
+        tile.addEventListener("touchstart", toggleLock, {passive:true});
+      }
+      tile.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleLock(); }
+      });
+
+      return tile;
+    }
+
+
   }
 
   // ---------- Profil ----------

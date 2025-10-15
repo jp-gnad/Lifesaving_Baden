@@ -674,8 +674,8 @@ table tr.odd {
 }
 
 .sr-icon{
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   display: block;
   border-radius: 50%;
   overflow: hidden;
@@ -710,8 +710,8 @@ table tr.odd {
   }
 
   .sr-icon{
-    width: 22px;
-    height: 22px;
+    width: 21px;
+    height: 21px;
     border: 1.0px solid #36320ac7;  /* ← neue schwarze Umrandung */
   }
 
@@ -1239,3 +1239,70 @@ table tr.odd {
 @media (prefers-reduced-motion: reduce){
   .lsc-label .label{ transition: none; }
 }
+
+
+/* Flipbare Überblick-Kachel „Wettkämpfe“ – mit äußerer Standard-Border */
+.info-tile.flip{
+  /* Außenrahmen wie bei deinen normalen Info-Kacheln */
+  border: 1px solid rgba(17,24,39,0.12);  /* ← sichtbare, durchgezogene Kante */
+  border-radius: 12px;
+  background: #ffffff;
+
+  /* Flip-Setup */
+  position: relative;
+  padding: 0;                 /* Inhaltspadding übernehmen die Faces */
+  overflow: hidden;
+  cursor: pointer;
+  perspective: 900px;
+}
+
+.info-tile.flip .tile-inner{
+  position: relative;
+  min-height: 92px;
+  transform-style: preserve-3d;
+  transition: transform .55s ease;
+  border: 0;                  /* keine innere Kante */
+  background: transparent;
+  border-radius: inherit;
+}
+
+@media (hover:hover) and (pointer:fine){
+  .info-tile.flip:hover .tile-inner{ transform: rotateY(180deg); }
+}
+.info-tile.flip.is-flipped .tile-inner{ transform: rotateY(180deg); }
+
+.info-tile.flip .tile-face{
+  position: absolute; inset: 0;
+  display: grid; align-content: center;
+  gap: 6px; padding: 10px 12px;
+  backface-visibility: hidden;
+  border: 0;                  /* keine zweite (innere) Border */
+  border-radius: inherit;
+}
+
+.info-tile.flip .tile-front{ background: #f9fafb; }
+.info-tile.flip .tile-back{
+  transform: rotateY(180deg);
+  background: #ffffff;
+  outline: none;              /* sicherheitshalber: keine gestrichelte Outline */
+}
+
+/* Rückseitenliste */
+.info-tile.flip .tile-stats{
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+}
+.info-tile.flip .tile-stats .stat{
+  display: flex; align-items: baseline; justify-content: space-between;
+  font-weight: 700;
+}
+.info-tile.flip .tile-stats .stat .k{ color: #475569; }
+.info-tile.flip .tile-stats .stat .v{
+  color: #0f172a;
+  font-variant-numeric: tabular-nums; font-feature-settings: "tnum";
+}
+
+/* optional: Fokus ausblenden, falls noch vorhanden */
+.info-tile.flip:focus { outline: none; }
+
