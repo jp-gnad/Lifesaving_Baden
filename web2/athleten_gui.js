@@ -1,13 +1,7 @@
 // athleten_gui.js
-// Funktionale Suche mit Dropdown + Profilansicht (Placeholder-Daten).
-// Zeigt initial keine Athletenkarten; Profil öffnet nach Auswahl.
-
 (function () {
-  // ---------------------------
-  // Helpers
-  // ---------------------------
+  // ---------- Mini-Helfer ----------
   const $ = (s, r = document) => r.querySelector(s);
-
   const h = (tag, props = {}, ...children) => {
     const el = document.createElement(tag);
     for (const [k, v] of Object.entries(props || {})) {
@@ -22,28 +16,244 @@
     }
     return el;
   };
+  const hDiv = h; // Kurzform
 
-  // ---- Vereins-Cap-Dateiname strikt aus der Ortsgruppe ableiten --------
-  function capFileFromOrtsgruppe(rawOG){
-    // "OG Karlsruhe" → "Karlsruhe.svg", "DLRG Weil am Rhein" → "Weil am Rhein.svg"
-    const base = String(rawOG || "").trim();      // z.B. "Karlsruhe", "Weil am Rhein"
-    return `Cap-${base}.svg`;
+  // ---------- Konstanten / Pfade ----------
+  const FLAG_BASE_URL = "./svg"; // dein SVG-Ordner
+
+  // ---------- Mapping Disziplinen <-> Meet-Felder ----------
+  const DISCIPLINES = [
+    { key: "50_retten",         label: "50m Retten",                 meetZeit: "50m_Retten_Zeit",         meetPlatz: "50m_Retten_Platz" },
+    { key: "100_retten_flosse", label: "100m Retten mit Flossen",    meetZeit: "100m_Retten_Zeit",        meetPlatz: "100m_Retten_Platz" },
+    { key: "100_kombi",         label: "100 Kombi",                   meetZeit: "100m_Kombi_Zeit",         meetPlatz: "100m_Kombi_Platz" },
+    { key: "100_lifesaver",     label: "100m Lifesaver",              meetZeit: "100m_Lifesaver_Zeit",     meetPlatz: "100m_Lifesaver_Platz" },
+    { key: "200_super",         label: "200m Super Lifesaver",        meetZeit: "200m_SuperLifesaver_Zeit",meetPlatz: "200m_SuperLifesaver_Platz" },
+    { key: "200_hindernis",     label: "200m Hindernis",              meetZeit: "200m_Hindernis_Zeit",     meetPlatz: "200m_Hindernis_Platz" },
+  ];
+
+  // "0:34,25" | "34,25" | "1:02.13" -> Sekunden (float); "DQ" -> NaN
+  function parseTimeToSec(raw) {
+    if (raw == null) return NaN;
+    const s = String(raw).trim();
+    if (/^dq$/i.test(s)) return NaN;
+    const norm = s.replace(",", "."); // deutsche Kommas zulassen
+    const parts = norm.split(":");
+    if (parts.length === 1) {
+      const sec = parseFloat(parts[0]);
+      return Number.isFinite(sec) ? sec : NaN;
+    } else if (parts.length === 2) {
+      const m = parseInt(parts[0], 10);
+      const sec = parseFloat(parts[1]);
+      if (!Number.isFinite(m) || !Number.isFinite(sec)) return NaN;
+      return m * 60 + sec;
+    }
+    return NaN;
   }
 
-  // ---- Cap-Avatar (einziger Versuch + Fallback) -------------------------
+  // Durchschnittszeit (nur gültige Zeiten, keine DQ) pro Disziplin + Lane
+  function avgTimeForDiscipline(athlete, lane, disc) {
+    const meets = Array.isArray(athlete.meets) ? athlete.meets : [];
+    let sum = 0, cnt = 0;
+    for (const m of meets) {
+      if (!m || (lane && m.pool !== lane)) continue;
+      const z = m[disc.meetZeit];
+      if (!z || /^dq$/i.test(String(z).trim())) continue;
+      const sec = parseTimeToSec(z);
+      if (Number.isFinite(sec)) { sum += sec; cnt++; }
+    }
+    return cnt > 0 ? (sum / cnt) : NaN;
+  }
+
+
+
+  // ---------- Utils ----------
+  const REF_YEAR = new Date().getFullYear();
+  const normalize = (s) =>
+    (s || "").toString().toLowerCase().normalize("NFKD").replace(/\p{Diacritic}/gu, "").replace(/\s+/g, " ").trim();
+
+  const highlight = (text, query) => {
+    const nText = normalize(text);
+    const nQuery = normalize(query);
+    const idx = nText.indexOf(nQuery);
+    if (idx < 0 || !query) return text;
+    return text.slice(0, idx) + "<mark>" + text.slice(idx, idx + nQuery.length) + "</mark>" + text.slice(idx + nQuery.length);
+  };
+
+  function formatSeconds(sec) {
+    if (sec == null || isNaN(sec)) return "—";
+    const tot = Math.round(Math.max(0, Number(sec)) * 100);
+    const m = Math.floor(tot / 6000);
+    const s = Math.floor((tot % 6000) / 100);
+    const cs = tot % 100;
+    const sPart = (m ? String(s).padStart(2, "0") : String(s));
+    return (m ? `${m}:${sPart}` : sPart) + "." + String(cs).padStart(2, "0");
+  }
+
+  function parseTimeToSec(val) {
+    if (val == null) return NaN;
+    const t = String(val).trim();
+    if (!t || /^dq$/i.test(t)) return NaN;
+    const norm = t.replace(",", ".");
+    const parts = norm.split(":");
+    let sec;
+    if (parts.length === 1) sec = parseFloat(parts[0]);
+    else if (parts.length === 2) sec = parseInt(parts[0], 10) * 60 + parseFloat(parts[1]);
+    return Number.isFinite(sec) ? sec : NaN;
+  }
+
+  function fmtInt(n){ return Number.isFinite(n) ? n.toLocaleString("de-DE") : "—"; }
+  function fmtDate(dStr){
+    if (!dStr) return "—";
+    const d = new Date(dStr);
+    if (isNaN(d)) return "—";
+    return d.toLocaleDateString("de-DE");
+  }
+
+  // ---------- Daten-Ableitungen aus meets ----------
+  function getOrtsgruppe(a) {
+    return a.aktuelleOrtsgruppe || a.AktuelleOrtsgruppe || a.ortsgruppe || "";
+  }
+
+  function countriesFromAthlete(a) {
+    const fromMeets = new Set();
+    (a.meets || []).forEach(m => {
+      const land = (m && m.Land) ? String(m.Land).trim() : null;
+      if (land) fromMeets.add(land);
+    });
+    const arr = Array.from(fromMeets);
+    if (arr.length) return arr;
+    return Array.isArray(a.countriesDE) ? a.countriesDE : [];
+  }
+
+  function computeOverallLSC(meets) {
+    const list = Array.isArray(meets) ? [...meets] : [];
+    list.sort((a,b) => new Date(b.date) - new Date(a.date)); // neueste zuerst
+    for (const m of list) {
+      if (m && m.LSC != null && m.LSC !== "") {
+        const x = parseFloat(String(m.LSC).replace(",", "."));
+        if (Number.isFinite(x)) return x;          // erster (neuester) gültiger LSC
+      }
+    }
+    return null; // keiner vorhanden
+  }
+
+
+  function deriveFromMeets(a) {
+    const meets = Array.isArray(a.meets) ? a.meets : [];
+
+    const pbs   = { "25": {}, "50": {} };
+    const stats = { "25": {}, "50": {} };
+    for (const lane of ["25", "50"]) {
+      for (const d of DISCIPLINES) stats[lane][d.key] = { starts: 0, dq: 0 };
+    }
+
+    const medals = { gold: 0, silver: 0, bronze: 0, title: "Medaillen" };
+    let totalStarts = 0;
+
+    const addMedal = (place) => {
+      const p = parseInt(place, 10);
+      if (!Number.isFinite(p)) return;
+      if (p === 1) medals.gold++;
+      else if (p === 2) medals.silver++;
+      else if (p === 3) medals.bronze++;
+    };
+
+    for (const meet of meets) {
+      const lane = meet?.pool === "25" ? "25" : (meet?.pool === "50" ? "50" : null);
+
+      // -------- Starts / DQs / PBs --------
+      for (const d of DISCIPLINES) {
+        const z = meet[d.meetZeit];           // Zeit-String oder "DQ" oder ""
+        const tSec = parseTimeToSec(z);
+        const isDQ = z != null && /^dq$/i.test(String(z).trim());
+        const hasStart = isDQ || Number.isFinite(tSec);
+
+        if (lane && hasStart) {
+          stats[lane][d.key].starts++;
+          if (isDQ) stats[lane][d.key].dq++;
+          totalStarts++;
+          if (Number.isFinite(tSec)) {
+            const cur = pbs[lane][d.key];
+            if (cur == null || tSec < cur) pbs[lane][d.key] = tSec;
+          }
+        }
+      }
+
+      // -------- Medaillen nach Wertung --------
+      const wRaw = (meet.Wertung || "").toLowerCase();
+      const w = wRaw.replace(/[\s\-]+/g, ""); // leer/Minus raus
+
+      const countEinzel = w.includes("einzel");
+      const countMehrk  = w.includes("mehrkampf");
+
+      // Wenn Wertung leer/unklar → beide zählen (defensiv)
+      const useEinzel = (countEinzel || (!countEinzel && !countMehrk));
+      const useMehrk  = (countMehrk  || (!countEinzel && !countMehrk));
+
+      if (useEinzel) {
+        for (const d of DISCIPLINES) addMedal(meet[d.meetPlatz]);
+      }
+      if (useMehrk) {
+        addMedal(meet.Mehrkampf_Platz);
+      }
+    }
+
+    return {
+      pbs,
+      stats,
+      medals,
+      totalDisciplines: totalStarts,
+      countriesDE: countriesFromAthlete(a),
+      lsc: computeOverallLSC(meets) ?? a.lsc ?? null
+    };
+  }
+
+
+  // ---------- AK / OG / Geschlecht ----------
+  function ageFromJahrgang(jahrgang, refYear = REF_YEAR) {
+    const age = refYear - Number(jahrgang);
+    return isNaN(age) ? null : age;
+  }
+  function akDE(age){
+    if (age == null) return "?";
+    if (age <= 10) return "10";
+    if (age <= 12) return "12";
+    if (age === 13 || age === 14) return "13/14";
+    if (age === 15 || age === 16) return "15/16";
+    if (age === 17 || age === 18) return "17/18";
+    return "Offen";
+  }
+  function akLabelFromJahrgang(jahrgang){ return akDE(ageFromJahrgang(jahrgang)); }
+
+  function formatOrtsgruppe(raw) {
+    let s = (raw || "").toString().trim();
+    s = s.replace(/^(og|dlrg)\s+/i, "");
+    s = s.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+    return "DLRG " + s;
+  }
+
+  function genderTag(g) {
+    const isW = (g || "").toLowerCase().startsWith("w");
+    return { short: isW ? "w" : "m", full: isW ? "weiblich" : "männlich", cls: isW ? "w" : "m" };
+  }
+
+  // ---------- Caps & Flags ----------
+  function capFileFromOrtsgruppe(rawOG){ return `Cap-${String(rawOG||"").trim()}.svg`; }
+
   function renderCapAvatar(a, size = "xl", extraClass = ""){
     const wrap = h("div", { class: `ath-avatar ${size} ${extraClass}` });
 
-    const file = capFileFromOrtsgruppe(a.ortsgruppe);
+    const ogNow = currentOrtsgruppeFromMeets(a) || a.ortsgruppe || "";
+    const file  = `Cap-${ogNow}.svg`;
+
     const img = h("img", {
       class: "avatar-img",
-      alt: `Vereinskappe ${formatOrtsgruppe(a.ortsgruppe)}`,
+      alt: `Vereinskappe ${formatOrtsgruppe(ogNow)}`,
       loading: size === "xl" ? "eager" : "lazy",
       decoding: "async",
       fetchpriority: size === "xl" ? "high" : "low",
       src: `${FLAG_BASE_URL}/${encodeURIComponent(file)}`,
       onerror: () => {
-        // Fallback: ein einziges Mal auf Baden_light.svg
         img.onerror = null;
         img.src = `${FLAG_BASE_URL}/${encodeURIComponent("Cap-Baden_light.svg")}`;
       }
@@ -54,696 +264,515 @@
   }
 
 
-
-  // ---- Länder-Flags (SVG-only) -----------------------------------------
-  const FLAG_BASE_URL = "./svg";
-
-  // Exakte deutschen Dateinamen ohne ".svg"
   const SUPPORTED_FLAGS_DE = new Set([
     "Spanien","Australien","Deutschland","Belgien","Italien","Frankreich",
     "Schweiz","Polen","Japan","Dänemark","Ägypten","Niederlande","Großbritannien"
   ]);
 
-  // Nutzt a.countriesDE: ["Deutschland","Frankreich", ...]
   function renderCountryFlagsSectionSVG(a){
-    const names = Array.isArray(a.countriesDE) ? a.countriesDE.filter(Boolean) : [];
-    const list  = names
-      .map(n => String(n).trim())
-      .filter(n => SUPPORTED_FLAGS_DE.has(n));
-
-    if (list.length === 0) return null;
-
-    const header = h("div", { class: "ath-flags-header" }, "");
-
+    const names = countriesFromAthlete(a).map(n => String(n).trim()).filter(n => SUPPORTED_FLAGS_DE.has(n));
+    if (!names.length) return null;
     const row = h("div", { class: "ath-flags" },
-      ...list.map(name => {
-        const wrap = h("span", {
-          class: "ath-flag",
-          title: name,
-          "aria-label": name
-        });
-        const img = h("img", {
-          class: "flag-img",
-          src: `${FLAG_BASE_URL}/${encodeURIComponent(name)}.svg`,
-          alt: name,
-          loading: "lazy",
-          decoding: "async",
-          onerror: () => wrap.remove() // kein Fallback: bei Fehler entfernen
-        });
+      ...names.map(name => {
+        const wrap = h("span", { class: "ath-flag", title: name, "aria-label": name });
+        const img = h("img", { class: "flag-img", src: `${FLAG_BASE_URL}/${encodeURIComponent(name)}.svg`, alt: name, loading: "lazy", decoding: "async", onerror: () => wrap.remove() });
         wrap.appendChild(img);
         return wrap;
       })
     );
-
-    return h("div", { class: "ath-profile-section flags" }, header, row);
+    return h("div", { class: "ath-profile-section flags" }, h("div", { class: "ath-flags-header" }, ""), row);
   }
 
-
+  // ---------- Aktivitätsstatus ----------
   function activityStatusFromLast(lastISO){
-    // Kein Datum -> als Inaktiv werten
     if (!lastISO) return { key: "inactive", label: "Inaktiv" };
-
     const last = new Date(lastISO);
     if (isNaN(last)) return { key: "inactive", label: "Inaktiv" };
-
     const now  = new Date();
     const days = Math.floor((now - last) / (1000*60*60*24));
-
-    if (days < 365)      return { key: "active",  label: "Aktiv" };
-    if (days < 365*2)    return { key: "pause",   label: "Pause" };
+    if (days < 365)   return { key: "active",  label: "Aktiv" };
+    if (days < 730)   return { key: "pause",   label: "Pause" };
     return { key: "inactive", label: "Inaktiv" };
-}
-
-
-  // ---- Format-Helfer ----
-  function fmtInt(n){ return Number.isFinite(n) ? n.toLocaleString("de-DE") : "—"; }
-  function fmtDate(dStr){
-    if (!dStr) return "—";
-    const d = new Date(dStr);
-    if (isNaN(d)) return "—";
-    return d.toLocaleDateString("de-DE");
   }
 
-  // Summe aller DQs (50 + 25) aus stats
-  function sumAllDQ(a){
-    let total = 0;
-    const both = [ (a.stats && a.stats["50"]) || {}, (a.stats && a.stats["25"]) || {} ];
-    for (const lane of both){
-      for (const d of DISCIPLINES){
-        const s = lane[d.key];
-        if (s && Number.isFinite(+s.dq)) total += +s.dq;
-      }
-    }
-    return total;
-  }
-
-  // Wettkampf-Infos (aus a.meets)
+  // ---------- Meet-Infos ----------
   function computeMeetInfo(a){
-    const meets = Array.isArray(a.meets) ? a.meets.slice() : [];
+    const meets = Array.isArray(a.meets) ? a.meets : [];
     const total = meets.length;
-
     let c50 = 0, c25 = 0;
     let first = null, last = null;
-    const years = new Set();                 // ← NEU
-
+    const years = new Set();
     for (const m of meets){
       if (m.pool === "50") c50++;
       else if (m.pool === "25") c25++;
-
       const d = new Date(m.date);
       if (!isNaN(d)){
-        years.add(d.getFullYear());          // ← NEU
+        years.add(d.getFullYear());
         if (!first || d < first) first = d;
         if (!last  || d > last ) last  = d;
       }
     }
-
     const pct50 = total ? Math.round((c50/total)*100) : 0;
-    const pct25 = total ? Math.round((c25/total)*100) : 0;
-
     return {
-      total,
-      c50, c25, pct50, pct25,
+      total, c50, c25, pct50, pct25: total ? 100 - pct50 : 0,
       first: first ? first.toISOString().slice(0,10) : null,
       last:  last  ? last.toISOString().slice(0,10)  : null,
-      activeYears: years.size                     // ← NEU
+      activeYears: years.size
     };
   }
 
+  // Aktuelle Ortsgruppe = erste NATIONAL-Veranstaltung im jüngsten Jahr.
+  // Fallback (Sonderregel): wenn im jüngsten Jahr keine "National"-Events,
+  // dann die ERSTE Veranstaltung dieses Jahres (egal welches Regelwerk).
+  function currentOrtsgruppeFromMeets(a){
+    const meets = Array.isArray(a?.meets)
+      ? a.meets.filter(m => m && m.date && m.Ortsgruppe)
+      : [];
+    if (meets.length === 0) return a?.ortsgruppe || "";
 
-  // ---- Überblick-Section ----
-  function renderOverviewSection(a){
-    const header = h("div", { class: "ath-info-header" },
-      h("h3", {}, "Überblick")
-    );
+    // robustes Parsing + Hilfsfelder
+    const rows = meets.map(m => {
+      const d = new Date(m.date);
+      if (isNaN(d)) return null;
+      const rw = String(m.Regelwerk || "").toLowerCase();
+      return {
+        ...m,
+        _d: d,
+        _y: d.getFullYear(),
+        _isNational: rw.startsWith("national") // "National", "national", etc.
+      };
+    }).filter(Boolean);
 
-    const grid = h("div", { class: "ath-info-grid" });
+    if (rows.length === 0) return a?.ortsgruppe || "";
 
-    // Metriken berechnen
-    const lsc = Number.isFinite(+a.lsc) ? +a.lsc : null;
-    const meets = computeMeetInfo(a);
-    const totalDisc = Number.isFinite(+a.totalDisciplines) ? +a.totalDisciplines : null;
-    const totalDQ = sumAllDQ(a);
+    // jüngstes Jahr bestimmen
+    const latestYear = rows.reduce((y, r) => (r._y > y ? r._y : y), rows[0]._y);
 
-    // Kacheln
-    grid.appendChild(infoTileBig("LSC", lsc != null ? fmtInt(lsc) : "—"));
+    // alle Meets des jüngsten Jahres (aufsteigend nach Datum)
+    const inYear = rows
+      .filter(r => r._y === latestYear)
+      .sort((x, y) => x._d - y._d);
 
-    grid.appendChild(infoTile("Wettkämpfe", fmtInt(meets.total)));
-    grid.appendChild(infoTile("Total Starts", fmtInt(totalDisc)));
-    grid.appendChild(infoTile("DQ / Strafen", fmtInt(totalDQ)));
-    grid.appendChild(infoTileDist("Bahnverteilung", meets));
-    grid.appendChild(infoTile("Erster Wettkampf", fmtDate(meets.first)));
-    grid.appendChild(infoTile("Aktive Jahre", fmtInt(meets.activeYears)));
+    // 1) Falls es National-Events gibt: den ERSTEN im Jahr
+    const nationals = inYear.filter(r => r._isNational);
+    if (nationals.length > 0) return nationals[0].Ortsgruppe || a?.ortsgruppe || "";
 
-    return h("div", { class: "ath-profile-section info" }, header, grid);
+    // 2) Sonst: den LETZTEN Wettkampf des Jahres (z.B. international)
+    const lastMeet = inYear[inYear.length - 1];
+    return lastMeet?.Ortsgruppe || a?.ortsgruppe || "";
+  }
 
-    // --- lokale UI-Bausteine ---
-    function infoTile(label, value){
-      return h("div", { class: "info-tile" },
-        h("div", { class: "info-label" }, label),
-        h("div", { class: "info-value" }, value)
-      );
+
+
+  // ---------- DQ-Summe (über stats beider Bahnen) ----------
+  function sumAllDQ(obj){
+    const s50 = (obj.stats && obj.stats["50"]) || {};
+    const s25 = (obj.stats && obj.stats["25"]) || {};
+    let total = 0;
+    for (const d of DISCIPLINES){
+      total += Number(s50[d.key]?.dq || 0);
+      total += Number(s25[d.key]?.dq || 0);
     }
-    function infoTileBig(label, value){
-      // Titel mit zwei Layern (short/long)
-      const title = h("div", { class: "info-label lsc-label", "data-state": "short" },
-        h("span", { class: "label label-short", "aria-hidden": "false" }, "LSC"),
-        h("span", { class: "label label-long",  "aria-hidden": "true"  }, "Lifesaving Score")
-      );
-
-      const valueEl = h("div", { class: "info-value big" }, value);
-
-      const wrap = h("div", {
-        class: "info-tile accent lsc-tile",
-        role: "button",
-        tabindex: "0",
-        "aria-pressed": "false",
-        onclick: toggle,
-        onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } }
-      }, title, valueEl);
-
-      function toggle(){
-        const toLong = title.dataset.state !== "long";
-        title.dataset.state = toLong ? "long" : "short";
-        title.classList.toggle("show-long", toLong);
-        title.querySelector(".label-short")?.setAttribute("aria-hidden", toLong ? "true" : "false");
-        title.querySelector(".label-long")?.setAttribute("aria-hidden",  toLong ? "false" : "true");
-        wrap.setAttribute("aria-pressed", toLong ? "true" : "false");
-      }
-
-      return wrap;
-    }
-
-
-    function infoTileDist(label, m){
-      const wrap = h("div", { class: "info-tile dist" },
-        h("div", { class: "info-label" }, label),
-        // Progress-Balken 50/25
-        (() => {
-          const bar = h("div", { class: "info-progress" },
-            h("div", { class: "p50", style: `width:${m.pct50 || 0}%` }),
-          );
-          return bar;
-        })(),
-        // Legende
-        h("div", { class: "info-legend" },
-          h("span", { class: "l50" }, `50m ${m.pct50 || 0}%`),
-        )
-      );
-      return wrap;
-    }
-    function infoTileStatus(label, act){
-      return h("div", { class: `info-tile status ${act.key}` },
-        h("div", { class: "info-label" }, label),
-        h("div", { class: "status-line" },
-          h("span", { class: "status-dot" }),
-          h("span", { class: "status-text" }, act.label)
-        )
-      );
-    }
-
+    return total;
   }
 
-
-  // ---- Medaillen-Widget ------------------------------------------------
-  function renderMedalStats(a) {
-    const m = (a && a.medals) || {};
-    const g = Number(m.gold || 0);
-    const s = Number(m.silver || 0);
-    const b = Number(m.bronze || 0);
-    const total = g + s + b;
-
-    const max = Math.max(g, s, b, 1);   // nie 0, damit Balken-Höhen berechenbar sind
-    const H = 72;                        // max Balkenhöhe in px
-
-    const bar = (cls, label, value) => {
-      const h = Math.round((value / max) * H);
-      return hDiv("div", { class: `med-col ${cls}` },
-        hDiv("div", { class: "med-count" }, String(value)),
-        hDiv("div", { class: "med-barWrap" },
-          hDiv("div", { class: "med-bar", style: `height:${h}px` })
-        ),
-        hDiv("div", { class: "med-label" }, label)
-      );
-    };
-
-    const card = hDiv("aside", { class: "med-card", "aria-label": "Medaillen" },
-      hDiv("div", { class: "med-head" },
-        hDiv("div", { class: "med-title" }, m.title || "Medaillen"),
-        hDiv("div", { class: "med-total" }, String(total))
-      ),
-      hDiv("div", { class: "med-grid" },
-        bar("gold", "GOLD", g),
-        bar("silver", "SILVER", s),
-        bar("bronze", "BRONZE", b),
-      )
-    );
-
-    return card;
-  }
-
-  // kleine Helfer für kürzere Schreibweise
-  function hDiv(tag, props = {}, ...children){
-    const el = document.createElement(tag);
-    for (const [k, v] of Object.entries(props || {})) {
-      if (k === "class") el.className = v;
-      else if (v !== false && v != null) el.setAttribute(k, v === true ? "" : v);
-    }
-    for (const c of children.flat()) el.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
-    return el;
-  }
-
-
-  // ---- Altersklassen (aus Jahrgang) ---------------------------------
-  const REF_YEAR = new Date().getFullYear(); // ggf. auf fixes Wettkampfjahr setzen
-
-  function ageFromJahrgang(jahrgang, refYear = REF_YEAR) {
-    const age = refYear - Number(jahrgang);
-    return isNaN(age) ? null : age;
-  }
-
-  // ---- Altersklassen (nur DE, ohne "AK "-Prefix) ----
-  function akDE(age){
-    if (age == null) return "?";
-    if (age <= 10) return "10";
-    if (age <= 12) return "12";
-    if (age === 13 || age === 14) return "13/14";
-    if (age === 15 || age === 16) return "15/16";
-    if (age === 17 || age === 18) return "17/18";
-    return "Offen"; // >=19
-  }
-
-  function akLabelFromJahrgang(jahrgang){
-    const age = ageFromJahrgang(jahrgang);
-    return akDE(age); // z.B. "13/14" oder "Offen"
-  }
-
-
-  // ---- Ortsgruppe formatieren (DLRG + Korrekturen) -------------------
-  function formatOrtsgruppe(raw) {
-    let s = (raw || "").toString().trim();
-
-    // verbreitete Präfixe entfernen
-    s = s.replace(/^(og|dlrg)\s+/i, "");
-
-    // einfache Tippfehler-Korrekturen (erweiterbar)
-    const fixes = {
-      "karlsuhe": "Karlsruhe",
-      "karlsruhe": "Karlsruhe",
-      "mannhein": "Mannheim",
-      "mannheim": "Mannheim",
-      "heidelbrg": "Heidelberg",
-      "heidelberg": "Heidelberg",
-      "freiburg": "Freiburg",
-    };
-    const key = s.toLowerCase();
-    if (fixes[key]) {
-      s = fixes[key];
-    } else {
-      // Title-Case
-      s = s.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
-    }
-
-    return "DLRG " + s;
-  }
-
-  // ---- Geschlecht -> runder Kreis mit "w" / "m" ----------------------
-  function genderTag(g) {
-    const isW = (g || "").toLowerCase().startsWith("w");
-    return {
-      short: isW ? "w" : "m",
-      full:  isW ? "weiblich" : "männlich",
-      cls:   isW ? "w" : "m"
-    };
-  }
-
-  // ——— Disziplinen (Fixe Reihenfolge & interne Keys) ———
-  const DISCIPLINES = [
-    { key: "50_retten",           label: "50m Retten" },
-    { key: "100_retten_flosse",   label: "100m Retten mit Flossen" },
-    { key: "100_kombi",           label: "100 Kombi" },
-    { key: "100_lifesaver",       label: "100m Lifesaver" },
-    { key: "200_super",           label: "200m Super Lifesaver" },
-    { key: "200_hindernis",       label: "200m Hindernis" },
-  ];
-
-  // ——— Zeitformat: Sekunden (float) -> m:ss.hh ———
-  function formatSeconds(sec) {
-    if (sec == null || isNaN(sec)) return "—";
-    const tot = Math.round(Math.max(0, Number(sec)) * 100); // auf Hundertstel
-    const m = Math.floor(tot / 6000);
-    const s = Math.floor((tot % 6000) / 100);
-    const cs = tot % 100;
-    const sPart = (m ? String(s).padStart(2, "0") : String(s));
-    return (m ? `${m}:${sPart}` : sPart) + "." + String(cs).padStart(2, "0");
-  }
-
-
-
-
-  const normalize = (s) =>
-    (s || "")
-      .toString()
-      .toLowerCase()
-      .normalize("NFKD")
-      .replace(/\p{Diacritic}/gu, "")
-      .replace(/\s+/g, " ")
-      .trim();
-
-  const initials = (name) =>
-    (name || "")
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((s) => (s[0] || "").toUpperCase())
-      .join("");
-
-  const highlight = (text, query) => {
-    // einfache Substring-Hervorhebung (case/diacritic-insensitive)
-    const nText = normalize(text);
-    const nQuery = normalize(query);
-    const idx = nText.indexOf(nQuery);
-    if (idx < 0 || !query) return text;
-
-    // Rekonstruiere Markup anhand echter Indizes (vereinfachte Variante)
-    const start = idx;
-    const end = idx + nQuery.length;
-    // finde die echten Positionen im Originaltext (naiv, aber ok fürs UI)
-    let realStart = start, realEnd = end;
-    return (
-      text.slice(0, realStart) +
-      "<mark>" +
-      text.slice(realStart, realEnd) +
-      "</mark>" +
-      text.slice(realEnd)
-    );
-  };
-
-  // ---------------------------
-  // State
-  // ---------------------------
+  // ---------- UI: Suche ----------
   const AppState = {
     athletes: [
+      // Alte Struktur (funktioniert weiterhin)
       {
         id: "a1",
         name: "Lena Hoffmann",
         ortsgruppe: "Karlsruhe",
         geschlecht: "weiblich",
         jahrgang: 2007,
-        poolLen: "50", // "50" | "25"
+        poolLen: "50",
         medals: { gold: 18, silver: 6, bronze: 7, title: "Medaillen" },
-        lsc: 742, // oder beliebiger Score
+        lsc: 742,
         totalDisciplines: 20,
         countriesDE: ["Deutschland","Schweiz","Italien"],
         meets: [
-          { date: "2023-03-16", pool: "50" },
-          { date: "2023-05-11", pool: "25" },
-          { date: "2023-06-29", pool: "50" },
-          { date: "2024-02-01", pool: "50" }
+          { date: "2023-03-16", pool: "50", Land: "Deutschland" },
+          { date: "2023-05-11", pool: "25", Land: "Deutschland" },
+          { date: "2023-06-29", pool: "50", Land: "Schweiz" },
+          { date: "2024-02-01", pool: "50", Land: "Italien" }
         ],
         pbs: {
-          "50": {
-            "50_retten": 32.18,
-            "100_retten_flosse": 55.42,
-            "100_kombi": 70.31,
-            "100_lifesaver": 63.05,
-            "200_super": 146.22,
-            "200_hindernis": 139.88
-          },
-          "25": {
-            "50_retten": 31.50,
-            "100_lifesaver": 54.10
-            // Rest kann fehlen -> "—"
-          }
+          "50": { "50_retten": 32.18, "100_retten_flosse": 55.42, "100_kombi": 70.31, "100_lifesaver": 63.05, "200_super": 146.22, "200_hindernis": 139.88 },
+          "25": { "50_retten": 31.50, "100_lifesaver": 54.10 }
         },
-        // im Athletenobjekt
         stats: {
-          "50": {
-            "50_retten":        { starts: 12, dq: 1 },
-            "100_retten_flosse":{ starts: 8,  dq: 0 },
-            "100_kombi":        { starts: 6,  dq: 0 },
-            "100_lifesaver":    { starts: 10, dq: 2 },
-            "200_super":        { starts: 4,  dq: 0 },
-            "200_hindernis":    { starts: 7,  dq: 1 }
-          },
-          "25": {
-            "50_retten":        { starts: 9,  dq: 0 },
-            "100_lifesaver":    { starts: 5,  dq: 1 }
-          }
+          "50": { "50_retten": { starts:12,dq:1 }, "100_retten_flosse":{ starts:8,dq:0 }, "100_kombi":{ starts:6,dq:0 }, "100_lifesaver":{ starts:10,dq:2 }, "200_super":{ starts:4,dq:0 }, "200_hindernis":{ starts:7,dq:1 } },
+          "25": { "50_retten": { starts:9,dq:0 }, "100_lifesaver":{ starts:5,dq:1 } }
         }
       },
+      // Neue Zielstruktur – Beispiel (gekürzt)
       {
-        id: "a2",
-        name: "Noah Meier",
-        ortsgruppe: "Mannheim",
-        geschlecht: "männlich",
-        jahrgang: 2006,
-        poolLen: "50", // "50" | "25"
-      },
-      {
-        id: "a3",
-        name: "Sofia Brandt",
-        ortsgruppe: "Freiburg",
-        geschlecht: "weiblich",
-        jahrgang: 2004,
-        poolLen: "50", // "50" | "25"
-      },
-      {
-        id: "a4",
-        name: "Levi Schröder",
-        ortsgruppe: "Heidelberg",
-        geschlecht: "männlich",
-        jahrgang: 2009,
-        poolLen: "50", // "50" | "25"
-        medals: { gold: 1, silver: 0, bronze: 1, title: "Medaillen" },
-      },
-      {
-        id: "a1",
+        id: "ath_jan-philipp",
         name: "Jan-Philipp Gnad",
-        ortsgruppe: "Ettlingen",
         geschlecht: "männlich",
         jahrgang: 2001,
-        poolLen: "50", // "50" | "25"
-        medals: { gold: 4, silver: 7, bronze: 5, title: "Medaillen" },
-        lsc: 823, // oder beliebiger Score
-        totalDisciplines: 96,
-        countriesDE: ["Deutschland","Niederlande","Australien","Spanien","Belgien"],
+        poolLen: "50",
         meets: [
-          { date: "2023-03-16", pool: "25" },
-          { date: "2023-05-11", pool: "25" },
-          { date: "2023-06-29", pool: "50" },
-          { date: "2024-06-29", pool: "50" },
-          { date: "2025-07-27", pool: "50" }
-        ],
-        pbs: {
-          "50": {
-            "50_retten": 34.46,
-            "100_retten_flosse": 52.00,
-            "100_kombi": 73.69,
-            "100_lifesaver": 59.42,
-            "200_super": 145.55,
-            "200_hindernis": 232.85
+          {
+            meet_name: "BMS-KA - 2024",
+            date: "2024-03-16",
+            pool: "25",
+            Ortsgruppe: "Wettersbach",
+            Regelwerk: "National",
+            Land: "Deutschland",
+            Startrecht: "OG",
+            Wertung: "Einzelkampf",
+            LSC: "792,40",
+
+            Mehrkampf_Platz: "2",
+
+            "50m_Retten_Zeit": "0:34,20",  "50m_Retten_Platz": "2",
+            "100m_Retten_Zeit": "0:57,90", "100m_Retten_Platz": "1",
+            "100m_Kombi_Zeit": "DQ",       "100m_Kombi_Platz": "",
+            "100m_Lifesaver_Zeit": "1:02,45", "100m_Lifesaver_Platz": "3",
+            "200m_SuperLifesaver_Zeit": "2:40,30", "200m_SuperLifesaver_Platz": "1",
+            "200m_Hindernis_Zeit": "2:25,50", "200m_Hindernis_Platz": "2"
           },
-          "25": {
-            "50_retten": 31.50,
-            "100_retten_flosse": 56.20,
-            "100_kombi": 72.69,
-            "100_lifesaver": 58.69,
-            "200_super": 141.55,
-            "200_hindernis": 231.00
-            // Rest kann fehlen -> "—"
-          }
-        },
-        // im Athletenobjekt
-        stats: {
-          "50": {
-            "50_retten":        { starts: 12, dq: 0 },
-            "100_retten_flosse":{ starts: 12, dq: 0 },
-            "100_kombi":        { starts: 3,  dq: 0 },
-            "100_lifesaver":    { starts: 16, dq: 0 },
-            "200_super":        { starts: 18, dq: 1 },
-            "200_hindernis":    { starts: 17, dq: 0 }
+          {
+            meet_name: "Orange-Cup - 2024",
+            date: "2024-11-09",
+            pool: "50",
+            Ortsgruppe: "Masch",
+            Regelwerk: "International",
+            Land: "Niederlande",
+            Startrecht: "LV",
+            Wertung: "Einzel-/Mehrkampf",
+            LSC: "815,20",
+
+            Mehrkampf_Platz: "56",
+
+            "50m_Retten_Zeit": "0:34,85",  "50m_Retten_Platz": "3",
+            "100m_Retten_Zeit": "0:58,40", "100m_Retten_Platz": "2",
+            "100m_Kombi_Zeit": "1:14,80",  "100m_Kombi_Platz": "5",
+            "100m_Lifesaver_Zeit": "1:01,90", "100m_Lifesaver_Platz": "2",
+            "200m_SuperLifesaver_Zeit": "2:39,80", "200m_SuperLifesaver_Platz": "4",
+            "200m_Hindernis_Zeit": "", "200m_Hindernis_Platz": ""
           },
-          "25": {
-            "50_retten":        { starts: 7,  dq: 0 },
-            "100_retten_flosse":{ starts: 2,  dq: 0 },
-            "100_kombi":        { starts: 2,  dq: 0 },
-            "100_lifesaver":    { starts: 6,  dq: 0 },
-            "200_super":        { starts: 6,  dq: 0 },
-            "200_hindernis":    { starts: 8,  dq: 0 }
+          {
+            meet_name: "LMS - 2025",
+            date: "2025-05-18",
+            pool: "50",
+            Ortsgruppe: "Malsch",
+            Regelwerk: "International",
+            Land: "Deutschland",
+            Startrecht: "OG",
+            Wertung: "Mehrkampf",
+            LSC: "830,75",
+
+            Mehrkampf_Platz: "1",
+
+            "50m_Retten_Zeit": "0:34,10",  "50m_Retten_Platz": "1",
+            "100m_Retten_Zeit": "0:57,40", "100m_Retten_Platz": "1",
+            "100m_Kombi_Zeit": "1:13,90",  "100m_Kombi_Platz": "2",
+            "100m_Lifesaver_Zeit": "1:00,80", "100m_Lifesaver_Platz": "2",
+            "200m_SuperLifesaver_Zeit": "2:38,50", "200m_SuperLifesaver_Platz": "1",
+            "200m_Hindernis_Zeit": "2:22,95", "200m_Hindernis_Platz": "2"
+          },
+          {
+            meet_name: "BP - 2025",
+            date: "2025-07-27",
+            pool: "50",
+            Ortsgruppe: "Ettlingen",
+            Regelwerk: "National",
+            Land: "Deutschland",
+            Startrecht: "LV",
+            Wertung: "Mehrkampf",
+            LSC: "830,75",
+
+            Mehrkampf_Platz: "1",
+
+            "50m_Retten_Zeit": "0:34,10",  "50m_Retten_Platz": "1",
+            "100m_Retten_Zeit": "0:57,40", "100m_Retten_Platz": "1",
+            "100m_Kombi_Zeit": "1:13,90",  "100m_Kombi_Platz": "2",
+            "100m_Lifesaver_Zeit": "1:00,80", "100m_Lifesaver_Platz": "2",
+            "200m_SuperLifesaver_Zeit": "2:38,50", "200m_SuperLifesaver_Platz": "1",
+            "200m_Hindernis_Zeit": "2:22,95", "200m_Hindernis_Platz": "2"
           }
-        }
+        ]
       },
+      {
+        id: "ath_julian",
+        name: "Julian von Auenmüller",
+        AktuelleOrtsgruppe: "Oberhausen Rheinhausen",
+        geschlecht: "männlich",
+        jahrgang: 2001,
+        poolLen: "50",
+        meets: [
+          {
+            meet_name: "BMS-KA - 2024",
+            date: "2024-03-16",
+            pool: "25",
+            Ortsgruppe: "Oberhausen Rheinhausen",
+            Regelwerk: "National",
+            Land: "Deutschland",
+            Startrecht: "OG",
+            Wertung: "Einzelkampf",
+            LSC: "792,40",
 
+            Mehrkampf_Platz: "2",
+
+            "50m_Retten_Zeit": "0:34,20",  "50m_Retten_Platz": "2",
+            "100m_Retten_Zeit": "0:57,90", "100m_Retten_Platz": "1",
+            "100m_Kombi_Zeit": "DQ",       "100m_Kombi_Platz": "",
+            "100m_Lifesaver_Zeit": "1:02,45", "100m_Lifesaver_Platz": "3",
+            "200m_SuperLifesaver_Zeit": "2:40,30", "200m_SuperLifesaver_Platz": "1",
+            "200m_Hindernis_Zeit": "2:25,50", "200m_Hindernis_Platz": "2"
+          },
+          {
+            meet_name: "Orange-Cup - 2024",
+            date: "2024-11-09",
+            pool: "50",
+            Ortsgruppe: "Oberhausen Rheinhausen",
+            Regelwerk: "International",
+            Land: "Niederlande",
+            Startrecht: "LV",
+            Wertung: "Einzel-/Mehrkampf",
+            LSC: "815,20",
+
+            Mehrkampf_Platz: "56",
+
+            "50m_Retten_Zeit": "0:34,85",  "50m_Retten_Platz": "3",
+            "100m_Retten_Zeit": "0:58,40", "100m_Retten_Platz": "2",
+            "100m_Kombi_Zeit": "1:14,80",  "100m_Kombi_Platz": "5",
+            "100m_Lifesaver_Zeit": "1:01,90", "100m_Lifesaver_Platz": "2",
+            "200m_SuperLifesaver_Zeit": "2:39,80", "200m_SuperLifesaver_Platz": "4",
+            "200m_Hindernis_Zeit": "", "200m_Hindernis_Platz": ""
+          },
+          {
+            meet_name: "LMS - 2025",
+            date: "2025-05-18",
+            pool: "50",
+            Ortsgruppe: "Oberhausen Rheinhausen",
+            Regelwerk: "National",
+            Land: "Deutschland",
+            Startrecht: "OG",
+            Wertung: "Mehrkampf",
+            LSC: "830,75",
+
+            Mehrkampf_Platz: "1",
+
+            "50m_Retten_Zeit": "0:34,10",  "50m_Retten_Platz": "1",
+            "100m_Retten_Zeit": "0:57,40", "100m_Retten_Platz": "1",
+            "100m_Kombi_Zeit": "1:13,90",  "100m_Kombi_Platz": "2",
+            "100m_Lifesaver_Zeit": "1:00,80", "100m_Lifesaver_Platz": "2",
+            "200m_SuperLifesaver_Zeit": "2:38,50", "200m_SuperLifesaver_Platz": "1",
+            "200m_Hindernis_Zeit": "2:22,95", "200m_Hindernis_Platz": "2"
+          }
+        ]
+      },
+      {
+        id: "ath_lisa",
+        name: "Lisa Brenzinger",
+        AktuelleOrtsgruppe: "Malsch",
+        geschlecht: "weiblich",
+        jahrgang: 1999,
+        poolLen: "50",
+        meets: [
+          {
+            meet_name: "BMS-RN-MA - 2023",
+            date: "2023-10-07",
+            pool: "25",
+            Ortsgruppe: "Malsch",
+            Regelwerk: "National",
+            Land: "Deutschland",
+            Startrecht: "OG",
+            Wertung: "Einzelkampf",
+            LSC: "801,12",
+
+            Mehrkampf_Platz: "",
+
+            "50m_Retten_Zeit": "0:33,50",  "50m_Retten_Platz": "1",
+            "100m_Retten_Zeit": "0:56,70", "100m_Retten_Platz": "2",
+            "100m_Kombi_Zeit": "1:12,90",  "100m_Kombi_Platz": "3",
+            "100m_Lifesaver_Zeit": "1:00,30", "100m_Lifesaver_Platz": "2",
+            "200m_SuperLifesaver_Zeit": "2:36,20", "200m_SuperLifesaver_Platz": "3",
+            "200m_Hindernis_Zeit": "", "200m_Hindernis_Platz": ""
+          },
+          {
+            meet_name: "French-Rescue - 2024",
+            date: "2024-06-15",
+            pool: "50",
+            Ortsgruppe: "Malsch",
+            Regelwerk: "International",
+            Land: "Frankreich",
+            Startrecht: "LV",
+            Wertung: "Einzel-/Mehrkampf",
+            LSC: "842,90",
+
+            Mehrkampf_Platz: "1",
+
+            "50m_Retten_Zeit": "0:33,90",  "50m_Retten_Platz": "2",
+            "100m_Retten_Zeit": "0:57,20", "100m_Retten_Platz": "1",
+            "100m_Kombi_Zeit": "1:13,10",  "100m_Kombi_Platz": "2",
+            "100m_Lifesaver_Zeit": "1:00,10", "100m_Lifesaver_Platz": "1",
+            "200m_SuperLifesaver_Zeit": "2:35,50", "200m_SuperLifesaver_Platz": "2",
+            "200m_Hindernis_Zeit": "2:21,80", "200m_Hindernis_Platz": "3"
+          },
+          {
+            meet_name: "MISP-2025",
+            date: "2025-02-22",
+            pool: "25",
+            Ortsgruppe: "Malsch",
+            Regelwerk: "International",
+            Land: "Belgien",
+            Startrecht: "LV",
+            Wertung: "Mehrkampf",
+            LSC: "856,33",
+
+            Mehrkampf_Platz: "1",
+
+            "50m_Retten_Zeit": "0:33,20",  "50m_Retten_Platz": "1",
+            "100m_Retten_Zeit": "0:56,10", "100m_Retten_Platz": "1",
+            "100m_Kombi_Zeit": "1:11,90",  "100m_Kombi_Platz": "1",
+            "100m_Lifesaver_Zeit": "0:59,60", "100m_Lifesaver_Platz": "1",
+            "200m_SuperLifesaver_Zeit": "2:33,80", "200m_SuperLifesaver_Platz": "1",
+            "200m_Hindernis_Zeit": "2:18,90", "200m_Hindernis_Platz": "2"
+          }
+        ]
+      },
+      {
+        id: "ath_lea",
+        name: "Lea Hunger",
+        AktuelleOrtsgruppe: "Weil am Rhein",
+        geschlecht: "weiblich",
+        jahrgang: 2011,
+        poolLen: "50",
+        meets: [
+          {
+            meet_name: "BMS-HR-ML - 2024",
+            date: "2024-04-20",
+            pool: "25",
+            Ortsgruppe: "Weil am Rhein",
+            Regelwerk: "National",
+            Land: "Deutschland",
+            Startrecht: "OG",
+            Wertung: "Mehrkampf",
+            LSC: "612,10",
+
+            Mehrkampf_Platz: "3",
+
+            "50m_Retten_Zeit": "0:43,50",  "50m_Retten_Platz": "4",
+            "100m_Retten_Zeit": "1:18,20", "100m_Retten_Platz": "5",
+            "100m_Kombi_Zeit": "DQ",       "100m_Kombi_Platz": "",
+            "100m_Lifesaver_Zeit": "1:25,00", "100m_Lifesaver_Platz": "6",
+            "200m_SuperLifesaver_Zeit": "3:25,40", "200m_SuperLifesaver_Platz": "3",
+            "200m_Hindernis_Zeit": "3:01,80", "200m_Hindernis_Platz": "4"
+          },
+          {
+            meet_name: "SÖRG - 2024",
+            date: "2024-09-28",
+            pool: "50",
+            Ortsgruppe: "Weil am Rhein",
+            Regelwerk: "International",
+            Land: "Schweiz",
+            Startrecht: "LV",
+            Wertung: "Einzelkampf",
+            LSC: "640,55",
+
+            Mehrkampf_Platz: "",
+
+            "50m_Retten_Zeit": "0:42,80",  "50m_Retten_Platz": "5",
+            "100m_Retten_Zeit": "1:17,50", "100m_Retten_Platz": "5",
+            "100m_Kombi_Zeit": "1:36,20",  "100m_Kombi_Platz": "6",
+            "100m_Lifesaver_Zeit": "1:23,80", "100m_Lifesaver_Platz": "5",
+            "200m_SuperLifesaver_Zeit": "", "200m_SuperLifesaver_Platz": "",
+            "200m_Hindernis_Zeit": "2:58,40", "200m_Hindernis_Platz": "5"
+          },
+          {
+            meet_name: "Bodensee-Pokal -2025",
+            date: "2025-07-27",
+            pool: "50",
+            Ortsgruppe: "Weil am Rhein",
+            Regelwerk: "International",
+            Land: "Deutschland",
+            Startrecht: "LV",
+            Wertung: "Mehrkampf",
+            LSC: "658,20",
+
+            Mehrkampf_Platz: "2",
+
+            "50m_Retten_Zeit": "0:41,95",  "50m_Retten_Platz": "3",
+            "100m_Retten_Zeit": "1:16,90", "100m_Retten_Platz": "4",
+            "100m_Kombi_Zeit": "1:35,10",  "100m_Kombi_Platz": "4",
+            "100m_Lifesaver_Zeit": "1:22,60", "100m_Lifesaver_Platz": "4",
+            "200m_SuperLifesaver_Zeit": "3:18,90", "200m_SuperLifesaver_Platz": "3",
+            "200m_Hindernis_Zeit": "2:55,70", "200m_Hindernis_Platz": "3"
+          }
+        ]
+      }
     ],
-    query: "",
-    suggestions: [],
-    activeIndex: -1,
-    selectedAthleteId: null,
+
+    query: "", suggestions: [], activeIndex: -1, selectedAthleteId: null, poolLen: "50"
   };
 
-  const Refs = {
-    input: null,
-    suggest: null,
-    profileMount: null,
-    searchWrap: null,
-  };
+  const Refs = { input: null, suggest: null, profileMount: null, searchWrap: null, bestGrid: null, bestBtn50: null, bestBtn25: null };
 
-  // ---------------------------
-  // Render Root
-  // ---------------------------
+  // ---------- Suche ----------
   function renderApp() {
-    const mount = $("#athleten-container");
-    if (!mount) return console.error("[athleten_gui] #athleten-container nicht gefunden");
-
+    const mount = $("#athleten-container"); if (!mount) return;
     mount.innerHTML = "";
     const ui = h("section", { class: "ath-ui", role: "region", "aria-label": "Athletenbereich" });
-
-    // Hinweis
-    ui.appendChild(
-      h(
-        "p",
-        { class: "ath-ui-note" },
-        "Suche nach Name (ab 2 Zeichen). Treffer erscheinen im Dropdown. Auswahl öffnet das Profil."
-      )
-    );
-
-    // Suche + Dropdown
+    ui.appendChild(h("p", { class: "ath-ui-note" }, "Suche nach Name (ab 2 Zeichen). Treffer erscheinen im Dropdown. Auswahl öffnet das Profil."));
     ui.appendChild(renderSearch());
-
-    // Profilbereich (zunächst leer/verborgen)
-    const profile = h("div", { id: "ath-profile" });
-    Refs.profileMount = profile;
-    ui.appendChild(profile);
-
+    const profile = h("div", { id: "ath-profile" }); Refs.profileMount = profile; ui.appendChild(profile);
     mount.appendChild(ui);
   }
 
-  // ---------------------------
-  // Search
-  // ---------------------------
   function renderSearch() {
-    const wrap = h("div", { class: "ath-search-wrap" });
-    Refs.searchWrap = wrap;
-
-    const input = h("input", {
-      class: "ath-input",
-      type: "search",
-      placeholder: "Name suchen …",
-      role: "searchbox",
-      "aria-label": "Athleten suchen",
-      autocomplete: "off",
-      // auf iOS gibt's beim type="search" automatisch ein kleines "x" zum Leeren
-      oninput: onQueryChange,
-      onkeydown: onSearchKeyDown,
-    });
+    const wrap = h("div", { class: "ath-search-wrap" }); Refs.searchWrap = wrap;
+    const input = h("input", { class: "ath-input", type: "search", placeholder: "Name suchen …", role: "searchbox", "aria-label": "Athleten suchen", autocomplete: "off", oninput: onQueryChange, onkeydown: onSearchKeyDown });
     Refs.input = input;
-
-    const searchBtn = h(
-      "button",
-      {
-        class: "ath-btn primary",
-        type: "button",
-        title: "Ersten Treffer öffnen",
-        onclick: () => {
-          if (AppState.suggestions.length > 0) {
-            openProfile(AppState.suggestions[0]);
-          }
-        },
-      },
-      "Öffnen"
-    );
-
-    const bar = h("div", { class: "ath-ui-search", role: "search" }, input, searchBtn);
-    wrap.appendChild(bar);
-
-    // Suggestion-Dropdown (leer, wird dynamisch gefüllt)
-    const suggest = h("div", { class: "ath-suggest hidden", role: "listbox", id: "ath-suggest" });
-    Refs.suggest = suggest;
-    wrap.appendChild(suggest);
-
-    // Klick außerhalb => Dropdown schließen
-    document.addEventListener("click", (e) => {
-      if (!Refs.searchWrap.contains(e.target)) hideSuggestions();
-    });
-
+    const searchBtn = h("button", { class: "ath-btn primary", type: "button", title: "Ersten Treffer öffnen",
+      onclick: () => { if (AppState.suggestions.length > 0) openProfile(AppState.suggestions[0]); } }, "Öffnen");
+    wrap.appendChild(h("div", { class: "ath-ui-search", role: "search" }, input, searchBtn));
+    const suggest = h("div", { class: "ath-suggest hidden", role: "listbox", id: "ath-suggest" }); Refs.suggest = suggest; wrap.appendChild(suggest);
+    document.addEventListener("click", (e) => { if (!Refs.searchWrap.contains(e.target)) hideSuggestions(); });
     return wrap;
   }
 
-
-  function onQueryChange(e) {
-    AppState.query = e.target.value || "";
-    updateSuggestions();
-  }
-
-  function onSearchKeyDown(e) {
+  function onQueryChange(e){ AppState.query = e.target.value || ""; updateSuggestions(); }
+  function onSearchKeyDown(e){
     const { suggestions, activeIndex } = AppState;
-
-    if (e.key === "ArrowDown") {
-      if (suggestions.length === 0) return;
-      e.preventDefault();
-      AppState.activeIndex = (activeIndex + 1) % suggestions.length;
-      paintSuggestions();
-    } else if (e.key === "ArrowUp") {
-      if (suggestions.length === 0) return;
-      e.preventDefault();
-      AppState.activeIndex = (activeIndex - 1 + suggestions.length) % suggestions.length;
-      paintSuggestions();
-    } else if (e.key === "Enter") {
-      if (suggestions.length === 0) return;
-      e.preventDefault();
-      const idx = activeIndex >= 0 ? activeIndex : 0;
-      openProfile(suggestions[idx]);
-    } else if (e.key === "Escape") {
-      hideSuggestions();
-    }
+    if (e.key === "ArrowDown") { if (!suggestions.length) return; e.preventDefault(); AppState.activeIndex = (activeIndex + 1) % suggestions.length; paintSuggestions(); }
+    else if (e.key === "ArrowUp") { if (!suggestions.length) return; e.preventDefault(); AppState.activeIndex = (activeIndex - 1 + suggestions.length) % suggestions.length; paintSuggestions(); }
+    else if (e.key === "Enter") { if (!suggestions.length) return; e.preventDefault(); openProfile(suggestions[activeIndex >= 0 ? activeIndex : 0]); }
+    else if (e.key === "Escape") { hideSuggestions(); }
   }
 
   function updateSuggestions() {
     const q = AppState.query.trim();
-    if (q.length < 2) {
-      AppState.suggestions = [];
-      AppState.activeIndex = -1;
-      hideSuggestions();
-      return;
-    }
-
+    if (q.length < 2) { AppState.suggestions = []; AppState.activeIndex = -1; hideSuggestions(); return; }
     const nq = normalize(q);
-
-    // Filter nach Name (später können wir OG/Jahrgang hinzunehmen)
-    let list = AppState.athletes
-      .map((a) => ({ a, nName: normalize(a.name) }))
-      .filter(({ nName }) => nName.includes(nq));
-
-    // Sortierung: startsWith > includes
+    let list = AppState.athletes.map(a => ({ a, nName: normalize(a.name) })).filter(({ nName }) => nName.includes(nq));
     list.sort((l, r) => {
       const aStart = l.nName.startsWith(nq) ? 0 : 1;
       const bStart = r.nName.startsWith(nq) ? 0 : 1;
       if (aStart !== bStart) return aStart - bStart;
       return l.nName.localeCompare(r.nName);
     });
-
-    AppState.suggestions = list.map((x) => x.a).slice(0, 8);
+    AppState.suggestions = list.map(x => x.a).slice(0, 8);
     AppState.activeIndex = AppState.suggestions.length ? 0 : -1;
     paintSuggestions();
   }
 
-  function hideSuggestions() {
-      if (Refs.suggest) {
-        Refs.suggest.classList.add("hidden");
-        Refs.suggest.innerHTML = "";
-      }
-    }
+  function hideSuggestions(){ if (Refs.suggest) { Refs.suggest.classList.add("hidden"); Refs.suggest.innerHTML = ""; } }
 
-    function paintSuggestions() {
-    const box = Refs.suggest;
-    if (!box) return;
-    const q = AppState.query.trim();
-    box.innerHTML = "";
+  function paintSuggestions(){
+    const box = Refs.suggest; if (!box) return;
+    const q = AppState.query.trim(); box.innerHTML = "";
 
-    if (!q || AppState.suggestions.length === 0) {
-      const empty = h("div", { class: "ath-suggest-empty" }, q.length < 2 ? "Mind. 2 Zeichen eingeben" : "Keine Treffer");
-      box.appendChild(empty);
+    if (!q || !AppState.suggestions.length) {
+      box.appendChild(
+        h("div", { class: "ath-suggest-empty" },
+          q.length < 2 ? "Mind. 2 Zeichen eingeben" : "Keine Treffer"
+        )
+      );
       box.classList.remove("hidden");
       return;
     }
@@ -753,32 +782,28 @@
         class: "ath-suggest-item" + (idx === AppState.activeIndex ? " active" : ""),
         role: "option",
         "aria-selected": idx === AppState.activeIndex ? "true" : "false",
-
-        // ★ iOS-fest: zuerst pointerdown (deckt Touch + Maus ab)
         onpointerdown: (ev) => { ev.preventDefault(); ev.stopPropagation(); openProfile(a); },
-
-        // ★ Fallback für sehr alte iOS-Versionen
         ontouchstart: (ev) => { ev.preventDefault(); ev.stopPropagation(); openProfile(a); },
-
-        // ★ Desktop-Fallback
         onclick: (ev) => { ev.preventDefault(); ev.stopPropagation(); openProfile(a); },
-
         onmouseenter: () => {
-          if (AppState.activeIndex === idx) return;                 // nichts tun, wenn schon aktiv
-          const prev = box.querySelector('.ath-suggest-item.active');
-          prev?.classList.remove('active');                         // alte Markierung weg
-          item.classList.add('active');                             // diese Zeile markieren
-          AppState.activeIndex = idx;                               // State updaten (für Enter)
+          if (AppState.activeIndex === idx) return;
+          box.querySelector('.ath-suggest-item.active')?.classList.remove('active');
+          item.classList.add('active');
+          AppState.activeIndex = idx;
         }
       });
 
-      // Avatar (Cap-SVG, kleine Größe)
+      // Cap-Avatar (klein)
       item.appendChild(renderCapAvatar(a, "sm", "ath-suggest-avatar"));
 
-      // Name (mit Jahrgang) + OG darunter
+      // Name + Jahrgang
       const nameEl = h("div", { class: "ath-suggest-name" });
       nameEl.innerHTML = `${highlight(a.name, q)} <span class="ath-year">(${a.jahrgang})</span>`;
-      const sub = h("div", { class: "ath-suggest-sub" }, formatOrtsgruppe(a.ortsgruppe));
+
+      // ★ aktuelle OG aus Meets
+      const ogNow = currentOrtsgruppeFromMeets(a) || a.ortsgruppe || "";
+      const sub = h("div", { class: "ath-suggest-sub" }, formatOrtsgruppe(ogNow));
+
       const text = h("div", { class: "ath-suggest-text" }, nameEl, sub);
       item.appendChild(text);
 
@@ -789,83 +814,42 @@
   }
 
 
+  // ---------- Bestzeiten-Section ----------
+  function renderBahnSwitch(athlete) {
+    const wrap = h("div", { class: "ath-bests-switch", role: "group", "aria-label": "Bahnlänge" });
+    const b50 = h("button", { class: "seg-btn" + (AppState.poolLen === "50" ? " active" : ""), type: "button",
+      onclick: () => { if (AppState.poolLen !== "50") { AppState.poolLen = "50"; b50.classList.add("active"); b25.classList.remove("active"); paintBestzeitenGrid(athlete); } } }, "50 m");
+    const b25 = h("button", { class: "seg-btn" + (AppState.poolLen === "25" ? " active" : ""), type: "button",
+      onclick: () => { if (AppState.poolLen !== "25") { AppState.poolLen = "25"; b25.classList.add("active"); b50.classList.remove("active"); paintBestzeitenGrid(athlete); } } }, "25 m");
+    Refs.bestBtn50 = b50; Refs.bestBtn25 = b25;
+    return h("div", { class: "seg" }, b50, b25);
+  }
 
-  // Refs für Bestzeiten
-  Refs.bestGrid = null;
-  Refs.bestBtn50 = null;
-  Refs.bestBtn25 = null;
-
-  // Section erzeugen
   function renderBestzeitenSection(athlete) {
-    const header = h("div", { class: "ath-bests-header" },
-      h("h3", {}, "Bestzeiten / Info"),
-      renderBahnSwitch(athlete)
-    );
-
-    const grid = h("div", { class: "ath-bests-grid" });
-    Refs.bestGrid = grid;
-
+    const header = h("div", { class: "ath-bests-header" }, h("h3", {}, "Bestzeiten / Info"), renderBahnSwitch(athlete));
+    const grid = h("div", { class: "ath-bests-grid" }); Refs.bestGrid = grid;
     const section = h("div", { class: "ath-profile-section bests" }, header, grid);
     paintBestzeitenGrid(athlete);
     return section;
   }
 
-  // Toggle 50m / 25m
-  function renderBahnSwitch(athlete) {
-    const wrap = h("div", { class: "ath-bests-switch", role: "group", "aria-label": "Bahnlänge" });
-
-    const b50 = h("button", {
-      class: "seg-btn" + (AppState.poolLen === "50" ? " active" : ""),
-      type: "button",
-      onclick: () => {
-        if (AppState.poolLen !== "50") {
-          AppState.poolLen = "50";
-          b50.classList.add("active");
-          b25.classList.remove("active");
-          paintBestzeitenGrid(athlete);
-        }
-      }
-    }, "50 m");
-
-    const b25 = h("button", {
-      class: "seg-btn" + (AppState.poolLen === "25" ? " active" : ""),
-      type: "button",
-      onclick: () => {
-        if (AppState.poolLen !== "25") {
-          AppState.poolLen = "25";
-          b25.classList.add("active");
-          b50.classList.remove("active");
-          paintBestzeitenGrid(athlete);
-        }
-      }
-    }, "25 m");
-
-    Refs.bestBtn50 = b50;
-    Refs.bestBtn25 = b25;
-
-    return h("div", { class: "seg" }, b50, b25);
-  }
-
-  // Grid der 6 Disziplinen befüllen
   function paintBestzeitenGrid(athlete) {
     if (!Refs.bestGrid) return;
 
-    const lane = AppState.poolLen || "50";
-    const times = (athlete.pbs && athlete.pbs[lane]) || {};
-    const statsMap = (athlete.stats && athlete.stats[lane]) || {};
+    const lane    = AppState.poolLen || "50";
+    const times   = (athlete.pbs   && athlete.pbs[lane])   || {};
+    const statsMap= (athlete.stats && athlete.stats[lane]) || {};
 
     Refs.bestGrid.innerHTML = "";
 
-    const toSec = (v) => {
-      if (v == null) return NaN;
-      const n = parseFloat(String(v).replace(",", "."));
-      return Number.isFinite(n) ? n : NaN;
-    };
+    // --- NEU: Disziplinen anzeigen, wenn (PB-Zeit vorhanden) ODER (DQ>0) ---
+    const showList = DISCIPLINES.filter(d => {
+      const hasTime = Number.isFinite(times[d.key]);
+      const dqOnly  = Number(statsMap[d.key]?.dq || 0) > 0;
+      return hasTime || dqOnly;
+    });
 
-    // Nur Disziplinen mit Zeit anzeigen (wie bisher)
-    const showList = DISCIPLINES.filter(d => Number.isFinite(toSec(times[d.key])));
-
-    if (showList.length === 0) {
+    if (!showList.length) {
       Refs.bestGrid.appendChild(
         h("div", { class: "best-empty" },
           lane === "50" ? "Keine Bestzeiten auf 50 m vorhanden." : "Keine Bestzeiten auf 25 m vorhanden."
@@ -875,199 +859,198 @@
     }
 
     showList.forEach(d => {
-        const sec = toSec(times[d.key]);
-        const st  = statsMap[d.key] || {};
-        const starts = Number(st.starts || 0);
-        const dq     = Number(st.dq || 0);
+      const sec    = times[d.key];                     // PB (kann undefined sein)
+      const st     = statsMap[d.key] || {};
+      const starts = Number(st.starts || 0);
+      const dq     = Number(st.dq || 0);
+      const hasTime= Number.isFinite(sec);
 
-        const tile = h("article", {
+      const frontValue = hasTime ? formatSeconds(sec) : (dq > 0 ? "DQ" : "—");
+      const aria = hasTime ? `Bestzeit ${formatSeconds(sec)}` : (dq > 0 ? "DQ" : "keine Zeit");
+
+      const tile = h("article", {
         class: "best-tile",
         role: "button",
         tabindex: "0",
         "aria-pressed": "false",
-        "aria-label": `${d.label} – Bestzeit ${formatSeconds(sec)}`
+        "aria-label": `${d.label} – ${aria}`
       });
 
       const inner = h("div", { class: "tile-inner" });
-      // ... front/back anhängen ...
-      tile.appendChild(inner);
-      Refs.bestGrid.appendChild(tile);
 
-      /* Klick/Tap = Lock/Unlock */
-      const toggleLock = () => {
-        const locked = tile.classList.toggle("is-flipped");
-        tile.setAttribute("aria-pressed", locked ? "true" : "false");
-      };
-
-      /* Pointer deckt Maus + Touch ab; fallback für alte Browser */
-      if ("onpointerdown" in window) {
-        // Maus, Touch, Stift – alles über einen Kanal
-        tile.addEventListener("pointerdown", toggleLock);
-      } else {
-        // Fallback (sehr alte Browser)
-        tile.addEventListener("click", toggleLock);
-        tile.addEventListener("touchstart", toggleLock, { passive: true });
-      }
-
-      // Tastatur-Bedienung (Enter/Space)
-      tile.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleLock(); }
-      });
-
-
-      // FRONT (Bestzeit)
       const front = h("div", { class: "tile-face tile-front" },
         h("div", { class: "best-label" }, d.label),
-        h("div", { class: "best-time"  }, formatSeconds(sec))
+        h("div", { class: "best-time"  }, frontValue)
       );
 
-      // BACK (Starts + DQ)
+      // BACK (Schnitt + Starts + DQ)
+      const avgSec = avgTimeForDiscipline(athlete, lane, d);
+
       const back = h("div", { class: "tile-face tile-back" },
         h("div", { class: "tile-stats" },
+          statRow("Schnitt", Number.isFinite(avgSec) ? formatSeconds(avgSec) : "—"),
           statRow("Starts", starts),
           statRow("DQ / Strafen", dq)
         )
       );
-
 
       inner.appendChild(front);
       inner.appendChild(back);
       tile.appendChild(inner);
       Refs.bestGrid.appendChild(tile);
 
-      function toggle(){
-        const flipped = tile.classList.toggle("is-flipped");
-        tile.setAttribute("aria-pressed", flipped ? "true" : "false");
+      const toggleLock = () => {
+        const locked = tile.classList.toggle("is-flipped");
+        tile.setAttribute("aria-pressed", locked ? "true" : "false");
+      };
+      if ("onpointerdown" in window) tile.addEventListener("pointerdown", toggleLock);
+      else { tile.addEventListener("click", toggleLock); tile.addEventListener("touchstart", toggleLock, { passive: true }); }
+      tile.addEventListener("keydown", (e) => { if (e.key==="Enter"||e.key===" "){ e.preventDefault(); toggleLock(); } });
+
+      function statRow(k, v){
+        return h("div", { class: "stat" }, h("span", { class: "k" }, k), h("span", { class: "v" }, String(v)));
       }
     });
+  }
 
-    function statRow(k, v){
-      return h("div", { class: "stat" },
-        h("span", { class: "k" }, k),
-        h("span", { class: "v" }, String(v))
+
+  // ---------- Medaillen ----------
+  function renderMedalStats(a) {
+    const m = (a && a.medals) || {};
+    const g = Number(m.gold || 0), s = Number(m.silver || 0), b = Number(m.bronze || 0);
+    const total = g + s + b, max = Math.max(g, s, b, 1), H = 72;
+    const bar = (cls, label, value) => {
+      const hpx = Math.round((value / max) * H);
+      return hDiv("div", { class: `med-col ${cls}` },
+        hDiv("div", { class: "med-count" }, String(value)),
+        hDiv("div", { class: "med-barWrap" }, hDiv("div", { class: "med-bar", style: `height:${hpx}px` })),
+        hDiv("div", { class: "med-label" }, label)
+      );
+    };
+    return hDiv("aside", { class: "med-card", "aria-label": "Medaillen" },
+      hDiv("div", { class: "med-head" }, hDiv("div", { class: "med-title" }, m.title || "Medaillen"), hDiv("div", { class: "med-total" }, String(total))),
+      hDiv("div", { class: "med-grid" }, bar("gold","GOLD",g), bar("silver","SILVER",s), bar("bronze","BRONZE",b))
+    );
+  }
+
+  // ---------- Überblick ----------
+  function renderOverviewSection(a){
+    const header = h("div", { class: "ath-info-header" }, h("h3", {}, "Überblick"));
+    const grid = h("div", { class: "ath-info-grid" });
+
+    const meets = computeMeetInfo(a);
+    const totalDisc = Number.isFinite(+a.totalDisciplines) ? +a.totalDisciplines : null;
+    const totalDQ = sumAllDQ(a);
+
+    grid.appendChild(infoTileBig("LSC", a.lsc != null ? fmtInt(a.lsc) : "—"));
+    grid.appendChild(infoTile("Wettkämpfe", fmtInt(meets.total)));
+    grid.appendChild(infoTile("Total Starts", fmtInt(totalDisc)));
+    grid.appendChild(infoTile("DQ / Strafen", fmtInt(totalDQ)));
+    grid.appendChild(infoTileDist("Bahnverteilung", meets));
+    grid.appendChild(infoTile("Erster Wettkampf", fmtDate(meets.first)));
+    grid.appendChild(infoTile("Aktive Jahre", fmtInt(meets.activeYears)));
+
+    return h("div", { class: "ath-profile-section info" }, header, grid);
+
+    function infoTile(label, value){
+      return h("div", { class: "info-tile" }, h("div", { class: "info-label" }, label), h("div", { class: "info-value" }, value));
+    }
+    function infoTileBig(label, value){
+      const title = h("div", { class: "info-label lsc-label", "data-state": "short" },
+        h("span", { class: "label label-short", "aria-hidden": "false" }, "LSC"),
+        h("span", { class: "label label-long",  "aria-hidden": "true"  }, "Lifesaving Score")
+      );
+      const valueEl = h("div", { class: "info-value big" }, value);
+      const wrap = h("div", { class: "info-tile accent lsc-tile", role: "button", tabindex: "0", "aria-pressed": "false",
+        onclick: toggle, onkeydown: (e)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggle(); } } }, title, valueEl);
+      function toggle(){
+        const toLong = title.dataset.state !== "long";
+        title.dataset.state = toLong ? "long" : "short";
+        title.classList.toggle("show-long", toLong);
+        title.querySelector(".label-short")?.setAttribute("aria-hidden", toLong ? "true" : "false");
+        title.querySelector(".label-long")?.setAttribute("aria-hidden",  toLong ? "false" : "true");
+        wrap.setAttribute("aria-pressed", toLong ? "true" : "false");
+      }
+      return wrap;
+    }
+    function infoTileDist(label, m){
+      return h("div", { class: "info-tile dist" },
+        h("div", { class: "info-label" }, label),
+        h("div", { class: "info-progress" }, h("div", { class: "p50", style: `width:${m.pct50 || 0}%` })),
+        h("div", { class: "info-legend" }, h("span", { class: "l50" }, `50m ${m.pct50 || 0}%`))
       );
     }
   }
 
-
-
-
-
-
-
-  // ---------------------------
-  // Profile
-  // ---------------------------
+  // ---------- Profil ----------
   function openProfile(a) {
-    AppState.poolLen = (a && a.poolLen) ? String(a.poolLen) : (AppState.poolLen || "50");
-    AppState.selectedAthleteId = a?.id || null;
+    // Aus meets alles ableiten (pbs, stats, medals, totalDisciplines, countries, lsc)
+    const derived = deriveFromMeets(a);
+    const ax = { ...a, ...derived };        // ← NICHT mehr ortsgruppe überschreiben
+
+    AppState.poolLen = (ax && ax.poolLen) ? String(ax.poolLen) : (AppState.poolLen || "50");
+    AppState.selectedAthleteId = ax?.id || null;
     hideSuggestions();
 
-    const mount = Refs.profileMount;
-    if (!mount) return;
+    const mount = Refs.profileMount; if (!mount) return;
+    if (!ax) { mount.innerHTML = ""; mount.classList.remove("ath-profile-wrap"); return; }
 
-    if (!a) {
-      mount.innerHTML = "";
-      mount.classList.remove("ath-profile-wrap");
-      return;
-    }
+    const KV = (k, v) => h("span", { class: "kv" }, h("span", { class: "k" }, k + ":"), h("span", { class: "v" }, v));
 
-    // lokale KV-Hilfe (falls noch nicht oben global vorhanden)
-    const KV = (k, v) =>
-      h("span", { class: "kv" },
-        h("span", { class: "k" }, k + ":"),
-        h("span", { class: "v" }, v)
-      );
+    // ★ aktuelle OG aus Meets berechnen (mit Fallback auf evtl. altes Feld)
+    const currOG = currentOrtsgruppeFromMeets(ax) || ax.ortsgruppe || "";
 
-    const profile = h(
-      "article",
-      { class: "ath-profile" },
+    const profile = h("article", { class: "ath-profile" },
+      h("div", { class: "ath-profile-head" },
 
-      // HEAD (Avatar | Titel/Meta | Medaillen rechts)
-      h(
-        "div",
-        { class: "ath-profile-head" },
+        // Cap lädt intern bereits die aktuelle OG
+        renderCapAvatar(ax),
 
-        // Vereinscap
-        renderCapAvatar(a),
-
-
-        // Titel + Meta
-        h(
-          "div",
-          { class: "ath-profile-title" },
-
-          // Name
-          h("h2", {}, a.name),
+        h("div", { class: "ath-profile-title" },
+          h("h2", {}, ax.name),
 
           // Chips-Zeile: Gender + AK + Aktivitätsstatus
           (() => {
-            const gt   = genderTag(a.geschlecht);                // { full, cls: "w"|"m" }
-            const age  = ageFromJahrgang(a.jahrgang);
-            const ak   = akLabelFromJahrgang(a.jahrgang);        // "10" | "12" | "13/14" | "15/16" | "17/18" | "Offen"
+            const gt   = genderTag(ax.geschlecht);
+            const ak   = akLabelFromJahrgang(ax.jahrgang);
+            const meets = computeMeetInfo(ax);
+            const act   = activityStatusFromLast(meets.last);
+            const lastStr = fmtDate(meets.last);
+            const age = ageFromJahrgang(ax.jahrgang);
             const band = (age != null && age <= 18) ? "youth" : "open";
-
-            const meets = computeMeetInfo(a);                    // hat .last
-            const act   = activityStatusFromLast(meets.last);    // { key:"active"|"pause"|"inactive", label:"Aktiv"|... }
-            const last = fmtDate(meets.last);                // z.B. "01.02.2025"
-
             return h("div", { class: "gender-row" },
               h("span", { class: `gender-chip ${gt.cls}`, title: gt.full, "aria-label": `Geschlecht: ${gt.full}` }, gt.full),
               h("span", { class: `ak-chip ${band}`,       title: `Altersklasse ${ak}`, "aria-label": `Altersklasse ${ak}` }, ak),
-              h("span", {
-                class: `status-chip ${act.key}`,
-                title: `Letzter Wettkampf: ${last}`,                                  // ← Tooltip-Text
-                "aria-label": `Aktivitätsstatus: ${act.label}. Letzter Wettkampf: ${last}` // ← Screenreader
-              },
+              h("span", { class: `status-chip ${act.key}`, title: `Letzter Wettkampf: ${lastStr}`, "aria-label": `Aktivitätsstatus: ${act.label}. Letzter Wettkampf: ${lastStr}` },
                 h("span", { class: "status-dot" }), act.label
               )
             );
           })(),
 
-          // Meta-Zeile(n): OG / Jahrgang  (AK hier NICHT mehr anzeigen)
+          // ★ Meta: OG + Jahrgang (OG = aktuelle)
           h("div", { class: "ath-profile-meta" },
-            KV("Ortsgruppe", formatOrtsgruppe(a.ortsgruppe)),
-            KV("Jahrgang", String(a.jahrgang))
+            KV("Ortsgruppe", formatOrtsgruppe(currOG)),
+            KV("Jahrgang", String(ax.jahrgang))
           )
         ),
-        // Medaillen-Widget (rechts)
-        renderMedalStats(a)
+
+        renderMedalStats(ax)
       ),
 
-      // ★ NEU: Länder-Flaggen direkt unter dem Kopf
-      renderCountryFlagsSectionSVG(a),
-
-      // ÜBERBLICK (neu)
-      renderOverviewSection(a),
-
-      // Trennstrich
+      renderCountryFlagsSectionSVG(ax),
+      renderOverviewSection(ax),
       h("hr", { class: "ath-sep", role: "separator", "aria-hidden": "true" }),
-
-      // BESTZEITEN
-      renderBestzeitenSection(a),
-
-      // Platzhalter Statistik
-      h("div", { class: "ath-profile-section muted" },
-        "Hier kommt später die Statistik (GUI) aus deiner Excel-Datenbank rein."
-      )
+      renderBestzeitenSection(ax),
+      h("div", { class: "ath-profile-section muted" }, "Hier kommt später die Statistik (GUI) aus deiner Excel-Datenbank rein.")
     );
 
     mount.innerHTML = "";
     mount.classList.add("ath-profile-wrap");
     mount.appendChild(profile);
-    // z.B. 320px vom Seitenanfang
-    function scrollToY(y = 275, smooth = true){
-      window.scrollTo({ top: Math.max(0, y), behavior: smooth ? 'smooth' : 'auto' });
-    }
-
-    // in openProfile(), direkt NACH mount.appendChild(profile):
-    requestAnimationFrame(() => scrollToY(275, true));
+    requestAnimationFrame(() => window.scrollTo({ top: 275, behavior: 'smooth' }));
   }
 
 
-
-  // ---------------------------
-  // Boot
-  // ---------------------------
+  // ---------- Boot ----------
   document.addEventListener("DOMContentLoaded", renderApp);
 })();
