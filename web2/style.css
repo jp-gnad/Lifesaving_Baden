@@ -1173,3 +1173,41 @@ table tr.odd {
   );
   margin: 15px 0; /* Abstand oben/unten */
 }
+
+/*Cursor für LSC*/
+.info-tile.accent.lsc-tile{ cursor: pointer; user-select: none; }
+
+
+/* klickbare LSC-Kachel */
+.info-tile.accent.lsc-tile{ cursor: pointer; user-select: none; }
+
+/* Titel-Wrapper mit zwei Ebenen */
+.lsc-label{
+  position: relative;
+  height: 1.2em;          /* fixiert die Höhe, damit nix springt */
+  overflow: hidden;
+}
+
+/* beide Titel-Layer überlagern */
+.lsc-label .label{
+  position: absolute;
+  inset: 0;
+  display: inline-block;
+  white-space: nowrap;
+  transform: translateX(0);
+  opacity: 1;
+  transition: transform .35s ease, opacity .35s ease;
+}
+
+/* Startzustand: Kurz sichtbar, Lang links außerhalb */
+.lsc-label .label-short{ transform: translateX(0%);    opacity: 1; }
+.lsc-label .label-long { transform: translateX(-110%); opacity: 0; }
+
+/* Show-Long: Kurz raus nach rechts, Lang rein */
+.lsc-label.show-long .label-short{ transform: translateX(110%); opacity: 0; }
+.lsc-label.show-long .label-long { transform: translateX(0%);   opacity: 1; }
+
+/* Bewegungsreduktion respektieren */
+@media (prefers-reduced-motion: reduce){
+  .lsc-label .label{ transition: none; }
+}

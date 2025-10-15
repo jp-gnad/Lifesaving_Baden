@@ -23,67 +23,36 @@
     return el;
   };
 
-  // ---- Vereins-Cap im Avatar laden -------------------------------------
-  function capNameVariantsFromOrtsgruppe(rawOG){
-    // Wir versuchen mehrere plausible Namensvarianten, damit Dateinamen robust gefunden werden
-    const formatted = formatOrtsgruppe(rawOG || "");           // z.B. "DLRG Karlsruhe"
-    const noPrefix  = formatted.replace(/^DLRG\s+/i, "").trim(); // "Karlsruhe"
-
-    const baseList = [formatted, rawOG || "", noPrefix].filter(Boolean);
-
-    const umlautSwap = (s) => s
-      .replaceAll("Ä","Ae").replaceAll("ä","ae")
-      .replaceAll("Ö","Oe").replaceAll("ö","oe")
-      .replaceAll("Ü","Ue").replaceAll("ü","ue")
-      .replaceAll("ß","ss");
-
-    const noDiacritics = (s) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "");
-
-    const set = new Set();
-    for (const s of baseList){
-      const t = String(s).trim();
-      if (!t) continue;
-      set.add(t);
-      set.add(t.replace(/\s+/g, "_"));
-      set.add(umlautSwap(t));
-      set.add(umlautSwap(t).replace(/\s+/g, "_"));
-      set.add(noDiacritics(t));
-      set.add(noDiacritics(t).replace(/\s+/g, "_"));
-    }
-    return Array.from(set);
+  // ---- Vereins-Cap-Dateiname strikt aus der Ortsgruppe ableiten --------
+  function capFileFromOrtsgruppe(rawOG){
+    // "OG Karlsruhe" → "Karlsruhe.svg", "DLRG Weil am Rhein" → "Weil am Rhein.svg"
+    const base = String(rawOG || "").trim();      // z.B. "Karlsruhe", "Weil am Rhein"
+    return `Cap-${base}.svg`;
   }
 
+  // ---- Cap-Avatar (einziger Versuch + Fallback) -------------------------
   function renderCapAvatar(a, size = "xl", extraClass = ""){
     const wrap = h("div", { class: `ath-avatar ${size} ${extraClass}` });
 
-    const variants = capNameVariantsFromOrtsgruppe(a.ortsgruppe)
-      .map(name => `Cap-${name}.svg`);
-
+    const file = capFileFromOrtsgruppe(a.ortsgruppe);
     const img = h("img", {
       class: "avatar-img",
       alt: `Vereinskappe ${formatOrtsgruppe(a.ortsgruppe)}`,
+      loading: size === "xl" ? "eager" : "lazy",
       decoding: "async",
-      loading: "lazy"
-    });
-
-    let idx = 0;
-    const FALLBACK = "Cap-Baden_light.svg";
-
-    function tryNext(){
-      if (idx < variants.length){
-        img.src = `${FLAG_BASE_URL}/${encodeURIComponent(variants[idx++])}`;
-      } else {
-        img.src = `${FLAG_BASE_URL}/${FALLBACK}`;
-        img.onerror = null; // Fallback nicht weiter loopen
+      fetchpriority: size === "xl" ? "high" : "low",
+      src: `${FLAG_BASE_URL}/${encodeURIComponent(file)}`,
+      onerror: () => {
+        // Fallback: ein einziges Mal auf Baden_light.svg
+        img.onerror = null;
+        img.src = `${FLAG_BASE_URL}/${encodeURIComponent("Cap-Baden_light.svg")}`;
       }
-    }
-
-    img.onerror = tryNext;
-    tryNext();
+    });
 
     wrap.appendChild(img);
     return wrap;
   }
+
 
 
   // ---- Länder-Flags (SVG-only) -----------------------------------------
@@ -217,7 +186,7 @@
 
     grid.appendChild(infoTile("Wettkämpfe", fmtInt(meets.total)));
     grid.appendChild(infoTile("Total Starts", fmtInt(totalDisc)));
-    grid.appendChild(infoTile("Disqualifikationen", fmtInt(totalDQ)));
+    grid.appendChild(infoTile("DQ / Strafen", fmtInt(totalDQ)));
 
     grid.appendChild(infoTileDist("Bahnverteilung", meets));
 
@@ -234,11 +203,36 @@
       );
     }
     function infoTileBig(label, value){
-      return h("div", { class: "info-tile accent" },
-        h("div", { class: "info-label" }, label),
-        h("div", { class: "info-value big" }, value)
+      // Titel mit zwei Layern (short/long)
+      const title = h("div", { class: "info-label lsc-label", "data-state": "short" },
+        h("span", { class: "label label-short", "aria-hidden": "false" }, "LSC"),
+        h("span", { class: "label label-long",  "aria-hidden": "true"  }, "Lifesaving Score")
       );
+
+      const valueEl = h("div", { class: "info-value big" }, value);
+
+      const wrap = h("div", {
+        class: "info-tile accent lsc-tile",
+        role: "button",
+        tabindex: "0",
+        "aria-pressed": "false",
+        onclick: toggle,
+        onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } }
+      }, title, valueEl);
+
+      function toggle(){
+        const toLong = title.dataset.state !== "long";
+        title.dataset.state = toLong ? "long" : "short";
+        title.classList.toggle("show-long", toLong);
+        title.querySelector(".label-short")?.setAttribute("aria-hidden", toLong ? "true" : "false");
+        title.querySelector(".label-long")?.setAttribute("aria-hidden",  toLong ? "false" : "true");
+        wrap.setAttribute("aria-pressed", toLong ? "true" : "false");
+      }
+
+      return wrap;
     }
+
+
     function infoTileDist(label, m){
       const wrap = h("div", { class: "info-tile dist" },
         h("div", { class: "info-label" }, label),
@@ -927,12 +921,12 @@
 
       // BACK (Starts + DQ)
       const back = h("div", { class: "tile-face tile-back" },
-        h("div", { class: "best-label" }, d.label),
         h("div", { class: "tile-stats" },
           statRow("Starts", starts),
-          statRow("DQ", dq)
+          statRow("DQ / Strafen", dq)
         )
       );
+
 
       inner.appendChild(front);
       inner.appendChild(back);
@@ -1013,11 +1007,16 @@
 
             const meets = computeMeetInfo(a);                    // hat .last
             const act   = activityStatusFromLast(meets.last);    // { key:"active"|"pause"|"inactive", label:"Aktiv"|... }
+            const last = fmtDate(meets.last);                // z.B. "01.02.2025"
 
             return h("div", { class: "gender-row" },
               h("span", { class: `gender-chip ${gt.cls}`, title: gt.full, "aria-label": `Geschlecht: ${gt.full}` }, gt.full),
               h("span", { class: `ak-chip ${band}`,       title: `Altersklasse ${ak}`, "aria-label": `Altersklasse ${ak}` }, ak),
-              h("span", { class: `status-chip ${act.key}`, title: `Status: ${act.label}`, "aria-label": `Aktivitätsstatus: ${act.label}` },
+              h("span", {
+                class: `status-chip ${act.key}`,
+                title: `Letzter Wettkampf: ${last}`,                                  // ← Tooltip-Text
+                "aria-label": `Aktivitätsstatus: ${act.label}. Letzter Wettkampf: ${last}` // ← Screenreader
+              },
                 h("span", { class: "status-dot" }), act.label
               )
             );
