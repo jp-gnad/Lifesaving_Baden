@@ -1070,6 +1070,16 @@ table tr.odd {
   border-radius: 12px;
   background: #f9fafb;
 }
+
+.info-tile .info-sub{
+  margin-top: -5px;
+  font-size: .85rem;
+  font-weight: bold;
+  color: #111827;
+  line-height: 1.25;
+}
+
+
 .info-tile.accent{
   background: #111827;
   color: #fff;
@@ -1305,4 +1315,12 @@ table tr.odd {
 
 /* optional: Fokus ausblenden, falls noch vorhanden */
 .info-tile.flip:focus { outline: none; }
+
+
+/* DQ-Rückseite: kompakte Zeilen */
+.dq-rows { display: grid; gap: 6px; margin-top: 6px; }
+.dq-row  { display: grid; margin-top: -5px;grid-template-columns: 1fr auto auto; align-items: baseline; gap: 8px; }
+.dq-row .lane { color: #475569; font-weight: 700; }
+.dq-row .pct  { font-weight: 800; color: #0f172a; }
+.dq-row .meta { color: #6b7280; font-size: .9rem; }
 

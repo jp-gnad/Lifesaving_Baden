@@ -32,6 +32,35 @@
     return c;
   }
 
+  function shortMeetName(name){
+    if (!name) return "—";
+    const s = String(name);
+    const i = s.indexOf(" - ");
+    return (i >= 0 ? s.slice(0, i) : s).trim();
+  }
+
+
+  // Summiert Starts & DQ je Bahn aus ax.stats und berechnet die Wahrscheinlichkeit
+  function computeLaneDQProb(ax){
+    const out = { "25": { starts: 0, dq: 0 }, "50": { starts: 0, dq: 0 } };
+    const stats = (ax && ax.stats) || {};
+
+    for (const lane of ["25","50"]){
+      const laneStats = stats[lane] || {};
+      for (const d of DISCIPLINES){
+        const s = laneStats[d.key];
+        if (!s) continue;
+        out[lane].starts += Number(s.starts || 0);
+        out[lane].dq     += Number(s.dq     || 0);
+      }
+    }
+
+    const pct = (dq, starts) => (starts > 0 ? Math.round((dq/starts)*1000)/10 : 0); // 1 Nachkommastelle
+    return {
+      "25": { ...out["25"], pct: pct(out["25"].dq, out["25"].starts) },
+      "50": { ...out["50"], pct: pct(out["50"].dq, out["50"].starts) }
+    };
+  }
 
 
   // — Startrechte: LV/BV → Badges neben den Chips —
@@ -346,27 +375,46 @@
   function computeMeetInfo(a){
     const meets = Array.isArray(a.meets) ? a.meets : [];
     const total = meets.length;
+
     let c50 = 0, c25 = 0;
     let first = null, last = null;
+    let firstName = null;            // bereits gekürzt
     const years = new Set();
+
     for (const m of meets){
       if (m.pool === "50") c50++;
       else if (m.pool === "25") c25++;
+
       const d = new Date(m.date);
       if (!isNaN(d)){
         years.add(d.getFullYear());
-        if (!first || d < first) first = d;
-        if (!last  || d > last ) last  = d;
+
+        if (!first || d < first){
+          first = d;
+          // ⇣ hier direkt kürzen
+          firstName = shortMeetName(m.meet_name || "");
+        }
+        if (!last || d > last){
+          last = d;
+        }
       }
     }
+
     const pct50 = total ? Math.round((c50/total)*100) : 0;
+
     return {
-      total, c50, c25, pct50, pct25: total ? 100 - pct50 : 0,
+      total,
+      c50,
+      c25,
+      pct50,
+      pct25: total ? 100 - pct50 : 0,
       first: first ? first.toISOString().slice(0,10) : null,
       last:  last  ? last.toISOString().slice(0,10)  : null,
+      firstName,                         // schon gekürzt, z. B. "BMS-KA"
       activeYears: years.size
     };
   }
+
 
   // Disziplin-Feldnamen in den meet-Objekten
 const MEET_DISC_TIME_FIELDS = [
@@ -1034,14 +1082,14 @@ function hasStartVal(v){
     const totalDQ = sumAllDQ(a);
     const startsPer = computeStartsPerStartrecht(a);
     const totalStarts = totalStartsFromMeets(a);
+    const dqLane = computeLaneDQProb(a);
 
     grid.appendChild(infoTileBig("LSC", a.lsc != null ? fmtInt(a.lsc) : "—"));
     grid.appendChild(infoTileWettkaempfeFlip(a, meets));
     grid.appendChild(infoTileStartsFlip(totalStarts, startsPer));
-    grid.appendChild(infoTile("DQ / Strafen", fmtInt(totalDQ)));
+    grid.appendChild(infoTileDQFlip(totalDQ, dqLane));
     grid.appendChild(infoTileDist("Bahnverteilung", meets));
-    grid.appendChild(infoTile("Erster Wettkampf", fmtDate(meets.first)));
-    grid.appendChild(infoTile("Aktive Jahre", fmtInt(meets.activeYears)));
+    grid.appendChild(infoTileYearsFlip(meets.activeYears, meets.first, meets.firstName));
 
     return h("div", { class: "ath-profile-section info" }, header, grid);
 
@@ -1172,6 +1220,99 @@ function hasStartVal(v){
 
       return tile;
     }
+
+    function infoTileYearsFlip(activeYears, firstISO, firstName){
+      const tile = h("div", {
+        class: "info-tile flip years-flip",
+        role: "button",
+        tabindex: "0",
+        "aria-pressed": "false",
+        onclick: toggle,
+        onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } }
+      });
+
+      const inner = h("div", { class: "tile-inner" });
+
+      // Vorderseite
+      const front = h("div", { class: "tile-face tile-front" },
+        h("div", { class: "info-label" }, "Aktive Jahre"),
+        h("div", { class: "info-value" }, fmtInt(activeYears))
+      );
+
+      // Rückseite: Datum + darunter der Name
+      const back = h("div", { class: "tile-face tile-back" },
+        h("div", { class: "info-label" }, "Erster Wettkampf"),
+        h("div", { class: "info-value" }, fmtDate(firstISO)),
+        firstName ? h("div", { class: "info-sub" }, firstName) : null
+      );
+
+      inner.appendChild(front);
+      inner.appendChild(back);
+      tile.appendChild(inner);
+
+      function toggle(){
+        const locked = tile.classList.toggle("is-flipped");
+        tile.setAttribute("aria-pressed", locked ? "true" : "false");
+      }
+      return tile;
+    }
+
+    function infoTileDQFlip(totalDQ, dqLane){
+      const tile = h("div", {
+        class: "info-tile flip dq-flip",
+        role: "button",
+        tabindex: "0",
+        "aria-pressed": "false",
+        onclick: toggle,
+        onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } }
+      });
+
+      const inner = h("div", { class: "tile-inner" });
+
+      // Vorderseite (gesamt)
+      const front = h("div", { class: "tile-face tile-front" },
+        h("div", { class: "info-label" }, "DQ / Strafen"),
+        h("div", { class: "info-value" }, fmtInt(totalDQ))
+      );
+
+      // Rückseite (Wahrscheinlichkeit je Bahn – nur Zeilen mit Starts anzeigen)
+      const rows = [];
+      if (dqLane["25"].starts > 0){
+        rows.push(
+          h("div", { class: "dq-row" },
+            h("span", { class: "lane" },  "25m"),
+            h("span", { class: "pct" },   `${dqLane["25"].pct.toLocaleString("de-DE",{minimumFractionDigits:1})}%`),
+            h("span", { class: "meta" },  `(${dqLane["25"].dq}/${dqLane["25"].starts})`)
+          )
+        );
+      }
+      if (dqLane["50"].starts > 0){
+        rows.push(
+          h("div", { class: "dq-row" },
+            h("span", { class: "lane" },  "50m"),
+            h("span", { class: "pct" },   `${dqLane["50"].pct.toLocaleString("de-DE",{minimumFractionDigits:1})}%`),
+            h("span", { class: "meta" },  `(${dqLane["50"].dq}/${dqLane["50"].starts})`)
+          )
+        );
+      }
+
+      const back = h("div", { class: "tile-face tile-back" },
+        h("div", { class: "info-label" }, "Wahrscheinlichkeit"),
+        h("div", { class: "dq-rows" }, ...rows)
+      );
+
+      inner.appendChild(front);
+      inner.appendChild(back);
+      tile.appendChild(inner);
+
+      function toggle(){
+        const locked = tile.classList.toggle("is-flipped");
+        tile.setAttribute("aria-pressed", locked ? "true" : "false");
+      }
+      return tile;
+    }
+
+
 
     function statRow(k, v){
       return h("div", { class: "stat" },
