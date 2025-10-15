@@ -646,15 +646,18 @@ table tr.odd {
   white-space: nowrap;
 }
 
-/* farbiger Punkt */
+/* farbiger Punkt – kreisfest auch auf iOS */
 .status-dot{
   width: 8px;
   height: 8px;
-  border-radius: 999px;
-  flex: 0 0 8px;             /* fixe Größe im Flex-Layout */
-  align-self: center;        /* Sicherheit: mittig im Chip */
+  aspect-ratio: 1 / 1;     /* immer Quadrat -> perfekter Kreis */
+  border-radius: 50%;
+  display: inline-block;
+  flex: 0 0 8px;           /* Basis passend zur Breite */
+  align-self: center;
   background: var(--sc);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--sc) 25%, transparent);
+  transform: translateZ(0); /* iOS-Rendering-Glitch fix */
 }
 
 /* Varianten (gleiches Farbschema wie vorher): */
@@ -662,10 +665,10 @@ table tr.odd {
 .status-chip.pause   { --sc: #f59e0b; } /* gelb  */
 .status-chip.inactive{ --sc: #ef4444; } /* rot   }
 
-/* Mobile: Chips unter dem Namen kompakter darstellen */
+/* Mobile: Chips kompakter + Dot konsistent */
 @media (max-width: 720px){
   .gender-row{
-    gap: 6px;           /* weniger Abstand zwischen den Chips */
+    gap: 6px;
     margin-top: 1px;
     margin-bottom: 10px;
     margin-left: -70px;
@@ -674,18 +677,17 @@ table tr.odd {
   .gender-chip,
   .ak-chip,
   .status-chip{
-    font-size: .86rem;  /* kleinerer Text */
-    padding: 3px 8px;   /* schmalere Pillen */
-    border-width: 1px;  /* dünnerer Rand */
-    line-height: 1;     /* kompakt */
+    font-size: .86rem;
+    padding: 3px 8px;
+    border-width: 1px;
+    line-height: 1;
   }
 
   .status-chip .status-dot{
-    width: 6px;         /* kleinerer Punkt */
+    width: 6px;
     height: 6px;
-    /* optional: dezentere Aura auf kleineren Screens
-       box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--sc) 25%, transparent);
-    */
+    flex: 0 0 6px;       /* flex-basis an neue Größe anpassen */
+    aspect-ratio: 1 / 1; /* Sicherheit */
   }
 }
 

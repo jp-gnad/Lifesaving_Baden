@@ -144,6 +144,7 @@
 
     let c50 = 0, c25 = 0;
     let first = null, last = null;
+    const years = new Set();                 // ← NEU
 
     for (const m of meets){
       if (m.pool === "50") c50++;
@@ -151,6 +152,7 @@
 
       const d = new Date(m.date);
       if (!isNaN(d)){
+        years.add(d.getFullYear());          // ← NEU
         if (!first || d < first) first = d;
         if (!last  || d > last ) last  = d;
       }
@@ -163,9 +165,11 @@
       total,
       c50, c25, pct50, pct25,
       first: first ? first.toISOString().slice(0,10) : null,
-      last:  last  ? last.toISOString().slice(0,10)  : null
+      last:  last  ? last.toISOString().slice(0,10)  : null,
+      activeYears: years.size                     // ← NEU
     };
   }
+
 
   // ---- Überblick-Section ----
   function renderOverviewSection(a){
@@ -187,11 +191,9 @@
     grid.appendChild(infoTile("Wettkämpfe", fmtInt(meets.total)));
     grid.appendChild(infoTile("Total Starts", fmtInt(totalDisc)));
     grid.appendChild(infoTile("DQ / Strafen", fmtInt(totalDQ)));
-
     grid.appendChild(infoTileDist("Bahnverteilung", meets));
-
     grid.appendChild(infoTile("Erster Wettkampf", fmtDate(meets.first)));
-    
+    grid.appendChild(infoTile("Aktive Jahre", fmtInt(meets.activeYears)));
 
     return h("div", { class: "ath-profile-section info" }, header, grid);
 
