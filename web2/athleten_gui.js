@@ -378,12 +378,16 @@
 
     let c50 = 0, c25 = 0;
     let first = null, last = null;
-    let firstName = null;            // bereits gekürzt
+    let firstName = null;
+    let intl = 0, nat = 0;
     const years = new Set();
 
     for (const m of meets){
       if (m.pool === "50") c50++;
       else if (m.pool === "25") c25++;
+
+      if (m.Regelwerk === "International") intl++;
+      else if (m.Regelwerk === "National") nat++;
 
       const d = new Date(m.date);
       if (!isNaN(d)){
@@ -392,7 +396,7 @@
         if (!first || d < first){
           first = d;
           // ⇣ hier direkt kürzen
-          firstName = shortMeetName(m.meet_name || "");
+          firstName = shortMeetName?.(m.meet_name || m.meet || "") || (m.meet_name || m.meet || null);
         }
         if (!last || d > last){
           last = d;
@@ -401,16 +405,20 @@
     }
 
     const pct50 = total ? Math.round((c50/total)*100) : 0;
+    const pctIntl = total ? Math.round((intl/total)*100) : 0;
 
     return {
       total,
-      c50,
-      c25,
-      pct50,
-      pct25: total ? 100 - pct50 : 0,
+      c50, c25,
+      pct50, pct25: total ? 100 - pct50 : 0,
+
+      // Regelwerk-Auswertung
+      intl, nat,
+      pctIntl, pctNat: total ? 100 - pctIntl : 0,
+
       first: first ? first.toISOString().slice(0,10) : null,
       last:  last  ? last.toISOString().slice(0,10)  : null,
-      firstName,                         // schon gekürzt, z. B. "BMS-KA"
+      firstName,
       activeYears: years.size
     };
   }
@@ -804,11 +812,11 @@ function hasStartVal(v){
             "200m_Hindernis_Zeit": "3:01,80", "200m_Hindernis_Platz": "4"
           },
           {
-            meet_name: "SÖRG - 2024",
+            meet_name: "SLRG - 2024",
             date: "2024-09-28",
             pool: "50",
             Ortsgruppe: "Weil am Rhein",
-            Regelwerk: "International",
+            Regelwerk: "National",
             Land: "Schweiz",
             Startrecht: "LV",
             Wertung: "Einzelkampf",
@@ -828,7 +836,7 @@ function hasStartVal(v){
             date: "2025-07-27",
             pool: "50",
             Ortsgruppe: "Weil am Rhein",
-            Regelwerk: "International",
+            Regelwerk: "National",
             Land: "Deutschland",
             Startrecht: "LV",
             Wertung: "Mehrkampf",
@@ -1089,6 +1097,7 @@ function hasStartVal(v){
     grid.appendChild(infoTileStartsFlip(totalStarts, startsPer));
     grid.appendChild(infoTileDQFlip(totalDQ, dqLane));
     grid.appendChild(infoTileDist("Bahnverteilung", meets));
+    grid.appendChild(infoTileRegelwerk("Regelwerk", meets));
     grid.appendChild(infoTileYearsFlip(meets.activeYears, meets.first, meets.firstName));
 
     return h("div", { class: "ath-profile-section info" }, header, grid);
@@ -1220,6 +1229,30 @@ function hasStartVal(v){
 
       return tile;
     }
+
+    function infoTileRegelwerk(label, m){
+      const intlPct = m?.pctIntl ?? 0;
+      const total   = m?.total   ?? 0;
+      const legendText =
+        total === 0
+          ? "—"
+          : (intlPct === 0 ? "National: 100%" : `International: ${intlPct}%`);
+
+      return h("div", { class: "info-tile regelwerk" },
+        h("div", { class: "info-label" }, label),
+        // Progress-Balken: dunkler Teil = International
+        (() => {
+          const bar = h("div", { class: "info-progress" },
+            h("div", { class: "pIntl", style: `width:${intlPct || 0}%` })
+          );
+          return bar;
+        })(),
+        h("div", { class: "info-legend" },
+          h("span", { class: "lintl" }, legendText)
+        )
+      );
+    }
+
 
     function infoTileYearsFlip(activeYears, firstISO, firstName){
       const tile = h("div", {

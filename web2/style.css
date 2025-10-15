@@ -1324,3 +1324,37 @@ table tr.odd {
 .dq-row .pct  { font-weight: 800; color: #0f172a; }
 .dq-row .meta { color: #6b7280; font-size: .9rem; }
 
+/* Regelwerk-Kachel: Progress-Bar dunkel = International */
+.info-tile.regelwerk .info-progress{
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: #e5e7eb;        /* Track */
+  overflow: hidden;
+  margin-top: 6px;
+}
+.info-tile.regelwerk .info-progress .pIntl{
+  height: 100%;
+  background: #0f172a;        /* dunkel = International */
+  border-radius: inherit;
+  transition: width .25s ease;
+}
+
+/* Legende */
+.info-tile.regelwerk .info-legend{
+  margin-top: 6px;
+  display: flex;
+  justify-content: flex-start;
+  font-weight: 700;
+  font-size: .92rem;
+}
+.info-tile.regelwerk .info-legend .lintl{
+  color: #0f172a;
+  letter-spacing: .02em;
+  white-space: nowrap;           /* kein Zeilenumbruch */
+  line-height: 1.1;
+  font-size: clamp(.88rem, 1.8vw, .92rem); /* skaliert bei wenig Platz runter */
+  max-width: 100%;
+}
+
+
