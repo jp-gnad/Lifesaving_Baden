@@ -368,6 +368,50 @@
     };
   }
 
+  // Disziplin-Feldnamen in den meet-Objekten
+const MEET_DISC_TIME_FIELDS = [
+  "50m_Retten_Zeit",
+  "100m_Retten_Zeit",           // = 100m Retten mit Flossen
+  "100m_Kombi_Zeit",
+  "100m_Lifesaver_Zeit",
+  "200m_SuperLifesaver_Zeit",
+  "200m_Hindernis_Zeit"
+];
+
+function hasStartVal(v){
+    // Start zählt, wenn nicht leer: Zeiten oder "DQ" zählen, "" nicht
+    return v != null && String(v).trim() !== "";
+  }
+
+  // Summe aller Starts über alle Meets/Disziplinen (egal welches Startrecht)
+  function totalStartsFromMeets(a){
+    const meets = Array.isArray(a.meets) ? a.meets : [];
+    let total = 0;
+    for (const m of meets){
+      for (const f of MEET_DISC_TIME_FIELDS){
+        if (hasStartVal(m[f])) total++;
+      }
+    }
+    return total;
+  }
+
+  // Starts pro Startrecht (OG/BZ/LV/BV)
+  function computeStartsPerStartrecht(a){
+    const meets = Array.isArray(a.meets) ? a.meets : [];
+    const out = { OG:0, BZ:0, LV:0, BV:0 };
+    for (const m of meets){
+      const sr = (m.Startrecht || "").toUpperCase();
+      if (!out.hasOwnProperty(sr)) continue; // Unbekanntes Startrecht ignorieren
+      let cnt = 0;
+      for (const f of MEET_DISC_TIME_FIELDS){
+        if (hasStartVal(m[f])) cnt++;
+      }
+      out[sr] += cnt;
+    }
+    return out;
+  }
+
+
   // Aktuelle Ortsgruppe = erste NATIONAL-Veranstaltung im jüngsten Jahr.
   // Fallback (Sonderregel): wenn im jüngsten Jahr keine "National"-Events,
   // dann die ERSTE Veranstaltung dieses Jahres (egal welches Regelwerk).
@@ -988,10 +1032,12 @@
     const meets = computeMeetInfo(a);
     const totalDisc = Number.isFinite(+a.totalDisciplines) ? +a.totalDisciplines : null;
     const totalDQ = sumAllDQ(a);
+    const startsPer = computeStartsPerStartrecht(a);
+    const totalStarts = totalStartsFromMeets(a);
 
     grid.appendChild(infoTileBig("LSC", a.lsc != null ? fmtInt(a.lsc) : "—"));
     grid.appendChild(infoTileWettkaempfeFlip(a, meets));
-    grid.appendChild(infoTile("Total Starts", fmtInt(totalDisc)));
+    grid.appendChild(infoTileStartsFlip(totalStarts, startsPer));
     grid.appendChild(infoTile("DQ / Strafen", fmtInt(totalDQ)));
     grid.appendChild(infoTileDist("Bahnverteilung", meets));
     grid.appendChild(infoTile("Erster Wettkampf", fmtDate(meets.first)));
@@ -1083,7 +1129,56 @@
       return tile;
     }
 
+    function infoTileStartsFlip(total, per){
+      const tile = h("div", {
+        class: "info-tile flip starts-flip",
+        role: "button",
+        tabindex: "0",
+        "aria-pressed": "false",
+        onclick: toggle,
+        onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } }
+      });
 
+      const inner = h("div", { class: "tile-inner" });
+
+      // FRONT – wie normale Info-Kachel
+      const front = h("div", { class: "tile-face tile-front" },
+        h("div", { class: "info-label" }, "Total Starts"),
+        h("div", { class: "info-value" }, fmtInt(total))
+      );
+
+      // BACK – nur Startrechte mit >0 anzeigen
+      const list = [];
+      const labelMap = { OG: "OG", BZ: "BZ", LV: "LV", BV: "BV" };
+      (["OG","BZ","LV","BV"]).forEach(k => {
+        const v = per[k] || 0;
+        if (v > 0) {
+          list.push(statRow(labelMap[k], v));
+        }
+      });
+
+      const back = h("div", { class: "tile-face tile-back" },
+        h("div", { class: "tile-stats" }, ...list)
+      );
+
+      inner.appendChild(front);
+      inner.appendChild(back);
+      tile.appendChild(inner);
+
+      function toggle(){
+        const locked = tile.classList.toggle("is-flipped");
+        tile.setAttribute("aria-pressed", locked ? "true" : "false");
+      }
+
+      return tile;
+    }
+
+    function statRow(k, v){
+      return h("div", { class: "stat" },
+        h("span", { class: "k" }, k),
+        h("span", { class: "v" }, fmtInt(v))
+      );
+    }
   }
 
   // ---------- Profil ----------
