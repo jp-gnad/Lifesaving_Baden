@@ -31,8 +31,8 @@
 
   function renderStartrechtIcons(a){
     const icons = [];
-    if (hasStartrecht(a, "LV")) icons.push({file: "Cap-Baden.svg",       alt: "Startrecht LV"});
-    if (hasStartrecht(a, "BV")) icons.push({file: "Cap-Deutschland.svg", alt: "Startrecht BV"});
+    if (hasStartrecht(a, "LV")) icons.push({file: "Cap-Baden.svg",       label: "Landeskader Athlet", key: "LV"});
+    if (hasStartrecht(a, "BV")) icons.push({file: "Cap-Deutschland.svg", label: "Bundeskader Athlet", key: "BV"});
 
     if (icons.length === 0) return null;
 
@@ -41,7 +41,9 @@
       const img = h("img", {
         class: "sr-icon",
         src: `${FLAG_BASE_URL}/${encodeURIComponent(ic.file)}`,
-        alt: ic.alt,
+        alt: ic.label,                 // Screenreader-Text
+        title: ic.label,               // Tooltip beim Hover
+        "data-startrecht": ic.key,     // optional für Debug/Styling
         loading: "lazy",
         decoding: "async",
         onerror: (e) => e.currentTarget.remove()
@@ -50,6 +52,7 @@
     });
     return wrap;
   }
+
 
 
 

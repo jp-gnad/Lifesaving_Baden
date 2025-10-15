@@ -671,7 +671,6 @@ table tr.odd {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-left: 6px;
 }
 
 .sr-icon{
