@@ -94,6 +94,19 @@
     return wrap;
   }
 
+  // Hilfszähler für Regelwerk
+  function countRegelwerk(meets){
+    let intl = 0, nat = 0;
+    (meets || []).forEach(m => {
+      const r = String(m.Regelwerk || "").toLowerCase();
+      if (r.startsWith("int")) intl++;
+      else if (r.startsWith("nat")) nat++;
+    });
+    const total   = intl + nat;
+    const pctIntl = total ? Math.round((intl / total) * 100) : 0;
+    const pctNat  = total ? 100 - pctIntl : 0;
+    return { intl, nat, pctIntl, pctNat, total };
+  }
 
 
 
@@ -377,51 +390,44 @@
     const total = meets.length;
 
     let c50 = 0, c25 = 0;
-    let first = null, last = null;
-    let firstName = null;
-    let intl = 0, nat = 0;
+    let first = null, last = null, firstName = null;
     const years = new Set();
 
-    for (const m of meets){
-      if (m.pool === "50") c50++;
-      else if (m.pool === "25") c25++;
+    // NEU: Regelwerk-Zähler
+    let cNat = 0, cIntl = 0;
 
-      if (m.Regelwerk === "International") intl++;
-      else if (m.Regelwerk === "National") nat++;
+    for (const m of meets){
+      if (m.pool === "50") c50++; else if (m.pool === "25") c25++;
+
+      // Regelwerk zählen
+      const reg = (m.Regelwerk || "").toLowerCase();
+      if (reg === "international") cIntl++;
+      else if (reg === "national") cNat++;
 
       const d = new Date(m.date);
       if (!isNaN(d)){
         years.add(d.getFullYear());
-
         if (!first || d < first){
           first = d;
-          // ⇣ hier direkt kürzen
           firstName = shortMeetName?.(m.meet_name || m.meet || "") || (m.meet_name || m.meet || null);
-        }
-        if (!last || d > last){
-          last = d;
-        }
+        }        if (!last  || d > last ){ last  = d; }
       }
     }
 
-    const pct50 = total ? Math.round((c50/total)*100) : 0;
-    const pctIntl = total ? Math.round((intl/total)*100) : 0;
+    const pct50  = total ? Math.round((c50/total)*100) : 0;
+    const pctIntl = total ? Math.round((cIntl/total)*100) : 0;
 
     return {
-      total,
-      c50, c25,
-      pct50, pct25: total ? 100 - pct50 : 0,
-
-      // Regelwerk-Auswertung
-      intl, nat,
-      pctIntl, pctNat: total ? 100 - pctIntl : 0,
-
+      total, c50, c25, pct50, pct25: total ? 100 - pct50 : 0,
       first: first ? first.toISOString().slice(0,10) : null,
       last:  last  ? last.toISOString().slice(0,10)  : null,
       firstName,
-      activeYears: years.size
+      activeYears: years.size,
+      // NEU:
+      cNat, cIntl, pctIntl
     };
   }
+
 
 
   // Disziplin-Feldnamen in den meet-Objekten
@@ -1096,8 +1102,8 @@ function hasStartVal(v){
     grid.appendChild(infoTileWettkaempfeFlip(a, meets));
     grid.appendChild(infoTileStartsFlip(totalStarts, startsPer));
     grid.appendChild(infoTileDQFlip(totalDQ, dqLane));
-    grid.appendChild(infoTileDist("Bahnverteilung", meets));
-    grid.appendChild(infoTileRegelwerk("Regelwerk", meets));
+    grid.appendChild(renderBahnverteilungTile(a));
+    grid.appendChild(renderRegelwerkTile(a));
     grid.appendChild(infoTileYearsFlip(meets.activeYears, meets.first, meets.firstName));
 
     return h("div", { class: "ath-profile-section info" }, header, grid);
@@ -1130,6 +1136,75 @@ function hasStartVal(v){
         h("div", { class: "info-legend" }, h("span", { class: "l50" }, `50m ${m.pct50 || 0}%`))
       );
     }
+
+    function renderBahnverteilungTile(a){
+      const m = computeMeetInfo(a); // liefert u.a. m.pct50, m.c50, m.c25
+
+      const tile  = h("div", {
+        class: "info-tile flip dist",
+        role: "button",
+        tabindex: "0",
+        "aria-pressed": "false",
+        "aria-label": "Bahnverteilung"
+      });
+
+      const inner = h("div", { class: "tile-inner" });
+
+      // FRONT: Balken + Legende (wie vorher)
+      const front = h("div", { class: "tile-face tile-front" },
+        h("div", { class: "info-label" }, "Bahnverteilung"),
+        (() => {
+          const bar = h("div", { class: "info-progress" },
+            h("div", { class: "p50", style: `width:${m.pct50 || 0}%` })
+          );
+          return bar;
+        })(),
+        h("div", { class: "info-legend" },
+          h("span", { class: "l50" }, `50m ${m.pct50 || 0}%`)
+        )
+      );
+
+      // BACK: Anzahl Wettkämpfe 25m/50m (nur Zeilen > 0)
+      const rows = [];
+      if (m.c25 > 0) rows.push(statRow("25m", m.c25));
+      if (m.c50 > 0) rows.push(statRow("50m", m.c50));
+      if (rows.length === 0) rows.push(statRow("—", "—")); // falls (noch) keine Daten
+
+      const back = h("div", { class: "tile-face tile-back" },
+        h("div", { class: "info-label" }, "Bahnverteilung"),
+        h("div", { class: "tile-stats" }, rows)
+      );
+
+      inner.appendChild(front);
+      inner.appendChild(back);
+      tile.appendChild(inner);
+
+      // Klick = Lock/Unlock (Hover-Flip macht dein CSS)
+      const toggleLock = () => {
+        const locked = tile.classList.toggle("is-flipped");
+        tile.setAttribute("aria-pressed", locked ? "true" : "false");
+      };
+      if ("onpointerdown" in window) {
+        tile.addEventListener("pointerdown", toggleLock);
+      } else {
+        tile.addEventListener("click", toggleLock);
+        tile.addEventListener("touchstart", toggleLock, { passive: true });
+      }
+      tile.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleLock(); }
+      });
+
+      return tile;
+
+      function statRow(k, v){
+        return h("div", { class: "stat" },
+          h("span", { class: "k" }, k),
+          h("span", { class: "v" }, String(v))
+        );
+      }
+    }
+
+
     function infoTileWettkaempfeFlip(a, meets){
       const counts = countStartrechte(a);              // {OG,BZ,LV,BV}
       const rows = Object.entries(counts).filter(([,v]) => v > 0);
@@ -1230,28 +1305,78 @@ function hasStartVal(v){
       return tile;
     }
 
-    function infoTileRegelwerk(label, m){
-      const intlPct = m?.pctIntl ?? 0;
-      const total   = m?.total   ?? 0;
-      const legendText =
-        total === 0
-          ? "—"
-          : (intlPct === 0 ? "National: 100%" : `International: ${intlPct}%`);
+    function renderRegelwerkTile(a){
+      const c = countRegelwerk(a.meets);
 
-      return h("div", { class: "info-tile regelwerk" },
-        h("div", { class: "info-label" }, label),
-        // Progress-Balken: dunkler Teil = International
+      const tile  = h("div", {
+        class: "info-tile flip regelwerk",
+        role: "button",
+        tabindex: "0",
+        "aria-pressed": "false",
+        "aria-label": "Regelwerk"
+      });
+
+      const inner = h("div", { class: "tile-inner" });
+
+      // FRONT (Progress + Legende)
+      const front = h("div", { class: "tile-face tile-front" },
+        h("div", { class: "info-label" }, "Regelwerk"),
         (() => {
           const bar = h("div", { class: "info-progress" },
-            h("div", { class: "pIntl", style: `width:${intlPct || 0}%` })
+            h("div", { class: "pIntl", style: `width:${c.pctIntl}%` })
           );
           return bar;
         })(),
         h("div", { class: "info-legend" },
-          h("span", { class: "lintl" }, legendText)
+          h("span", {
+            class: "lintl"
+          }, (c.pctIntl === 0 ? `National: 100%` : `International: ${c.pctIntl}%`))
         )
       );
+
+      // BACK (Zähler National/International – nur zeigen, was > 0 ist)
+      const backStats = [];
+      if (c.nat > 0)  backStats.push(statRow("National",      c.nat));
+      if (c.intl > 0) backStats.push(statRow("International", c.intl));
+      if (backStats.length === 0) backStats.push(statRow("—", "—")); // falls keine Daten
+
+      const back = h("div", { class: "tile-face tile-back" },
+        h("div", { class: "info-label" }, "Regelwerk"),
+        h("div", { class: "tile-stats" }, backStats)
+      );
+
+      inner.appendChild(front);
+      inner.appendChild(back);
+      tile.appendChild(inner);
+
+      // Hover-Flip macht dein CSS.
+      // Klick = Lock/Unlock (wie bei den anderen)
+      const toggleLock = () => {
+        const locked = tile.classList.toggle("is-flipped");
+        tile.setAttribute("aria-pressed", locked ? "true" : "false");
+      };
+      if ("onpointerdown" in window) {
+        tile.addEventListener("pointerdown", toggleLock);
+      } else {
+        tile.addEventListener("click", toggleLock);
+        tile.addEventListener("touchstart", toggleLock, { passive: true });
+      }
+      tile.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleLock(); }
+      });
+
+      return tile;
+
+      function statRow(k, v){
+        return h("div", { class: "stat" },
+          h("span", { class: "k" }, k),
+          h("span", { class: "v" }, String(v))
+        );
+      }
     }
+
+
+
 
 
     function infoTileYearsFlip(activeYears, firstISO, firstName){
