@@ -21,6 +21,38 @@
   // ---------- Konstanten / Pfade ----------
   const FLAG_BASE_URL = "./svg"; // dein SVG-Ordner
 
+
+  // — Startrechte: LV/BV → Badges neben den Chips —
+  function hasStartrecht(a, code){
+    return Array.isArray(a?.meets) && a.meets.some(
+      m => String(m?.Startrecht || "").toUpperCase() === String(code).toUpperCase()
+    );
+  }
+
+  function renderStartrechtIcons(a){
+    const icons = [];
+    if (hasStartrecht(a, "LV")) icons.push({file: "Cap-Baden.svg",       alt: "Startrecht LV"});
+    if (hasStartrecht(a, "BV")) icons.push({file: "Cap-Deutschland.svg", alt: "Startrecht BV"});
+
+    if (icons.length === 0) return null;
+
+    const wrap = h("div", { class: "sr-icons", "aria-label": "Startrechte" });
+    icons.forEach(ic => {
+      const img = h("img", {
+        class: "sr-icon",
+        src: `${FLAG_BASE_URL}/${encodeURIComponent(ic.file)}`,
+        alt: ic.alt,
+        loading: "lazy",
+        decoding: "async",
+        onerror: (e) => e.currentTarget.remove()
+      });
+      wrap.appendChild(img);
+    });
+    return wrap;
+  }
+
+
+
   // ---------- Mapping Disziplinen <-> Meet-Felder ----------
   const DISCIPLINES = [
     { key: "50_retten",         label: "50m Retten",                 meetZeit: "50m_Retten_Zeit",         meetPlatz: "50m_Retten_Platz" },
@@ -441,7 +473,7 @@
             Ortsgruppe: "Masch",
             Regelwerk: "International",
             Land: "Niederlande",
-            Startrecht: "LV",
+            Startrecht: "BV",
             Wertung: "Einzel-/Mehrkampf",
             LSC: "815,20",
 
@@ -1016,14 +1048,18 @@
             const meets = computeMeetInfo(ax);
             const act   = activityStatusFromLast(meets.last);
             const lastStr = fmtDate(meets.last);
-            const age = ageFromJahrgang(ax.jahrgang);
+            const age  = ageFromJahrgang(ax.jahrgang);
             const band = (age != null && age <= 18) ? "youth" : "open";
+
+            const srIcons = renderStartrechtIcons(ax); // kann null sein
+
             return h("div", { class: "gender-row" },
               h("span", { class: `gender-chip ${gt.cls}`, title: gt.full, "aria-label": `Geschlecht: ${gt.full}` }, gt.full),
               h("span", { class: `ak-chip ${band}`,       title: `Altersklasse ${ak}`, "aria-label": `Altersklasse ${ak}` }, ak),
               h("span", { class: `status-chip ${act.key}`, title: `Letzter Wettkampf: ${lastStr}`, "aria-label": `Aktivitätsstatus: ${act.label}. Letzter Wettkampf: ${lastStr}` },
                 h("span", { class: "status-dot" }), act.label
-              )
+              ),
+              srIcons
             );
           })(),
 

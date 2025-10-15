@@ -665,6 +665,26 @@ table tr.odd {
 .status-chip.pause   { --sc: #f59e0b; } /* gelb  */
 .status-chip.inactive{ --sc: #ef4444; } /* rot   }
 
+
+/* Startrechts-Icons (LV/BV) rechts in der Chips-Zeile */
+.sr-icons{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 6px;
+}
+
+.sr-icon{
+  width: 28px;
+  height: 28px;
+  display: block;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1.5px solid #36320ac7;  /* ← neue schwarze Umrandung */
+  box-sizing: border-box;    /* Kontur zählt zur Gesamtgröße */
+}
+
+
 /* Mobile: Chips kompakter + Dot konsistent */
 @media (max-width: 720px){
   .gender-row{
@@ -689,6 +709,13 @@ table tr.odd {
     flex: 0 0 6px;       /* flex-basis an neue Größe anpassen */
     aspect-ratio: 1 / 1; /* Sicherheit */
   }
+
+  .sr-icon{
+    width: 22px;
+    height: 22px;
+    border: 1.0px solid #36320ac7;  /* ← neue schwarze Umrandung */
+  }
+
 }
 
 
