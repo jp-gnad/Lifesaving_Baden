@@ -148,58 +148,74 @@ table tr.odd {
   color: rgb(255, 255, 255);
 }
 
+/* === Grundwerte: feste Header-Höhe zentral definieren === */
+:root{
+  --header-h: 100px;
+}
 
+/* Body: KEIN globales margin. Platz für den fixen Header mit padding-top schaffen. */
+html, body{ height: 100%; }
+body{
+  margin: 0;                               /* <— statt margin:125px */
+  padding-top: var(--header-h);            /* Platz für den fixen Header */
+  /* auf iOS die Safe-Area berücksichtigen */
+  padding-top: calc(var(--header-h) + env(safe-area-inset-top));
+}
 
-.header {
+/* Fixierter Header – stabil auf iOS */
+.header{
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100px;
-  background-color: rgba(0, 0, 0, 1);
-  color: white;
+  top: 0; left: 0; right: 0;
+  height: var(--header-h);
+  background-color: rgba(0,0,0,1);
+  color: #fff;
   display: flex;
   align-items: center;
-  justify-content: flex-start; /* linksbündig */
-  padding: 0 20px; /* Abstand innen */
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 0 20px;
   box-sizing: border-box;
   font-size: 20px;
   z-index: 1000;
   box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-  gap: 10px; /* Abstand zwischen Logo und Text */
+
+  /* iOS Jitter minimieren: eigene Compositor-Layer, keine Rückseite */
+  transform: translateZ(0);
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
-.header-logo {
-  height: 65px; /* an die Header-Höhe anpassen */
+/* Flex-Layout statt Prozent-Margins: Logo links, Text daneben, Menü rechts */
+.header-logo{
+  height: 65px;
   width: auto;
-  margin-left: 80%;
+  margin: 0;               /* <— KEIN margin-left: 80% */
+  flex: 0 0 auto;
 }
-
-.header-text {
-  margin-left: 60px;
+.header-text{
+  margin-left: 16px;       /* dezentes Offset statt 60px */
   font-size: 32px;
   font-weight: bold;
   color: rgb(255,204,0);
-  text-decoration: none; /* Unterstreichung entfernen */
-  cursor: pointer;       /* Mauszeiger als Hand */
+  text-decoration: none;
+  cursor: pointer;
 }
-
-.header-menu {
-  margin-right: auto; /* schiebt das Menü ganz nach rechts */
+.header-menu{
+  margin-left: 24px;       /* <— schiebt Menü an den rechten Rand */
   display: flex;
-  gap: 20px;         /* Abstand zwischen den Menüpunkten */
+  gap: 20px;
   font-size: 20px;
-  padding-left: 5%;
+  padding-left: 0;         /* kein künstlicher Einzug nötig */
+  
 }
-
-.header-menu a {
+.header-menu a{
   color: white;
   text-decoration: none;
   padding: 5px 10px;
   position: relative;
 }
-
-.header-menu a.active::after {
+.header-menu a.active::after{
   content: "";
   position: absolute;
   left: 0;
@@ -208,67 +224,58 @@ table tr.odd {
   height: 3px;
   background-color: white;
   border-radius: 2px;
-  transition: all 0.3s ease; /* weicher Übergang */
+  transition: all .3s ease;
 }
-
-.menu-underline {
+.menu-underline{
   position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 0;           /* wird per JS gesetzt */
+  bottom: 0; left: 0;
+  width: 0;
   height: 3px;
   background-color: white;
   border-radius: 2px;
-  transition: left 0.3s, width 0.3s; /* smooth Bewegung */
+  transition: left .3s, width .3s;
 }
 
-
-
-/* Screenreader-only Text für den Button */
-.sr-only {
+/* Toggle */
+.sr-only{
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
 }
-
-/* Toggle-Button: standardmäßig verstecken, rechts ausrichten */
-.menu-toggle {
+.menu-toggle{
+  margin-left: auto;   /* <— schiebt den Toggle ans rechte Ende */
   display: none;
-  background: none;
-  border: 0;
-  color: white;
-  cursor: pointer;
+  background: none; border: 0; color: #fff; cursor: pointer;
   padding: 8px;
-  margin-left: 12px;   /* Icon direkt neben dem Titel, leicht versetzt */
 }
 
+/* Mobile/Portrait */
+@media (max-width: 900px), (orientation: portrait){
+  .menu-toggle{ display: block; }
+  .header-menu{ display: none; }
+  .header-menu .menu-underline{ display: none; }
 
-/* Mobile/Portrait Verhalten */
-@media (max-width: 900px), (orientation: portrait) {
-  .menu-toggle { display: block; }
-  .header-menu { display: none; }
-  .header-menu .menu-underline { display: none; }
-
-  /* Einspaltiges Dropdown unter dem festen Header */
-  .header.open .header-menu {
+  /* Dropdown fix unter dem fixen Header platzieren */
+  .header.open .header-menu{
     display: flex;
-    flex-direction: column;    /* einspaltig */
+    flex-direction: column;
     gap: 12px;
     position: fixed;
-    top: 100px;                /* deine Header-Höhe */
-    left: 0; right: 0;
-    background: rgba(0,0,0,0.96);
+    top: 100px;
+    left: -25px; right: 0;
+    background: rgba(255, 255, 255, 0.973);
     padding: 16px 20px 20px;
-    z-index: 999;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    width: 100%;
+    z-index: 1002;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
   }
-
-  .header.open .header-menu a {
+  .header.open .header-menu a{
     display: block;
-    width: 100%;              /* volle Breite pro Zeile */
+    width: 98.5%;
     padding: 10px 12px;
-    border-radius: 8px;
     text-decoration: none;
-    background: rgba(255,255,255,0.06);
+    background: rgba(0, 0, 0, 0.027);
+    text-align: left;
+    color: #232327;
   }
 }
 
