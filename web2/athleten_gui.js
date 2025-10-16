@@ -1194,12 +1194,12 @@ function hasStartVal(v){
 
       // BACK: Anzahl Wettkämpfe 25m/50m (nur Zeilen > 0)
       const rows = [];
-      if (m.c25 > 0) rows.push(statRow("25m", m.c25));
-      if (m.c50 > 0) rows.push(statRow("50m", m.c50));
+      if (m.c25 > 0) rows.push(statRow("25m Bahn", m.c25));
+      if (m.c50 > 0) rows.push(statRow("50m Bahn", m.c50));
       if (rows.length === 0) rows.push(statRow("—", "—")); // falls (noch) keine Daten
 
       const back = h("div", { class: "tile-face tile-back" },
-        h("div", { class: "info-label" }, "Bahnverteilung"),
+        h("div", { class: "info-label" }, "Wettkämpfe auf"),
         h("div", { class: "tile-stats" }, rows)
       );
 
@@ -1505,8 +1505,9 @@ function hasStartVal(v){
         rows.push(
           h("div", { class: "dq-row" },
             h("span", { class: "lane" },  "25m"),
-            h("span", { class: "pct" },   `${dqLane["25"].pct.toLocaleString("de-DE",{minimumFractionDigits:1})}%`),
-            h("span", { class: "meta" },  `(${dqLane["25"].dq}/${dqLane["25"].starts})`)
+            h("span", { class: "pct"  },  `${dqLane["25"].pct.toLocaleString("de-DE",{ minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`),
+            // geändert: nur DQ in Klammern
+            h("span", { class: "meta" },  `(${dqLane["25"].dq})`)
           )
         );
       }
@@ -1514,8 +1515,9 @@ function hasStartVal(v){
         rows.push(
           h("div", { class: "dq-row" },
             h("span", { class: "lane" },  "50m"),
-            h("span", { class: "pct" },   `${dqLane["50"].pct.toLocaleString("de-DE",{minimumFractionDigits:1})}%`),
-            h("span", { class: "meta" },  `(${dqLane["50"].dq}/${dqLane["50"].starts})`)
+            h("span", { class: "pct"  },  `${dqLane["50"].pct.toLocaleString("de-DE",{ minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`),
+            // geändert: nur DQ in Klammern
+            h("span", { class: "meta" },  `(${dqLane["50"].dq})`)
           )
         );
       }
@@ -1535,6 +1537,7 @@ function hasStartVal(v){
       }
       return tile;
     }
+
 
 
 

@@ -1,34 +1,51 @@
-/* Cross-browser „fixed background“ (auch iOS) */
+/* Fixierter Vollbild-Hintergrund – stabil auf iOS/Android/Desktop */
 body::before{
   content: "";
   position: fixed;
-  inset: 0;                        /* top/right/bottom/left: 0 */
-  z-index: -1;                     /* hinter allem */
-  background-image: url("./images/hintergrund.jpg");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  top: 0; left: 0; width: 100%;
+  height: 100vh;                /* Fallback */
+  z-index: -1;
   pointer-events: none;
-  transform: translateZ(0);        /* Safari Repaint-Fix */
-  will-change: transform;
-}
 
-/* Optional: bei Geräten mit Notch die Safe-Area voll ausnutzen */
-@supports (padding: env(safe-area-inset-top)){
-  body::before{ inset: 0; }
-}
-
-
-body {
-  background-size: cover;
-  background-position: center;
+  background-image: url("./images/hintergrund.jpg");
   background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+
+  /* Wichtig: KEIN transform / will-change hier */
+  -webkit-backface-visibility: hidden; /* Safari-Ruckler minimieren */
+}
+
+/* Bevorzugt: dynamische/sichere VH-Einheiten, um iOS-Adressleiste zu neutralisieren */
+@supports (height: 100dvh){
+  body::before{ height: 100dvh; }
+}
+@supports (height: 100svh){
+  /* Für stabilen, NICHT-zoomen Effekt: kleine Viewporthöhe verwenden */
+  body::before{ height: 100svh; }
+}
+
+/* Safe-Area optional */
+@supports (padding: env(safe-area-inset-top)){
+  body::before{ /* nichts weiter nötig, hält an den Kanten */ }
+}
+
+/* KEIN Hintergrund mehr direkt auf dem body – nur Layout/Typo hier */
+body{
+  /* Hintergrund-Eigenschaften entfernen */
+  background: none;
+
   display: flex;
   flex-direction: column;
-  align-items: center;   /* horizontal zentrieren */
+  align-items: center;
+
+  /* Hinweis: ein globales margin von 125px ist ungewöhnlich;
+     falls möglich lieber einen inneren Container einrücken. */
   margin: 125px;
+
   font-family: Arial, sans-serif;
 }
+
 
 #switch-container {
   margin-top: 50px;
@@ -1276,4 +1293,11 @@ table tr.odd {
   line-height:1.1;
   font-size:clamp(.88rem, 1.8vw, .92rem);
   max-width:100%;
+}
+
+/* nur die ⌀-Marke in der Meters-Kachel vergrößern */
+.info-tile.meters .tile-back .info-label::first-letter{
+  font-size: 1.45em;   /* ggf. anpassen */
+  font-weight: 800;
+  line-height: 1;
 }
