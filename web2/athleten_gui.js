@@ -70,6 +70,33 @@
     );
   }
 
+  // Summe aller geschwommenen Wettkampf-Meter (inkl. DQ, solange _Zeit nicht leer ist)
+  function sumWettkampfMeter(a){
+    const meets = Array.isArray(a.meets) ? a.meets : [];
+    let total = 0;
+
+    for (const m of meets){
+      for (const [key, val] of Object.entries(m)){
+        if (!/_Zeit$/i.test(key)) continue;              // nur Zeit-Felder
+        const v = (val ?? "").toString().trim();
+        if (!v) continue;                                // leer -> nicht gezählt (nicht gestartet)
+        // Distanz aus dem Feld-Namen ziehen (z. B. "100m_Lifesaver_Zeit")
+        let dist = NaN;
+        let mm = key.match(/^(\d+)m[_ ]/i) || key.match(/(\d+)m/i);
+        if (mm) dist = parseInt(mm[1], 10);
+        if (Number.isFinite(dist)) total += dist;
+      }
+    }
+    return total; // Meter
+  }
+
+  function fmtMeters(m){
+    if (!Number.isFinite(m) || m <= 0) return "—";
+    return `${m.toLocaleString("de-DE")} m`;
+  }
+
+
+
   function renderStartrechtIcons(a){
     const icons = [];
     if (hasStartrecht(a, "LV")) icons.push({file: "Cap-Baden.svg",       label: "Landeskader Athlet", key: "LV"});
@@ -1097,6 +1124,7 @@ function hasStartVal(v){
     const startsPer = computeStartsPerStartrecht(a);
     const totalStarts = totalStartsFromMeets(a);
     const dqLane = computeLaneDQProb(a);
+    const totalMeters = sumWettkampfMeter(a);
 
     grid.appendChild(infoTileBig("LSC", a.lsc != null ? fmtInt(a.lsc) : "—"));
     grid.appendChild(infoTileWettkaempfeFlip(a, meets));
@@ -1105,6 +1133,7 @@ function hasStartVal(v){
     grid.appendChild(renderBahnverteilungTile(a));
     grid.appendChild(renderRegelwerkTile(a));
     grid.appendChild(infoTileYearsFlip(meets.activeYears, meets.first, meets.firstName));
+    grid.appendChild(infoTile("Wettkampfmeter", fmtMeters(totalMeters)));
 
     return h("div", { class: "ath-profile-section info" }, header, grid);
 
