@@ -96,7 +96,6 @@
   }
 
 
-
   function renderStartrechtIcons(a){
     const icons = [];
     if (hasStartrecht(a, "LV")) icons.push({file: "Cap-Baden.svg",       label: "Landeskader Athlet", key: "LV"});
@@ -1133,7 +1132,7 @@ function hasStartVal(v){
     grid.appendChild(renderBahnverteilungTile(a));
     grid.appendChild(renderRegelwerkTile(a));
     grid.appendChild(infoTileYearsFlip(meets.activeYears, meets.first, meets.firstName));
-    grid.appendChild(infoTile("Wettkampfmeter", fmtMeters(totalMeters)));
+    grid.appendChild(infoTileMetersFlip("Wettkampfmeter", totalMeters, meets.total)); // ← NEU
 
     return h("div", { class: "ath-profile-section info" }, header, grid);
 
@@ -1443,6 +1442,44 @@ function hasStartVal(v){
       }
       return tile;
     }
+
+    function infoTileMetersFlip(label, totalMeters, totalMeets){
+      const avg = totalMeets ? Math.round(totalMeters / totalMeets) : null;
+
+      const tile  = h("div", {
+        class: "info-tile flip meters",
+        role: "button", tabindex: "0", "aria-pressed": "false"
+      });
+      const inner = h("div", { class: "tile-inner" });
+
+      // Vorderseite
+      const front = h("div", { class: "tile-face tile-front" },
+        h("div", { class: "info-label" }, label),                 // "Wettkampfmeter"
+        h("div", { class: "info-value" }, fmtMeters(totalMeters)) // Gesamtmeter
+      );
+
+      // Rückseite: NUR Titel "⌀ Meter / Wettkampf" + Wert
+      const back = h("div", { class: "tile-face tile-back" },
+        h("div", { class: "info-label" }, "⌀ Meter / Wettkampf"),
+        h("div", { class: "info-value" }, avg != null ? fmtMeters(avg) : "—")
+      );
+
+      inner.append(front, back);
+      tile.appendChild(inner);
+
+      // Hover dreht (per CSS), Klick lockt/unlockt
+      const toggle = () => {
+        const locked = tile.classList.toggle("is-flipped");
+        tile.setAttribute("aria-pressed", locked ? "true" : "false");
+      };
+      if ("onpointerdown" in window) tile.addEventListener("pointerdown", toggle);
+      else { tile.addEventListener("click", toggle); tile.addEventListener("touchstart", toggle, { passive: true }); }
+      tile.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+
+      return tile;
+    }
+
+
 
     function infoTileDQFlip(totalDQ, dqLane){
       const tile = h("div", {
