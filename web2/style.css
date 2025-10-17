@@ -465,6 +465,22 @@ body{
   gap: 14px;
 }
 
+/* Mobile: ath-profile volle Bildschirmbreite, ohne Lücke links/rechts */
+@media (max-width: 720px){
+  .ath-profile{
+    /* bricht aus dem zentrierten Container raus */
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+
+    /* optional: Ecken gerade ziehen, damit’s bündig wirkt */
+    border-radius: 0;
+
+    /* falls der Schatten am Rand stört, kannst du ihn abschwächen/entfernen: */
+    /* box-shadow: 0 8px 24px rgba(2,6,23,.10); */
+  }
+}
+
 .ath-profile-head{
   display: grid;
   grid-template-columns: 64px 1fr;
