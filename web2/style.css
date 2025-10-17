@@ -470,8 +470,7 @@ body{
   .ath-profile{
     /* bricht aus dem zentrierten Container raus */
     width: 100vw;
-    margin-left: calc(50% - 50vw);
-    margin-right: calc(50% - 50vw);
+    
 
     /* optional: Ecken gerade ziehen, damit’s bündig wirkt */
     border-radius: 0;
