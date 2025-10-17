@@ -465,21 +465,31 @@ body{
   gap: 14px;
 }
 
-/* Mobile: ath-profile volle Bildschirmbreite, ohne Lücke links/rechts */
+/* Nur der Profilbereich soll auf Mobil full-bleed werden */
 @media (max-width: 720px){
-  .ath-profile{
-    /* bricht aus dem zentrierten Container raus */
-    width: 100svw;
-    padding-left: -16px;
+  .ath-profile-wrap{
+    /* exakt auf Viewport-Breite ziehen */
+    width: 100svw;                       /* stabiler als 100vw auf iOS */
+    margin-left: calc(50% - 50svw);
+    margin-right: calc(50% - 50svw);
+
+    /* damit die Karte nicht breiter als der Screen wird */
     box-sizing: border-box;
-
-    /* optional: Ecken gerade ziehen, damit’s bündig wirkt */
-    border-radius: 0;
-
-    /* falls der Schatten am Rand stört, kannst du ihn abschwächen/entfernen: */
-    /* box-shadow: 0 8px 24px rgba(2,6,23,.10); */
   }
 }
+
+/* Fallback, falls svw nicht unterstützt wird */
+@supports not (width: 1svw){
+  @media (max-width: 720px){
+    .ath-profile-wrap{
+      width: 100vw;
+      margin-left: calc(50% - 50vw);
+      margin-right: calc(50% - 50vw);
+      box-sizing: border-box;
+    }
+  }
+}
+
 
 .ath-profile-head{
   display: grid;
