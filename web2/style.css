@@ -458,7 +458,7 @@ body{
 .ath-profile-wrap{ margin-top: 6px; }
 
 .ath-profile{
-  background: #ffffff;
+  background: #FAFCFD;
   border-radius: 16px;
   padding: 16px;
   display: grid;
@@ -1248,6 +1248,7 @@ body{
 .ath-sep.thick{
   height: 80px;                 /* Dicke */
   background: rgb(255, 255, 255); /* Vollflächig (kein Verlauf) */
+  box-shadow: 0 0 10px rgba(32, 32, 32, 0.048);
   border: 0;
   border-radius: 0;             /* rechteckig */
   margin-top: 0px;
@@ -1255,33 +1256,7 @@ body{
 
 .ath-sep.thick.full-bleed{
   display: block;
-  width: calc(100% + 16px*2);
-  margin-left: calc(-16px);
 }
-
-/* Eigener Hintergrund NUR oben (bis zum dicken Trenner) */
-.ath-card-top{
-  background: #FAFCFD;            /* <- deine neue Top-Farbe */
-  /* bis an den Kartenrand „ausbluten“ */
-  margin-top: -16px;
-  margin-bottom: -14px;
-  margin-left: -16px;
-  margin-right: -16px;
-  padding: 16px;
-  border-radius: 16px 16px 0 0;    /* oben rund wie die Karte */
-}
-
-.ath-card-buttom{
-  background: #FAFCFD;            /* <- deine neue Top-Farbe */
-  /* bis an den Kartenrand „ausbluten“ */
-  margin-top: -29px;
-  margin-bottom: -16px;
-  margin-left: -16px;
-  margin-right: -16px;
-  padding: 16px;
-  border-radius: 0px 0px 16px 16px;    /* oben rund wie die Karte */
-}
-
 
 /* =========================
    LSC – klickbarer Titelwechsler
