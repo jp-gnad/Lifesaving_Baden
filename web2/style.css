@@ -904,6 +904,7 @@ body{
   padding:10px 12px;
   display:grid;
   gap:8px;
+  margin-bottom: 20px;
 }
 .med-head{
   display:flex;
@@ -916,7 +917,6 @@ body{
   font-weight:700;
   color:#64748b;
   text-transform:uppercase;
-  margin-bottom:25px;
 }
 .med-total{
   font-size:1.6rem;
@@ -926,7 +926,7 @@ body{
 }
 .med-grid{
   display:grid;
-  grid-template-columns:repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap:8px;
   align-items:end;
 }
@@ -936,6 +936,7 @@ body{
   gap:4px;
   justify-items:center;
   text-align:center;
+  min-width: 0;
 }
 .med-count{
   font-weight:800;
@@ -943,7 +944,7 @@ body{
 }
 .med-barWrap{
   width:100%;
-  height:76px;        /* visuelle Maxhöhe */
+  height: 100px;        /* visuelle Maxhöhe */
   display:flex;
   align-items:end;
   justify-content:center;
@@ -966,12 +967,19 @@ body{
   font-weight:700;
   letter-spacing:.06em;
   color:#64748b;
+  white-space: nowrap;
 }
 
 /* Optional: etwas Platz links, damit’s nicht zu nah am Text klebt */
 .ath-profile-head .med-card{
   margin-right:20px;
   justify-self:end;
+}
+@media (min-width:720px){
+  .ath-profile-head .med-card{
+    width: 115%;
+    height: 102%;
+  }
 }
 
 /* Mobile: Widget unter den Kopf umbrechen (wie zuvor) */
@@ -982,8 +990,11 @@ body{
   }
   .ath-profile-head .med-card{
     grid-column:1 / -1;
-    margin:25px 10px;
+    margin-top: 35px;
     justify-self:stretch;
+  }
+  .med-title{
+    margin-bottom: 15px;
   }
 }
 
