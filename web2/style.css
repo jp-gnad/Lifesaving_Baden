@@ -476,6 +476,9 @@ body{
     /* damit die Karte nicht breiter als der Screen wird */
     box-sizing: border-box;
   }
+  .ath-profile{
+    border-radius: 0px;
+  }
 }
 
 /* Fallback, falls svw nicht unterstützt wird */
