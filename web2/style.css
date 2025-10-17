@@ -469,7 +469,7 @@ body{
 @media (max-width: 720px){
   .ath-profile{
     /* bricht aus dem zentrierten Container raus */
-    width: 100vw;
+    width: 80vw;
 
     /* optional: Ecken gerade ziehen, damit’s bündig wirkt */
     border-radius: 0;
