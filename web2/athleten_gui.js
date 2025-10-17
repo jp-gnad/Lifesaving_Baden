@@ -384,19 +384,33 @@
     "Schweiz","Polen","Japan","Dänemark","Ägypten","Niederlande","Großbritannien"
   ]);
 
-  function renderCountryFlagsSectionSVG(a){
-    const names = countriesFromAthlete(a).map(n => String(n).trim()).filter(n => SUPPORTED_FLAGS_DE.has(n));
+  // REPLACE your old renderCountryFlagsSectionSVG with this:
+  function renderCountryFlagsInline(a){
+    // Quelle: aus deriveFromMeets() — fallback auf a.countriesDE
+    const names = (typeof countriesFromAthlete === "function"
+      ? countriesFromAthlete(a)
+      : (Array.isArray(a.countriesDE) ? a.countriesDE : [])
+    )
+    .map(n => String(n).trim())
+    .filter(n => SUPPORTED_FLAGS_DE.has(n));
+
     if (!names.length) return null;
-    const row = h("div", { class: "ath-flags" },
+
+    return h("div", { class: "kv-flags" },
       ...names.map(name => {
         const wrap = h("span", { class: "ath-flag", title: name, "aria-label": name });
-        const img = h("img", { class: "flag-img", src: `${FLAG_BASE_URL}/${encodeURIComponent(name)}.svg`, alt: name, loading: "lazy", decoding: "async", onerror: () => wrap.remove() });
+        const img  = h("img", {
+          class: "flag-img",
+          src: `${FLAG_BASE_URL}/${encodeURIComponent(name)}.svg`,
+          alt: name, loading: "lazy", decoding: "async",
+          onerror: () => wrap.remove()
+        });
         wrap.appendChild(img);
         return wrap;
       })
     );
-    return h("div", { class: "ath-profile-section flags" }, h("div", { class: "ath-flags-header" }, ""), row);
   }
+
 
   // ---------- Aktivitätsstatus ----------
   function activityStatusFromLast(lastISO){
@@ -1108,7 +1122,7 @@ function hasStartVal(v){
     };
     return hDiv("aside", { class: "med-card", "aria-label": "Medaillen" },
       hDiv("div", { class: "med-head" }, hDiv("div", { class: "med-title" }, m.title || "Medaillen"), hDiv("div", { class: "med-total" }, String(total))),
-      hDiv("div", { class: "med-grid" }, bar("gold","GOLD",g), bar("silver","SILVER",s), bar("bronze","BRONZE",b))
+      hDiv("div", { class: "med-grid" }, bar("gold","GOLD",g), bar("silver","SILBER",s), bar("bronze","BRONZE",b))
     );
   }
 
@@ -1562,59 +1576,69 @@ function hasStartVal(v){
     const mount = Refs.profileMount; if (!mount) return;
     if (!ax) { mount.innerHTML = ""; mount.classList.remove("ath-profile-wrap"); return; }
 
-    const KV = (k, v) => h("span", { class: "kv" }, h("span", { class: "k" }, k + ":"), h("span", { class: "v" }, v));
+    const KV = (k, v) =>
+      h("span", { class: "kv", "data-key": k },
+        h("span", { class: "k" }, k + ":"),
+        h("span", { class: "v" }, v)
+      );
 
     // ★ aktuelle OG aus Meets berechnen (mit Fallback auf evtl. altes Feld)
     const currOG = currentOrtsgruppeFromMeets(ax) || ax.ortsgruppe || "";
 
     const profile = h("article", { class: "ath-profile" },
-      h("div", { class: "ath-profile-head" },
+      h("div", { class: "ath-card-top" },  
+        h("div", { class: "ath-profile-head" },
+        
+          // Cap lädt intern bereits die aktuelle OG
+          renderCapAvatar(ax),
 
-        // Cap lädt intern bereits die aktuelle OG
-        renderCapAvatar(ax),
+          h("div", { class: "ath-profile-title" },
+            h("h2", {}, ax.name),
 
-        h("div", { class: "ath-profile-title" },
-          h("h2", {}, ax.name),
+            // Chips-Zeile: Gender + AK + Aktivitätsstatus
+            (() => {
+              const gt   = genderTag(ax.geschlecht);
+              const ak   = akLabelFromJahrgang(ax.jahrgang);
+              const meets = computeMeetInfo(ax);
+              const act   = activityStatusFromLast(meets.last);
+              const lastStr = fmtDate(meets.last);
+              const age  = ageFromJahrgang(ax.jahrgang);
+              const band = (age != null && age <= 18) ? "youth" : "open";
 
-          // Chips-Zeile: Gender + AK + Aktivitätsstatus
-          (() => {
-            const gt   = genderTag(ax.geschlecht);
-            const ak   = akLabelFromJahrgang(ax.jahrgang);
-            const meets = computeMeetInfo(ax);
-            const act   = activityStatusFromLast(meets.last);
-            const lastStr = fmtDate(meets.last);
-            const age  = ageFromJahrgang(ax.jahrgang);
-            const band = (age != null && age <= 18) ? "youth" : "open";
+              const srIcons = renderStartrechtIcons(ax); // kann null sein
 
-            const srIcons = renderStartrechtIcons(ax); // kann null sein
+              return h("div", { class: "gender-row" },
+                h("span", { class: `gender-chip ${gt.cls}`, title: gt.full, "aria-label": `Geschlecht: ${gt.full}` }, gt.full),
+                h("span", { class: `ak-chip ${band}`,       title: `Altersklasse ${ak}`, "aria-label": `Altersklasse ${ak}` }, ak),
+                h("span", { class: `status-chip ${act.key}`, title: `Letzter Wettkampf: ${lastStr}`, "aria-label": `Aktivitätsstatus: ${act.label}. Letzter Wettkampf: ${lastStr}` },
+                  h("span", { class: "status-dot" }), act.label
+                ),
+                srIcons
+              );
+            })(),
 
-            return h("div", { class: "gender-row" },
-              h("span", { class: `gender-chip ${gt.cls}`, title: gt.full, "aria-label": `Geschlecht: ${gt.full}` }, gt.full),
-              h("span", { class: `ak-chip ${band}`,       title: `Altersklasse ${ak}`, "aria-label": `Altersklasse ${ak}` }, ak),
-              h("span", { class: `status-chip ${act.key}`, title: `Letzter Wettkampf: ${lastStr}`, "aria-label": `Aktivitätsstatus: ${act.label}. Letzter Wettkampf: ${lastStr}` },
-                h("span", { class: "status-dot" }), act.label
-              ),
-              srIcons
-            );
-          })(),
+            // ★ Meta: OG + Jahrgang (OG = aktuelle)
+            // ...innerhalb der ath-profile-title:
+            h("div", { class: "ath-profile-meta" },
+              KV("Ortsgruppe", currOG),
+              KV("Jahrgang", String(ax.jahrgang)),
+              KV("Länderpins", renderCountryFlagsInline(ax) || "—")   // ← NEU
+            ),
 
-          // ★ Meta: OG + Jahrgang (OG = aktuelle)
-          h("div", { class: "ath-profile-meta" },
-            KV("Ortsgruppe", formatOrtsgruppe(currOG)),
-            KV("Jahrgang", String(ax.jahrgang))
-          )
+          ),
+
+          renderMedalStats(ax)
         ),
-
-        renderMedalStats(ax)
+        
       ),
-
-      renderCountryFlagsSectionSVG(ax),
-      renderOverviewSection(ax),
-      h("hr", { class: "ath-sep", role: "separator", "aria-hidden": "true" }),
-      renderBestzeitenSection(ax),
-      h("div", { class: "ath-profile-section muted" }, "Hier kommt später die Statistik (GUI) aus deiner Excel-Datenbank rein.")
+      h("div", { class: "ath-sep thick full-bleed" }),
+      h("div", { class: "ath-card-buttom" },
+        renderOverviewSection(ax),
+        h("hr", { class: "ath-sep", role: "separator", "aria-hidden": "true" }),
+        renderBestzeitenSection(ax),
+        h("div", { class: "ath-profile-section muted" }, "Hier kommt später die Statistik (GUI) aus deiner Excel-Datenbank rein.")  
+      ),
     );
-
     mount.innerHTML = "";
     mount.classList.add("ath-profile-wrap");
     mount.appendChild(profile);
