@@ -262,7 +262,7 @@
       for (const d of DISCIPLINES) stats[lane][d.key] = { starts: 0, dq: 0 };
     }
 
-    const medals = { gold: 0, silver: 0, bronze: 0, title: "Medaillen" };
+    const medals = { gold: 0, silver: 0, bronze: 0, title: "Lifesaving Medaillen" };
     let totalStarts = 0;
 
     const addMedal = (place) => {
