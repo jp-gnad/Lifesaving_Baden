@@ -47,19 +47,33 @@
     );
 
     const tabs = renderAthTabs(["Bestzeiten","Info","Wettkämpfe"], "Bestzeiten", (key) => {
-      // Panels umschalten
       panels.querySelectorAll(".ath-tab-panel").forEach(p => {
         p.classList.toggle("active", p.dataset.key === key);
       });
     });
 
-    // Initial: “Bestzeiten”
-    setTimeout(() => {
-      panels.querySelectorAll(".ath-tab-panel").forEach(p => p.classList.toggle("active", p.dataset.key === "bests"));
+    const wrap = h("div", { class: "ath-tabs-wrap" }, tabs, panels);
+
+    // Initial: Panel "bests" aktiv + Unterline korrekt positionieren,
+    // nachdem wrap im DOM ist (verhindert 0px-Messungen).
+    requestAnimationFrame(() => {
+      panels.querySelectorAll(".ath-tab-panel").forEach(p =>
+        p.classList.toggle("active", p.dataset.key === "bests")
+      );
+      const activeBtn = wrap.querySelector(".ath-tab.active") || wrap.querySelector(".ath-tab");
+      if (activeBtn) {
+        const ul  = wrap.querySelector(".ath-tabs-underline");
+        const lst = wrap.querySelector(".ath-tabs-list");
+        const pr  = lst.getBoundingClientRect();
+        const tr  = activeBtn.getBoundingClientRect();
+        ul.style.width = tr.width + "px";
+        ul.style.left  = (tr.left - pr.left) + "px";
+      }
     });
 
-    return h("div", { class: "ath-tabs-wrap" }, tabs, panels);
+    return wrap;
   }
+
 
   function renderAthTabs(labels, activeLabel, onChange){
     const map = { "Bestzeiten":"bests", "Info":"info", "Wettkämpfe":"meets" };
@@ -151,7 +165,7 @@
     }
 
     function paint(year){
-      title.textContent = `Wettkämpfe (${year})`;
+      title.textContent = year;
 
       // Meets dieses Jahres, neueste zuerst
       const items = allMeets
