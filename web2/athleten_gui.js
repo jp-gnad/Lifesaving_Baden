@@ -39,6 +39,188 @@
     return (i >= 0 ? s.slice(0, i) : s).trim();
   }
 
+  function renderAthTabsAndPanels(ax){
+    const panels = h("div", { class: "ath-tab-panels" },
+      h("div", { class: "ath-tab-panel", "data-key": "bests" }, renderBestzeitenSection(ax)),
+      h("div", { class: "ath-tab-panel", "data-key": "info"  }, renderOverviewSection(ax)),
+      h("div", { class: "ath-tab-panel", "data-key": "meets" }, renderMeetsSection(ax))
+    );
+
+    const tabs = renderAthTabs(["Bestzeiten","Info","Wettkämpfe"], "Bestzeiten", (key) => {
+      // Panels umschalten
+      panels.querySelectorAll(".ath-tab-panel").forEach(p => {
+        p.classList.toggle("active", p.dataset.key === key);
+      });
+    });
+
+    // Initial: “Bestzeiten”
+    setTimeout(() => {
+      panels.querySelectorAll(".ath-tab-panel").forEach(p => p.classList.toggle("active", p.dataset.key === "bests"));
+    });
+
+    return h("div", { class: "ath-tabs-wrap" }, tabs, panels);
+  }
+
+  function renderAthTabs(labels, activeLabel, onChange){
+    const map = { "Bestzeiten":"bests", "Info":"info", "Wettkämpfe":"meets" };
+    const bar  = h("div", { class: "ath-tabs full-bleed" });
+    const list = h("div", { class: "ath-tabs-list" });
+    const ul   = h("div", { class: "ath-tabs-underline" });
+
+    let activeBtn = null;
+
+    labels.forEach(lbl => {
+      const key = map[lbl] || lbl.toLowerCase();
+      const btn = h("button", {
+        class: "ath-tab" + (lbl === activeLabel ? " active" : ""),
+        type: "button",
+        onclick: () => setActive(btn, key)
+      }, lbl.toUpperCase());
+      list.appendChild(btn);
+      if (lbl === activeLabel) activeBtn = btn;
+    });
+
+    bar.appendChild(list);
+    bar.appendChild(ul);
+
+    function positionUnderline(btn){
+      const r = btn.getBoundingClientRect();
+      const p = list.getBoundingClientRect();
+      ul.style.width = r.width + "px";
+      ul.style.left  = (r.left - p.left) + "px";
+    }
+    function setActive(btn, key){
+      list.querySelectorAll(".ath-tab").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      positionUnderline(btn);
+      onChange?.(key);
+    }
+
+    // initiale Position nach Layout
+    requestAnimationFrame(() => activeBtn && positionUnderline(activeBtn));
+    window.addEventListener("resize", () => {
+      const cur = list.querySelector(".ath-tab.active");
+      cur && positionUnderline(cur);
+    });
+
+    return bar;
+  }
+
+  // sehr einfache Wettkampf-Liste (du kannst später erweitern)
+  function renderMeetsSection(a){
+    const allMeets = Array.isArray(a.meets) ? a.meets.slice() : [];
+    if (!allMeets.length){
+      const emptyBox = h("div", { class: "ath-profile-section meets" },
+        h("div", { class: "ath-info-header" }, h("h3", {}, "Wettkämpfe (—)")),
+        h("div", { class: "best-empty" }, "Keine Wettkämpfe erfasst.")
+      );
+      return emptyBox;
+    }
+
+    // verfügbare Jahre (neueste zuerst)
+    const years = Array.from(new Set(
+      allMeets
+        .map(m => (new Date(m.date)).getFullYear())
+        .filter(y => Number.isFinite(y))
+    )).sort((a,b) => b - a);
+
+    let idx = 0; // start: neuestes Jahr
+    const box   = h("div", { class: "ath-profile-section meets" });
+
+    // Kopf mit Jahres-Navigation
+    const title = h("h3", {}, "");
+    const head  = h("div", { class: "ath-info-header meets-head" },
+      h("button", { class: "nav-btn", type: "button", onclick: () => changeYear(-1) }, "‹"),
+      title,
+      h("button", { class: "nav-btn", type: "button", onclick: () => changeYear(+1) }, "›"),
+    );
+
+    const listWrap = h("div", { class: "meets-list" });
+    box.appendChild(head);
+    box.appendChild(listWrap);
+
+    paint(years[idx]);
+
+    return box;
+
+    function changeYear(delta){
+      const next = idx + delta;
+      if (next < 0 || next >= years.length) return;
+      idx = next;
+      paint(years[idx]);
+    }
+
+    function paint(year){
+      title.textContent = `Wettkämpfe (${year})`;
+
+      // Meets dieses Jahres, neueste zuerst
+      const items = allMeets
+        .filter(m => (new Date(m.date)).getFullYear() === year)
+        .sort((l, r) => new Date(r.date) - new Date(l.date));
+
+      listWrap.innerHTML = "";
+      if (!items.length){
+        listWrap.appendChild(h("div", { class: "best-empty" }, "Keine Wettkämpfe in diesem Jahr."));
+        return;
+      }
+
+      items.forEach(m => {
+        const row = h("div", {
+          class: "meet-row",
+          role: "button",
+          tabindex: "0",
+          "aria-expanded": "false",
+          onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } },
+          onclick: toggle
+        },
+          h("span", { class: "m-date" }, fmtDate(m.date)),
+          h("span", { class: "m-name" }, (m.meet_name || "—").replace(/\s+-\s+.*$/, "")), // Text vor " - "
+          h("span", { class: "m-mkp"  }, m.Mehrkampf_Platz ? `#${m.Mehrkampf_Platz}` : "—"),
+          h("span", { class: "m-pool" }, m.pool === "25" ? "25 m" : (m.pool === "50" ? "50 m" : ""))
+        );
+
+        // Details: Disziplinen auflisten
+        const details = h("div", { class: "meet-details" }, ...buildResultRows(m));
+
+        listWrap.appendChild(row);
+        listWrap.appendChild(details);
+
+        function toggle(){
+          const isOpen = row.classList.toggle("open");
+          row.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        }
+      });
+    }
+
+    // Disziplin-Schlüssel (wie in deinen Meet-Objekten)
+    function buildResultRows(m){
+      const F = [
+        { base:"50m_Retten",            label:"50m Retten" },
+        { base:"100m_Retten",           label:"100m Retten" },
+        { base:"100m_Kombi",            label:"100m Kombi" },
+        { base:"100m_Lifesaver",        label:"100m Lifesaver" },
+        { base:"200m_SuperLifesaver",   label:"200m Super Lifesaver" },
+        { base:"200m_Hindernis",        label:"200m Hindernis" },
+      ];
+      const rows = [];
+      for (const f of F){
+        const t = m[`${f.base}_Zeit`];   // string: "0:52,73" | "DQ" | "" | undefined
+        const p = m[`${f.base}_Platz`];  // string: "1" | ""
+        if (t || p){                     // nur anzeigen, wenn irgendwas da ist (DQ zählt)
+          rows.push(
+            h("div", { class: "meet-res" },
+              h("span", { class: "d" }, f.label),
+              h("span", { class: "p" }, p ? `${p}. Platz` : (t==="DQ" ? "—" : "—")),
+              h("span", { class: "t" }, t && t !== "" ? t : "—")
+            )
+          );
+        }
+      }
+      return rows.length ? rows : [ h("div", { class: "best-empty" }, "Keine Einzelergebnisse erfasst.") ];
+    }
+  }
+
+
 
   // Summiert Starts & DQ je Bahn aus ax.stats und berechnet die Wahrscheinlichkeit
   function computeLaneDQProb(ax){
@@ -1019,7 +1201,7 @@ function hasStartVal(v){
   }
 
   function renderBestzeitenSection(athlete) {
-    const header = h("div", { class: "ath-bests-header" }, h("h3", {}, "Bestzeiten / Info"), renderBahnSwitch(athlete));
+    const header = h("div", { class: "ath-bests-header" }, h("h3", {}, ""), renderBahnSwitch(athlete));
     const grid = h("div", { class: "ath-bests-grid" }); Refs.bestGrid = grid;
     const section = h("div", { class: "ath-profile-section bests" }, header, grid);
     paintBestzeitenGrid(athlete);
@@ -1128,7 +1310,7 @@ function hasStartVal(v){
 
   // ---------- Überblick ----------
   function renderOverviewSection(a){
-    const header = h("div", { class: "ath-info-header" }, h("h3", {}, "Überblick"));
+    const header = h("div", { class: "ath-info-header" }, h("h3", {}, ""));
     const grid = h("div", { class: "ath-info-grid" });
 
     const meets = computeMeetInfo(a);
@@ -1584,7 +1766,8 @@ function hasStartVal(v){
 
     // ★ aktuelle OG aus Meets berechnen (mit Fallback auf evtl. altes Feld)
     const currOG = currentOrtsgruppeFromMeets(ax) || ax.ortsgruppe || "";
-
+    // --- Tabs + Panels ---
+    const tabsWrap = renderAthTabsAndPanels(ax);
     const profile = h("article", { class: "ath-profile" },
       h("div", { class: "ath-profile-head" },
       
@@ -1627,11 +1810,12 @@ function hasStartVal(v){
         renderMedalStats(ax)
         
       ),
-      h("div", { class: "ath-sep thick full-bleed" }),
-      renderOverviewSection(ax),
-      h("hr", { class: "ath-sep", role: "separator", "aria-hidden": "true" }),
-      renderBestzeitenSection(ax),
-      h("div", { class: "ath-profile-section muted" }, "Hier kommt später die Statistik (GUI) aus deiner Excel-Datenbank rein.")  
+      h("div", { class: "ath-card-buttom" },
+        tabsWrap,
+        h("div", { class: "ath-profile-section muted" },
+          "Hier kommt später die Statistik (GUI) aus deiner Excel-Datenbank rein."
+        )
+      ),
     );
     mount.innerHTML = "";
     mount.classList.add("ath-profile-wrap");

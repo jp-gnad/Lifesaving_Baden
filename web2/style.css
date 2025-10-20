@@ -1368,3 +1368,176 @@ body{
   font-weight: 800;
   line-height: 1;
 }
+
+
+/* ===== Subtabs (Bestzeiten | Info | Wettkämpfe) ===== */
+.ath-tabs.full-bleed{
+  position: relative;
+  background: #ffffff;
+  /* Full bleed innerhalb der Karte (du nutzt 16px Innenabstand) */
+  width: calc(100% + 32px);
+  margin-left: -16px;
+  margin-right: -16px;
+  border-top: 1px solid rgba(17,24,39,0.08);
+  border-bottom: 1px solid rgba(17,24,39,0.08);
+  box-shadow: 0 0 10px rgba(32, 32, 32, 0.048);
+}
+
+.ath-tabs-list{
+  display:flex;
+  justify-content:center;       /* <— zentriert */
+  gap: clamp(16px, 6vw, 48px);
+  align-items:center;
+  padding: 10px 16px 12px;
+  position: relative;
+}
+
+ath-tab{
+  position: relative;           /* für ::after */
+  appearance:none;
+  background:none;
+  border:0;
+  padding: 8px 4px;
+  cursor:pointer;
+  font-weight:700;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:#0f172a;
+  opacity:.9;
+}
+
+/* --- Tabs: Button-Chrome voll resetten --- */
+.ath-tabs-list .ath-tab{
+  all: unset;                    /* killt UA-Styles (border, bg, etc.) */
+  display: inline-block;
+  cursor: pointer;
+  position: relative;
+  padding: 8px 4px;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #0f172a;
+  opacity: .9;
+}
+.ath-tabs-list .ath-tab:focus{ outline: none; }
+.ath-tabs-list .ath-tab.active{ opacity: 1; }
+
+/* Hover-Wipe NUR unter dem Tab-Text */
+.ath-tabs-list .ath-tab::after{
+  content:"";
+  position:absolute; left:0; right:0; bottom:0;
+  height: 0;                       /* start unsichtbar */
+  background:#1d4ed8;
+  border-radius:2px;
+  transform-origin: bottom;        /* von unten hoch wischen */
+  transition: height .22s ease;
+}
+.ath-tabs-list .ath-tab:hover::after{ height:4px; }
+
+/* Bewegliche Unterline (für aktiven Tab) – Breite/Position per CSS-Var */
+.ath-tabs-underline{
+  position: absolute;
+  bottom: 0;
+  height: 4px;
+  width: var(--w, 0px);
+  left:  var(--l, 0px);
+  background: #1d4ed8;
+  border-radius: 2px;
+  transition: left .25s ease, width .25s ease;
+}
+
+/* (Sicherstellen, dass die Tab-Leiste selbst keinerlei Rahmen/BG hat) */
+.ath-tabs{ background: transparent; }
+.ath-tabs-list{ border: 0; background: transparent; }
+
+
+.ath-tab.active{ opacity:1; }
+
+/* Wipe-Balken beim Hover */
+.ath-tab::after{
+  content:"";
+  position:absolute;
+  left:0; right:0; bottom:0;
+  height:0;                      /* start: nicht sichtbar */
+  background:#1d4ed8;
+  border-radius:2px;
+  transform-origin: bottom;      /* von unten „hoch wischen“ */
+  transition: height .22s ease;  /* smooth */
+}
+.ath-tab:hover::after{ height:4px; }
+
+/* Bewegliche Unterline für den aktiven Tab bleibt wie gehabt */
+.ath-tabs-underline{
+  position:absolute;
+  left:16px; bottom:0;
+  height:4px;
+  width:0;
+  background:#1d4ed8;
+  border-radius:2px;
+  transition:left .25s ease, width .25s ease;
+}
+
+
+/* Panels */
+.ath-tab-panels{ padding-top: 10px; }
+.ath-tab-panel{ display: none; }
+.ath-tab-panel.active{ display: block; }
+
+/* Schlichte Wettkampf-Liste */
+.meets-list{ 
+  display: grid; 
+  gap: 8px; 
+  margin-top: 4px; 
+  margin-left: -13px;
+  width: calc(100% + 26px);
+}
+.meet-row{
+  display: grid;
+  grid-template-columns: 100px 1fr 120px 60px;
+  gap: 10px;
+  align-items: baseline;
+  padding: 8px 10px;
+  border: 1px solid rgba(17,24,39,0.08);
+  border-radius: 10px;
+  background: #f9fafb;
+  font-size: .9rem;
+  cursor:pointer;
+}
+.meet-row .m-date{ font-weight:800; color:#0f172a; }
+.meet-row .m-name{ font-weight:700; color:#334155; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.meet-row .m-mkp { font-weight:800; color:#0f172a; text-align:right; }
+.meet-row .m-pool{ font-weight:700; color:#475569; text-align:right; }
+
+/* Details ein-/ausklappen */
+.meet-details{
+  display:none;
+  padding:8px 10px 10px;
+  border-left:1px dashed rgba(17,24,39,0.12);
+  border-right:1px dashed rgba(17,24,39,0.12);
+  border-bottom:1px solid rgba(17,24,39,0.12);
+  border-radius:0 0 10px 10px;
+  background:#fff;
+}
+.meet-row.open + .meet-details{ display:grid; gap:6px; }
+
+.meet-res{
+  display:grid;
+  grid-template-columns: 1fr 90px 110px; /* Disziplin | Platz | Zeit */
+  align-items:baseline;
+  gap:8px;
+}
+.meet-res .d { color:#475569; font-weight:700; }
+.meet-res .p { font-weight:800; color:#0f172a; text-align:right; }
+.meet-res .t { font-weight:800; color:#0f172a; text-align:right; }
+
+/* Jahres-Navigation im Header der Meets-Section */
+.meets-head{
+  display:flex; align-items:center; justify-content:center; gap:10px;
+}
+.meets-head .nav-btn{
+  appearance:none; border:1px solid rgba(17,24,39,0.12);
+  background:#fff; border-radius:8px; padding:6px 10px; cursor:pointer;
+  font-weight:700;
+}
+.meets-head h3{ margin:0 8px; }
