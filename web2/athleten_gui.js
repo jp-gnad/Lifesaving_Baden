@@ -224,7 +224,7 @@
           rows.push(
             h("div", { class: "meet-res" },
               h("span", { class: "d" }, f.label),
-              h("span", { class: "p" }, p ? `${p}. Platz` : (t==="DQ" ? "—" : "—")),
+              h("span", { class: "p" }, p ? `${p}. Platz` : "—"),
               h("span", { class: "t" }, t && t !== "" ? t : "—")
             )
           );
@@ -398,18 +398,6 @@
     const cs = tot % 100;
     const sPart = (m ? String(s).padStart(2, "0") : String(s));
     return (m ? `${m}:${sPart}` : sPart) + "." + String(cs).padStart(2, "0");
-  }
-
-  function parseTimeToSec(val) {
-    if (val == null) return NaN;
-    const t = String(val).trim();
-    if (!t || /^dq$/i.test(t)) return NaN;
-    const norm = t.replace(",", ".");
-    const parts = norm.split(":");
-    let sec;
-    if (parts.length === 1) sec = parseFloat(parts[0]);
-    else if (parts.length === 2) sec = parseInt(parts[0], 10) * 60 + parseFloat(parts[1]);
-    return Number.isFinite(sec) ? sec : NaN;
   }
 
   function fmtInt(n){ return Number.isFinite(n) ? n.toLocaleString("de-DE") : "—"; }
@@ -636,9 +624,9 @@
       if (m.pool === "50") c50++; else if (m.pool === "25") c25++;
 
       // Regelwerk zählen
-      const reg = (m.Regelwerk || "").toLowerCase();
-      if (reg === "international") cIntl++;
-      else if (reg === "national") cNat++;
+      const reg = String(m.Regelwerk || "").toLowerCase().trim();
+      if (reg.startsWith("int")) cIntl++;
+      else if (reg.startsWith("nat")) cNat++;
 
       const d = new Date(m.date);
       if (!isNaN(d)){

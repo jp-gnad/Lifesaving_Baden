@@ -728,7 +728,7 @@ body{
 /* Varianten (gleiches Farbschema wie vorher): */
 .status-chip.active  { --sc: #10b981; } /* grün  */
 .status-chip.pause   { --sc: #f59e0b; } /* gelb  */
-.status-chip.inactive{ --sc: #ef4444; } /* rot   }
+.status-chip.inactive{ --sc: #ef4444; } /* rot  */
 
 
 /* Startrechts-Icons (LV/BV) rechts in der Chips-Zeile */
@@ -1457,13 +1457,15 @@ body{
   gap: 10px;
   align-items: baseline;
   padding: 8px 10px;
-  border-top: solid 1px ; color:#0f172a;
-  border-bottom: solid 1px ; color:#0f172a;
+  border-top: 1px solid rgba(17,24,39,0.12);
+  border-bottom: 1px solid rgba(17,24,39,0.12);
   background: #ffffff;
   font-size: .9rem;
   cursor:pointer;
   margin-top: -1px;
+  color:#0f172a;
 }
+
 .meet-row .m-date{ font-weight:normal; color:#0f172a; }
 .meet-row .m-name{ font-weight:normal; color:#334155; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .meet-row .m-mkp { font-weight:normal; color:#0f172a; text-align:right; }
