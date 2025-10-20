@@ -32,6 +32,47 @@
     return c;
   }
 
+  function poolLabel(pool){
+    return pool === "25" ? "25m" : (pool === "50" ? "50m" : "—");
+  }
+
+  function fmtDateShort(dStr){
+    if (!dStr) return "—";
+    const d = new Date(dStr);
+    if (isNaN(d)) return "—";
+    const months = ["Jan.","Feb.","März","Apr.","Mai","Jun.","Jul.","Aug.","Sep.","Okt.","Nov.","Dez."];
+    return `${d.getDate()}. ${months[d.getMonth()]}`;
+  }
+
+  const LAND_TO_ISO3 = {
+    "Deutschland":"GER",
+    "Schweiz":"SUI",
+    "Italien":"ITA",
+    "Frankreich":"FRA",
+    "Belgien":"BEL",
+    "Niederlande":"NED",
+    "Spanien":"ESP",
+    "Polen":"POL",
+    "Japan":"JPN",
+    "Dänemark":"DEN",
+    "Ägypten":"EGY",
+    "Großbritannien":"GBR",
+  };
+
+  function iso3FromLand(landName){
+    return LAND_TO_ISO3[String(landName||"").trim()] || "—";
+  }
+
+  function medalForPlace(placeStr){
+    const p = parseInt(placeStr, 10);
+    if (!Number.isFinite(p)) return null;
+    if (p === 1) return { file:"medal_gold.svg",   alt:"Gold"   };
+    if (p === 2) return { file:"medal_silver.svg", alt:"Silber" };
+    if (p === 3) return { file:"medal_bronze.svg", alt:"Bronze" };
+    return null;
+  }
+
+
   function shortMeetName(name){
     if (!name) return "—";
     const s = String(name);
@@ -179,6 +220,48 @@
       }
 
       items.forEach(m => {
+        // Platzierung (Zahl ohne #) + ggf. Medaille
+        const placeStr = (m.Mehrkampf_Platz || "").toString().trim();
+        const medal    = medalForPlace(placeStr);
+
+        const placeEl = h("span", { class: "m-place" },
+          placeStr ? placeStr : "—",
+          medal ? h("img", {
+            class: "m-medal",
+            src: `${FLAG_BASE_URL}/${medal.file}`,
+            alt: medal.alt,
+            loading: "lazy",
+            decoding: "async",
+            onerror: (e)=>e.currentTarget.remove()
+          }) : null
+        );
+
+        // Name (wie gehabt, alles vor " - ")
+        const nameEl = h("span", { class: "m-name" },
+          (m.meet_name || "—").replace(/\s+-\s+.*$/, "")
+        );
+
+        // Bahn
+        const poolEl = h("span", { class: "m-pool" }, poolLabel(m.pool));
+
+        // Land: Flagge + ISO3
+        const landName = (m.Land || "").toString().trim();
+        const iso3 = iso3FromLand(landName);
+        const landEl = h("span", { class: "m-country" },
+          h("img", {
+            class: "m-flag",
+            src: `${FLAG_BASE_URL}/${encodeURIComponent(landName)}.svg`,
+            alt: landName || "Land",
+            loading: "lazy",
+            decoding: "async",
+            onerror: (e)=>e.currentTarget.remove()
+          }),
+          h("span", { class: "m-iso" }, ` ${iso3}`)
+        );
+
+        // Datum kurz
+        const dateEl = h("span", { class: "m-date" }, fmtDateShort(m.date));
+
         const row = h("div", {
           class: "meet-row",
           role: "button",
@@ -187,13 +270,13 @@
           onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } },
           onclick: toggle
         },
-          h("span", { class: "m-date" }, fmtDate(m.date)),
-          h("span", { class: "m-name" }, (m.meet_name || "—").replace(/\s+-\s+.*$/, "")), // Text vor " - "
-          h("span", { class: "m-mkp"  }, m.Mehrkampf_Platz ? `#${m.Mehrkampf_Platz}` : "—"),
-          h("span", { class: "m-pool" }, m.pool === "25" ? "25 m" : (m.pool === "50" ? "50 m" : ""))
+          dateEl,    
+          placeEl,    
+          nameEl,     
+          landEl,   
+          poolEl      
         );
 
-        // Details: Disziplinen auflisten
         const details = h("div", { class: "meet-details" }, ...buildResultRows(m));
 
         listWrap.appendChild(row);
@@ -204,6 +287,7 @@
           row.setAttribute("aria-expanded", isOpen ? "true" : "false");
         }
       });
+
     }
 
     // Disziplin-Schlüssel (wie in deinen Meet-Objekten)
@@ -813,7 +897,7 @@ function hasStartVal(v){
           },
           {
             meet_name: "Orange-Cup - 2024",
-            date: "2024-11-09",
+            date: "2025-11-09",
             pool: "50",
             Ortsgruppe: "Masch",
             Regelwerk: "International",

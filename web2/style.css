@@ -1453,17 +1453,71 @@ body{
 }
 .meet-row{
   display: grid;
-  grid-template-columns: 100px 1fr 60px 60px;
+  /* Datum | Platz | Name | Land | Bahn */
+  grid-template-columns: 86px 72px 1fr 130px 64px;
   gap: 10px;
-  align-items: baseline;
-  padding: 8px 10px;
+  align-items: center;
+  padding: 14px 16px;
   border-top: 1px solid rgba(17,24,39,0.12);
   border-bottom: 1px solid rgba(17,24,39,0.12);
   background: #ffffff;
   font-size: .9rem;
-  cursor:pointer;
+  cursor: pointer;
   margin-top: -1px;
   color:#0f172a;
+}
+
+
+.m-place{
+  font-weight: 800;
+  color:#0f172a;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.m-medal{
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.meet-row .m-name{
+  font-weight: 600;
+  color:#334155;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meet-row .m-pool{
+  text-align: right;
+  color:#475569;
+  font-weight: 700;
+}
+
+.m-country{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color:#0f172a;
+  font-weight: normal;
+}
+.m-flag{
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: .5px solid rgba(17,24,39,0.10);
+  box-shadow: 0 2px 6px rgba(2,6,23,.08);
+}
+.m-iso{
+  letter-spacing: .04em;
+}
+
+.meet-row .m-date{
+  text-align: left;
+  color:#0f172a;
+  font-weight: 600;
 }
 
 .meet-row .m-date{ font-weight:normal; color:#0f172a; }
