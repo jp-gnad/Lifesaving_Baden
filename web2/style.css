@@ -1469,9 +1469,6 @@ body{
 .meet-details{
   display:none;
   padding:8px 10px 10px;
-  border-left:1px dashed rgba(17,24,39,0.12);
-  border-right:1px dashed rgba(17,24,39,0.12);
-  border-bottom:1px solid rgba(17,24,39,0.12);
   background:#fff;
 }
 .meet-row.open + .meet-details{ display:grid; gap:6px; }
@@ -1481,8 +1478,9 @@ body{
   grid-template-columns: 1fr 90px 110px; /* Disziplin | Platz | Zeit */
   align-items:baseline;
   gap:8px;
+  padding: 5px;
 }
-.meet-res .d { color:#475569; font-weight:normal; }
+.meet-res .d { color:#475569; font-weight:normal; font-size: 0.8em;}
 .meet-res .p { font-weight:normal; color:#0f172a; text-align:right; }
 .meet-res .t { font-weight:normal; color:#0f172a; text-align:right; }
 
