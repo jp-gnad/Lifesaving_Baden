@@ -787,7 +787,7 @@ body{
 
 /* ————— Bestzeiten Sektion ————— */
 .ath-profile-section.bests{
-  background: #ffffff;
+  background: transparent;
   border: 1px solid rgba(17,24,39,0.08);
 }
 
@@ -1281,6 +1281,8 @@ body{
   border: 0;
   border-radius: 0;             /* rechteckig */
   margin-top: 0px;
+  margin-left: -16px;
+  width: calc(100% + 32px);
 }
 
 .ath-sep.thick.full-bleed{
