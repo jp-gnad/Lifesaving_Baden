@@ -1454,7 +1454,7 @@ body{
 .meet-row{
   display: grid;
   /* Datum | Platz | Name | Land | Bahn */
-  grid-template-columns: 60px 50px 1fr 50px 40px;
+  grid-template-columns: 50px 50px 1fr 50px 40px;
   gap: 10px;
   align-items: center;
   padding: 14px 16px;
@@ -1484,8 +1484,8 @@ body{
 }
 
 .meet-row .m-name{
-  font-weight: 600;
-  color:#334155;
+  font-weight: normal;
+  color:#0f172a;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1493,8 +1493,9 @@ body{
 
 .meet-row .m-pool{
   text-align: right;
-  color:#475569;
-  font-weight: 700;
+  color:#0f172a;
+  font-weight: normal;
+  font-size: 0.8em;
 }
 
 .m-country{
@@ -1522,11 +1523,6 @@ body{
   font-weight: normal;
   font-size: 0.8em;
 }
-
-.meet-row .m-date{ font-weight:normal; color:#0f172a; }
-.meet-row .m-name{ font-weight:normal; color:#334155; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.meet-row .m-mkp { font-weight:normal; color:#0f172a; text-align:right; }
-.meet-row .m-pool{ font-weight:normal; color:#475569; text-align:right; }
 
 /* Details ein-/ausklappen */
 .meet-details{
