@@ -1454,7 +1454,7 @@ body{
 .meet-row{
   display: grid;
   /* Datum | Platz | Name | Land | Bahn */
-  grid-template-columns: 60px 60px 1fr 60px 40px;
+  grid-template-columns: 60px 50px 1fr 50px 40px;
   gap: 10px;
   align-items: center;
   padding: 14px 16px;
@@ -1474,6 +1474,7 @@ body{
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  font-size: 1.1em;
 }
 .m-medal{
   width: 16px;
@@ -1502,6 +1503,7 @@ body{
   gap: 6px;
   color:#0f172a;
   font-weight: normal;
+  font-size: 0.8em;
 }
 .m-flag{
   width: 18px;
@@ -1517,7 +1519,8 @@ body{
 .meet-row .m-date{
   text-align: left;
   color:#0f172a;
-  font-weight: 600;
+  font-weight: normal;
+  font-size: 0.8em;
 }
 
 .meet-row .m-date{ font-weight:normal; color:#0f172a; }
