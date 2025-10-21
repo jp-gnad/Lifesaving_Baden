@@ -1577,7 +1577,7 @@ body{
 
 .meet-res{
   display: grid;
-  grid-template-columns: 1fr 70px 110px;
+  grid-template-columns: 1fr 50px 80px;
   align-items: baseline;
   gap: 8px;
   padding: 5px;
@@ -1603,7 +1603,6 @@ body{
 .meet-res .pl {
   display: inline-flex;
   align-items: center;
-  justify-self: left;          /* rechts in der Spalte */
   gap: 6px;
   font-weight: 800;
   color:#0f172a;
