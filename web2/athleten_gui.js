@@ -1102,7 +1102,8 @@ function hasStartVal(v){
             LSC: "815,23",
 
             Mehrkampf_Platz: "5",
-            "200m_Hindernis_Zeit": "2:18,50", "200m_Hindernis_Platz": "5"
+            "200m_Hindernis_Zeit": "2:18,50", "200m_Hindernis_Platz": "5",
+            "50m_Retten_Zeit": "0:34,85",  "50m_Retten_Platz": "1",
           },
           {
             meet_name: "LMS - 2025",
