@@ -1484,7 +1484,7 @@ body{
 }
 
 .meet-row .m-name{
-  font-weight: normal;
+  font-weight: 600;
   color:#0f172a;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1532,7 +1532,7 @@ body{
   grid-template-columns: 1fr 50px 70px;
   gap: 6px;
   padding: 0 10px;            /* vertikal 0 im geschlossenen Zustand */
-  background: #fff;
+  background: transparent;
   overflow: hidden;
   height: 0;                  /* start closed */
   transition: height .28s ease, padding .28s ease;
@@ -1542,6 +1542,7 @@ body{
 /* wenn offen (per .open auf der Zeile gesteuert) */
 .meet-row.open + .meet-details{
   padding: 8px 10px 10px;     /* sanft „reinblenden“ */
+  border-bottom: #10b981;
 }
 
 .meet-res{
@@ -1559,7 +1560,7 @@ body{
   line-height:1.15;
 }
 .meet-res .d{           /* Disziplintitel */
-  font-weight:600;
+  font-weight: 600;
   color:#0f172a;
 }
 .meet-res .d-sub{       /* Vorlauf / Halbfinale / Finale */

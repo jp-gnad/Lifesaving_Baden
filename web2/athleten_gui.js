@@ -270,10 +270,13 @@
     // Kopf mit Jahres-Navigation
     const title = h("h3", {}, "");
     const head  = h("div", { class: "ath-info-header meets-head" },
-      h("button", { class: "nav-btn", type: "button", onclick: () => changeYear(-1) }, "‹"),
+      // links: älteres Jahr (Vergangenheit)
+      h("button", { class: "nav-btn", type: "button", onclick: () => changeYear(+1) }, "‹"),
       title,
-      h("button", { class: "nav-btn", type: "button", onclick: () => changeYear(+1) }, "›")
+      // rechts: neueres Jahr (Zukunft)
+      h("button", { class: "nav-btn", type: "button", onclick: () => changeYear(-1) }, "›")
     );
+
 
     const listWrap = h("div", { class: "meets-list" });
     box.appendChild(head);
