@@ -1559,7 +1559,7 @@ body{
 
 /* Details ein-/ausklappen */
 .meet-details{
-  display: grid;              /* immer grid, nicht mehr display:none */
+  grid-template-columns: 1fr 60px 100px;
   gap: 6px;
   padding: 0 10px;            /* vertikal 0 im geschlossenen Zustand */
   background: #fff;
