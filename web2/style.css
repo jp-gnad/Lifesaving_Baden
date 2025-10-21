@@ -1644,3 +1644,40 @@ body{
     padding: 5px 48px;
   }
 }
+
+
+.ath-lsc-card{
+  margin-top: 16px;
+  background: #fff;
+  border: 1px solid rgba(17,24,39,0.12);
+  border-radius: 12px;
+  padding: 12px 14px 10px;
+}
+.lsc-head h4{
+  margin: 0 0 8px 0;
+  font-size: 1rem;
+  color: #0f172a;
+  font-weight: 700;
+}
+.lsc-svg{ display:block; width:100%; height:220px; }
+
+.lsc-grid line{
+  stroke: rgba(17,24,39,0.10);
+  stroke-width: 1;
+}
+.lsc-axis text{
+  fill: #475569;
+  font-size: 10px;
+  dominant-baseline: middle;
+}
+.lsc-line{
+  fill: none;
+  stroke: #1d4ed8;
+  stroke-width: 2;
+}
+.lsc-dot{
+  fill: #1d4ed8;
+  stroke: #ffffff;
+  stroke-width: 1;
+}
+

@@ -1012,6 +1012,140 @@ function hasStartVal(v){
     return total;
   }
 
+  // ---- LSC-Chart: Utils ----
+  function parseLSC(v){
+    if (v == null) return NaN;
+    const s = String(v).trim().replace(",", ".");
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  // 1. Juli des Jahrgangs als Geburtsdatum
+  function assumedBirthDate(jahrgang){
+    const y = Number(jahrgang);
+    if (!Number.isFinite(y)) return null;
+    return new Date(y, 6, 1); // Monat 0-basiert → 6 = Juli
+  }
+
+  function ageAt(dateStr, jahrgang){
+    const birth = assumedBirthDate(jahrgang);
+    if (!birth) return NaN;
+    const d = new Date(dateStr);
+    if (isNaN(d)) return NaN;
+    const msPerYear = 365.2425 * 24 * 60 * 60 * 1000;
+    return (d - birth) / msPerYear;
+  }
+
+  // Aus gemergten Meets (ax.meets) LSC-Punkte bauen:
+  // pro Datum genau 1 Wert: höchster Vorläufe → bei Gleichstand höherer LSC
+  function buildLSCSeries(a){
+    const meets = Array.isArray(a.meets) ? a.meets : [];
+    const byDate = new Map();
+
+    for (const m of meets){
+      const lsc = parseLSC(m.LSC);
+      if (!Number.isFinite(lsc)) continue;
+      const d = (m.date || "").slice(0,10);
+      if (!d) continue;
+
+      const lauf = Number(m._lauf_max || m.Vorläufe || m._lauf || 1);
+
+      const prev = byDate.get(d);
+      if (!prev || lauf > prev.lauf || (lauf === prev.lauf && lsc > prev.lsc)){
+        byDate.set(d, { date: d, lsc, lauf });
+      }
+    }
+
+    const arr = Array.from(byDate.values()).sort((x,y)=> new Date(x.date) - new Date(y.date));
+    return arr
+      .map(p => ({ ...p, age: ageAt(p.date, a.jahrgang) }))
+      .filter(p => Number.isFinite(p.age));
+  }
+
+  // kleines SVG-Helper (Namespace!)
+  function s(tag, attrs = {}, ...children){
+    const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (const [k,v] of Object.entries(attrs || {})){
+      if (v == null) continue;
+      el.setAttribute(k, String(v));
+    }
+    for (const c of children.flat()){
+      if (c == null) continue;
+      el.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+    }
+    return el;
+  }
+
+  // ---- LSC-Chart Renderer ----
+  function renderLSCChart(a){
+    const pts = buildLSCSeries(a);
+    const card = h("div", { class: "ath-lsc-card" },
+      h("div", { class: "lsc-head" }, h("h4", {}, "LSC über Alter"))
+    );
+
+    if (!pts.length){
+      card.appendChild(h("div", { class: "best-empty" }, "Keine LSC-Daten vorhanden."));
+      return card;
+    }
+
+    // Domainen
+    const yMin = 0, yMax = 1000;
+    let xMin = Math.floor(Math.min(...pts.map(p => p.age)));
+    let xMax = Math.ceil(Math.max(...pts.map(p => p.age)));
+    if (xMax === xMin) xMax = xMin + 1; // Division durch 0 vermeiden
+
+    // Canvas / Viewbox
+    const W = 700, H = 220;
+    const m = { l: 44, r: 12, t: 10, b: 28 };
+    const cw = W - m.l - m.r, ch = H - m.t - m.b;
+
+    const x = (v) => m.l + ((v - xMin) / (xMax - xMin)) * cw;
+    const y = (v) => m.t + ch - ((v - yMin) / (yMax - yMin)) * ch;
+
+    const svg = s("svg", { class:"lsc-svg", viewBox:`0 0 ${W} ${H}`, width:"100%", height:"220" });
+
+    // Grid + Achsen
+    const grid = s("g", { class:"lsc-grid" });
+    const axis = s("g", { class:"lsc-axis" });
+
+    // Y-Ticks (0..1000 Schritt 200)
+    for (let val = 0; val <= 1000; val += 200){
+      const yy = y(val);
+      grid.appendChild(s("line", { x1:m.l, y1:yy, x2:W-m.r, y2:yy }));
+      axis.appendChild(s("text", { x: m.l - 6, y: yy + 3, "text-anchor":"end" }, String(val)));
+    }
+
+    // X-Ticks: ganzzahlige Alter
+    for (let v = Math.floor(xMin); v <= Math.ceil(xMax); v++){
+      const xx = x(v);
+      grid.appendChild(s("line", { x1:xx, y1:m.t, x2:xx, y2:m.t+ch, "stroke-dasharray":"2,4" }));
+      axis.appendChild(s("text", { x: xx, y: m.t + ch + 16, "text-anchor":"middle" }, String(v)));
+    }
+
+    svg.appendChild(grid);
+    svg.appendChild(axis);
+
+    // Linie
+    const pathD = pts.map((p,i) => `${i ? "L" : "M"}${x(p.age)} ${y(Math.max(0, Math.min(1000, p.lsc)))}`).join(" ");
+    svg.appendChild(s("path", { d: pathD, class: "lsc-line" }));
+
+    // Punkte
+    const dots = s("g", { class:"lsc-dots" });
+    pts.forEach(p => {
+      dots.appendChild(s("circle", {
+        cx: x(p.age),
+        cy: y(Math.max(0, Math.min(1000, p.lsc))),
+        r: 3,
+        class: "lsc-dot"
+      }));
+    });
+    svg.appendChild(dots);
+
+    card.appendChild(svg);
+    return card;
+  }
+
+
   // ---------- UI: Suche ----------
   const AppState = {
     athletes: [
@@ -1610,6 +1744,7 @@ function hasStartVal(v){
     const totalStarts = totalStartsFromMeets(a);
     const dqLane = computeLaneDQProb(a);
     const totalMeters = sumWettkampfMeter(a);
+    const chartCard = renderLSCChart(a);
 
     grid.appendChild(infoTileBig("LSC", a.lsc != null ? fmtInt(a.lsc) : "—"));
     grid.appendChild(infoTileWettkaempfeFlip(a, meets));
@@ -1620,7 +1755,7 @@ function hasStartVal(v){
     grid.appendChild(infoTileYearsFlip(meets.activeYears, meets.first, meets.firstName));
     grid.appendChild(infoTileMetersFlip("Wettkampfmeter", totalMeters, meets.total)); // ← NEU
 
-    return h("div", { class: "ath-profile-section info" }, header, grid);
+    return h("div", { class: "ath-profile-section info" }, header, grid, chartCard);
 
     function infoTile(label, value){
       return h("div", { class: "info-tile" }, h("div", { class: "info-label" }, label), h("div", { class: "info-value" }, value));
