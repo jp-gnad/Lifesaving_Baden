@@ -427,9 +427,14 @@
           const hasAny = (t && String(t).trim() !== "") || (p && String(p).trim() !== "");
           if (!hasAny) continue;
 
-          // Platz (Zahl + evtl. Medaille)
+          // --- NEU: Medaille nur bei Einzel-Wertungen ---
+          const wRaw = String(run.Wertung ?? m.Wertung ?? "").toLowerCase();
+          // "einzelkampf", "einzel-/mehrkampf", "einzel / mehrkampf" → alles trifft
+          const isEinzel = wRaw.replace(/[\s\-]+/g, "").includes("einzel");
+
           const placeStr = (p || "").toString().trim();
-          const medal = medalForPlace(placeStr);
+          const medal = isEinzel ? medalForPlace(placeStr) : null;
+
           const placeEl = h("span", { class: "pl" },
             placeStr ? placeStr : "—",
             medal ? h("img", {
@@ -442,11 +447,10 @@
             }) : null
           );
 
-          // Disziplin + kleine Infozeile (nur bei mehreren Läufen)
-          const rLabel = roundLabelFromIndex(i + 1, total); // "Vorlauf", "Halbfinale", "Finale", ...
+          const rLabel = roundLabelFromIndex(i + 1, runs.length);
           const discWrap = h("span", { class: "d-wrap" },
             h("span", { class: "d" }, f.label),
-            (rLabel ? h("span", { class: "d-sub" }, rLabel) : null) // Fall 1: total==1 -> kein Sub
+            (rLabel ? h("span", { class: "d-sub" }, rLabel) : null)
           );
 
           rows.push(
@@ -458,6 +462,7 @@
           );
         }
       }
+
 
       return rows.length ? rows : [ h("div", { class: "best-empty" }, "Keine Einzelergebnisse erfasst.") ];
     }
@@ -1054,7 +1059,7 @@ function hasStartVal(v){
             Vorläufe: "1",
             LSC: "792,40",
 
-            Mehrkampf_Platz: "2",
+            Mehrkampf_Platz: "",
 
             "50m_Retten_Zeit": "0:34,20",  "50m_Retten_Platz": "2",
             "100m_Retten_Zeit": "0:57,90", "100m_Retten_Platz": "1",
@@ -1075,14 +1080,14 @@ function hasStartVal(v){
             Vorläufe: "1",
             LSC: "815,20",
 
-            Mehrkampf_Platz: "",
+            Mehrkampf_Platz: "2",
 
-            "50m_Retten_Zeit": "0:34,85",  "50m_Retten_Platz": "",
-            "100m_Retten_Zeit": "0:58,40", "100m_Retten_Platz": "",
-            "100m_Kombi_Zeit": "1:14,80",  "100m_Kombi_Platz": "",
-            "100m_Lifesaver_Zeit": "1:01,90", "100m_Lifesaver_Platz": "",
-            "200m_SuperLifesaver_Zeit": "2:39,80", "200m_SuperLifesaver_Platz": "",
-            "200m_Hindernis_Zeit": "2:22,22", "200m_Hindernis_Platz": ""
+            "50m_Retten_Zeit": "0:34,85",  "50m_Retten_Platz": "2",
+            "100m_Retten_Zeit": "0:58,40", "100m_Retten_Platz": "15",
+            "100m_Kombi_Zeit": "1:14,80",  "100m_Kombi_Platz": "15",
+            "100m_Lifesaver_Zeit": "1:01,90", "100m_Lifesaver_Platz": "6",
+            "200m_SuperLifesaver_Zeit": "2:39,80", "200m_SuperLifesaver_Platz": "5",
+            "200m_Hindernis_Zeit": "2:22,22", "200m_Hindernis_Platz": "4"
           },
           {
             meet_name: "Orange-Cup - 2024",
