@@ -277,7 +277,12 @@
           poolEl      
         );
 
-        const details = h("div", { class: "meet-details" }, ...buildResultRows(m));
+        const details = h("div", {
+          class: "meet-details",
+          "aria-hidden": "true",
+          style: "height:0"    // Startzustand für Animation
+        }, ...buildResultRows(m));
+
 
         listWrap.appendChild(row);
         listWrap.appendChild(details);
@@ -285,34 +290,72 @@
         function toggle(){
           const isOpen = row.classList.toggle("open");
           row.setAttribute("aria-expanded", isOpen ? "true" : "false");
+          if (isOpen) expand(details); else collapse(details);
+        }
+
+        function expand(el){
+          el.setAttribute("aria-hidden", "false");
+          // von 0 → Zielhöhe
+          el.style.height = el.scrollHeight + "px";
+          // nach Ende: auf auto setzen, damit Inhalte mitwachsen
+          el.addEventListener("transitionend", () => {
+            if (row.classList.contains("open")) el.style.height = "auto";
+          }, { once: true });
+        }
+
+        function collapse(el){
+          el.setAttribute("aria-hidden", "true");
+          // von aktueller Höhe (auto → erst messen) → 0
+          if (el.style.height === "" || el.style.height === "auto"){
+            el.style.height = el.scrollHeight + "px";
+          }
+          requestAnimationFrame(() => {
+            el.style.height = "0px";
+          });
         }
       });
-
     }
 
     // Disziplin-Schlüssel (wie in deinen Meet-Objekten)
     function buildResultRows(m){
       const F = [
         { base:"50m_Retten",            label:"50m Retten" },
-        { base:"100m_Retten",           label:"100m Retten" },
+        { base:"100m_Retten",           label:"100m Retten mit Flossen" },
         { base:"100m_Kombi",            label:"100m Kombi" },
         { base:"100m_Lifesaver",        label:"100m Lifesaver" },
         { base:"200m_SuperLifesaver",   label:"200m Super Lifesaver" },
         { base:"200m_Hindernis",        label:"200m Hindernis" },
       ];
       const rows = [];
+
       for (const f of F){
-        const t = m[`${f.base}_Zeit`];   // string: "0:52,73" | "DQ" | "" | undefined
-        const p = m[`${f.base}_Platz`];  // string: "1" | ""
-        if (t || p){                     // nur anzeigen, wenn irgendwas da ist (DQ zählt)
-          rows.push(
-            h("div", { class: "meet-res" },
-              h("span", { class: "d" }, f.label),
-              h("span", { class: "p" }, p ? `${p}. Platz` : "—"),
-              h("span", { class: "t" }, t && t !== "" ? t : "—")
-            )
-          );
-        }
+        const t = m[`${f.base}_Zeit`];   // "0:52,73" | "DQ" | "" | undefined
+        const p = m[`${f.base}_Platz`];  // "1" | "" | undefined
+        const hasAny = (t && String(t).trim() !== "") || (p && String(p).trim() !== "");
+        if (!hasAny) continue;
+
+        const placeStr = (p || "").toString().trim();
+        const medal = medalForPlace(placeStr); // nutzt deine Helper-Funktion
+
+        const placeEl = h("span", { class: "pl" },
+          placeStr ? placeStr : "—",
+          medal ? h("img", {
+            class: "res-medal",
+            src: `${FLAG_BASE_URL}/${medal.file}`,
+            alt: medal.alt,
+            loading: "lazy",
+            decoding: "async",
+            onerror: (e)=>e.currentTarget.remove()
+          }) : null
+        );
+
+        rows.push(
+          h("div", { class: "meet-res" },
+            h("span", { class: "d" }, f.label),
+            placeEl,
+            h("span", { class: "t" }, (t && String(t).trim() !== "") ? String(t) : "—")
+          )
+        );
       }
       return rows.length ? rows : [ h("div", { class: "best-empty" }, "Keine Einzelergebnisse erfasst.") ];
     }

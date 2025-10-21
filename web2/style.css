@@ -1483,17 +1483,17 @@ body{
     font-size: 1.2em;
   }
   .m-country{
-    font-size: 1.0em;
+    font-size: 1.1em;
   }
   .meet-row .m-pool{
-    font-size: 1.0em;
+    font-size: 1.1em;
   }
   .m-flag{
     width: 20px;
     height: 20px;
   }
   .meet-row .m-date{
-    font-size: 1.0em;
+    font-size: 1.1em;
   }
 }
 
@@ -1559,22 +1559,54 @@ body{
 
 /* Details ein-/ausklappen */
 .meet-details{
-  display:none;
-  padding:8px 10px 10px;
-  background:#fff;
+  display: grid;              /* immer grid, nicht mehr display:none */
+  gap: 6px;
+  padding: 0 10px;            /* vertikal 0 im geschlossenen Zustand */
+  background: #fff;
+  overflow: hidden;
+  height: 0;                  /* start closed */
+  transition: height .28s ease, padding .28s ease;
+  border-top: 0;              /* Trenner nur wenn offen */
 }
-.meet-row.open + .meet-details{ display:grid; gap:6px; }
+
+/* wenn offen (per .open auf der Zeile gesteuert) */
+.meet-row.open + .meet-details{
+  padding: 8px 10px 10px;     /* sanft „reinblenden“ */
+  border-top: 1px dashed rgba(17,24,39,0.08);
+}
 
 .meet-res{
-  display:grid;
-  grid-template-columns: 1fr 90px 110px; /* Disziplin | Platz | Zeit */
-  align-items:baseline;
-  gap:8px;
+  display: grid;
+  grid-template-columns: 1fr 70px 110px;
+  align-items: baseline;
+  gap: 8px;
   padding: 5px;
 }
-.meet-res .d { color:#475569; font-weight:normal; font-size: 0.8em;}
+.meet-res .d  { color:#475569; font-weight: 600; font-size: .92em; }
 .meet-res .p { font-weight:normal; color:#0f172a; text-align:right; }
 .meet-res .t { font-weight:normal; color:#0f172a; text-align:right; }
+.meet-res .pl {
+  display: inline-flex;
+  align-items: center;
+  justify-self: left;          /* rechts in der Spalte */
+  gap: 6px;
+  font-weight: 800;
+  color:#0f172a;
+}
+
+.res-medal{
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  vertical-align: middle;
+}
+.meet-res .t  {
+  text-align: right;
+  font-weight: 700;
+  color:#0f172a;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
 
 /* Jahres-Navigation im Header der Meets-Section */
 .meets-head{
