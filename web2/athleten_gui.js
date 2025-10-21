@@ -1080,7 +1080,7 @@ function hasStartVal(v){
   function renderLSCChart(a){
     const pts = buildLSCSeries(a);
     const card = h("div", { class: "ath-lsc-card" },
-      h("div", { class: "lsc-head" }, h("h4", {}, "LSC über Alter"))
+      h("div", { class: "lsc-head" }, h("h4", {}, "LSC Verlauf"))
     );
 
     if (!pts.length){
