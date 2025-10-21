@@ -1467,6 +1467,36 @@ body{
   color:#0f172a;
 }
 
+@media(min-width:720px){
+  .meet-row{  
+    grid-template-columns: 60px 60px 1fr 60px 60px;
+    padding: 14px 48px;
+  }
+  .m-place{
+    font-size: 1.2em;
+  }
+  .m-medal{
+    width: 18px;
+    height: 18px;
+  }
+  .meet-row .m-name{
+    font-size: 1.2em;
+  }
+  .m-country{
+    font-size: 1.0em;
+  }
+  .meet-row .m-pool{
+    font-size: 1.0em;
+  }
+  .m-flag{
+    width: 20px;
+    height: 20px;
+  }
+  .meet-row .m-date{
+    font-size: 1.0em;
+  }
+}
+
 
 .m-place{
   font-weight: 800;
