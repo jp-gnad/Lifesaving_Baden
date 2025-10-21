@@ -36,6 +36,75 @@
     return pool === "25" ? "25m" : (pool === "50" ? "50m" : "—");
   }
 
+  // Key für "gleiches Event": meet_name + date (beides normalisiert)
+  function meetKey(m){
+    const name = String(m?.meet_name || "").trim().toLowerCase();
+    const date = String(m?.date || "").trim();
+    return name + "||" + date;
+  }
+
+  function nonEmpty(v){ return v != null && String(v).trim() !== ""; }
+    
+  // nimmt ein Array von Meets und gibt zusammengefasste Meets zurück
+  function mergeDuplicateMeets(meets){
+    const list = Array.isArray(meets) ? meets.slice() : [];
+    const groups = new Map();
+
+    // 1) gruppieren
+    list.forEach((m, idx) => {
+      if (!m || !m.meet_name) return;
+      const k = meetKey(m);
+      if (!groups.has(k)) groups.set(k, []);
+      // Lauf-Index merken (Reihenfolge in der Quelle => Laufnummer)
+      groups.get(k).push({ ...m, _lauf: (groups.get(k).length + 1), _srcIndex: idx });
+    });
+
+    const merged = [];
+
+    // 2) jede Gruppe zusammenfassen
+    for (const runs of groups.values()){
+      // Sortiert nach ursprünglicher Reihenfolge → Lauf 1, 2, ...
+      runs.sort((a,b) => a._srcIndex - b._srcIndex);
+
+      const highest = runs[runs.length - 1]; // höchster Lauf
+      const out = { ...highest };            // Meta vom höchsten Lauf
+      out._runs = runs.map(r => ({ ...r })); // volle Transparenz der Läufe
+      out._lauf_max = runs.length;
+
+      // Für alle Disziplinfelder: Wert vom höchsten Lauf, falls vorhanden;
+      // sonst fallback auf ersten vorhandenen in (Lauf absteigend).
+      const ALL_TIME_FIELDS = MEET_DISC_TIME_FIELDS.slice();
+      const PLACE_FIELDS = MEET_DISC_TIME_FIELDS.map(f => f.replace(/_Zeit$/i, "_Platz"));
+
+      function pickFromHighest(field){
+        for (let i = runs.length - 1; i >= 0; i--){
+          if (nonEmpty(runs[i][field])) return runs[i][field];
+        }
+        return ""; // leer, wenn keiner
+      }
+
+      ALL_TIME_FIELDS.forEach(f => { out[f] = pickFromHighest(f); });
+      PLACE_FIELDS.forEach(f => { out[f] = pickFromHighest(f); });
+
+      // Mehrkampf/LSC/Wertung/Startrecht/Regelwerk etc. → auch vom höchsten Lauf
+      out.Mehrkampf_Platz = pickFromHighest("Mehrkampf_Platz");
+      out.LSC             = pickFromHighest("LSC");
+      out.Wertung         = highest.Wertung || out.Wertung || "";
+      out.Startrecht      = highest.Startrecht || out.Startrecht || "";
+      out.Regelwerk       = highest.Regelwerk || out.Regelwerk || "";
+      out.Ortsgruppe      = highest.Ortsgruppe || out.Ortsgruppe || "";
+      out.pool            = highest.pool || out.pool;
+      out.Land            = highest.Land || out.Land;
+
+      merged.push(out);
+    }
+
+    // nach Datum absteigend wie gehabt
+    merged.sort((l, r) => new Date(r.date) - new Date(l.date));
+    return merged;
+  }
+
+
   function fmtDateShort(dStr){
     if (!dStr) return "—";
     const d = new Date(dStr);
@@ -70,6 +139,22 @@
     if (p === 2) return { file:"medal_silver.svg", alt:"Silber" };
     if (p === 3) return { file:"medal_bronze.svg", alt:"Bronze" };
     return null;
+  }
+
+  function roundLabelFromIndex(idx, total){
+    // idx = 1-basiert (Lauf 1, 2, ...)
+    if (!Number.isFinite(total) || total <= 1) return null;
+
+    // Explizite Fälle
+    if (total === 2) return idx === 1 ? "Vorlauf" : "Finale";
+    if (total === 3) return idx === 1 ? "Vorlauf" : (idx === 2 ? "Halbfinale" : "Finale");
+    if (total === 4) return idx === 1 ? "Vorlauf" : (idx === 2 ? "Viertelfinale" : (idx === 3 ? "Halbfinale" : "Finale"));
+
+    // Fallback (selten >4): alles vor letztem = "Vorlauf", vorletztes = "Halbfinale", drittletztes = "Viertelfinale", letztes = "Finale"
+    if (idx === total) return "Finale";
+    if (idx === total - 1) return "Halbfinale";
+    if (idx === total - 2) return "Viertelfinale";
+    return "Vorlauf";
   }
 
 
@@ -187,7 +272,7 @@
     const head  = h("div", { class: "ath-info-header meets-head" },
       h("button", { class: "nav-btn", type: "button", onclick: () => changeYear(-1) }, "‹"),
       title,
-      h("button", { class: "nav-btn", type: "button", onclick: () => changeYear(+1) }, "›"),
+      h("button", { class: "nav-btn", type: "button", onclick: () => changeYear(+1) }, "›")
     );
 
     const listWrap = h("div", { class: "meets-list" });
@@ -236,11 +321,6 @@
           }) : null
         );
 
-        // Name (wie gehabt, alles vor " - ")
-        const nameEl = h("span", { class: "m-name" },
-          (m.meet_name || "—").replace(/\s+-\s+.*$/, "")
-        );
-
         // Bahn
         const poolEl = h("span", { class: "m-pool" }, poolLabel(m.pool));
 
@@ -261,6 +341,9 @@
 
         // Datum kurz
         const dateEl = h("span", { class: "m-date" }, fmtDateShort(m.date));
+        const nameEl = h("span", { class: "m-name" },
+          (m.meet_name || "—").replace(/\s+-\s+.*$/, "")
+        );
 
         const row = h("div", {
           class: "meet-row",
@@ -270,11 +353,11 @@
           onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } },
           onclick: toggle
         },
-          dateEl,    
-          placeEl,    
-          nameEl,     
-          landEl,   
-          poolEl      
+          dateEl,
+          placeEl,
+          nameEl,
+          landEl,
+          poolEl
         );
 
         const details = h("div", {
@@ -326,39 +409,59 @@
         { base:"200m_SuperLifesaver",   label:"200m Super Lifesaver" },
         { base:"200m_Hindernis",        label:"200m Hindernis" },
       ];
+
+      // Läufe holen (aufsteigend nach _lauf)
+      const runs = Array.isArray(m._runs) && m._runs.length
+        ? [...m._runs].sort((a,b) => (a._lauf || 1) - (b._lauf || 1))
+        : [ m ];
+      const total = runs.length;
+
       const rows = [];
 
       for (const f of F){
-        const t = m[`${f.base}_Zeit`];   // "0:52,73" | "DQ" | "" | undefined
-        const p = m[`${f.base}_Platz`];  // "1" | "" | undefined
-        const hasAny = (t && String(t).trim() !== "") || (p && String(p).trim() !== "");
-        if (!hasAny) continue;
+        for (let i = 0; i < runs.length; i++){
+          const run = runs[i];
+          const t = run[`${f.base}_Zeit`];
+          const p = run[`${f.base}_Platz`];
 
-        const placeStr = (p || "").toString().trim();
-        const medal = medalForPlace(placeStr); // nutzt deine Helper-Funktion
+          const hasAny = (t && String(t).trim() !== "") || (p && String(p).trim() !== "");
+          if (!hasAny) continue;
 
-        const placeEl = h("span", { class: "pl" },
-          placeStr ? placeStr : "—",
-          medal ? h("img", {
-            class: "res-medal",
-            src: `${FLAG_BASE_URL}/${medal.file}`,
-            alt: medal.alt,
-            loading: "lazy",
-            decoding: "async",
-            onerror: (e)=>e.currentTarget.remove()
-          }) : null
-        );
+          // Platz (Zahl + evtl. Medaille)
+          const placeStr = (p || "").toString().trim();
+          const medal = medalForPlace(placeStr);
+          const placeEl = h("span", { class: "pl" },
+            placeStr ? placeStr : "—",
+            medal ? h("img", {
+              class: "res-medal",
+              src: `${FLAG_BASE_URL}/${medal.file}`,
+              alt: medal.alt,
+              loading: "lazy",
+              decoding: "async",
+              onerror: (e)=>e.currentTarget.remove()
+            }) : null
+          );
 
-        rows.push(
-          h("div", { class: "meet-res" },
+          // Disziplin + kleine Infozeile (nur bei mehreren Läufen)
+          const rLabel = roundLabelFromIndex(i + 1, total); // "Vorlauf", "Halbfinale", "Finale", ...
+          const discWrap = h("span", { class: "d-wrap" },
             h("span", { class: "d" }, f.label),
-            placeEl,
-            h("span", { class: "t" }, (t && String(t).trim() !== "") ? String(t) : "—")
-          )
-        );
+            (rLabel ? h("span", { class: "d-sub" }, rLabel) : null) // Fall 1: total==1 -> kein Sub
+          );
+
+          rows.push(
+            h("div", { class: "meet-res" },
+              discWrap,
+              placeEl,
+              h("span", { class: "t" }, (t && String(t).trim() !== "") ? String(t) : "—")
+            )
+          );
+        }
       }
+
       return rows.length ? rows : [ h("div", { class: "best-empty" }, "Keine Einzelergebnisse erfasst.") ];
     }
+
   }
 
 
@@ -388,30 +491,37 @@
 
   // — Startrechte: LV/BV → Badges neben den Chips —
   function hasStartrecht(a, code){
-    return Array.isArray(a?.meets) && a.meets.some(
-      m => String(m?.Startrecht || "").toUpperCase() === String(code).toUpperCase()
-    );
+    const meets = Array.isArray(a?.meets) ? a.meets : [];
+    for (const m of meets){
+      const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
+      if (runs.some(r => String(r?.Startrecht || "").toUpperCase() === String(code).toUpperCase()))
+        return true;
+    }
+    return false;
   }
+
 
   // Summe aller geschwommenen Wettkampf-Meter (inkl. DQ, solange _Zeit nicht leer ist)
   function sumWettkampfMeter(a){
     const meets = Array.isArray(a.meets) ? a.meets : [];
     let total = 0;
-
     for (const m of meets){
-      for (const [key, val] of Object.entries(m)){
-        if (!/_Zeit$/i.test(key)) continue;              // nur Zeit-Felder
-        const v = (val ?? "").toString().trim();
-        if (!v) continue;                                // leer -> nicht gezählt (nicht gestartet)
-        // Distanz aus dem Feld-Namen ziehen (z. B. "100m_Lifesaver_Zeit")
-        let dist = NaN;
-        let mm = key.match(/^(\d+)m[_ ]/i) || key.match(/(\d+)m/i);
-        if (mm) dist = parseInt(mm[1], 10);
-        if (Number.isFinite(dist)) total += dist;
+      const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
+      for (const run of runs){
+        for (const [key, val] of Object.entries(run)){
+          if (!/_Zeit$/i.test(key)) continue;
+          const v = (val ?? "").toString().trim();
+          if (!v) continue;
+          let dist = NaN;
+          let mm = key.match(/^(\d+)m[_ ]/i) || key.match(/(\d+)m/i);
+          if (mm) dist = parseInt(mm[1], 10);
+          if (Number.isFinite(dist)) total += dist;
+        }
       }
     }
-    return total; // Meter
+    return total;
   }
+
 
   function fmtMeters(m){
     if (!Number.isFinite(m) || m <= 0) return "—";
@@ -585,43 +695,48 @@
     };
 
     for (const meet of meets) {
+      // lane vom Top-Level (Läufe haben i. d. R. gleiche Bahn)
       const lane = meet?.pool === "25" ? "25" : (meet?.pool === "50" ? "50" : null);
 
-      // -------- Starts / DQs / PBs --------
-      for (const d of DISCIPLINES) {
-        const z = meet[d.meetZeit];           // Zeit-String oder "DQ" oder ""
-        const tSec = parseTimeToSec(z);
-        const isDQ = z != null && /^dq$/i.test(String(z).trim());
-        const hasStart = isDQ || Number.isFinite(tSec);
+      // Hilfsfunktion: über alle Läufe iterieren (oder 1 Fake-Lauf aus dem Meet selbst)
+      const runs = Array.isArray(meet._runs) && meet._runs.length
+        ? meet._runs
+        : [ meet ];
 
-        if (lane && hasStart) {
-          stats[lane][d.key].starts++;
-          if (isDQ) stats[lane][d.key].dq++;
-          totalStarts++;
-          if (Number.isFinite(tSec)) {
-            const cur = pbs[lane][d.key];
-            if (cur == null || tSec < cur) pbs[lane][d.key] = tSec;
+      // --- Starts / DQ / PBs je Lauf ---
+      for (const run of runs) {
+        for (const d of DISCIPLINES) {
+          const z = run[d.meetZeit];                // Zeit-String bzw. "DQ"
+          const tSec = parseTimeToSec(z);
+          const isDQ = z != null && /^dq$/i.test(String(z).trim());
+          const hasStart = isDQ || Number.isFinite(tSec);
+
+          if (lane && hasStart) {
+            stats[lane][d.key].starts++;
+            if (isDQ) stats[lane][d.key].dq++;
+            totalStarts++;
+            if (Number.isFinite(tSec)) {
+              const cur = pbs[lane][d.key];
+              if (cur == null || tSec < cur) pbs[lane][d.key] = tSec;
+            }
           }
         }
       }
 
-      // -------- Medaillen nach Wertung --------
-      const wRaw = (meet.Wertung || "").toLowerCase();
-      const w = wRaw.replace(/[\s\-]+/g, ""); // leer/Minus raus
+      // --- Medaillen: Einzel je Lauf, Mehrkampf nur höchster Lauf ---
+      // 1) Einzel je Lauf (wenn die jeweilige Lauf-Wertung "Einzel" enthält)
+      for (const run of runs) {
+        const wRaw = (run.Wertung || "").toLowerCase();
+        const w = wRaw.replace(/[\s\-]+/g, "");
+        const isEinzel = w.includes("einzel");
+        if (!isEinzel) continue;
 
-      const countEinzel = w.includes("einzel");
-      const countMehrk  = w.includes("mehrkampf");
-
-      // Wenn Wertung leer/unklar → beide zählen (defensiv)
-      const useEinzel = (countEinzel || (!countEinzel && !countMehrk));
-      const useMehrk  = (countMehrk  || (!countEinzel && !countMehrk));
-
-      if (useEinzel) {
-        for (const d of DISCIPLINES) addMedal(meet[d.meetPlatz]);
+        for (const d of DISCIPLINES) addMedal(run[d.meetPlatz]);
       }
-      if (useMehrk) {
-        addMedal(meet.Mehrkampf_Platz);
-      }
+
+      // 2) Mehrkampf: nur Lauf mit maximalem _lauf (Final > Vorlauf)
+      const maxRun = runs.reduce((acc, r) => (acc == null || (r._lauf || 0) > (acc._lauf || 0)) ? r : acc, null);
+      if (maxRun && nonEmpty(maxRun.Mehrkampf_Platz)) addMedal(maxRun.Mehrkampf_Platz);
     }
 
     return {
@@ -633,6 +748,7 @@
       lsc: computeOverallLSC(meets) ?? a.lsc ?? null
     };
   }
+
 
 
   // ---------- AK / OG / Geschlecht ----------
@@ -801,28 +917,36 @@ function hasStartVal(v){
     const meets = Array.isArray(a.meets) ? a.meets : [];
     let total = 0;
     for (const m of meets){
-      for (const f of MEET_DISC_TIME_FIELDS){
-        if (hasStartVal(m[f])) total++;
+      const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
+      for (const run of runs){
+        for (const f of MEET_DISC_TIME_FIELDS){
+          if (hasStartVal(run[f])) total++;
+        }
       }
     }
     return total;
   }
+
 
   // Starts pro Startrecht (OG/BZ/LV/BV)
   function computeStartsPerStartrecht(a){
     const meets = Array.isArray(a.meets) ? a.meets : [];
     const out = { OG:0, BZ:0, LV:0, BV:0 };
     for (const m of meets){
-      const sr = (m.Startrecht || "").toUpperCase();
-      if (!out.hasOwnProperty(sr)) continue; // Unbekanntes Startrecht ignorieren
-      let cnt = 0;
-      for (const f of MEET_DISC_TIME_FIELDS){
-        if (hasStartVal(m[f])) cnt++;
+      const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
+      for (const run of runs){
+        const sr = (run.Startrecht || "").toUpperCase();
+        if (!out.hasOwnProperty(sr)) continue;
+        let cnt = 0;
+        for (const f of MEET_DISC_TIME_FIELDS){
+          if (hasStartVal(run[f])) cnt++;
+        }
+        out[sr] += cnt;
       }
-      out[sr] += cnt;
     }
     return out;
   }
+
 
 
   // Aktuelle Ortsgruppe = erste NATIONAL-Veranstaltung im jüngsten Jahr.
@@ -927,6 +1051,7 @@ function hasStartVal(v){
             Land: "Deutschland",
             Startrecht: "OG",
             Wertung: "Einzelkampf",
+            Vorläufe: "1",
             LSC: "792,40",
 
             Mehrkampf_Platz: "2",
@@ -946,17 +1071,33 @@ function hasStartVal(v){
             Regelwerk: "International",
             Land: "Niederlande",
             Startrecht: "BV",
-            Wertung: "Einzel-/Mehrkampf",
+            Wertung: "Mehrkampf",
+            Vorläufe: "1",
             LSC: "815,20",
 
-            Mehrkampf_Platz: "56",
+            Mehrkampf_Platz: "",
 
-            "50m_Retten_Zeit": "0:34,85",  "50m_Retten_Platz": "3",
-            "100m_Retten_Zeit": "0:58,40", "100m_Retten_Platz": "2",
-            "100m_Kombi_Zeit": "1:14,80",  "100m_Kombi_Platz": "5",
-            "100m_Lifesaver_Zeit": "1:01,90", "100m_Lifesaver_Platz": "2",
-            "200m_SuperLifesaver_Zeit": "2:39,80", "200m_SuperLifesaver_Platz": "4",
-            "200m_Hindernis_Zeit": "", "200m_Hindernis_Platz": ""
+            "50m_Retten_Zeit": "0:34,85",  "50m_Retten_Platz": "",
+            "100m_Retten_Zeit": "0:58,40", "100m_Retten_Platz": "",
+            "100m_Kombi_Zeit": "1:14,80",  "100m_Kombi_Platz": "",
+            "100m_Lifesaver_Zeit": "1:01,90", "100m_Lifesaver_Platz": "",
+            "200m_SuperLifesaver_Zeit": "2:39,80", "200m_SuperLifesaver_Platz": "",
+            "200m_Hindernis_Zeit": "2:22,22", "200m_Hindernis_Platz": ""
+          },
+          {
+            meet_name: "Orange-Cup - 2024",
+            date: "2025-11-09",
+            pool: "50",
+            Ortsgruppe: "Masch",
+            Regelwerk: "International",
+            Land: "Niederlande",
+            Startrecht: "BV",
+            Wertung: "Einzelkampf",
+            Vorläufe: "2",
+            LSC: "815,23",
+
+            Mehrkampf_Platz: "5",
+            "200m_Hindernis_Zeit": "2:18,50", "200m_Hindernis_Platz": "5"
           },
           {
             meet_name: "LMS - 2025",
@@ -967,6 +1108,7 @@ function hasStartVal(v){
             Land: "Deutschland",
             Startrecht: "OG",
             Wertung: "Mehrkampf",
+            Vorläufe: "1",
             LSC: "830,75",
 
             Mehrkampf_Platz: "1",
@@ -987,6 +1129,7 @@ function hasStartVal(v){
             Land: "Deutschland",
             Startrecht: "LV",
             Wertung: "Mehrkampf",
+            Vorläufe: "1",
             LSC: "830,75",
 
             Mehrkampf_Platz: "1",
@@ -1017,6 +1160,7 @@ function hasStartVal(v){
             Land: "Deutschland",
             Startrecht: "OG",
             Wertung: "Einzelkampf",
+            Vorläufe: "1",
             LSC: "792,40",
 
             Mehrkampf_Platz: "2",
@@ -1037,6 +1181,7 @@ function hasStartVal(v){
             Land: "Niederlande",
             Startrecht: "LV",
             Wertung: "Einzel-/Mehrkampf",
+            Vorläufe: "1",
             LSC: "815,20",
 
             Mehrkampf_Platz: "56",
@@ -1057,6 +1202,7 @@ function hasStartVal(v){
             Land: "Deutschland",
             Startrecht: "OG",
             Wertung: "Mehrkampf",
+            Vorläufe: "1",
             LSC: "830,75",
 
             Mehrkampf_Platz: "1",
@@ -1087,6 +1233,7 @@ function hasStartVal(v){
             Land: "Deutschland",
             Startrecht: "OG",
             Wertung: "Einzelkampf",
+            Vorläufe: "1",
             LSC: "801,12",
 
             Mehrkampf_Platz: "",
@@ -1107,6 +1254,7 @@ function hasStartVal(v){
             Land: "Frankreich",
             Startrecht: "LV",
             Wertung: "Einzel-/Mehrkampf",
+            Vorläufe: "1",
             LSC: "842,90",
 
             Mehrkampf_Platz: "1",
@@ -1127,6 +1275,7 @@ function hasStartVal(v){
             Land: "Belgien",
             Startrecht: "LV",
             Wertung: "Mehrkampf",
+            Vorläufe: "1",
             LSC: "856,33",
 
             Mehrkampf_Platz: "1",
@@ -1157,6 +1306,7 @@ function hasStartVal(v){
             Land: "Deutschland",
             Startrecht: "OG",
             Wertung: "Mehrkampf",
+            Vorläufe: "1",
             LSC: "612,10",
 
             Mehrkampf_Platz: "3",
@@ -1177,6 +1327,7 @@ function hasStartVal(v){
             Land: "Schweiz",
             Startrecht: "LV",
             Wertung: "Einzelkampf",
+            Vorläufe: "1",
             LSC: "640,55",
 
             Mehrkampf_Platz: "",
@@ -1197,6 +1348,7 @@ function hasStartVal(v){
             Land: "Deutschland",
             Startrecht: "LV",
             Wertung: "Mehrkampf",
+            Vorläufe: "1",
             LSC: "658,20",
 
             Mehrkampf_Platz: "2",
@@ -1876,13 +2028,21 @@ function hasStartVal(v){
 
   // ---------- Profil ----------
   function openProfile(a) {
-    // Aus meets alles ableiten (pbs, stats, medals, totalDisciplines, countries, lsc)
-    const derived = deriveFromMeets(a);
-    const ax = { ...a, ...derived };        // ← NICHT mehr ortsgruppe überschreiben
+    // NEU: zuerst meets mergen
+    const mergedMeets = mergeDuplicateMeets(a.meets);
+
+    // Aus (gemergten) meets alles ableiten …
+    const derived = deriveFromMeets({ ...a, meets: mergedMeets });
+
+    // ax enthält nur gemergte Meets
+    const ax = { ...a, ...derived, meets: mergedMeets };
 
     AppState.poolLen = (ax && ax.poolLen) ? String(ax.poolLen) : (AppState.poolLen || "50");
     AppState.selectedAthleteId = ax?.id || null;
     hideSuggestions();
+
+    // ... Rest von openProfile unverändert ...
+
 
     const mount = Refs.profileMount; if (!mount) return;
     if (!ax) { mount.innerHTML = ""; mount.classList.remove("ath-profile-wrap"); return; }
