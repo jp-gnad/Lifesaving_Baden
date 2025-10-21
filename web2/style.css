@@ -1529,7 +1529,7 @@ body{
 
 /* Details ein-/ausklappen */
 .meet-details{
-  grid-template-columns: 1fr 50px 70px;
+  grid-template-columns: 1fr 40px 60px;
   gap: 6px;
   padding: 0 10px;            /* vertikal 0 im geschlossenen Zustand */
   background: transparent;
