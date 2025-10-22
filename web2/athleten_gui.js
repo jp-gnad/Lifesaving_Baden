@@ -1077,8 +1077,9 @@ function hasStartVal(v){
   }
 
 
-  // ---- LSC-Chart Renderer (flächig, ohne Y-Beschriftung/Vertikalraster) ----
+  // ---- LSC-Chart Renderer mit X-Achsen-Label & Vergleichssuche ----
   function renderLSCChart(a){
+    // kleine Helfer
     const s = (tag, attrs = {}, ...children) => {
       const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
       for (const [k,v] of Object.entries(attrs)) if (v != null) el.setAttribute(k, String(v));
@@ -1096,15 +1097,17 @@ function hasStartVal(v){
       return el;
     };
 
-    const pts = buildLSCSeries(a); // [{age,lsc,date,meet_name}]
+    // Daten der Hauptperson
+    const basePts = buildLSCSeries(a); // [{age,lsc,date,meet_name}]
     const card = hEl("div", { class:"ath-lsc-card" },
       hEl("div", { class:"lsc-head" }, hEl("h4", {}, "LSC Verlauf"))
     );
-    if (!pts.length){
+    if (!basePts.length){
       card.appendChild(hEl("div", { class:"best-empty" }, "Keine LSC-Daten vorhanden."));
       return card;
     }
 
+    // Viewport + SVG + Tooltip
     const vp  = hEl("div", { class:"lsc-viewport" });
     const svg = s("svg", { class:"lsc-svg", role:"img", "aria-label":"LSC Verlauf" });
     vp.appendChild(svg);
@@ -1116,15 +1119,157 @@ function hasStartVal(v){
     );
     card.appendChild(tip);
 
+    // Legende
+    const legend = hEl("div", { class:"lsc-legend" },
+      hEl("span", { class:"lsc-key" },
+        hEl("span", { class:"lsc-key-dot blue" }),
+        hEl("span", { class:"lsc-key-label" }, a?.name || "Athlet A")
+      )
+    );
+    card.appendChild(legend);
+
+    // Vergleichs-Suche unter dem Chart
+    let cmpAth  = null;
+    let cmpPts  = null;
+    const cmpWrap   = hEl("div", { class:"lsc-compare-wrap" });
+    const cmpInput  = hEl("input", {
+      class:"lsc-input",
+      type:"search",
+      placeholder:"Athlet zum Vergleich suchen …",
+      autocomplete:"off",
+      role:"searchbox",
+      "aria-label":"Athlet zum Vergleich suchen"
+    });
+    const clearBtn  = hEl("button", { class:"lsc-clear hidden", type:"button", title:"Vergleich entfernen" }, "Entfernen");
+    const suggest   = hEl("div", { class:"lsc-suggest hidden", role:"listbox" });
+
+    cmpWrap.appendChild(hEl("div", { class:"lsc-search-row" }, cmpInput, clearBtn));
+    cmpWrap.appendChild(suggest);
+    card.appendChild(cmpWrap);
+
+    // Suche: Logik (wie oben bei dir – leicht abgespeckt)
+    let cmpQuery = "", cmpResults = [], cmpActive = -1;
+
+    const normalizeLocal = (s) => (s||"").toString()
+      .toLowerCase().normalize("NFKD").replace(/\p{Diacritic}/gu,"").replace(/\s+/g," ").trim();
+
+    function updateCmpSuggest(){
+      const q = cmpQuery.trim();
+      if (q.length < 2){
+        cmpResults = [];
+        cmpActive = -1;
+        paintCmpSuggest();
+        return;
+      }
+      const nq = normalizeLocal(q);
+      const pool = (AppState?.athletes || []).filter(x => x?.id !== a?.id); // sich selbst ausblenden
+      const list = pool.map(ax => ({ ax, nName: normalizeLocal(ax.name) }))
+        .filter(x => x.nName.includes(nq))
+        .sort((l,r) => {
+          const la = l.nName.startsWith(nq) ? 0 : 1;
+          const ra = r.nName.startsWith(nq) ? 0 : 1;
+          if (la !== ra) return la - ra;
+          return l.nName.localeCompare(r.nName);
+        })
+        .slice(0,8);
+
+      cmpResults = list.map(x => x.ax);
+      cmpActive  = cmpResults.length ? 0 : -1;
+      paintCmpSuggest();
+    }
+
+    function paintCmpSuggest(){
+      suggest.innerHTML = "";
+      if (!cmpQuery || cmpResults.length === 0){
+        const msg = cmpQuery.length < 2 ? "Mind. 2 Zeichen eingeben" : "Keine Treffer";
+        suggest.appendChild(hEl("div", { class:"lsc-suggest-empty" }, msg));
+        suggest.classList.remove("hidden");
+        return;
+      }
+      cmpResults.forEach((ax, idx) => {
+        const item = hEl("div", {
+          class:"lsc-suggest-item" + (idx===cmpActive ? " active" : ""),
+          role:"option",
+          "aria-selected": idx===cmpActive ? "true" : "false"
+        });
+
+        item.appendChild(renderCapAvatar(ax, "sm", "lsc-suggest-avatar"));
+
+        const name = hEl("div", { class:"lsc-suggest-name" }, ax.name, " ",
+          hEl("span", { class:"lsc-year" }, `(${ax.jahrgang})`)
+        );
+        const og = currentOrtsgruppeFromMeets(ax) || ax.ortsgruppe || "";
+        const sub = hEl("div", { class:"lsc-suggest-sub" }, "DLRG ", og);
+
+        item.appendChild(hEl("div", { class:"lsc-suggest-text" }, name, sub));
+
+        // Events
+        item.addEventListener("pointerdown", (ev)=>{ ev.preventDefault(); chooseCmp(ax); });
+        item.addEventListener("mouseenter", ()=>{ 
+          suggest.querySelector(".active")?.classList.remove("active");
+          item.classList.add("active"); cmpActive = idx;
+        });
+
+        suggest.appendChild(item);
+      });
+      suggest.classList.remove("hidden");
+    }
+
+    function hideCmpSuggest(){ suggest.classList.add("hidden"); }
+
+    function chooseCmp(ax){
+      cmpAth = ax;
+      const merged = mergeDuplicateMeets(cmpAth.meets);
+      cmpPts = buildLSCSeries({ ...cmpAth, meets: merged });
+      legend.querySelector(".lsc-key.green")?.remove();
+      legend.appendChild(
+        hEl("span", { class:"lsc-key" },
+          hEl("span", { class:"lsc-key-dot green" }),
+          hEl("span", { class:"lsc-key-label" }, cmpAth.name)
+        )
+      );
+      clearBtn.classList.remove("hidden");
+      hideCmpSuggest();
+      cmpInput.value = cmpQuery = "";
+      paint(); // neu zeichnen mit grüner Kurve
+    }
+
+    cmpInput.addEventListener("input", e => { cmpQuery = e.target.value || ""; updateCmpSuggest(); });
+    cmpInput.addEventListener("keydown", e => {
+      if (!cmpResults.length) return;
+      if (e.key === "ArrowDown"){ e.preventDefault(); cmpActive = (cmpActive+1) % cmpResults.length; paintCmpSuggest(); }
+      else if (e.key === "ArrowUp"){ e.preventDefault(); cmpActive = (cmpActive-1+cmpResults.length) % cmpResults.length; paintCmpSuggest(); }
+      else if (e.key === "Enter"){ e.preventDefault(); chooseCmp(cmpResults[cmpActive>=0?cmpActive:0]); }
+      else if (e.key === "Escape"){ hideCmpSuggest(); }
+    });
+    document.addEventListener("click", (e) => { if (!cmpWrap.contains(e.target)) hideCmpSuggest(); });
+
+    clearBtn.addEventListener("click", () => {
+      cmpAth = null; cmpPts = null;
+      clearBtn.classList.add("hidden");
+      // zweite Legendenzeile entfernen
+      const n = legend.querySelectorAll(".lsc-key").length;
+      if (n > 1) legend.removeChild(legend.lastElementChild);
+      paint();
+    });
+
     // Domains
     const yMin = 0, yMax = 1000;
-    let xMin = Math.floor(Math.min(...pts.map(p => p.age)));
-    let xMax = Math.ceil(Math.max(...pts.map(p => p.age)));
-    if (xMax === xMin) xMax = xMin + 1;
+    let xMin, xMax;
+    const updateXDomain = () => {
+      const all = cmpPts && cmpPts.length ? basePts.concat(cmpPts) : basePts;
+      xMin = Math.floor(Math.min(...all.map(p=>p.age)));
+      xMax = Math.ceil (Math.max(...all.map(p=>p.age)));
+      if (xMax === xMin) xMax = xMin + 1;
+    };
+    updateXDomain();
 
-    let activeIdx = null;
+    let activeIdx = null, activeSeries = "base"; // für Tooltip-Repaint
 
     function paint(){
+      // Domain updaten (falls Vergleich dazu/weg)
+      updateXDomain();
+
       const rect = vp.getBoundingClientRect();
       const W = Math.max(320, Math.floor(rect.width));
       const H = Math.max(260, vp.clientHeight);
@@ -1134,18 +1279,14 @@ function hasStartVal(v){
       svg.setAttribute("height", H);
       while (svg.firstChild) svg.removeChild(svg.firstChild);
 
-      // Sehr kleine Ränder – Diagramm füllt fast die ganze Karte
-      const m  = { l: 8, r: 8, t: 10, b: 36 };
+      const m  = { l: 8, r: 8, t: 10, b: 48 }; // b größer für Label "Alter"
       const cw = W - m.l - m.r;
       const ch = H - m.t - m.b;
-
       const fx = (v) => m.l + ((v - xMin) / (xMax - xMin)) * cw;
       const fy = (v) => m.t + ch - ((v - yMin) / (yMax - yMin)) * ch;
 
+      // Grid: fette 0 + 200/400/600/800
       const grid  = s("g", { class:"lsc-grid" });
-      const xAxis = s("g", { class:"lsc-xaxis" });
-
-      // Horizontale: 200/400/600/800 + fette 0-Achse
       const y0 = fy(0);
       grid.appendChild(s("line", { x1:m.l, y1:y0, x2:W-m.r, y2:y0, class:"hline0" }));
       for (let val=200; val<=800; val+=200){
@@ -1153,43 +1294,91 @@ function hasStartVal(v){
         grid.appendChild(s("line", { x1:m.l, y1:yy, x2:W-m.r, y2:yy, class:"hline" }));
       }
 
-      // X-Ticks an der 0-Achse
-      const xStart = Math.floor(xMin);
-      const xEnd   = Math.ceil(xMax);
+      // X-Ticks kurz an der 0-Achse
+      const xAxis = s("g", { class:"lsc-xaxis" });
       const tickLen = 8;
-      for (let v = xStart; v <= xEnd; v++){
+      for (let v = Math.floor(xMin); v <= Math.ceil(xMax); v++){
         const xx = fx(v);
         grid.appendChild(s("line", { x1:xx, y1:y0, x2:xx, y2:y0 + tickLen, class:"xtick" }));
         xAxis.appendChild(s("text", { x: xx, y: y0 + tickLen + 6, "text-anchor":"middle" }, String(v)));
       }
 
+      // X-Achsen-Label "Alter"
+      xAxis.appendChild(s("text", {
+        x: m.l + cw/2, y: y0 + tickLen + 26, "text-anchor":"middle"
+      }, "Alter"));
+
       svg.appendChild(grid);
       svg.appendChild(xAxis);
 
-      // Gradient (unique id je Chart)
+      // Gradient für Basis-Fläche
       const gradId = `lsc-grad-${Math.random().toString(36).slice(2)}`;
       const defs = s("defs");
       const lg = s("linearGradient", { id: gradId, x1:"0", y1:"0", x2:"0", y2:"1" });
-      lg.appendChild(s("stop", { offset:"0%",  "stop-color":"#1d4ed8", "stop-opacity":"0.22" }));
-      lg.appendChild(s("stop", { offset:"100%","stop-color":"#1d4ed8", "stop-opacity":"0" }));
+      lg.appendChild(s("stop", { offset:"0%",   "stop-color":"#1d4ed8", "stop-opacity":"0.22" }));
+      lg.appendChild(s("stop", { offset:"100%", "stop-color":"#1d4ed8", "stop-opacity":"0" }));
       defs.appendChild(lg);
       svg.appendChild(defs);
 
-      // Linie & Fläche
-      const pathD = pts.map((p,i) => {
-        const Y = Math.max(0, Math.min(1000, p.lsc));
-        return `${i ? "L" : "M"}${fx(p.age)} ${fy(Y)}`;
-      }).join(" ");
+      // --- Kurven & Flächen ---
+      const drawSeries = (pts, colorClass, withArea=false) => {
+        const pathD = pts.map((p,i)=>{
+          const Y = Math.max(0, Math.min(1000, p.lsc));
+          return `${i ? "L" : "M"}${fx(p.age)} ${fy(Y)}`;
+        }).join(" ");
 
-      const areaD = pathD +
-        ` L${fx(pts[pts.length-1].age)} ${y0}` +
-        ` L${fx(pts[0].age)} ${y0} Z`;
+        if (withArea){
+          const areaD = pathD + ` L${fx(pts[pts.length-1].age)} ${y0} L${fx(pts[0].age)} ${y0} Z`;
+          svg.appendChild(s("path", { d: areaD, class:`lsc-area ${colorClass}`, fill:`url(#${gradId})` }));
+        }
+        svg.appendChild(s("path", { d: pathD, class:`lsc-line ${colorClass}` }));
 
-      svg.appendChild(s("path", { d: areaD, class:"lsc-area", fill:`url(#${gradId})` }));
-      svg.appendChild(s("path", { d: pathD, class:"lsc-line" }));
+        // Punkte
+        const dots = s("g", { class:`lsc-dots ${colorClass}` });
+        pts.forEach((p, idx) => {
+          const Y = Math.max(0, Math.min(1000, p.lsc));
+          const c = s("circle", {
+            cx: fx(p.age), cy: fy(Y), r:4.5, class:"lsc-dot", tabindex:0,
+            "data-idx": idx,
+            "data-series": colorClass,
+            "data-name": (colorClass==="blue" ? (a?.name||"") : (cmpAth?.name||"")),
+            "data-lsc": p.lsc.toLocaleString("de-DE", { minimumFractionDigits:2, maximumFractionDigits:2 }),
+            "data-date": (new Date(p.date)).toLocaleDateString("de-DE"),
+            "data-meet": p.meet_name || "—"
+          });
 
-      // Tooltip-Positionierung relativ zum Punkt (robust für iOS/Safari)
-      const positionTipNearCircle = (circle) => {
+          const show = () => {
+            activeIdx = idx; activeSeries = colorClass;
+            c.setAttribute("data-active","1");
+            const name = c.dataset.name ? ` – ${c.dataset.name}` : "";
+            tip.querySelector(".tt-l1").textContent = `${c.dataset.lsc} LSC${name}`;
+            tip.querySelector(".tt-l2").textContent = `${c.dataset.date} — ${c.dataset.meet || "—"}`;
+            positionTipNearCircle(c);
+          };
+          const hide = () => {
+            if (activeIdx === idx && activeSeries === colorClass){ activeIdx = null; }
+            c.removeAttribute("data-active");
+            tip.style.opacity = "0";
+            tip.style.transform = "translate(-9999px,-9999px)";
+            tip.setAttribute("aria-hidden","true");
+          };
+
+          c.addEventListener("pointerenter", show);
+          c.addEventListener("pointerleave", hide);
+          c.addEventListener("focus", show);
+          c.addEventListener("blur", hide);
+          c.addEventListener("pointerdown", (e)=>{ e.stopPropagation(); show(); });
+
+          dots.appendChild(c);
+        });
+        svg.appendChild(dots);
+      };
+
+      drawSeries(basePts, "blue", true);
+      if (cmpPts && cmpPts.length) drawSeries(cmpPts, "green", false);
+
+      // Tooltip-Position (iOS-robust)
+      function positionTipNearCircle(circle){
         const pt = svg.createSVGPoint();
         pt.x = +circle.getAttribute("cx");
         pt.y = +circle.getAttribute("cy");
@@ -1198,12 +1387,9 @@ function hasStartVal(v){
         const px = scr.x - cardRect.left;
         const py = scr.y - cardRect.top;
 
-        // Sichtbar schalten (Transform zurücksetzen!)
         tip.style.opacity = "1";
         tip.style.transform = "translate(0,0)";
         tip.setAttribute("aria-hidden","false");
-
-        // zuerst an 0/0 setzen, dann messen
         tip.style.left = "0px";
         tip.style.top  = "0px";
         const tr = tip.getBoundingClientRect();
@@ -1217,53 +1403,13 @@ function hasStartVal(v){
         T = Math.max(8, Math.min(T, maxT));
         tip.style.left = `${L}px`;
         tip.style.top  = `${T}px`;
-      };
+      }
 
-      // Punkte + Interaktion
-      const dots = s("g", { class:"lsc-dots" });
-      pts.forEach((p, idx) => {
-        const Y = Math.max(0, Math.min(1000, p.lsc));
-        const c = s("circle", {
-          cx: fx(p.age), cy: fy(Y), r:4.5, class:"lsc-dot", tabindex:0,
-          "data-idx": idx,
-          "data-lsc": p.lsc.toLocaleString("de-DE", { minimumFractionDigits:2, maximumFractionDigits:2 }),
-          "data-date": (new Date(p.date)).toLocaleDateString("de-DE"),
-          "data-meet": p.meet_name || "—"
-        });
-
-        const show = () => {
-          activeIdx = idx;
-          c.setAttribute("data-active","1");
-          tip.querySelector(".tt-l1").textContent = `${c.dataset.lsc} LSC`;
-          tip.querySelector(".tt-l2").textContent = `${c.dataset.date} — ${c.dataset.meet || "—"}`;
-          positionTipNearCircle(c);
-        };
-        const hide = () => {
-          if (activeIdx === idx) activeIdx = null;
-          c.removeAttribute("data-active");
-          tip.style.opacity = "0";
-          tip.style.transform = "translate(-9999px,-9999px)";
-          tip.setAttribute("aria-hidden","true");
-        };
-
-        c.addEventListener("pointerenter", show);
-        c.addEventListener("pointerleave", hide);
-        c.addEventListener("focus", show);
-        c.addEventListener("blur", hide);
-        c.addEventListener("pointerdown", (e)=>{ e.stopPropagation(); show(); });
-
-        dots.appendChild(c);
-      });
-      svg.appendChild(dots);
-
-      // Tooltip offen halten bei aktivem Punkt (z.B. nach Resize)
+      // Tooltip nach Resize an aktivem Punkt neu positionieren
       if (activeIdx != null){
-        const active = svg.querySelector(`.lsc-dot[data-idx="${activeIdx}"]`);
-        if (active){
-          tip.querySelector(".tt-l1").textContent = `${active.dataset.lsc} LSC`;
-          tip.querySelector(".tt-l2").textContent = `${active.dataset.date} — ${active.dataset.meet || "—"}`;
-          positionTipNearCircle(active);
-        }
+        const sel = `.lsc-dots.${activeSeries} .lsc-dot[data-idx="${activeIdx}"]`;
+        const active = svg.querySelector(sel);
+        if (active) positionTipNearCircle(active);
       }
 
       // Klick außerhalb schließt Tooltip
@@ -1287,6 +1433,7 @@ function hasStartVal(v){
 
     return card;
   }
+
 
 
   /* baut die Serie [{age,lsc,date,meet_name}] aus (gemergten) meets */
@@ -1527,7 +1674,7 @@ function hasStartVal(v){
             Startrecht: "OG",
             Wertung: "Einzelkampf",
             Vorläufe: "1",
-            LSC: "792,40",
+            LSC: "685,40",
 
             Mehrkampf_Platz: "2",
 
@@ -1548,7 +1695,7 @@ function hasStartVal(v){
             Startrecht: "LV",
             Wertung: "Einzel-/Mehrkampf",
             Vorläufe: "1",
-            LSC: "815,20",
+            LSC: "752,20",
 
             Mehrkampf_Platz: "56",
 
@@ -1569,7 +1716,7 @@ function hasStartVal(v){
             Startrecht: "OG",
             Wertung: "Mehrkampf",
             Vorläufe: "1",
-            LSC: "830,75",
+            LSC: "880,75",
 
             Mehrkampf_Platz: "1",
 

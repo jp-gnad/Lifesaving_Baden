@@ -1645,7 +1645,6 @@ body{
   }
 }
 
-
 /* ---------- Karte + Titel ---------- */
 .ath-lsc-card{
   margin-top:18px;
@@ -1653,7 +1652,7 @@ body{
   border:1px solid rgba(17,24,39,0.12);
   border-radius:16px;
   padding:20px 22px 18px;
-  position:relative; /* für Tooltip */
+  position:relative; /* Tooltip-Positionierung */
 }
 .lsc-head h4{
   margin:0 0 12px 0;
@@ -1662,7 +1661,7 @@ body{
   font-size:1.35rem;
 }
 
-/* ---------- Plot-Wrapper steuert die echte Höhe ---------- */
+/* ---------- Viewport steuert die echte Höhe ---------- */
 .lsc-viewport{
   position:relative;
   height:clamp(340px, 44vw, 520px);
@@ -1675,23 +1674,23 @@ body{
 .lsc-svg{ display:block; width:100%; height:100%; }
 
 /* ---------- Raster ---------- */
-.lsc-grid .hline{        /* 200/400/600/800 */
+.lsc-grid .hline{   /* 200/400/600/800 */
   stroke:rgba(17,24,39,0.12);
   stroke-width:1;
   shape-rendering:crispEdges;
 }
-.lsc-grid .hline0{       /* fette 0-Achse */
+.lsc-grid .hline0{  /* fette 0-Achse */
   stroke:rgba(17,24,39,0.35);
   stroke-width:2.5;
   shape-rendering:crispEdges;
 }
-.lsc-grid .xtick{        /* kleine Ticks an der 0-Achse */
+.lsc-grid .xtick{
   stroke:rgba(17,24,39,0.25);
   stroke-width:1.25;
   shape-rendering:crispEdges;
 }
 
-/* ---------- Achsenbeschriftung (nur X) ---------- */
+/* ---------- X-Achse-Beschriftung ---------- */
 .lsc-xaxis text{
   fill:#475569;
   font-size:13px;
@@ -1701,18 +1700,19 @@ body{
   .lsc-xaxis text{ font-size:15px; }
 }
 
-/* ---------- Linie, Fläche & Punkte ---------- */
-.lsc-area{
-  pointer-events:none;             /* Fläche klickt nicht */
-}
+/* ---------- Linien, Fläche & Punkte ---------- */
+.lsc-area{ pointer-events:none; }
 .lsc-line{
   fill:none;
-  stroke:#1d4ed8;
-  stroke-width:3;
   vector-effect:non-scaling-stroke;
+  stroke-width:3;
 }
+.lsc-line.blue{  stroke:#1d4ed8; }
+.lsc-line.green{ stroke:#10b981; } /* Emerald */
+.lsc-dots.blue  .lsc-dot{ fill:#1d4ed8; }
+.lsc-dots.green .lsc-dot{ fill:#10b981; }
+
 .lsc-dot{
-  fill:#1d4ed8;
   stroke:#fff;
   stroke-width:1.25;
   r:4.5px;
@@ -1722,14 +1722,14 @@ body{
 .lsc-dot[data-active="1"],
 .lsc-dot:hover{ r:7.5px; }
 
-/* iOS Tap-Highlight & Fokusrahmen vermeiden */
+/* iOS Tap-Highlight & Fokusrahmen entfernen */
 .lsc-svg,.lsc-dot{ -webkit-tap-highlight-color:transparent; }
 .lsc-dot:focus{ outline:none; }
 
 /* ---------- Tooltip ---------- */
 .lsc-tooltip{
   position:absolute; left:0; top:0;
-  transform:translate(-9999px,-9999px); /* initial vom Screen schieben */
+  transform:translate(-9999px,-9999px);
   background:#0f172a; color:#fff;
   border-radius:12px;
   padding:10px 12px 8px;
@@ -1746,7 +1746,51 @@ body{
   border:6px solid transparent; border-top-color:#0b1020;
 }
 
-/* Bewegungsreduktion */
-@media (prefers-reduced-motion: reduce){
-  .lsc-dot,.lsc-tooltip{ transition:none; }
+/* ---------- Legende ---------- */
+.lsc-legend{
+  display:flex; align-items:center; gap:14px;
+  margin-top:8px; color:#475569; font-size:13px;
 }
+.lsc-key{ display:inline-flex; align-items:center; gap:6px; }
+.lsc-key-dot{
+  width:10px; height:10px; border-radius:9999px;
+  border:1.5px solid currentColor;
+}
+.lsc-key-dot.blue{  color:#1d4ed8; background:#1d4ed8; }
+.lsc-key-dot.green{ color:#10b981; background:#10b981; }
+
+/* ---------- Vergleichs-Suche unter dem Chart ---------- */
+.lsc-compare-wrap{ margin-top:10px; position:relative; }
+.lsc-search-row{ display:flex; gap:8px; align-items:center; }
+.lsc-input{
+  width:100%; padding:10px 12px; border:1px solid rgba(17,24,39,0.16);
+  border-radius:10px; font-size:14px; outline:none;
+}
+.lsc-input:focus{ border-color:#1d4ed8; box-shadow:0 0 0 3px rgba(29,78,216,.12); }
+.lsc-clear{
+  appearance:none; border:1px solid rgba(17,24,39,0.16);
+  background:#fff; border-radius:10px; padding:8px 10px; cursor:pointer;
+  font-weight:700; color:#0f172a;
+}
+.lsc-clear.hidden{ display:none; }
+
+/* Suggest */
+.lsc-suggest{
+  position:absolute; left:0; right:0; top:100%; margin-top:6px; z-index:20;
+  background:#fff; border:1px solid rgba(17,24,39,0.16); border-radius:12px;
+  box-shadow:0 10px 30px rgba(2,6,23,.08); max-height:320px; overflow:auto;
+}
+.lsc-suggest.hidden{ display:none; }
+.lsc-suggest-empty{ padding:12px; color:#64748b; }
+.lsc-suggest-item{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; cursor:pointer;
+}
+.lsc-suggest-item:hover, .lsc-suggest-item.active{
+  background:rgba(29,78,216,.06);
+}
+.lsc-suggest-avatar .avatar-img{ width:32px; height:32px; }
+.lsc-suggest-text{ display:flex; flex-direction:column; min-width:0; }
+.lsc-suggest-name{ font-weight:700; color:#0f172a; }
+.lsc-year{ color:#64748b; font-weight:600; margin-left:6px; }
+.lsc-suggest-sub{ color:#475569; font-size:12px; }
