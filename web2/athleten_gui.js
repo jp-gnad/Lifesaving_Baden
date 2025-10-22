@@ -1075,9 +1075,10 @@ function hasStartVal(v){
     }
     return el;
   }
-  // ---- LSC-Chart Renderer (mit inneren vertikalen Linien, solide Raster) ----
+
+
+  // ---- LSC-Chart Renderer (flächig, ohne Y-Beschriftung/Vertikalraster) ----
   function renderLSCChart(a){
-    // kleine Helfer
     const s = (tag, attrs = {}, ...children) => {
       const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
       for (const [k,v] of Object.entries(attrs)) if (v != null) el.setAttribute(k, String(v));
@@ -1095,26 +1096,23 @@ function hasStartVal(v){
       return el;
     };
 
-    // Daten
     const pts = buildLSCSeries(a); // [{age,lsc,date,meet_name}]
-    const card = hEl("div", { class: "ath-lsc-card" },
-      hEl("div", { class: "lsc-head" }, hEl("h4", {}, "LSC Verlauf"))
+    const card = hEl("div", { class:"ath-lsc-card" },
+      hEl("div", { class:"lsc-head" }, hEl("h4", {}, "LSC Verlauf"))
     );
     if (!pts.length){
-      card.appendChild(hEl("div", { class: "best-empty" }, "Keine LSC-Daten vorhanden."));
+      card.appendChild(hEl("div", { class:"best-empty" }, "Keine LSC-Daten vorhanden."));
       return card;
     }
 
-    // Canvas
-    const vp  = hEl("div", { class: "lsc-viewport" });
-    const svg = s("svg", { class: "lsc-svg", role: "img", "aria-label": "LSC Verlauf" });
+    const vp  = hEl("div", { class:"lsc-viewport" });
+    const svg = s("svg", { class:"lsc-svg", role:"img", "aria-label":"LSC Verlauf" });
     vp.appendChild(svg);
     card.appendChild(vp);
 
-    // Tooltip (HTML)
-    const tip = hEl("div", { class: "lsc-tooltip", "aria-hidden":"true" },
-      hEl("div", { class: "tt-l1" }),
-      hEl("div", { class: "tt-l2" })
+    const tip = hEl("div", { class:"lsc-tooltip", "aria-hidden":"true" },
+      hEl("div", { class:"tt-l1" }),
+      hEl("div", { class:"tt-l2" })
     );
     card.appendChild(tip);
 
@@ -1136,91 +1134,99 @@ function hasStartVal(v){
       svg.setAttribute("height", H);
       while (svg.firstChild) svg.removeChild(svg.firstChild);
 
-      // Margins etwas enger
-      const m  = { l: 52, r: 12, t: 10, b: 32 };
+      // Sehr kleine Ränder – Diagramm füllt fast die ganze Karte
+      const m  = { l: 8, r: 8, t: 10, b: 36 };
       const cw = W - m.l - m.r;
       const ch = H - m.t - m.b;
 
       const fx = (v) => m.l + ((v - xMin) / (xMax - xMin)) * cw;
       const fy = (v) => m.t + ch - ((v - yMin) / (yMax - yMin)) * ch;
 
-      const grid = s("g", { class: "lsc-grid" });
-      const axis = s("g", { class: "lsc-axis" });
+      const grid  = s("g", { class:"lsc-grid" });
+      const xAxis = s("g", { class:"lsc-xaxis" });
 
-      // Horizontale Linien: alle 100, aber NICHT 0 und NICHT 1000
-      for (let val = 100; val <= 900; val += 100){
+      // Horizontale: 200/400/600/800 + fette 0-Achse
+      const y0 = fy(0);
+      grid.appendChild(s("line", { x1:m.l, y1:y0, x2:W-m.r, y2:y0, class:"hline0" }));
+      for (let val=200; val<=800; val+=200){
         const yy = fy(val);
         grid.appendChild(s("line", { x1:m.l, y1:yy, x2:W-m.r, y2:yy, class:"hline" }));
-        // Y-Labels nur 200,400,600,800
-        if (val % 200 === 0 && val >= 200 && val <= 800){
-          axis.appendChild(s("text", { x: m.l - 8, y: yy, "text-anchor":"end" }, String(val)));
-        }
       }
 
-      // Vertikale Linien: nur innere ganzzahlige Ticks (keine Ränder), solide
+      // X-Ticks an der 0-Achse
       const xStart = Math.floor(xMin);
       const xEnd   = Math.ceil(xMax);
+      const tickLen = 8;
       for (let v = xStart; v <= xEnd; v++){
         const xx = fx(v);
-        // Achsen-Labels an allen Integer-Ticks
-        axis.appendChild(s("text", { x: xx, y: m.t + ch + 18, "text-anchor":"middle" }, String(v)));
-        // Grid-Linien nur zwischen den Rändern
-        if (v > xStart && v < xEnd){
-          grid.appendChild(s("line", { x1:xx, y1:m.t, x2:xx, y2:m.t+ch, class:"vline" }));
-        }
+        grid.appendChild(s("line", { x1:xx, y1:y0, x2:xx, y2:y0 + tickLen, class:"xtick" }));
+        xAxis.appendChild(s("text", { x: xx, y: y0 + tickLen + 6, "text-anchor":"middle" }, String(v)));
       }
 
       svg.appendChild(grid);
-      svg.appendChild(axis);
+      svg.appendChild(xAxis);
 
-      // Linie
+      // Gradient (unique id je Chart)
+      const gradId = `lsc-grad-${Math.random().toString(36).slice(2)}`;
+      const defs = s("defs");
+      const lg = s("linearGradient", { id: gradId, x1:"0", y1:"0", x2:"0", y2:"1" });
+      lg.appendChild(s("stop", { offset:"0%",  "stop-color":"#1d4ed8", "stop-opacity":"0.22" }));
+      lg.appendChild(s("stop", { offset:"100%","stop-color":"#1d4ed8", "stop-opacity":"0" }));
+      defs.appendChild(lg);
+      svg.appendChild(defs);
+
+      // Linie & Fläche
       const pathD = pts.map((p,i) => {
         const Y = Math.max(0, Math.min(1000, p.lsc));
         return `${i ? "L" : "M"}${fx(p.age)} ${fy(Y)}`;
       }).join(" ");
-      svg.appendChild(s("path", { d: pathD, class: "lsc-line" }));
 
-      // Punkte
-      const dots = s("g", { class:"lsc-dots" });
+      const areaD = pathD +
+        ` L${fx(pts[pts.length-1].age)} ${y0}` +
+        ` L${fx(pts[0].age)} ${y0} Z`;
 
+      svg.appendChild(s("path", { d: areaD, class:"lsc-area", fill:`url(#${gradId})` }));
+      svg.appendChild(s("path", { d: pathD, class:"lsc-line" }));
+
+      // Tooltip-Positionierung relativ zum Punkt (robust für iOS/Safari)
       const positionTipNearCircle = (circle) => {
         const pt = svg.createSVGPoint();
         pt.x = +circle.getAttribute("cx");
         pt.y = +circle.getAttribute("cy");
         const scr = pt.matrixTransform(svg.getScreenCTM());
         const cardRect = card.getBoundingClientRect();
-        const x = scr.x - cardRect.left;
-        const y = scr.y - cardRect.top;
+        const px = scr.x - cardRect.left;
+        const py = scr.y - cardRect.top;
 
+        // Sichtbar schalten (Transform zurücksetzen!)
+        tip.style.opacity = "1";
         tip.style.transform = "translate(0,0)";
-        tip.style.opacity   = "1";
         tip.setAttribute("aria-hidden","false");
+
+        // zuerst an 0/0 setzen, dann messen
         tip.style.left = "0px";
         tip.style.top  = "0px";
         const tr = tip.getBoundingClientRect();
 
         const offX = 6, offY = 10;
-        let L = Math.round(x + offX - tr.width*0.12);
-        let T = Math.round(y - offY - tr.height - 6);
+        let L = Math.round(px + offX - tr.width*0.12);
+        let T = Math.round(py - offY - tr.height - 6);
         const maxL = card.clientWidth  - tr.width  - 8;
         const maxT = card.clientHeight - tr.height - 8;
         L = Math.max(8, Math.min(L, maxL));
         T = Math.max(8, Math.min(T, maxT));
-
         tip.style.left = `${L}px`;
         tip.style.top  = `${T}px`;
       };
 
+      // Punkte + Interaktion
+      const dots = s("g", { class:"lsc-dots" });
       pts.forEach((p, idx) => {
         const Y = Math.max(0, Math.min(1000, p.lsc));
         const c = s("circle", {
-          cx: fx(p.age),
-          cy: fy(Y),
-          r: 4.5,
-          class: "lsc-dot",
-          tabindex: 0,
+          cx: fx(p.age), cy: fy(Y), r:4.5, class:"lsc-dot", tabindex:0,
           "data-idx": idx,
-          "data-lsc": p.lsc.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+          "data-lsc": p.lsc.toLocaleString("de-DE", { minimumFractionDigits:2, maximumFractionDigits:2 }),
           "data-date": (new Date(p.date)).toLocaleDateString("de-DE"),
           "data-meet": p.meet_name || "—"
         });
@@ -1235,7 +1241,7 @@ function hasStartVal(v){
         const hide = () => {
           if (activeIdx === idx) activeIdx = null;
           c.removeAttribute("data-active");
-          tip.style.opacity   = "0";
+          tip.style.opacity = "0";
           tip.style.transform = "translate(-9999px,-9999px)";
           tip.setAttribute("aria-hidden","true");
         };
@@ -1250,7 +1256,7 @@ function hasStartVal(v){
       });
       svg.appendChild(dots);
 
-      // Repositioniere Tooltip beim Repaint, wenn aktiv
+      // Tooltip offen halten bei aktivem Punkt (z.B. nach Resize)
       if (activeIdx != null){
         const active = svg.querySelector(`.lsc-dot[data-idx="${activeIdx}"]`);
         if (active){
@@ -1260,12 +1266,12 @@ function hasStartVal(v){
         }
       }
 
-      // Outside-click schließt Tooltip
+      // Klick außerhalb schließt Tooltip
       if (!card._lscOutsideHandlerAttached){
         card.addEventListener("pointerdown", (e) => {
           if (!svg.contains(e.target)){
             activeIdx = null;
-            tip.style.opacity   = "0";
+            tip.style.opacity = "0";
             tip.style.transform = "translate(-9999px,-9999px)";
             tip.setAttribute("aria-hidden","true");
             svg.querySelectorAll('.lsc-dot[data-active="1"]').forEach(n => n.removeAttribute("data-active"));
@@ -1282,7 +1288,8 @@ function hasStartVal(v){
     return card;
   }
 
-  /* Hilfsfunktion: baut Datenreihe [{age,lsc,date,meet_name}] aus gemergten Meets */
+
+  /* baut die Serie [{age,lsc,date,meet_name}] aus (gemergten) meets */
   function buildLSCSeries(a){
     const jahrgang = Number(a?.jahrgang);
     if (!Number.isFinite(jahrgang)) return [];
@@ -1296,9 +1303,8 @@ function hasStartVal(v){
       const d = new Date(dateISO);
       if (isNaN(d)) continue;
 
-      // höchster Lauf je Meet
       const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
-      let best = { lauf: -1, lsc: NaN };
+      let best = { lauf:-1, lsc:NaN };
       for (const r of runs){
         const lauf = Number(r?._lauf || r?.Vorläufe || 1);
         const lsc  = parseFloat(String(r?.LSC ?? m?.LSC ?? "").replace(",", "."));
@@ -1318,6 +1324,7 @@ function hasStartVal(v){
     rows.sort((l, r) => new Date(l.date) - new Date(r.date));
     return rows;
   }
+
 
 
 
