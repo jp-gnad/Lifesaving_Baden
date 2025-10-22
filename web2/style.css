@@ -1644,9 +1644,9 @@ body{
     padding: 5px 48px;
   }
 }
-
-/* ---------- Größere Karte + Titel ---------- */
+/* ---------- Karte + Titel ---------- */
 .ath-lsc-card{
+  position: relative;
   margin-top: 18px;
   background:#fff;
   border:1px solid rgba(17,24,39,0.12);
@@ -1658,72 +1658,113 @@ body{
   margin:0 0 12px 0;
   font-weight:800;
   color:#0f172a;
-  font-size:1.35rem;         /* größer */
+  font-size: clamp(1.15rem, 1.2vw + .8rem, 1.5rem);
 }
 
-/* ---------- Größen-Variablen (nur CSS) ---------- */
+/* ---------- Variablen ---------- */
 :root{
-  --lsc-h-desktop: 360px;    /* Diagrammhöhe Desktop */
-  --lsc-h-mobile:  520px;    /* Diagrammhöhe mobil */
-  --lsc-font:      13px;     /* Achsen-Schrift */
-  --lsc-font-m:    16px;
-  --lsc-line-w:    3px;      /* Linienbreite */
-  --lsc-dot-r:     4.5px;    /* Punktgröße */
+  --lsc-height-desktop: 360px; /* Diagrammhöhe Desktop */
+  --lsc-height-mobile:  420px; /* Diagrammhöhe Mobile */
+  --lsc-font:          13px;   /* Achsentext Desktop */
+  --lsc-font-m:        16px;   /* Achsentext Mobile */
+  --lsc-line-w:         3px;   /* Linienbreite */
+  --lsc-dot-scale-hot:  1.6;   /* Hover/Lock-Vergrößerung */
 }
 
-/* ---------- SVG größer ziehen (ohne JS) ---------- */
+/* ---------- Plot-Wrapper: steuert die echte Höhe ---------- */
+/* Unterstützt beide Klassennamen, nimm einen davon ins Markup */
+.lsc-plot,
+.lsc-viewport{
+  position: relative;
+  height: var(--lsc-height-desktop); /* bleibt konstant, Breite kann schrumpfen */
+}
+@media (max-width: 720px){
+  .lsc-plot,
+  .lsc-viewport{ height: var(--lsc-height-mobile); }
+}
+
+/* ---------- SVG-Grundgröße ---------- */
 .lsc-svg{
   display:block;
   width:100%;
-  height: 100%;               /* <- steuert die wirkliche Höhe */
-  aspect-ratio: auto;
+  height:100%;
 }
 
-.lsc-viewport{
-  position: relative;
-  height: 360px;              /* Höhe bleibt konstant */
-}
-
-/* mobil: noch höher + größere Schrift */
-
-
-/* ---------- Raster + Achsen besser lesbar ---------- */
+/* ---------- Raster + Achsen ---------- */
 .lsc-grid line{
-  stroke:rgba(17,24,39,0.12);
-  stroke-width:1;
-  stroke-dasharray:2 5;            /* zarteres Raster */
-  shape-rendering:crispEdges;
+  stroke: rgba(17,24,39,0.12);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
 }
-
 .lsc-axis text{
   fill:#475569;
-  font-size:var(--lsc-font);
-  dominant-baseline:middle;
+  font-size: var(--lsc-font);
+  dominant-baseline: middle;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
 }
 @media (max-width:720px){
-  .lsc-axis text{ font-size:var(--lsc-font-m); }
+  .lsc-axis text{ font-size: var(--lsc-font-m); }
 }
 
-/* ---------- Linie + Punkte größer, bleiben scharf beim Skalieren ---------- */
+/* ---------- Linie & Punkte ---------- */
 .lsc-line{
-  fill:none;
-  stroke:#1d4ed8;
-  stroke-width:var(--lsc-line-w);
-  vector-effect:non-scaling-stroke; /* Strichbreite bleibt konstant trotz CSS-Skalierung */
+  fill: none;
+  stroke: #1d4ed8;
+  stroke-width: var(--lsc-line-w);
+  vector-effect: non-scaling-stroke; /* Strichbreite bleibt konstant bei Resize */
 }
-
 .lsc-dot{
-  fill:#1d4ed8;
-  stroke:#fff;
-  stroke-width:1.25;
-  r: var(--lsc-dot-r);             /* Punktgröße rein per CSS */
-  vector-effect:non-scaling-stroke;
+  fill: #1d4ed8;
+  stroke: #fff;
+  stroke-width: 1.25;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform .16s ease;
+  /* (Radius kommt aus JS; optional kann man es zusätzlich hier setzen:)
+     r: 4.5px; */
+}
+.lsc-dot.hot{ transform: scale(var(--lsc-dot-scale-hot)); }
+
+/* größere unsichtbare Trefferfläche für komfortables Hover/Click */
+.lsc-hit{ fill: transparent; cursor: pointer; }
+
+/* ---------- Tooltip ---------- */
+.lsc-tip{
+  position: absolute;
+  z-index: 3;
+  transform: translate(-50%, -110%); /* oberhalb & mittig des Punkts */
+  background: #0b1020;
+  color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(2,6,23,.18);
+  padding: 8px 10px;
+  pointer-events: none; /* damit Klicks auf Punkte gehen */
+  opacity: 1;
+  transition: opacity .12s ease;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.lsc-tip.hidden{ opacity: 0; }
+.lsc-tip::after{
+  content: "";
+  position: absolute;
+  left: 50%; bottom: -6px;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #0b1020;  /* kleiner Pfeil */
+}
+.lsc-tip-val{
+  font-weight: 800;
+  letter-spacing: .01em;
+}
+.lsc-tip-sub{
+  opacity: .9;
+  margin-top: 2px;
 }
 
-.lsc-viewport{
-  position: relative;
-  height: 360px;              /* Höhe bleibt konstant */
-}
-@media (max-width: 720px){
-  .lsc-viewport{ height: 420px; }   /* auf Handy höher */
+/* ---------- Barrierefreiheit: weniger Bewegung, wenn gewünscht ---------- */
+@media (prefers-reduced-motion: reduce){
+  .lsc-dot{ transition: none; }
+  .lsc-tip{ transition: none; }
 }
