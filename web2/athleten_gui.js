@@ -1077,7 +1077,7 @@ function hasStartVal(v){
   }
 
 
-  // ---- LSC-Chart Renderer mit X-Achsen-Label & Vergleichssuche ----
+  // ---- LSC-Chart Renderer mit X-Achsen-Label & Vergleichssuche (1 Vergleich max., ersetzt alte Auswahl) ----
   function renderLSCChart(a){
     // kleine Helfer
     const s = (tag, attrs = {}, ...children) => {
@@ -1121,16 +1121,17 @@ function hasStartVal(v){
 
     // Legende
     const legend = hEl("div", { class:"lsc-legend" },
-      hEl("span", { class:"lsc-key" },
+      hEl("span", { class:"lsc-key lsc-key--base" },
         hEl("span", { class:"lsc-key-dot blue" }),
         hEl("span", { class:"lsc-key-label" }, a?.name || "Athlet A")
       )
     );
     card.appendChild(legend);
 
-    // Vergleichs-Suche unter dem Chart
+    // Vergleichs-Suche (max. 1 Person – neue Auswahl ersetzt alte)
     let cmpAth  = null;
     let cmpPts  = null;
+
     const cmpWrap   = hEl("div", { class:"lsc-compare-wrap" });
     const cmpInput  = hEl("input", {
       class:"lsc-input",
@@ -1147,20 +1148,14 @@ function hasStartVal(v){
     cmpWrap.appendChild(suggest);
     card.appendChild(cmpWrap);
 
-    // Suche: Logik (wie oben bei dir – leicht abgespeckt)
+    // Suche
     let cmpQuery = "", cmpResults = [], cmpActive = -1;
-
-    const normalizeLocal = (s) => (s||"").toString()
-      .toLowerCase().normalize("NFKD").replace(/\p{Diacritic}/gu,"").replace(/\s+/g," ").trim();
+    const normalizeLocal = (s) => (s||"").toString().toLowerCase().normalize("NFKD").replace(/\p{Diacritic}/gu,"").replace(/\s+/g," ").trim();
 
     function updateCmpSuggest(){
       const q = cmpQuery.trim();
-      if (q.length < 2){
-        cmpResults = [];
-        cmpActive = -1;
-        paintCmpSuggest();
-        return;
-      }
+      if (q.length < 2){ cmpResults = []; cmpActive = -1; paintCmpSuggest(); return; }
+
       const nq = normalizeLocal(q);
       const pool = (AppState?.athletes || []).filter(x => x?.id !== a?.id); // sich selbst ausblenden
       const list = pool.map(ax => ({ ax, nName: normalizeLocal(ax.name) }))
@@ -1189,26 +1184,17 @@ function hasStartVal(v){
       cmpResults.forEach((ax, idx) => {
         const item = hEl("div", {
           class:"lsc-suggest-item" + (idx===cmpActive ? " active" : ""),
-          role:"option",
-          "aria-selected": idx===cmpActive ? "true" : "false"
+          role:"option", "aria-selected": idx===cmpActive ? "true" : "false"
         });
-
         item.appendChild(renderCapAvatar(ax, "sm", "lsc-suggest-avatar"));
-
         const name = hEl("div", { class:"lsc-suggest-name" }, ax.name, " ",
-          hEl("span", { class:"lsc-year" }, `(${ax.jahrgang})`)
-        );
+          hEl("span", { class:"lsc-year" }, `(${ax.jahrgang})`));
         const og = currentOrtsgruppeFromMeets(ax) || ax.ortsgruppe || "";
         const sub = hEl("div", { class:"lsc-suggest-sub" }, "DLRG ", og);
-
         item.appendChild(hEl("div", { class:"lsc-suggest-text" }, name, sub));
 
-        // Events
         item.addEventListener("pointerdown", (ev)=>{ ev.preventDefault(); chooseCmp(ax); });
-        item.addEventListener("mouseenter", ()=>{ 
-          suggest.querySelector(".active")?.classList.remove("active");
-          item.classList.add("active"); cmpActive = idx;
-        });
+        item.addEventListener("mouseenter", ()=>{ suggest.querySelector(".active")?.classList.remove("active"); item.classList.add("active"); cmpActive = idx; });
 
         suggest.appendChild(item);
       });
@@ -1218,20 +1204,24 @@ function hasStartVal(v){
     function hideCmpSuggest(){ suggest.classList.add("hidden"); }
 
     function chooseCmp(ax){
+      // REPLACE-MODUS: bestehende Auswahl (Legende & Daten) ersetzen
       cmpAth = ax;
       const merged = mergeDuplicateMeets(cmpAth.meets);
       cmpPts = buildLSCSeries({ ...cmpAth, meets: merged });
-      legend.querySelector(".lsc-key.green")?.remove();
+
+      // alte Vergleichslegende entfernen (falls vorhanden)
+      legend.querySelector(".lsc-key--cmp")?.remove();
       legend.appendChild(
-        hEl("span", { class:"lsc-key" },
+        hEl("span", { class:"lsc-key lsc-key--cmp" },
           hEl("span", { class:"lsc-key-dot green" }),
           hEl("span", { class:"lsc-key-label" }, cmpAth.name)
         )
       );
+
       clearBtn.classList.remove("hidden");
       hideCmpSuggest();
       cmpInput.value = cmpQuery = "";
-      paint(); // neu zeichnen mit grüner Kurve
+      paint(); // neu zeichnen inkl. grün
     }
 
     cmpInput.addEventListener("input", e => { cmpQuery = e.target.value || ""; updateCmpSuggest(); });
@@ -1247,9 +1237,7 @@ function hasStartVal(v){
     clearBtn.addEventListener("click", () => {
       cmpAth = null; cmpPts = null;
       clearBtn.classList.add("hidden");
-      // zweite Legendenzeile entfernen
-      const n = legend.querySelectorAll(".lsc-key").length;
-      if (n > 1) legend.removeChild(legend.lastElementChild);
+      legend.querySelector(".lsc-key--cmp")?.remove();
       paint();
     });
 
@@ -1264,10 +1252,9 @@ function hasStartVal(v){
     };
     updateXDomain();
 
-    let activeIdx = null, activeSeries = "base"; // für Tooltip-Repaint
+    let activeIdx = null, activeSeries = "blue";
 
     function paint(){
-      // Domain updaten (falls Vergleich dazu/weg)
       updateXDomain();
 
       const rect = vp.getBoundingClientRect();
@@ -1279,13 +1266,13 @@ function hasStartVal(v){
       svg.setAttribute("height", H);
       while (svg.firstChild) svg.removeChild(svg.firstChild);
 
-      const m  = { l: 8, r: 8, t: 10, b: 48 }; // b größer für Label "Alter"
+      const m  = { l: 8, r: 8, t: 10, b: 48 };
       const cw = W - m.l - m.r;
       const ch = H - m.t - m.b;
       const fx = (v) => m.l + ((v - xMin) / (xMax - xMin)) * cw;
       const fy = (v) => m.t + ch - ((v - yMin) / (yMax - yMin)) * ch;
 
-      // Grid: fette 0 + 200/400/600/800
+      // Grid (0/200/400/600/800) + X-Ticks + X-Label
       const grid  = s("g", { class:"lsc-grid" });
       const y0 = fy(0);
       grid.appendChild(s("line", { x1:m.l, y1:y0, x2:W-m.r, y2:y0, class:"hline0" }));
@@ -1293,8 +1280,6 @@ function hasStartVal(v){
         const yy = fy(val);
         grid.appendChild(s("line", { x1:m.l, y1:yy, x2:W-m.r, y2:yy, class:"hline" }));
       }
-
-      // X-Ticks kurz an der 0-Achse
       const xAxis = s("g", { class:"lsc-xaxis" });
       const tickLen = 8;
       for (let v = Math.floor(xMin); v <= Math.ceil(xMax); v++){
@@ -1302,26 +1287,27 @@ function hasStartVal(v){
         grid.appendChild(s("line", { x1:xx, y1:y0, x2:xx, y2:y0 + tickLen, class:"xtick" }));
         xAxis.appendChild(s("text", { x: xx, y: y0 + tickLen + 6, "text-anchor":"middle" }, String(v)));
       }
-
-      // X-Achsen-Label "Alter"
-      xAxis.appendChild(s("text", {
-        x: m.l + cw/2, y: y0 + tickLen + 26, "text-anchor":"middle"
-      }, "Alter"));
+      xAxis.appendChild(s("text", { x: m.l + cw/2, y: y0 + tickLen + 26, "text-anchor":"middle" }, "Alter"));
 
       svg.appendChild(grid);
       svg.appendChild(xAxis);
 
-      // Gradient für Basis-Fläche
-      const gradId = `lsc-grad-${Math.random().toString(36).slice(2)}`;
+      // Gradients (blau + grün)
       const defs = s("defs");
-      const lg = s("linearGradient", { id: gradId, x1:"0", y1:"0", x2:"0", y2:"1" });
-      lg.appendChild(s("stop", { offset:"0%",   "stop-color":"#1d4ed8", "stop-opacity":"0.22" }));
-      lg.appendChild(s("stop", { offset:"100%", "stop-color":"#1d4ed8", "stop-opacity":"0" }));
-      defs.appendChild(lg);
+      const gradBlueId  = `lsc-grad-b-${Math.random().toString(36).slice(2)}`;
+      const gradGreenId = `lsc-grad-g-${Math.random().toString(36).slice(2)}`;
+      const mkGrad = (id, color) => {
+        const g = s("linearGradient", { id, x1:"0", y1:"0", x2:"0", y2:"1" });
+        g.appendChild(s("stop", { offset:"0%",   "stop-color":color, "stop-opacity":"0.22" }));
+        g.appendChild(s("stop", { offset:"100%", "stop-color":color, "stop-opacity":"0" }));
+        return g;
+      };
+      defs.appendChild(mkGrad(gradBlueId,  "#1d4ed8"));
+      defs.appendChild(mkGrad(gradGreenId, "#10b981"));
       svg.appendChild(defs);
 
-      // --- Kurven & Flächen ---
-      const drawSeries = (pts, colorClass, withArea=false) => {
+      // Serie zeichnen
+      const drawSeries = (pts, colorClass, withArea=false, fillId=null) => {
         const pathD = pts.map((p,i)=>{
           const Y = Math.max(0, Math.min(1000, p.lsc));
           return `${i ? "L" : "M"}${fx(p.age)} ${fy(Y)}`;
@@ -1329,18 +1315,16 @@ function hasStartVal(v){
 
         if (withArea){
           const areaD = pathD + ` L${fx(pts[pts.length-1].age)} ${y0} L${fx(pts[0].age)} ${y0} Z`;
-          svg.appendChild(s("path", { d: areaD, class:`lsc-area ${colorClass}`, fill:`url(#${gradId})` }));
+          svg.appendChild(s("path", { d: areaD, class:`lsc-area ${colorClass}`, fill:`url(#${fillId})` }));
         }
         svg.appendChild(s("path", { d: pathD, class:`lsc-line ${colorClass}` }));
 
-        // Punkte
         const dots = s("g", { class:`lsc-dots ${colorClass}` });
         pts.forEach((p, idx) => {
           const Y = Math.max(0, Math.min(1000, p.lsc));
           const c = s("circle", {
             cx: fx(p.age), cy: fy(Y), r:4.5, class:"lsc-dot", tabindex:0,
-            "data-idx": idx,
-            "data-series": colorClass,
+            "data-idx": idx, "data-series": colorClass,
             "data-name": (colorClass==="blue" ? (a?.name||"") : (cmpAth?.name||"")),
             "data-lsc": p.lsc.toLocaleString("de-DE", { minimumFractionDigits:2, maximumFractionDigits:2 }),
             "data-date": (new Date(p.date)).toLocaleDateString("de-DE"),
@@ -1374,10 +1358,10 @@ function hasStartVal(v){
         svg.appendChild(dots);
       };
 
-      drawSeries(basePts, "blue", true);
-      if (cmpPts && cmpPts.length) drawSeries(cmpPts, "green", false);
+      drawSeries(basePts, "blue",  true,  gradBlueId);
+      if (cmpPts && cmpPts.length) drawSeries(cmpPts, "green", true,  gradGreenId);
 
-      // Tooltip-Position (iOS-robust)
+      // Tooltip positionieren (iOS-robust)
       function positionTipNearCircle(circle){
         const pt = svg.createSVGPoint();
         pt.x = +circle.getAttribute("cx");
@@ -1390,8 +1374,7 @@ function hasStartVal(v){
         tip.style.opacity = "1";
         tip.style.transform = "translate(0,0)";
         tip.setAttribute("aria-hidden","false");
-        tip.style.left = "0px";
-        tip.style.top  = "0px";
+        tip.style.left = "0px"; tip.style.top  = "0px";
         const tr = tip.getBoundingClientRect();
 
         const offX = 6, offY = 10;
@@ -1405,7 +1388,7 @@ function hasStartVal(v){
         tip.style.top  = `${T}px`;
       }
 
-      // Tooltip nach Resize an aktivem Punkt neu positionieren
+      // Tooltip bei Resize am aktiven Punkt neu ausrichten
       if (activeIdx != null){
         const sel = `.lsc-dots.${activeSeries} .lsc-dot[data-idx="${activeIdx}"]`;
         const active = svg.querySelector(sel);
