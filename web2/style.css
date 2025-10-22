@@ -1651,7 +1651,9 @@ body{
   border:1px solid rgba(17,24,39,0.12);
   border-radius:16px;
   padding:20px 22px 18px;
-  position: relative; /* für Tooltip-Transform */
+  position: relative; /* Bezug für Tooltip */
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .lsc-head h4{
@@ -1661,40 +1663,29 @@ body{
   font-size:1.35rem;
 }
 
-/* ---------- Variablen ---------- */
-:root{
-  --lsc-height-desktop: 360px; /* Diagrammhöhe Desktop */
-  --lsc-height-mobile:  420px; /* Diagrammhöhe Mobile */
-  --lsc-font:          13px;   /* Achsentext Desktop */
-  --lsc-font-m:        16px;   /* Achsentext Mobile */
-  --lsc-line-w:         3px;   /* Linienbreite */
-  --lsc-dot-scale-hot:  1.6;   /* Hover/Lock-Vergrößerung */
-}
-
-/* ---------- Plot-Wrapper: steuert die echte Höhe ---------- */
-/* Unterstützt beide Klassennamen, nimm einen davon ins Markup */
-.lsc-plot,
+/* ---------- Plot-Wrapper: steuert Höhe (füllt Kasten) ---------- */
 .lsc-viewport{
   position: relative;
   height: clamp(340px, 44vw, 520px);
 }
 @media (max-width: 720px){
-  .lsc-plot,
   .lsc-viewport{ height: clamp(380px, 64vw, 560px); }
 }
 
-/* ---------- SVG-Grundgröße ---------- */
+/* ---------- SVG ---------- */
 .lsc-svg{
   display:block;
   width:100%;
   height:100%;
+  touch-action: manipulation;                 /* iOS zoom/tap Verhalten */
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ---------- Raster + Achsen ---------- */
 .lsc-grid line{
   stroke: rgba(17,24,39,0.12);
   stroke-width: 1;
-  stroke-dasharray: 2 6; /* alle 100 */
+  stroke-dasharray: 2 6;                      /* 100er Raster */
   shape-rendering: crispEdges;
 }
 .lsc-axis text{
@@ -1713,6 +1704,7 @@ body{
   stroke-width:3;
   vector-effect: non-scaling-stroke;
 }
+
 .lsc-dot{
   fill:#1d4ed8;
   stroke:#fff;
@@ -1720,36 +1712,39 @@ body{
   r: 4.5px;
   transition: r .18s ease;
   vector-effect: non-scaling-stroke;
+  outline: none;                               /* Focus-Ring weg */
+  -webkit-tap-highlight-color: transparent;    /* iOS Tap-Highlight weg */
 }
-.lsc-dot.hot{ transform: scale(var(--lsc-dot-scale-hot)); }
-
 .lsc-dot:hover,
 .lsc-dot[data-active="1"]{
   r: 7.5px;
 }
+.lsc-dot:focus{ outline: none; }               /* Safari/Chrome */
+.lsc-dot::-moz-focus-inner{ border:0; }        /* Firefox (falls relevant) */
 
 /* ---------- Tooltip ---------- */
 .lsc-tooltip{
   position:absolute;
   left:0; top:0;
-  transform: translate(-9999px,-9999px);
+  transform: translate(-9999px,-9999px);       /* offscreen default */
   background:#0f172a;
   color:#fff;
   border-radius:12px;
   padding:10px 12px 8px;
+  box-shadow: 0 12px 30px rgba(2,6,23,.25);
   opacity:0;
   pointer-events:none;
   transition: opacity .12s ease;
-  will-change: transform, opacity;
+  will-change: left, top, opacity;
+  z-index: 5;
 }
-.lsc-tip.hidden{ opacity: 0; }
-.lsc-tip::after{
-  content: "";
-  position: absolute;
-  left: 50%; bottom: -6px;
-  transform: translateX(-50%);
+.lsc-tooltip::after{
+  content:"";
+  position:absolute;
+  left: 14px;
+  bottom: -6px;
   border: 6px solid transparent;
-  border-top-color: #0b1020;  /* kleiner Pfeil */
+  border-top-color:#0f172a;                    /* kleiner Pfeil nach unten */
 }
 .lsc-tooltip .tt-l1{
   font-weight:800;
@@ -1761,8 +1756,8 @@ body{
   margin-top: 2px;
 }
 
-/* ---------- Barrierefreiheit: weniger Bewegung, wenn gewünscht ---------- */
+/* ---------- Reduce motion ---------- */
 @media (prefers-reduced-motion: reduce){
   .lsc-dot{ transition: none; }
-  .lsc-tip{ transition: none; }
+  .lsc-tooltip{ transition: none; }
 }

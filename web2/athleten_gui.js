@@ -1078,13 +1078,10 @@ function hasStartVal(v){
 
   // ---- LSC-Chart Renderer ----
   function renderLSCChart(a){
-    // --- kleine SVG-Helfer ---
+    // --- kleine Helfer ---
     const s = (tag, attrs = {}, ...children) => {
       const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
-      for (const [k,v] of Object.entries(attrs)){
-        if (v == null) continue;
-        el.setAttribute(k, String(v));
-      }
+      for (const [k,v] of Object.entries(attrs)) if (v != null) el.setAttribute(k, String(v));
       children.flat().forEach(c => c != null && el.appendChild(typeof c === "string" ? document.createTextNode(c) : c));
       return el;
     };
@@ -1099,39 +1096,39 @@ function hasStartVal(v){
       return el;
     };
 
-    // --- Daten vorbereiten ---
-    const pts = buildLSCSeries(a); // erwartet [{age,lsc,date,meet_name}]
+    // --- Daten ---
+    const pts = buildLSCSeries(a); // [{age,lsc,date,meet_name}]
     const card = hEl("div", { class: "ath-lsc-card" },
       hEl("div", { class: "lsc-head" }, hEl("h4", {}, "LSC Verlauf"))
     );
-
     if (!pts.length){
       card.appendChild(hEl("div", { class: "best-empty" }, "Keine LSC-Daten vorhanden."));
       return card;
     }
 
     // Canvas
-    const vp = hEl("div", { class: "lsc-viewport" });
+    const vp  = hEl("div", { class: "lsc-viewport" });
     const svg = s("svg", { class: "lsc-svg", role: "img", "aria-label": "LSC Verlauf" });
     vp.appendChild(svg);
     card.appendChild(vp);
 
-    // Tooltip (HTML, damit wir schön stylen können)
+    // Tooltip (HTML)
     const tip = hEl("div", { class: "lsc-tooltip", "aria-hidden":"true" },
-      hEl("div", { class: "tt-l1" }),  // LSC
-      hEl("div", { class: "tt-l2" })   // Datum — Meet
+      hEl("div", { class: "tt-l1" }),
+      hEl("div", { class: "tt-l2" })
     );
     card.appendChild(tip);
 
-    // Domain (fix)
+    // Achsen-Domains
     const yMin = 0, yMax = 1000;
-
-    // X-Domain aus Daten
     let xMin = Math.floor(Math.min(...pts.map(p => p.age)));
     let xMax = Math.ceil(Math.max(...pts.map(p => p.age)));
     if (xMax === xMin) xMax = xMin + 1;
 
-    // Painter (reagiert auf Größe)
+    // aktiver Punkt (für Repaint/Resize)
+    let activeIdx = null;
+
+    // Painter
     function paint(){
       const rect = vp.getBoundingClientRect();
       const W = Math.max(320, Math.floor(rect.width));
@@ -1142,99 +1139,150 @@ function hasStartVal(v){
       svg.setAttribute("height", H);
       while (svg.firstChild) svg.removeChild(svg.firstChild);
 
-      // Ränder
-      const m = { l: 56, r: 16, t: 12, b: 36 };
+      // engere Margins → mehr Platz fürs Diagramm
+      const m  = { l: 52, r: 12, t: 10, b: 32 };
       const cw = W - m.l - m.r;
       const ch = H - m.t - m.b;
 
-      const x = (v) => m.l + ((v - xMin) / (xMax - xMin)) * cw;
-      const y = (v) => m.t + ch - ((v - yMin) / (yMax - yMin)) * ch;
+      const fx = (v) => m.l + ((v - xMin) / (xMax - xMin)) * cw;
+      const fy = (v) => m.t + ch - ((v - yMin) / (yMax - yMin)) * ch;
 
       // Grid & Achsen
       const grid = s("g", { class: "lsc-grid" });
       const axis = s("g", { class: "lsc-axis" });
 
-      // Y: Linien alle 100, Labels nur 200/400/600/800
+      // Y: Linien alle 100; Labels nur 200/400/600/800
       for (let val = 0; val <= 1000; val += 100){
-        const yy = y(val);
+        const yy = fy(val);
         grid.appendChild(s("line", { x1:m.l, y1:yy, x2:W-m.r, y2:yy }));
         if (val >= 200 && val <= 800 && val % 200 === 0){
           axis.appendChild(s("text", { x: m.l - 8, y: yy, "text-anchor":"end" }, String(val)));
         }
       }
-
       // X: Ganzzahlige Alter
       for (let v = Math.floor(xMin); v <= Math.ceil(xMax); v++){
-        const xx = x(v);
+        const xx = fx(v);
         grid.appendChild(s("line", { x1:xx, y1:m.t, x2:xx, y2:m.t+ch, "stroke-dasharray":"2 6" }));
         axis.appendChild(s("text", { x: xx, y: m.t + ch + 18, "text-anchor":"middle" }, String(v)));
       }
-
       svg.appendChild(grid);
       svg.appendChild(axis);
 
       // Linie
       const pathD = pts.map((p,i) => {
         const Y = Math.max(0, Math.min(1000, p.lsc));
-        return `${i ? "L" : "M"}${x(p.age)} ${y(Y)}`;
+        return `${i ? "L" : "M"}${fx(p.age)} ${fy(Y)}`;
       }).join(" ");
       svg.appendChild(s("path", { d: pathD, class: "lsc-line" }));
 
-      // Punkte
+      // Punkte + Interaktion
       const dots = s("g", { class:"lsc-dots" });
-      pts.forEach(p => {
+
+      const positionTipNearCircle = (circle) => {
+        // Punkt (SVG) → Bildschirm → Kartenkoordinaten (robust auf iOS/Safari)
+        const pt = svg.createSVGPoint();
+        pt.x = +circle.getAttribute("cx");
+        pt.y = +circle.getAttribute("cy");
+        const scr = pt.matrixTransform(svg.getScreenCTM());
+        const cardRect = card.getBoundingClientRect();
+        const x = scr.x - cardRect.left;
+        const y = scr.y - cardRect.top;
+
+        // Tooltip sichtbar machen, messen und platzieren
+        tip.style.transform = "translate(0,0)";
+        tip.style.opacity   = "1";
+        tip.setAttribute("aria-hidden","false");
+        tip.style.left = "0px";
+        tip.style.top  = "0px";
+        const tr = tip.getBoundingClientRect();
+
+        const offX = 6, offY = 10; // dichter am Punkt
+        let L = Math.round(x + offX - tr.width*0.12);
+        let T = Math.round(y - offY - tr.height - 6);
+        const maxL = card.clientWidth  - tr.width  - 8;
+        const maxT = card.clientHeight - tr.height - 8;
+        L = Math.max(8, Math.min(L, maxL));
+        T = Math.max(8, Math.min(T, maxT));
+
+        tip.style.left = `${L}px`;
+        tip.style.top  = `${T}px`;
+      };
+
+      pts.forEach((p, idx) => {
         const Y = Math.max(0, Math.min(1000, p.lsc));
         const c = s("circle", {
-          cx: x(p.age),
-          cy: y(Y),
+          cx: fx(p.age),
+          cy: fy(Y),
           r: 4.5,
           class: "lsc-dot",
           tabindex: 0,
+          "data-idx": idx,
           "data-lsc": p.lsc.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
           "data-date": (new Date(p.date)).toLocaleDateString("de-DE"),
           "data-meet": p.meet_name || "—"
         });
 
-        const show = (ev) => {
-          c.setAttribute("data-active", "1");
+        const show = () => {
+          activeIdx = idx;
+          c.setAttribute("data-active","1");
           tip.querySelector(".tt-l1").textContent = `${c.dataset.lsc} LSC`;
           tip.querySelector(".tt-l2").textContent = `${c.dataset.date} — ${c.dataset.meet || "—"}`;
-          tip.style.opacity = "1";
-          tip.setAttribute("aria-hidden","false");
-
-          // Position (leicht oberhalb rechts)
-          const px = +c.getAttribute("cx");
-          const py = +c.getAttribute("cy");
-          const offX = 14, offY = 18;
-          const cardRect = card.getBoundingClientRect();
-          tip.style.left = Math.round(px + offX) + "px";
-          tip.style.top  = Math.round(py - offY) + "px";
-          // transform in Karten-Koordinaten
-          tip.style.transform = `translate(${m.l}px, ${m.t}px)`;
+          positionTipNearCircle(c);
         };
         const hide = () => {
+          if (activeIdx === idx) activeIdx = null;
           c.removeAttribute("data-active");
-          tip.style.opacity = "0";
+          tip.style.opacity   = "0";
+          tip.style.transform = "translate(-9999px,-9999px)";
           tip.setAttribute("aria-hidden","true");
         };
 
+        // Maus
         c.addEventListener("pointerenter", show);
-        c.addEventListener("focus", show);
         c.addEventListener("pointerleave", hide);
+        // Tastatur
+        c.addEventListener("focus", show);
         c.addEventListener("blur", hide);
+        // Tap/Klick – bleibt offen bis man daneben tippt
+        c.addEventListener("pointerdown", (e)=>{ e.stopPropagation(); show(); });
 
         dots.appendChild(c);
       });
       svg.appendChild(dots);
+
+      // Bei aktivem Punkt nach einem Repaint neu positionieren
+      if (activeIdx != null){
+        const active = svg.querySelector(`.lsc-dot[data-idx="${activeIdx}"]`);
+        if (active){
+          tip.querySelector(".tt-l1").textContent = `${active.dataset.lsc} LSC`;
+          tip.querySelector(".tt-l2").textContent = `${active.dataset.date} — ${active.dataset.meet || "—"}`;
+          positionTipNearCircle(active);
+        }
+      }
+
+      // Klick/Tap außerhalb schließt Tooltip
+      if (!card._lscOutsideHandlerAttached){
+        card.addEventListener("pointerdown", (e) => {
+          if (!svg.contains(e.target)){
+            activeIdx = null;
+            tip.style.opacity   = "0";
+            tip.style.transform = "translate(-9999px,-9999px)";
+            tip.setAttribute("aria-hidden","true");
+            svg.querySelectorAll('.lsc-dot[data-active="1"]').forEach(n => n.removeAttribute("data-active"));
+          }
+        }, { passive:true });
+        card._lscOutsideHandlerAttached = true;
+      }
     }
 
-    // Erstmal zeichnen & bei Resize neu zeichnen
-    const ro = new ResizeObserver(() => paint());
+    // Render & Resize
+    const ro = new ResizeObserver(paint);
     ro.observe(vp);
     requestAnimationFrame(paint);
 
     return card;
   }
+
 
   /* Nimmt zusammengefasste Meets und liefert Punkte
     [{age:Number, lsc:Number, date:"YYYY-MM-DD", meet_name:String}]  */
