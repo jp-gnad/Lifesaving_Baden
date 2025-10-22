@@ -1646,19 +1646,19 @@ body{
 }
 /* ---------- Karte + Titel ---------- */
 .ath-lsc-card{
-  position: relative;
   margin-top: 18px;
   background:#fff;
   border:1px solid rgba(17,24,39,0.12);
   border-radius:16px;
   padding:20px 22px 18px;
+  position: relative; /* für Tooltip-Transform */
 }
 
 .lsc-head h4{
   margin:0 0 12px 0;
   font-weight:800;
   color:#0f172a;
-  font-size: clamp(1.15rem, 1.2vw + .8rem, 1.5rem);
+  font-size:1.35rem;
 }
 
 /* ---------- Variablen ---------- */
@@ -1676,11 +1676,11 @@ body{
 .lsc-plot,
 .lsc-viewport{
   position: relative;
-  height: var(--lsc-height-desktop); /* bleibt konstant, Breite kann schrumpfen */
+  height: clamp(340px, 44vw, 520px);
 }
 @media (max-width: 720px){
   .lsc-plot,
-  .lsc-viewport{ height: var(--lsc-height-mobile); }
+  .lsc-viewport{ height: clamp(380px, 64vw, 560px); }
 }
 
 /* ---------- SVG-Grundgröße ---------- */
@@ -1694,56 +1694,53 @@ body{
 .lsc-grid line{
   stroke: rgba(17,24,39,0.12);
   stroke-width: 1;
+  stroke-dasharray: 2 6; /* alle 100 */
   shape-rendering: crispEdges;
 }
 .lsc-axis text{
   fill:#475569;
-  font-size: var(--lsc-font);
-  dominant-baseline: middle;
-  font-variant-numeric: tabular-nums;
-  user-select: none;
+  font-size:13px;
+  dominant-baseline:middle;
 }
 @media (max-width:720px){
-  .lsc-axis text{ font-size: var(--lsc-font-m); }
+  .lsc-axis text{ font-size: 15px; }
 }
 
 /* ---------- Linie & Punkte ---------- */
 .lsc-line{
-  fill: none;
-  stroke: #1d4ed8;
-  stroke-width: var(--lsc-line-w);
-  vector-effect: non-scaling-stroke; /* Strichbreite bleibt konstant bei Resize */
+  fill:none;
+  stroke:#1d4ed8;
+  stroke-width:3;
+  vector-effect: non-scaling-stroke;
 }
 .lsc-dot{
-  fill: #1d4ed8;
-  stroke: #fff;
-  stroke-width: 1.25;
-  transform-box: fill-box;
-  transform-origin: center;
-  transition: transform .16s ease;
-  /* (Radius kommt aus JS; optional kann man es zusätzlich hier setzen:)
-     r: 4.5px; */
+  fill:#1d4ed8;
+  stroke:#fff;
+  stroke-width:1.25;
+  r: 4.5px;
+  transition: r .18s ease;
+  vector-effect: non-scaling-stroke;
 }
 .lsc-dot.hot{ transform: scale(var(--lsc-dot-scale-hot)); }
 
-/* größere unsichtbare Trefferfläche für komfortables Hover/Click */
-.lsc-hit{ fill: transparent; cursor: pointer; }
+.lsc-dot:hover,
+.lsc-dot[data-active="1"]{
+  r: 7.5px;
+}
 
 /* ---------- Tooltip ---------- */
-.lsc-tip{
-  position: absolute;
-  z-index: 3;
-  transform: translate(-50%, -110%); /* oberhalb & mittig des Punkts */
-  background: #0b1020;
-  color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 6px 18px rgba(2,6,23,.18);
-  padding: 8px 10px;
-  pointer-events: none; /* damit Klicks auf Punkte gehen */
-  opacity: 1;
+.lsc-tooltip{
+  position:absolute;
+  left:0; top:0;
+  transform: translate(-9999px,-9999px);
+  background:#0f172a;
+  color:#fff;
+  border-radius:12px;
+  padding:10px 12px 8px;
+  opacity:0;
+  pointer-events:none;
   transition: opacity .12s ease;
-  font-size: 13px;
-  white-space: nowrap;
+  will-change: transform, opacity;
 }
 .lsc-tip.hidden{ opacity: 0; }
 .lsc-tip::after{
@@ -1754,12 +1751,13 @@ body{
   border: 6px solid transparent;
   border-top-color: #0b1020;  /* kleiner Pfeil */
 }
-.lsc-tip-val{
-  font-weight: 800;
-  letter-spacing: .01em;
+.lsc-tooltip .tt-l1{
+  font-weight:800;
+  font-size: 15px;
 }
-.lsc-tip-sub{
-  opacity: .9;
+.lsc-tooltip .tt-l2{
+  opacity:.9;
+  font-size: 13px;
   margin-top: 2px;
 }
 

@@ -1078,173 +1078,202 @@ function hasStartVal(v){
 
   // ---- LSC-Chart Renderer ----
   function renderLSCChart(a){
-    // kleine SVG-Helfer lokal
-    const SVGNS = "http://www.w3.org/2000/svg";
+    // --- kleine SVG-Helfer ---
     const s = (tag, attrs = {}, ...children) => {
-      const el = document.createElementNS(SVGNS, tag);
-      for (const [k, v] of Object.entries(attrs || {})) {
+      const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      for (const [k,v] of Object.entries(attrs)){
         if (v == null) continue;
-        if (k === "class") el.setAttribute("class", v);
-        else if (k === "text") el.textContent = v;
-        else el.setAttribute(k, String(v));
+        el.setAttribute(k, String(v));
       }
-      children.flat().forEach(c => {
-        if (c == null) return;
-        el.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
-      });
+      children.flat().forEach(c => c != null && el.appendChild(typeof c === "string" ? document.createTextNode(c) : c));
+      return el;
+    };
+    const hEl = (tag, attrs = {}, ...children) => {
+      const el = document.createElement(tag);
+      for (const [k,v] of Object.entries(attrs)){
+        if (k === "class") el.className = v;
+        else if (k.startsWith("on") && typeof v === "function") el.addEventListener(k.slice(2), v);
+        else if (v !== false && v != null) el.setAttribute(k, v === true ? "" : v);
+      }
+      children.flat().forEach(c => el.appendChild(typeof c === "string" ? document.createTextNode(c) : c));
       return el;
     };
 
-    const pts = buildLSCSeries(a); // [{age, lsc(Number), date(ISO), name}]
-    const card = h("div", { class: "ath-lsc-card" },
-      h("div", { class: "lsc-head" }, h("h4", {}, "LSC Verlauf"))
+    // --- Daten vorbereiten ---
+    const pts = buildLSCSeries(a); // erwartet [{age,lsc,date,meet_name}]
+    const card = hEl("div", { class: "ath-lsc-card" },
+      hEl("div", { class: "lsc-head" }, hEl("h4", {}, "LSC Verlauf"))
     );
 
     if (!pts.length){
-      card.appendChild(h("div", { class: "best-empty" }, "Keine LSC-Daten vorhanden."));
+      card.appendChild(hEl("div", { class: "best-empty" }, "Keine LSC-Daten vorhanden."));
       return card;
     }
 
-    // --- Skalen/Domainen ---
+    // Canvas
+    const vp = hEl("div", { class: "lsc-viewport" });
+    const svg = s("svg", { class: "lsc-svg", role: "img", "aria-label": "LSC Verlauf" });
+    vp.appendChild(svg);
+    card.appendChild(vp);
+
+    // Tooltip (HTML, damit wir schön stylen können)
+    const tip = hEl("div", { class: "lsc-tooltip", "aria-hidden":"true" },
+      hEl("div", { class: "tt-l1" }),  // LSC
+      hEl("div", { class: "tt-l2" })   // Datum — Meet
+    );
+    card.appendChild(tip);
+
+    // Domain (fix)
     const yMin = 0, yMax = 1000;
+
+    // X-Domain aus Daten
     let xMin = Math.floor(Math.min(...pts.map(p => p.age)));
     let xMax = Math.ceil(Math.max(...pts.map(p => p.age)));
     if (xMax === xMin) xMax = xMin + 1;
 
-    // Zeichenfläche (viewBox fix; echte Größe kommt aus CSS)
-    const W = 900, H = 420;
-    const M = { l: 56, r: 16, t: 16, b: 40 };
-    const innerW = W - M.l - M.r, innerH = H - M.t - M.b;
+    // Painter (reagiert auf Größe)
+    function paint(){
+      const rect = vp.getBoundingClientRect();
+      const W = Math.max(320, Math.floor(rect.width));
+      const H = Math.max(260, vp.clientHeight); // Höhe kommt aus CSS
 
-    const x = v => M.l + ((v - xMin) / (xMax - xMin)) * innerW;
-    const y = v => M.t + innerH - ((Math.max(yMin, Math.min(yMax, v)) - yMin) / (yMax - yMin)) * innerH;
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      svg.setAttribute("width", W);
+      svg.setAttribute("height", H);
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
 
-    // Wrapper für Tooltip-Positionierung
-    const plotWrap = h("div", { class: "lsc-plot" });
+      // Ränder
+      const m = { l: 56, r: 16, t: 12, b: 36 };
+      const cw = W - m.l - m.r;
+      const ch = H - m.t - m.b;
 
-    const svg = s("svg", {
-      class: "lsc-svg",
-      viewBox: `0 0 ${W} ${H}`,
-      width: "100%",
-      height: "100%",
-      "aria-label": "LSC-Verlauf",
-      role: "img"
-    });
+      const x = (v) => m.l + ((v - xMin) / (xMax - xMin)) * cw;
+      const y = (v) => m.t + ch - ((v - yMin) / (yMax - yMin)) * ch;
 
-    // Grid + Achsen
-    const gGrid = s("g", { class: "lsc-grid" });
-    const gAxis = s("g", { class: "lsc-axis" });
+      // Grid & Achsen
+      const grid = s("g", { class: "lsc-grid" });
+      const axis = s("g", { class: "lsc-axis" });
 
-    // Y: Gridlinien 0, 400..900, 1000 – Labels NUR 400..900
-    const labelTicks = [400,500,600,700,800,900];
-    const gridTicks  = [0, ...labelTicks, 1000];
-    gridTicks.forEach(v => {
-      const yy = y(v);
-      gGrid.appendChild(s("line", { x1: M.l, y1: yy, x2: W - M.r, y2: yy }));
-    });
-    labelTicks.forEach(v => {
-      const yy = y(v);
-      gAxis.appendChild(s("text", {
-        x: M.l - 10, y: yy, "text-anchor": "end", class: "lsc-tick-y"
-      }, String(v)));
-    });
-
-    // X: ganze Alter
-    for (let v = Math.floor(xMin); v <= Math.ceil(xMax); v++){
-      const xx = x(v);
-      gGrid.appendChild(s("line", { x1: xx, y1: M.t, x2: xx, y2: M.t + innerH, "stroke-dasharray":"2,4" }));
-      gAxis.appendChild(s("text", { x: xx, y: M.t + innerH + 20, "text-anchor":"middle" }, String(v)));
-    }
-
-    svg.appendChild(gGrid);
-    svg.appendChild(gAxis);
-
-    // Linie
-    const pathD = pts.map((p,i) => `${i ? "L" : "M"}${x(p.age)} ${y(p.lsc)}`).join(" ");
-    svg.appendChild(s("path", { d: pathD, class: "lsc-line" }));
-
-    // Punkte + (größere) Hit-Areas
-    const gDots = s("g", { class: "lsc-dots" });
-    const gHits = s("g", { class: "lsc-hits" });
-
-    // Tooltip (HTML, damit Fonts konsequent sind)
-    const tip = h("div", { class: "lsc-tip hidden" },
-      h("div", { class: "lsc-tip-val" }, ""),   // z.B. "815,23 LSC"
-      h("div", { class: "lsc-tip-sub" }, "")    // Datum — Meet
-    );
-
-    let lockedIndex = -1;
-
-    const formatLSC = v => Number(v).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const shortName = n => (typeof shortMeetName === "function" ? shortMeetName(n) : String(n || "—").replace(/\s+-\s+.*$/, ""));
-
-    function showTip(i){
-      const p = pts[i];
-      const left = x(p.age), top = y(p.lsc);
-
-      tip.querySelector(".lsc-tip-val").textContent = `${formatLSC(p.lsc)} LSC`;
-      tip.querySelector(".lsc-tip-sub").textContent = `${fmtDate(p.date)} — ${shortName(p.name)}`;
-
-      tip.style.left = left + "px";
-      tip.style.top  = top + "px";
-      tip.classList.remove("hidden");
-    }
-    function hideTip(){
-      if (lockedIndex >= 0) return; // gelockt → nicht verstecken
-      tip.classList.add("hidden");
-    }
-    function setHot(i, hot){
-      const dot = gDots.querySelector(`circle[data-i="${i}"]`);
-      if (dot) dot.classList.toggle("hot", hot);
-    }
-
-    pts.forEach((p, i) => {
-      const cx = x(p.age), cy = y(p.lsc);
-
-      // sichtbarer Punkt
-      gDots.appendChild(s("circle", {
-        cx, cy, r: 3.5, class: "lsc-dot", "data-i": String(i)
-      }));
-
-      // unsichtbare, größere Hit-Area für bequemes Treffen
-      const hit = s("circle", { cx, cy, r: 12, class: "lsc-hit", "data-i": String(i) });
-
-      hit.addEventListener("pointerenter", () => { setHot(i, true); showTip(i); });
-      hit.addEventListener("pointerleave", () => { setHot(i, false); hideTip(); });
-      hit.addEventListener("click", (ev) => {
-        ev.stopPropagation();
-        if (lockedIndex === i) {
-          lockedIndex = -1;
-          setHot(i, false);
-          tip.classList.add("hidden");
-        } else {
-          if (lockedIndex >= 0) setHot(lockedIndex, false);
-          lockedIndex = i;
-          setHot(i, true);
-          showTip(i);
+      // Y: Linien alle 100, Labels nur 200/400/600/800
+      for (let val = 0; val <= 1000; val += 100){
+        const yy = y(val);
+        grid.appendChild(s("line", { x1:m.l, y1:yy, x2:W-m.r, y2:yy }));
+        if (val >= 200 && val <= 800 && val % 200 === 0){
+          axis.appendChild(s("text", { x: m.l - 8, y: yy, "text-anchor":"end" }, String(val)));
         }
-      });
-
-      gHits.appendChild(hit);
-    });
-
-    // Klick außerhalb entsperrt
-    plotWrap.addEventListener("click", () => {
-      if (lockedIndex >= 0) {
-        setHot(lockedIndex, false);
-        lockedIndex = -1;
-        tip.classList.add("hidden");
       }
-    });
 
-    svg.appendChild(gDots);
-    svg.appendChild(gHits);
+      // X: Ganzzahlige Alter
+      for (let v = Math.floor(xMin); v <= Math.ceil(xMax); v++){
+        const xx = x(v);
+        grid.appendChild(s("line", { x1:xx, y1:m.t, x2:xx, y2:m.t+ch, "stroke-dasharray":"2 6" }));
+        axis.appendChild(s("text", { x: xx, y: m.t + ch + 18, "text-anchor":"middle" }, String(v)));
+      }
 
-    plotWrap.appendChild(svg);
-    plotWrap.appendChild(tip);
-    card.appendChild(plotWrap);
+      svg.appendChild(grid);
+      svg.appendChild(axis);
+
+      // Linie
+      const pathD = pts.map((p,i) => {
+        const Y = Math.max(0, Math.min(1000, p.lsc));
+        return `${i ? "L" : "M"}${x(p.age)} ${y(Y)}`;
+      }).join(" ");
+      svg.appendChild(s("path", { d: pathD, class: "lsc-line" }));
+
+      // Punkte
+      const dots = s("g", { class:"lsc-dots" });
+      pts.forEach(p => {
+        const Y = Math.max(0, Math.min(1000, p.lsc));
+        const c = s("circle", {
+          cx: x(p.age),
+          cy: y(Y),
+          r: 4.5,
+          class: "lsc-dot",
+          tabindex: 0,
+          "data-lsc": p.lsc.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+          "data-date": (new Date(p.date)).toLocaleDateString("de-DE"),
+          "data-meet": p.meet_name || "—"
+        });
+
+        const show = (ev) => {
+          c.setAttribute("data-active", "1");
+          tip.querySelector(".tt-l1").textContent = `${c.dataset.lsc} LSC`;
+          tip.querySelector(".tt-l2").textContent = `${c.dataset.date} — ${c.dataset.meet || "—"}`;
+          tip.style.opacity = "1";
+          tip.setAttribute("aria-hidden","false");
+
+          // Position (leicht oberhalb rechts)
+          const px = +c.getAttribute("cx");
+          const py = +c.getAttribute("cy");
+          const offX = 14, offY = 18;
+          const cardRect = card.getBoundingClientRect();
+          tip.style.left = Math.round(px + offX) + "px";
+          tip.style.top  = Math.round(py - offY) + "px";
+          // transform in Karten-Koordinaten
+          tip.style.transform = `translate(${m.l}px, ${m.t}px)`;
+        };
+        const hide = () => {
+          c.removeAttribute("data-active");
+          tip.style.opacity = "0";
+          tip.setAttribute("aria-hidden","true");
+        };
+
+        c.addEventListener("pointerenter", show);
+        c.addEventListener("focus", show);
+        c.addEventListener("pointerleave", hide);
+        c.addEventListener("blur", hide);
+
+        dots.appendChild(c);
+      });
+      svg.appendChild(dots);
+    }
+
+    // Erstmal zeichnen & bei Resize neu zeichnen
+    const ro = new ResizeObserver(() => paint());
+    ro.observe(vp);
+    requestAnimationFrame(paint);
+
     return card;
   }
+
+  /* Nimmt zusammengefasste Meets und liefert Punkte
+    [{age:Number, lsc:Number, date:"YYYY-MM-DD", meet_name:String}]  */
+  function buildLSCSeries(a){
+    const jahrgang = Number(a?.jahrgang);
+    if (!Number.isFinite(jahrgang)) return [];
+    const meets = Array.isArray(a?.meets) ? a.meets : [];
+    const birth = new Date(`${jahrgang}-07-01T00:00:00Z`);
+
+    const rows = [];
+    for (const m of meets){
+      const dateISO = String(m?.date || "").slice(0,10);
+      if (!dateISO) continue;
+      const d = new Date(dateISO);
+      if (isNaN(d)) continue;
+
+      // LSC aus höchstem Lauf wählen (falls _runs vorhanden)
+      const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
+      let best = { lauf: -1, lsc: NaN };
+      for (const r of runs){
+        const lauf = Number(r?._lauf || r?.Vorläufe || 1);
+        const lsc  = parseFloat(String(r?.LSC ?? m?.LSC ?? "").replace(",", "."));
+        if (Number.isFinite(lauf) && Number.isFinite(lsc) && lauf >= best.lauf){
+          best = { lauf, lsc };
+        }
+      }
+      if (!Number.isFinite(best.lsc)) continue;
+
+      const years = (d - birth) / (365.2425 * 24 * 3600 * 1000);
+      const age = Math.round(years * 100) / 100;
+      const meetName = String(m.meet_name || m.meet || "").replace(/\s+-\s+.*$/, "").trim();
+
+      rows.push({ age, lsc: best.lsc, date: dateISO, meet_name: meetName });
+    }
+
+    rows.sort((l, r) => new Date(l.date) - new Date(r.date));
+    return rows;
+  }
+
 
 
 
