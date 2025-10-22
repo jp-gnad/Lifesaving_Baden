@@ -1075,10 +1075,9 @@ function hasStartVal(v){
     }
     return el;
   }
-
-  // ---- LSC-Chart Renderer ----
+  // ---- LSC-Chart Renderer (mit inneren vertikalen Linien, solide Raster) ----
   function renderLSCChart(a){
-    // --- kleine Helfer ---
+    // kleine Helfer
     const s = (tag, attrs = {}, ...children) => {
       const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
       for (const [k,v] of Object.entries(attrs)) if (v != null) el.setAttribute(k, String(v));
@@ -1096,7 +1095,7 @@ function hasStartVal(v){
       return el;
     };
 
-    // --- Daten ---
+    // Daten
     const pts = buildLSCSeries(a); // [{age,lsc,date,meet_name}]
     const card = hEl("div", { class: "ath-lsc-card" },
       hEl("div", { class: "lsc-head" }, hEl("h4", {}, "LSC Verlauf"))
@@ -1119,27 +1118,25 @@ function hasStartVal(v){
     );
     card.appendChild(tip);
 
-    // Achsen-Domains
+    // Domains
     const yMin = 0, yMax = 1000;
     let xMin = Math.floor(Math.min(...pts.map(p => p.age)));
     let xMax = Math.ceil(Math.max(...pts.map(p => p.age)));
     if (xMax === xMin) xMax = xMin + 1;
 
-    // aktiver Punkt (für Repaint/Resize)
     let activeIdx = null;
 
-    // Painter
     function paint(){
       const rect = vp.getBoundingClientRect();
       const W = Math.max(320, Math.floor(rect.width));
-      const H = Math.max(260, vp.clientHeight); // Höhe kommt aus CSS
+      const H = Math.max(260, vp.clientHeight);
 
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
       svg.setAttribute("width", W);
       svg.setAttribute("height", H);
       while (svg.firstChild) svg.removeChild(svg.firstChild);
 
-      // engere Margins → mehr Platz fürs Diagramm
+      // Margins etwas enger
       const m  = { l: 52, r: 12, t: 10, b: 32 };
       const cw = W - m.l - m.r;
       const ch = H - m.t - m.b;
@@ -1147,24 +1144,32 @@ function hasStartVal(v){
       const fx = (v) => m.l + ((v - xMin) / (xMax - xMin)) * cw;
       const fy = (v) => m.t + ch - ((v - yMin) / (yMax - yMin)) * ch;
 
-      // Grid & Achsen
       const grid = s("g", { class: "lsc-grid" });
       const axis = s("g", { class: "lsc-axis" });
 
-      // Y: Linien alle 100; Labels nur 200/400/600/800
-      for (let val = 0; val <= 1000; val += 100){
+      // Horizontale Linien: alle 100, aber NICHT 0 und NICHT 1000
+      for (let val = 100; val <= 900; val += 100){
         const yy = fy(val);
-        grid.appendChild(s("line", { x1:m.l, y1:yy, x2:W-m.r, y2:yy }));
-        if (val >= 200 && val <= 800 && val % 200 === 0){
+        grid.appendChild(s("line", { x1:m.l, y1:yy, x2:W-m.r, y2:yy, class:"hline" }));
+        // Y-Labels nur 200,400,600,800
+        if (val % 200 === 0 && val >= 200 && val <= 800){
           axis.appendChild(s("text", { x: m.l - 8, y: yy, "text-anchor":"end" }, String(val)));
         }
       }
-      // X: Ganzzahlige Alter
-      for (let v = Math.floor(xMin); v <= Math.ceil(xMax); v++){
+
+      // Vertikale Linien: nur innere ganzzahlige Ticks (keine Ränder), solide
+      const xStart = Math.floor(xMin);
+      const xEnd   = Math.ceil(xMax);
+      for (let v = xStart; v <= xEnd; v++){
         const xx = fx(v);
-        grid.appendChild(s("line", { x1:xx, y1:m.t, x2:xx, y2:m.t+ch, "stroke-dasharray":"2 6" }));
+        // Achsen-Labels an allen Integer-Ticks
         axis.appendChild(s("text", { x: xx, y: m.t + ch + 18, "text-anchor":"middle" }, String(v)));
+        // Grid-Linien nur zwischen den Rändern
+        if (v > xStart && v < xEnd){
+          grid.appendChild(s("line", { x1:xx, y1:m.t, x2:xx, y2:m.t+ch, class:"vline" }));
+        }
       }
+
       svg.appendChild(grid);
       svg.appendChild(axis);
 
@@ -1175,11 +1180,10 @@ function hasStartVal(v){
       }).join(" ");
       svg.appendChild(s("path", { d: pathD, class: "lsc-line" }));
 
-      // Punkte + Interaktion
+      // Punkte
       const dots = s("g", { class:"lsc-dots" });
 
       const positionTipNearCircle = (circle) => {
-        // Punkt (SVG) → Bildschirm → Kartenkoordinaten (robust auf iOS/Safari)
         const pt = svg.createSVGPoint();
         pt.x = +circle.getAttribute("cx");
         pt.y = +circle.getAttribute("cy");
@@ -1188,7 +1192,6 @@ function hasStartVal(v){
         const x = scr.x - cardRect.left;
         const y = scr.y - cardRect.top;
 
-        // Tooltip sichtbar machen, messen und platzieren
         tip.style.transform = "translate(0,0)";
         tip.style.opacity   = "1";
         tip.setAttribute("aria-hidden","false");
@@ -1196,7 +1199,7 @@ function hasStartVal(v){
         tip.style.top  = "0px";
         const tr = tip.getBoundingClientRect();
 
-        const offX = 6, offY = 10; // dichter am Punkt
+        const offX = 6, offY = 10;
         let L = Math.round(x + offX - tr.width*0.12);
         let T = Math.round(y - offY - tr.height - 6);
         const maxL = card.clientWidth  - tr.width  - 8;
@@ -1237,20 +1240,17 @@ function hasStartVal(v){
           tip.setAttribute("aria-hidden","true");
         };
 
-        // Maus
         c.addEventListener("pointerenter", show);
         c.addEventListener("pointerleave", hide);
-        // Tastatur
         c.addEventListener("focus", show);
         c.addEventListener("blur", hide);
-        // Tap/Klick – bleibt offen bis man daneben tippt
         c.addEventListener("pointerdown", (e)=>{ e.stopPropagation(); show(); });
 
         dots.appendChild(c);
       });
       svg.appendChild(dots);
 
-      // Bei aktivem Punkt nach einem Repaint neu positionieren
+      // Repositioniere Tooltip beim Repaint, wenn aktiv
       if (activeIdx != null){
         const active = svg.querySelector(`.lsc-dot[data-idx="${activeIdx}"]`);
         if (active){
@@ -1260,7 +1260,7 @@ function hasStartVal(v){
         }
       }
 
-      // Klick/Tap außerhalb schließt Tooltip
+      // Outside-click schließt Tooltip
       if (!card._lscOutsideHandlerAttached){
         card.addEventListener("pointerdown", (e) => {
           if (!svg.contains(e.target)){
@@ -1275,13 +1275,50 @@ function hasStartVal(v){
       }
     }
 
-    // Render & Resize
     const ro = new ResizeObserver(paint);
     ro.observe(vp);
     requestAnimationFrame(paint);
 
     return card;
   }
+
+  /* Hilfsfunktion: baut Datenreihe [{age,lsc,date,meet_name}] aus gemergten Meets */
+  function buildLSCSeries(a){
+    const jahrgang = Number(a?.jahrgang);
+    if (!Number.isFinite(jahrgang)) return [];
+    const meets = Array.isArray(a?.meets) ? a.meets : [];
+    const birth = new Date(`${jahrgang}-07-01T00:00:00Z`);
+
+    const rows = [];
+    for (const m of meets){
+      const dateISO = String(m?.date || "").slice(0,10);
+      if (!dateISO) continue;
+      const d = new Date(dateISO);
+      if (isNaN(d)) continue;
+
+      // höchster Lauf je Meet
+      const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
+      let best = { lauf: -1, lsc: NaN };
+      for (const r of runs){
+        const lauf = Number(r?._lauf || r?.Vorläufe || 1);
+        const lsc  = parseFloat(String(r?.LSC ?? m?.LSC ?? "").replace(",", "."));
+        if (Number.isFinite(lauf) && Number.isFinite(lsc) && lauf >= best.lauf){
+          best = { lauf, lsc };
+        }
+      }
+      if (!Number.isFinite(best.lsc)) continue;
+
+      const years = (d - birth) / (365.2425 * 24 * 3600 * 1000);
+      const age = Math.round(years * 100) / 100;
+      const meetName = String(m.meet_name || m.meet || "").replace(/\s+-\s+.*$/, "").trim();
+
+      rows.push({ age, lsc: best.lsc, date: dateISO, meet_name: meetName });
+    }
+
+    rows.sort((l, r) => new Date(l.date) - new Date(r.date));
+    return rows;
+  }
+
 
 
   /* Nimmt zusammengefasste Meets und liefert Punkte
