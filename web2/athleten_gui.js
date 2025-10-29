@@ -32,6 +32,154 @@
     return c;
   }
 
+  // ---------- Disziplin-Verteilung (Donut) ----------
+
+  // Zählt Starts je Disziplin über alle Meets (DQ zählt als Start)
+  function countStartsPerDisciplineAll(a){
+    const meets = Array.isArray(a?.meets) ? a.meets : [];
+    const out = {};
+    for (const d of DISCIPLINES){ out[d.key] = 0; }
+
+    for (const m of meets){
+      const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
+      for (const run of runs){
+        for (const d of DISCIPLINES){
+          const v = run[d.meetZeit];
+          if (v != null && String(v).trim() !== "") out[d.key] += 1;
+        }
+      }
+    }
+    return out;
+  }
+
+  function renderDisciplinePieCard(a){
+    const counts = countStartsPerDisciplineAll(a);
+    const items = DISCIPLINES.map(d => ({
+      key: d.key,
+      label: d.label,
+      count: Number(counts[d.key] || 0)
+    })).filter(x => x.count > 0);
+
+    const total = items.reduce((s,x)=>s + x.count, 0);
+
+    const card  = document.createElement("div");
+    card.className = "ath-pie-card";
+
+    const head = document.createElement("div");
+    head.className = "pie-head";
+    head.innerHTML = "<h4>Disziplin-Verteilung</h4>";
+    card.appendChild(head);
+
+    if (total === 0){
+      const empty = document.createElement("div");
+      empty.className = "best-empty";
+      empty.textContent = "Noch keine Starts erfasst.";
+      card.appendChild(empty);
+      return card;
+    }
+
+    // Sortiert (größter Anteil zuerst) + Prozent auf 0 Nachkommastellen runden
+    items.sort((l,r)=>r.count - l.count);
+    items.forEach(it => { it.pct = Math.round((it.count/total)*100); });
+
+    const wrap = document.createElement("div");
+    wrap.className = "pie-wrap";
+    card.appendChild(wrap);
+
+    // --- SVG Donut ---
+    const W = 360, H = 360, cx = W/2, cy = H/2;
+    const R  = 140, r = 80;
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("class","pie-svg");
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.setAttribute("width", W);
+    svg.setAttribute("height", H);
+
+    function segPath(cx, cy, R, r, start, end){
+      const large = end - start > Math.PI ? 1 : 0;
+      const x0 = cx + R*Math.cos(start), y0 = cy + R*Math.sin(start);
+      const x1 = cx + R*Math.cos(end),   y1 = cy + R*Math.sin(end);
+      const x2 = cx + r*Math.cos(end),   y2 = cy + r*Math.sin(end);
+      const x3 = cx + r*Math.cos(start), y3 = cy + r*Math.sin(start);
+      return `M ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1} L ${x2} ${y2} A ${r} ${r} 0 ${large} 0 ${x3} ${y3} Z`;
+    }
+
+    // DLRG-nahe Palette (Rot/Gelb plus Gold- & Orange-Töne)
+    const CLASS_MAP = {
+      "50_retten":         "pie-c-50r",   // DLRG-Rot
+      "200m_Hindernis":    "pie-c-200h",  // DLRG-Gelb
+      "100_retten_flosse": "pie-c-100rf", // Dunkelrot
+      "100_kombi":         "pie-c-100k",  // Gold
+      "100_lifesaver":     "pie-c-100l",  // Orange
+      "200_super":         "pie-c-200s"   // Amber-Orange
+    };
+
+    // Fallback falls Key nicht exakt wie oben (abhängig von DISCIPLINES.key)
+    // -> mappe anhand vorhandener keys aus DISCIPLINES
+    DISCIPLINES.forEach(d=>{
+      if (!CLASS_MAP[d.key]) {
+        // verteile Rest zyklisch auf vorhandene Klassen
+        const pool = ["pie-c-50r","pie-c-200h","pie-c-100rf","pie-c-100k","pie-c-100l","pie-c-200s"];
+        CLASS_MAP[d.key] = pool[Object.keys(CLASS_MAP).length % pool.length];
+      }
+    });
+
+    let angle = -Math.PI/2;
+    items.forEach(it => {
+      const sweep = (it.count/total) * Math.PI*2;
+      const path  = document.createElementNS(svgNS, "path");
+      path.setAttribute("d", segPath(cx,cy,R,r, angle, angle + sweep));
+      path.setAttribute("class", `pie-slice ${CLASS_MAP[it.key] || ""}`);
+      const title = document.createElementNS(svgNS, "title");
+      title.textContent = `${it.label}: ${it.pct}% (${it.count})`;
+      path.appendChild(title);
+      svg.appendChild(path);
+      angle += sweep;
+    });
+
+    // Center-Label
+    const center = document.createElementNS(svgNS, "g");
+    center.setAttribute("class", "pie-center");
+    const t1 = document.createElementNS(svgNS, "text");
+    t1.setAttribute("x", cx); t1.setAttribute("y", cy - 6);
+    t1.setAttribute("text-anchor","middle"); t1.setAttribute("class","c1");
+    t1.textContent = `${total}`;
+    const t2 = document.createElementNS(svgNS, "text");
+    t2.setAttribute("x", cx); t2.setAttribute("y", cy + 16);
+    t2.setAttribute("text-anchor","middle"); t2.setAttribute("class","c2");
+    t2.textContent = "Starts";
+    center.append(t1,t2);
+    svg.appendChild(center);
+
+    // Legende
+    const legend = document.createElement("div");
+    legend.className = "pie-legend";
+    items.forEach(it => {
+      const row = document.createElement("div");
+      row.className = "pie-leg-row";
+
+      const dot = document.createElement("span");
+      dot.className = `pie-dot ${CLASS_MAP[it.key] || ""}`;
+
+      const label = document.createElement("span");
+      label.className = "pie-leg-label";
+      label.textContent = it.label;
+
+      const val = document.createElement("span");
+      val.className = "pie-leg-val";
+      val.textContent = `${it.pct} %  •  ${it.count}`;
+
+      row.append(dot, label, val);
+      legend.appendChild(row);
+    });
+
+    wrap.appendChild(svg);
+    wrap.appendChild(legend);
+    return card;
+  }
+
+
   function poolLabel(pool){
     return pool === "25" ? "25m" : (pool === "50" ? "50m" : "—");
   }
@@ -2098,6 +2246,7 @@ function hasStartVal(v){
     const dqLane = computeLaneDQProb(a);
     const totalMeters = sumWettkampfMeter(a);
     const chartCard = renderLSCChart(a);
+    const pieCard = renderDisciplinePieCard(a);
 
     grid.appendChild(infoTileBig("LSC", a.lsc != null ? fmtInt(a.lsc) : "—"));
     grid.appendChild(infoTileWettkaempfeFlip(a, meets));
@@ -2108,7 +2257,7 @@ function hasStartVal(v){
     grid.appendChild(infoTileYearsFlip(meets.activeYears, meets.first, meets.firstName));
     grid.appendChild(infoTileMetersFlip("Wettkampfmeter", totalMeters, meets.total)); // ← NEU
 
-    return h("div", { class: "ath-profile-section info" }, header, grid, chartCard);
+    return h("div", { class: "ath-profile-section info" }, header, grid, chartCard, pieCard);
 
     function infoTile(label, value){
       return h("div", { class: "info-tile" }, h("div", { class: "info-label" }, label), h("div", { class: "info-value" }, value));

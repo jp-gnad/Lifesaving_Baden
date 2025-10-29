@@ -1794,3 +1794,105 @@ body{
 .lsc-suggest-name{ font-weight:700; color:#0f172a; }
 .lsc-year{ color:#64748b; font-weight:600; margin-left:6px; }
 .lsc-suggest-sub{ color:#475569; font-size:12px; }
+
+
+/* ----- Pie Card ----- */
+.ath-pie-card{
+  margin-top: 16px;
+  background:#fff;
+  border:1px solid rgba(17,24,39,0.12);
+  border-radius:16px;
+  padding:20px 22px 18px;
+}
+.pie-head h4{
+  margin:0 0 12px 0;
+  font-weight:800;
+  color:#0f172a;
+  font-size:1.2rem;
+}
+
+/* Layout */
+.pie-wrap{
+  display:flex;
+  align-items:center;
+  gap:18px;
+}
+@media (max-width: 780px){
+  .pie-wrap{ flex-direction:column; align-items:stretch; }
+}
+
+/* SVG */
+.pie-svg{
+  display:block;
+  width: 340px;
+  height: 340px;
+  max-width: 48vw;
+}
+@media (max-width: 780px){
+  .pie-svg{ width: 100%; height: auto; max-width: none; }
+}
+
+.pie-slice{
+  stroke:#fff;
+  stroke-width:2;
+}
+
+/* DLRG-orientierte Palette (auch für Legenden-Dots via background-color) */
+.pie-c-50r   { fill:#e2001a; }  /* DLRG Rot */
+.pie-c-200h  { fill:#ffd400; }  /* DLRG Gelb */
+.pie-c-100rf { fill:#b50014; }  /* dunkles Rot */
+.pie-c-100k  { fill:#f0b400; }  /* Gold */
+.pie-c-100l  { fill:#ff9800; }  /* Orange */
+.pie-c-200s  { fill:#e88500; }  /* Amber-Orange */
+
+/* Legenden-Dots brauchen background-color */
+.pie-dot.pie-c-50r   { background-color:#e2001a; }
+.pie-dot.pie-c-200h  { background-color:#ffd400; }
+.pie-dot.pie-c-100rf { background-color:#b50014; }
+.pie-dot.pie-c-100k  { background-color:#f0b400; }
+.pie-dot.pie-c-100l  { background-color:#ff9800; }
+.pie-dot.pie-c-200s  { background-color:#e88500; }
+
+/* Center-Label im Donut */
+.pie-center .c1{
+  font-weight:800;
+  font-size: 20px;
+  fill:#0f172a;
+}
+.pie-center .c2{
+  font-size: 12px;
+  fill:#64748b;
+}
+
+/* Legende */
+.pie-legend{
+  flex: 1 1 auto;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+  align-content:start;
+}
+@media (max-width: 780px){
+  .pie-legend{ grid-template-columns: 1fr; }
+}
+.pie-leg-row{
+  display:grid;
+  grid-template-columns: 14px 1fr auto;
+  gap: 10px;
+  align-items:center;
+  min-width: 240px;
+}
+.pie-dot{
+  width:14px; height:14px; border-radius:3px; display:inline-block;
+  box-shadow: 0 1px 2px rgba(2,6,23,.15);
+}
+.pie-leg-label{
+  color:#0f172a;
+  font-weight:600;
+  font-size:.95rem;
+}
+.pie-leg-val{
+  color:#475569;
+  font-variant-numeric: tabular-nums;
+  font-size:.9rem;
+}
