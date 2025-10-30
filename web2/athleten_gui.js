@@ -54,13 +54,16 @@
 
   function renderDisciplinePieCard(a){
     const counts = countStartsPerDisciplineAll(a);
-    const items = DISCIPLINES.map(d => ({
+
+    // Gewünschte feste Reihenfolge = Reihenfolge in DISCIPLINES
+    // (50 Retten → 100 Retten m. Flossen → 100 Kombi → 100 Lifesaver → 200 Super → 200 Hindernis)
+    const ordered = DISCIPLINES.map(d => ({
       key: d.key,
       label: d.label,
       count: Number(counts[d.key] || 0)
-    })).filter(x => x.count > 0);
+    })).filter(x => x.count > 0); // nur vorhandene anzeigen (Reihenfolge bleibt gleich)
 
-    const total = items.reduce((s,x)=>s + x.count, 0);
+    const total = ordered.reduce((s,x)=>s + x.count, 0);
 
     const card  = document.createElement("div");
     card.className = "ath-pie-card";
@@ -78,9 +81,8 @@
       return card;
     }
 
-    // Sortiert (größter Anteil zuerst) + Prozent auf 0 Nachkommastellen runden
-    items.sort((l,r)=>r.count - l.count);
-    items.forEach(it => { it.pct = Math.round((it.count/total)*100); });
+    // Prozente runden (0 NK) – Reihenfolge bleibt wie oben
+    ordered.forEach(it => { it.pct = Math.round((it.count/total)*100); });
 
     const wrap = document.createElement("div");
     wrap.className = "pie-wrap";
@@ -105,29 +107,20 @@
       return `M ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1} L ${x2} ${y2} A ${r} ${r} 0 ${large} 0 ${x3} ${y3} Z`;
     }
 
-    // DLRG-nahe Palette (Rot/Gelb plus Gold- & Orange-Töne)
+    // DLRG-nahe Farbzuteilung passend zur festen Reihenfolge
     const CLASS_MAP = {
-      "50_retten":         "pie-c-50r",   // DLRG-Rot
-      "200m_Hindernis":    "pie-c-200h",  // DLRG-Gelb
-      "100_retten_flosse": "pie-c-100rf", // Dunkelrot
-      "100_kombi":         "pie-c-100k",  // Gold
-      "100_lifesaver":     "pie-c-100l",  // Orange
-      "200_super":         "pie-c-200s"   // Amber-Orange
+      "50_retten":         "pie-c-200h",   
+      "100_retten_flosse": "pie-c-100k", 
+      "100_kombi":         "pie-c-100l",  
+      "100_lifesaver":     "pie-c-200s",  
+      "200_super":         "pie-c-50r",  
+      "200_hindernis":     "pie-c-100rf"  
     };
 
-    // Fallback falls Key nicht exakt wie oben (abhängig von DISCIPLINES.key)
-    // -> mappe anhand vorhandener keys aus DISCIPLINES
-    DISCIPLINES.forEach(d=>{
-      if (!CLASS_MAP[d.key]) {
-        // verteile Rest zyklisch auf vorhandene Klassen
-        const pool = ["pie-c-50r","pie-c-200h","pie-c-100rf","pie-c-100k","pie-c-100l","pie-c-200s"];
-        CLASS_MAP[d.key] = pool[Object.keys(CLASS_MAP).length % pool.length];
-      }
-    });
-
     let angle = -Math.PI/2;
-    items.forEach(it => {
+    ordered.forEach(it => {
       const sweep = (it.count/total) * Math.PI*2;
+      if (sweep <= 0) return;
       const path  = document.createElementNS(svgNS, "path");
       path.setAttribute("d", segPath(cx,cy,R,r, angle, angle + sweep));
       path.setAttribute("class", `pie-slice ${CLASS_MAP[it.key] || ""}`);
@@ -152,10 +145,10 @@
     center.append(t1,t2);
     svg.appendChild(center);
 
-    // Legende
+    // Legende – gleiche feste Reihenfolge
     const legend = document.createElement("div");
     legend.className = "pie-legend";
-    items.forEach(it => {
+    ordered.forEach(it => {
       const row = document.createElement("div");
       row.className = "pie-leg-row";
 
@@ -168,7 +161,7 @@
 
       const val = document.createElement("span");
       val.className = "pie-leg-val";
-      val.textContent = `${it.pct} %  •  ${it.count}`;
+      val.textContent = `${it.pct}%  •  ${it.count}`;
 
       row.append(dot, label, val);
       legend.appendChild(row);
@@ -178,6 +171,7 @@
     wrap.appendChild(legend);
     return card;
   }
+
 
 
   function poolLabel(pool){
