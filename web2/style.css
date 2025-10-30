@@ -1376,19 +1376,13 @@ body{
 .ath-tabs.full-bleed{
   position: relative;
   background: #ffffff;
-  width: calc(100% + 32px);
-  margin-left: -16px;
+  width: auto;
+  margin-left: 0;
   border-top: 1px solid rgba(17,24,39,0.08);
   border-bottom: 1px solid rgba(17,24,39,0.08);
   box-shadow: 0 0 10px rgba(32, 32, 32, 0.048);
 }
 
-@media (max-width: 720px){
-  .ath-tabs.full-bleed{
-    width: auto;
-    margin-left: 0;
-  }
-}
 
 .ath-tabs-list{
   display:flex;
@@ -1915,7 +1909,6 @@ body{
   width: calc(100% + 16px);
   margin-left: -8px;
   padding:20px 0px 18px;
-  border: transparent;
   border-radius: 0px;
   }
 }
