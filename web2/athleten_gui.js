@@ -1429,6 +1429,7 @@ function hasStartVal(v){
 
       clearBtn.classList.remove("hidden");
       hideCmpSuggest();
+      dismissKeyboard();
       cmpInput.value = cmpQuery = "";
       paint(); // neu zeichnen inkl. grün
     }
