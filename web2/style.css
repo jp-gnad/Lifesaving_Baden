@@ -1377,8 +1377,9 @@ body{
   position: relative;
   background: #ffffff;
   /* Full bleed innerhalb der Karte (du nutzt 16px Innenabstand) */
-  width: calc(100% + 32px);
+  width: auto;
   margin-left: -16px;
+  margin-right: 0;
   border-top: 1px solid rgba(17,24,39,0.08);
   border-bottom: 1px solid rgba(17,24,39,0.08);
   box-shadow: 0 0 10px rgba(32, 32, 32, 0.048);
