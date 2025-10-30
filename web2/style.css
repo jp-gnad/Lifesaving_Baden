@@ -1376,13 +1376,20 @@ body{
 .ath-tabs.full-bleed{
   position: relative;
   background: #ffffff;
-  width: auto;
-  margin-left: 0;
+  /* Full bleed innerhalb der Karte (du nutzt 16px Innenabstand) */
+  width: calc(100% + 32px);
+  margin-left: -16px;
   border-top: 1px solid rgba(17,24,39,0.08);
   border-bottom: 1px solid rgba(17,24,39,0.08);
   box-shadow: 0 0 10px rgba(32, 32, 32, 0.048);
 }
 
+/*@media (max-width: 720px){
+  .ath-tabs.full-bleed{
+    width: calc(100% + 10px);
+    margin-left: -5px;
+  }
+}*/
 
 .ath-tabs-list{
   display:flex;
@@ -1903,9 +1910,6 @@ body{
   padding:20px 22px 18px;
   position:relative;
 }
-
-
-
 .time-head{
   display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px;
 }
