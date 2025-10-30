@@ -472,7 +472,6 @@ body{
     width: 100svw;                       /* stabiler als 100vw auf iOS */
     margin-left: calc(50% - 50svw);
     margin-right: calc(50% - 50svw);
-
     /* damit die Karte nicht breiter als der Screen wird */
     box-sizing: border-box;
   }
@@ -597,11 +596,10 @@ body{
   padding: 12px;
 }
 
-/* Mehr Abstand zwischen Profilkopf und Bestzeiten-Kasten */
 .ath-profile .ath-profile-section.bests{
-  padding-left: 0;
-  padding-right: 0;
-  border-color: transparent;
+  padding: 12px 0;    /* oben/unten 12px, links/rechts 0 */
+  background: transparent;
+  border: 0;          /* keinen Rahmen (überschreibt das spätere border:1px) */
 }
 
 .ath-profile-section.muted{
@@ -786,6 +784,7 @@ body{
 /* ————— Bestzeiten Sektion ————— */
 .ath-profile-section.bests{
   background: transparent;
+  border: 1px solid rgba(17,24,39,0.08);
 }
 
 .ath-bests-header{
@@ -1378,9 +1377,9 @@ body{
   position: relative;
   background: #ffffff;
   /* Full bleed innerhalb der Karte (du nutzt 16px Innenabstand) */
-  width: calc(100% + 32px);
+  width: auto;
   margin-left: -16px;
-  margin-right: -16px;
+  margin-right: 0;
   border-top: 1px solid rgba(17,24,39,0.08);
   border-bottom: 1px solid rgba(17,24,39,0.08);
   box-shadow: 0 0 10px rgba(32, 32, 32, 0.048);
@@ -2004,4 +2003,3 @@ body{
 .time-suggest-name{ font-weight:700; color:#0f172a; }
 .time-year{ color:#64748b; font-weight:600; margin-left:6px; }
 .time-suggest-sub{ color:#475569; font-size:12px; }
-
