@@ -2522,7 +2522,7 @@ function hasStartVal(v){
     paintSuggestions();
   }
 
-  function hideSuggestions(){ if (Refs.suggest) { Refs.suggest.classList.add("hidden"); Refs.suggest.innerHTML = ""; } }
+  function hideSuggestions(){ if (Refs.suggest) { Refs.suggest.classList.add("hidden"); Refs.suggest.innerHTML = "";} }
 
   function paintSuggestions(){
     const box = Refs.suggest; if (!box) return;
