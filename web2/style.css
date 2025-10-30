@@ -463,7 +463,6 @@ body{
   padding: 16px;
   display: grid;
   gap: 14px;
-  --card-pad: 16px;
 }
 
 /* Nur der Profilbereich soll auf Mobil full-bleed werden */
@@ -1380,9 +1379,9 @@ body{
   position: relative;
   background: #ffffff;
   /* Full bleed innerhalb der Karte (du nutzt 16px Innenabstand) */
-  width: calc(100% + var(--card-pad) * 2);
-  margin-left: calc(-1 * var(--card-pad));
-  margin-right: calc(-1 * var(--card-pad));
+  width: calc(100% + 32px);
+  margin-left: -16px;
+  margin-right: -16px;
   border-top: 1px solid rgba(17,24,39,0.08);
   border-bottom: 1px solid rgba(17,24,39,0.08);
   box-shadow: 0 0 10px rgba(32, 32, 32, 0.048);
@@ -1392,21 +1391,6 @@ body{
   .ath-tabs.full-bleed{
     width: 100%;
     margin-left: 0;
-    margin-right: 0;
-    border-radius: 0; /* optional, falls die Karte mobil ohne Radius ist */
-  }
-   /* Falls du das Meets-Panel ebenfalls „auf Kante“ gezogen hast: zurück auf 100% */
-  .ath-profile .ath-tab-panel[data-key="meets"]{
-    margin-left: 0;
-    width: 100%;
-  }
-
-  /* Kleine Sicherheitsleine gegen Subpixel-Overflow am Kartenrand */
-  .ath-profile{
-    overflow-x: clip; /* Safari 16+ */
-  }
-  @supports not (overflow: clip){
-    .ath-profile{ overflow-x: hidden; }
   }
 }
 
