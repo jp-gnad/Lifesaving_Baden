@@ -1827,7 +1827,7 @@ function hasStartVal(v){
       svg.setAttribute("width", W); svg.setAttribute("height", H);
       while (svg.firstChild) svg.removeChild(svg.firstChild);
 
-      const m  = { l: 10, r: 10, t: 12, b: 56 };
+      const m = { l: 8, r: 8, t: 28, b: 48 };
       const cw = W - m.l - m.r;
       const ch = H - m.t - m.b;
       const fx = v => m.l + ((v - xMin) / (xMax - xMin)) * cw;
@@ -1841,7 +1841,9 @@ function hasStartVal(v){
       for (let v = yMin, first=true; v <= yMax + 1e-9; v += yStep){
         const yy = fy(v);
         grid.appendChild(s("line", { x1:m.l, y1:yy, x2:W-m.r, y2:yy, class: first ? "hline0" : "hline" }));
-        yAxis.appendChild(s("text", { x:m.l, y:yy-2, "text-anchor":"start" }, mmss(v)));
+        yAxis.appendChild(
+          s("text", { x:m.l, y:yy, "text-anchor":"start", "dominant-baseline":"middle" }, mmss(v))
+        );
         first = false;
       }
 
@@ -1855,7 +1857,7 @@ function hasStartVal(v){
         xAxis.appendChild(s("text", { x: xx, y: m.t + ch + tickLen + 6, "text-anchor": "middle" }, String(v)));
       }
       xAxis.appendChild(s("text", { x: m.l + cw/2, y: m.t + ch + tickLen + 26, "text-anchor": "middle" }, "Alter"));
-      yAxis.appendChild(s("text", { x: m.l, y: m.t - 4, "text-anchor": "start" }, "Zeit"));
+      yAxis.appendChild(s("text", { x: m.l, y: m.t - 4, "text-anchor": "start" }, ""));
 
       svg.appendChild(grid);
       svg.appendChild(xAxis);
