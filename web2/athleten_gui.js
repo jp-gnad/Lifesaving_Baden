@@ -32,6 +32,36 @@
     return c;
   }
 
+  function dismissKeyboard(){
+    try{
+      // 1) Fokus vom Suchfeld nehmen
+      Refs.input?.blur();
+
+      // 2) ggf. aktives Element blurren
+      const ae = document.activeElement;
+      if (ae && typeof ae.blur === "function") ae.blur();
+
+      // 3) iOS-Spezialfall: kurz auf unsichtbares Input focussen, dann blur
+      let trap = document.getElementById("kb-blur-trap");
+      if (!trap){
+        trap = document.createElement("input");
+        trap.type = "text";
+        trap.id = "kb-blur-trap";
+        trap.tabIndex = -1;
+        trap.autocomplete = "off";
+        trap.style.position = "fixed";
+        trap.style.opacity = "0";
+        trap.style.pointerEvents = "none";
+        trap.style.height = "0";
+        trap.style.width  = "0";
+        document.body.appendChild(trap);
+      }
+      trap.focus({ preventScroll: true });
+      trap.blur();
+    }catch(e){ /* no-op */ }
+  }
+
+
   // Baut Zeit-Punkte für eine Disziplin (alle Läufe mit gültiger Zeit; DQ wird ignoriert)
   function buildTimeSeriesForDiscipline(a, discKey){
     const dMeta = DISCIPLINES.find(d => d.key === discKey);
@@ -3117,9 +3147,8 @@ function hasStartVal(v){
 
     AppState.poolLen = (ax && ax.poolLen) ? String(ax.poolLen) : (AppState.poolLen || "50");
     AppState.selectedAthleteId = ax?.id || null;
+    dismissKeyboard();
     hideSuggestions();
-
-    // ... Rest von openProfile unverändert ...
 
 
     const mount = Refs.profileMount; if (!mount) return;
