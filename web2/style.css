@@ -1896,3 +1896,106 @@ body{
   font-variant-numeric: tabular-nums;
   font-size:.9rem;
 }
+
+/* ----- Zeit-Chart (Bestzeiten-Tab) ----- */
+.ath-time-card{
+  margin-top:18px;
+  background:#fff;
+  border:1px solid rgba(17,24,39,0.12);
+  border-radius:16px;
+  padding:20px 22px 18px;
+  position:relative;
+}
+.time-head{
+  display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px;
+}
+.time-head h4{
+  margin:0; font-weight:800; color:#0f172a; font-size:1.35rem;
+}
+.time-disc{
+  border:1px solid rgba(17,24,39,0.16);
+  background:#fff; border-radius:10px; padding:8px 10px; font-weight:700;
+}
+
+.time-viewport{ position:relative; height:clamp(340px, 44vw, 520px); }
+@media (max-width:720px){ .time-viewport{ height:clamp(380px, 64vw, 560px); } }
+.time-svg{ display:block; width:100%; height:100%; }
+
+/* Grid / Axis */
+.time-grid .hline{  stroke:rgba(17,24,39,0.12); stroke-width:1; shape-rendering:crispEdges; }
+.time-grid .hline0{ stroke:rgba(17,24,39,0.35); stroke-width:2.5; shape-rendering:crispEdges; }
+.time-grid .xtick{  stroke:rgba(17,24,39,0.25); stroke-width:1.25; shape-rendering:crispEdges; }
+.time-xaxis text{ fill:#475569; font-size:13px; dominant-baseline:hanging; }
+.time-yaxis text{ fill:#475569; font-size:12px; dominant-baseline:ideographic; }
+
+/* Lines, areas, dots */
+.time-area{ pointer-events:none; }
+.time-line{ fill:none; vector-effect:non-scaling-stroke; stroke-width:3; }
+.time-line.blue{  stroke:#1d4ed8; }
+.time-line.green{ stroke:#10b981; }
+.time-dots.blue  .time-dot{ fill:#1d4ed8; }
+.time-dots.green .time-dot{ fill:#10b981; }
+.time-dot{ stroke:#fff; stroke-width:1.25; r:4.5px; transition:r .18s ease; vector-effect:non-scaling-stroke; }
+.time-dot[data-active="1"], .time-dot:hover{ r:7.5px; }
+.time-svg, .time-dot{ -webkit-tap-highlight-color:transparent; }
+.time-dot:focus{ outline:none; }
+
+/* Tooltip */
+.time-tooltip{
+  position:absolute; left:0; top:0;
+  transform:translate(-9999px,-9999px);
+  background:#0f172a; color:#fff;
+  border-radius:12px;
+  padding:10px 12px 8px;
+  box-shadow:0 10px 30px rgba(2,6,23,.25);
+  opacity:0; pointer-events:none; transition:opacity .12s ease;
+}
+.time-tooltip .tt-l1{ font-weight:800; font-size:15px; }
+.time-tooltip .tt-l2{ opacity:.9; font-size:13px; margin-top:2px; }
+.time-tooltip::after{
+  content:""; position:absolute; left:50%; bottom:-6px; transform:translateX(-50%);
+  border:6px solid transparent; border-top-color:#0b1020;
+}
+
+/* Legend */
+.time-legend{ display:flex; align-items:center; gap:14px; margin-top:8px; color:#475569; font-size:13px; }
+.time-key{ display:inline-flex; align-items:center; gap:6px; }
+.time-key-dot{ width:10px; height:10px; border-radius:9999px; border:1.5px solid currentColor; }
+.time-key-dot.blue{  color:#1d4ed8; background:#1d4ed8; }
+.time-key-dot.green{ color:#10b981; background:#10b981; }
+
+/* Compare search */
+.time-compare-wrap{ margin-top:10px; position:relative; }
+.time-search-row{ display:flex; gap:8px; align-items:center; }
+.time-input{
+  width:100%; padding:10px 12px; border:1px solid rgba(17,24,39,0.16);
+  border-radius:10px; font-size:14px; outline:none;
+}
+.time-input:focus{ border-color:#1d4ed8; box-shadow:0 0 0 3px rgba(29,78,216,.12); }
+.time-clear{
+  appearance:none; border:1px solid rgba(17,24,39,0.16);
+  background:#fff; border-radius:10px; padding:8px 10px; cursor:pointer;
+  font-weight:700; color:#0f172a;
+}
+.time-clear.hidden{ display:none; }
+
+.time-suggest{
+  position:absolute; left:0; right:0; top:100%; margin-top:6px; z-index:20;
+  background:#fff; border:1px solid rgba(17,24,39,0.16); border-radius:12px;
+  box-shadow:0 10px 30px rgba(2,6,23,.08); max-height:320px; overflow:auto;
+}
+.time-suggest.hidden{ display:none; }
+.time-suggest-empty{ padding:12px; color:#64748b; }
+.time-suggest-item{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; cursor:pointer;
+}
+.time-suggest-item:hover, .time-suggest-item.active{
+  background:rgba(29,78,216,.06);
+}
+.time-suggest-avatar .avatar-img{ width:32px; height:32px; }
+.time-suggest-text{ display:flex; flex-direction:column; min-width:0; }
+.time-suggest-name{ font-weight:700; color:#0f172a; }
+.time-year{ color:#64748b; font-weight:600; margin-left:6px; }
+.time-suggest-sub{ color:#475569; font-size:12px; }
+

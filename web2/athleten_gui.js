@@ -32,6 +32,43 @@
     return c;
   }
 
+  // Baut Zeit-Punkte für eine Disziplin (alle Läufe mit gültiger Zeit; DQ wird ignoriert)
+  function buildTimeSeriesForDiscipline(a, discKey){
+    const dMeta = DISCIPLINES.find(d => d.key === discKey);
+    if (!dMeta) return [];
+    const jahrgang = Number(a?.jahrgang);
+    if (!Number.isFinite(jahrgang)) return [];
+
+    const byDate = new Map();
+    for (const m of Array.isArray(a.meets) ? a.meets : []){
+      const dateISO = String(m?.date || "").slice(0,10);
+      if (!dateISO) continue;
+
+      const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
+      let best = { lauf: -1, sec: NaN, meet_name: "" };
+
+      for (const r of runs){
+        const lauf = Number(r?._lauf || r?.Vorläufe || 1);
+        const raw  = r?.[dMeta.meetZeit] ?? m?.[dMeta.meetZeit] ?? "";
+        const sec  = parseTimeToSec(raw);
+        if (Number.isFinite(lauf) && Number.isFinite(sec) && lauf >= best.lauf){
+          best = { lauf, sec, meet_name: String(m.meet_name || m.meet || "").replace(/\s+-\s+.*$/, "").trim() };
+        }
+      }
+      if (!Number.isFinite(best.sec)) continue;
+
+      const birth = new Date(`${jahrgang}-07-01T00:00:00Z`);
+      const ageYears = (new Date(dateISO) - birth) / (365.2425*24*3600*1000);
+      const age = Math.round(ageYears * 100) / 100;
+
+      byDate.set(dateISO, { age, sec: best.sec, date: dateISO, meet_name: best.meet_name });
+    }
+
+    return Array.from(byDate.values()).sort((l, r) => new Date(l.date) - new Date(r.date));
+  }
+
+
+
   // ---------- Disziplin-Verteilung (Donut) ----------
 
   // Zählt Starts je Disziplin über alle Meets (DQ zählt als Start)
@@ -1559,6 +1596,403 @@ function hasStartVal(v){
     return card;
   }
 
+  function renderTimeChart(a){
+    // kleine DOM-Helper
+    const s = (tag, attrs = {}, ...children) => {
+      const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      Object.entries(attrs||{}).forEach(([k,v]) => v!=null && el.setAttribute(k,String(v)));
+      children.flat().forEach(c => c!=null && el.appendChild(typeof c==="string" ? document.createTextNode(c) : c));
+      return el;
+    };
+    const el = (tag, attrs = {}, ...children) => {
+      const node = document.createElement(tag);
+      for (const [k,v] of Object.entries(attrs||{})){
+        if (k === "class") node.className = v;
+        else if (k.startsWith("on") && typeof v === "function") node.addEventListener(k.slice(2), v);
+        else if (v !== false && v != null) node.setAttribute(k, v === true ? "" : v);
+      }
+      children.flat().forEach(c => c!=null && node.appendChild(typeof c==="string" ? document.createTextNode(c) : c));
+      return node;
+    };
+
+    // Disziplin-Vorauswahl: erste mit Daten, sonst erste in Liste
+    const firstWithData = DISCIPLINES.find(d => buildTimeSeriesForDiscipline(a, d.key).length > 0);
+    let discKey = (firstWithData || DISCIPLINES[0]).key;
+
+    // Serien
+    let basePts = buildTimeSeriesForDiscipline(a, discKey);
+    let cmpAth = null, cmpPts = null;
+
+    // Card + Kopf mit Dropdown
+    const card = el("div", { class:"ath-time-card" });
+    const head = el("div", { class:"time-head" },
+      el("h4", {}, "Zeit-Verlauf"),
+      (() => {
+        const sel = el("select", { class:"time-disc" });
+        DISCIPLINES.forEach(d => {
+          sel.appendChild(el("option", { value:d.key, selected: d.key===discKey }, d.label));
+        });
+        sel.addEventListener("change", () => {
+          discKey = sel.value;
+          basePts = buildTimeSeriesForDiscipline(a, discKey);
+          cmpPts  = cmpAth ? buildTimeSeriesForDiscipline({ ...cmpAth, meets: mergeDuplicateMeets(cmpAth.meets) }, discKey) : null;
+          paint();
+        });
+        return sel;
+      })()
+    );
+    card.appendChild(head);
+
+    // Y-Achsen-Start (Sekunden) je Disziplin
+    function getYAxisBaseSec(dKey){
+      const dm = DISCIPLINES.find(d => d.key === dKey);
+      const name = (dm?.label || dKey).toLowerCase();
+
+      if (name.includes("50m retten"))          return 20;   // 0:20
+      if (name.includes("100m retten"))         return 30;   // 0:30
+      if (name.includes("100m kombi"))          return 30;   // 0:30
+      if (name.includes("100m lifesaver"))      return 30;   // 0:30
+      if (name.includes("200m hindernis"))      return 90;   // 1:30
+      if (name.includes("200m superlifesaver")) return 120;  // 2:00
+      return 0;
+    }
+
+    // ---- Y-Achsen-Spezifikation je Disziplin (Sekunden) ----
+    // Keys: siehe DISCIPLINES (50_retten, 100_retten_flosse, 100_kombi, 100_lifesaver, 200_super, 200_hindernis)
+    const Y_SPEC = {
+      "50_retten":         { base:  20, step: 10 },
+      "100_retten_flosse": { base:  40, step: 10 },
+      "100_kombi":         { base:  50, step: 10 },
+      "100_lifesaver":     { base:  40, step: 10 },
+      "200_super":         { base: 120, step: 10 },
+      "200_hindernis":     { base: 110, step: 10 },
+    };
+
+    function getYAxisBaseSec(dKey){
+      return (Y_SPEC[dKey]?.base ?? 0);
+    }
+    function getYAxisStepSec(dKey){
+      return (Y_SPEC[dKey]?.step ?? 30);
+    }
+
+    // Aufrunden auf nächstes Vielfaches der Schrittweite
+    const ceilToStep = (sec, step) => Math.ceil(sec / step) * step;
+
+
+    // Viewport + SVG
+    const vp  = el("div", { class:"time-viewport" });
+    const svg = s("svg", { class:"time-svg", role:"img", "aria-label":"Zeit-Verlauf" });
+    vp.appendChild(svg);
+    card.appendChild(vp);
+
+    // Tooltip
+    const tip = el("div", { class:"time-tooltip", "aria-hidden":"true" },
+      el("div", { class:"tt-l1" }),
+      el("div", { class:"tt-l2" })
+    );
+    card.appendChild(tip);
+
+    // Legende
+    const legend = el("div", { class:"time-legend" },
+      el("span", { class:"time-key time-key--base" },
+        el("span", { class:"time-key-dot blue"}), el("span", { class:"time-key-label" }, a?.name || "Athlet A")
+      )
+    );
+    card.appendChild(legend);
+
+    // Vergleichs-Suche (1 Vergleich; ersetzt bestehende)
+    const cmpWrap  = el("div", { class:"time-compare-wrap" });
+    const cmpInput = el("input", { class:"time-input", type:"search", placeholder:"Athlet zum Vergleich suchen …", autocomplete:"off", role:"searchbox" });
+    const clearBtn = el("button", { class:"time-clear hidden", type:"button" }, "Entfernen");
+    const suggest  = el("div", { class:"time-suggest hidden", role:"listbox" });
+    cmpWrap.appendChild(el("div", { class:"time-search-row" }, cmpInput, clearBtn));
+    cmpWrap.appendChild(suggest);
+    card.appendChild(cmpWrap);
+
+    let cmpQuery = "", cmpResults = [], cmpActive = -1;
+    const normalizeLocal = (s) => (s||"").toString().toLowerCase().normalize("NFKD").replace(/\p{Diacritic}/gu,"").replace(/\s+/g," ").trim();
+
+    function updateCmpSuggest(){
+      const q = cmpQuery.trim();
+      suggest.innerHTML = "";
+      if (q.length < 2){
+        suggest.appendChild(el("div", { class:"time-suggest-empty" }, "Mind. 2 Zeichen eingeben"));
+        suggest.classList.remove("hidden"); return;
+      }
+      const nq = normalizeLocal(q);
+      const pool = (AppState?.athletes || []).filter(x => x?.id !== a?.id);
+      const list = pool.map(ax => ({ ax, n: normalizeLocal(ax.name) }))
+        .filter(x => x.n.includes(nq))
+        .sort((l,r) => {
+          const al = l.n.startsWith(nq) ? 0 : 1;
+          const ar = r.n.startsWith(nq) ? 0 : 1;
+          return (al-ar) || l.n.localeCompare(r.n);
+        })
+        .slice(0,8);
+      cmpResults = list.map(x => x.ax);
+      cmpActive = cmpResults.length ? 0 : -1;
+
+      if (!cmpResults.length){
+        suggest.appendChild(el("div", { class:"time-suggest-empty" }, "Keine Treffer"));
+        suggest.classList.remove("hidden"); return;
+      }
+
+      cmpResults.forEach((ax, idx) => {
+        const item = el("div", { class:"time-suggest-item"+(idx===cmpActive?" active":""), role:"option", "aria-selected": idx===cmpActive?"true":"false" });
+        item.appendChild(renderCapAvatar(ax, "sm", "time-suggest-avatar"));
+        const text = el("div", { class:"time-suggest-text" },
+          el("div", { class:"time-suggest-name" }, ax.name, " ", el("span",{class:"time-year"},`(${ax.jahrgang})`)),
+          el("div", { class:"time-suggest-sub" }, "DLRG ", currentOrtsgruppeFromMeets(ax) || ax.ortsgruppe || "")
+        );
+        item.appendChild(text);
+        item.addEventListener("pointerdown", (ev)=>{ ev.preventDefault(); chooseCmp(ax); });
+        item.addEventListener("mouseenter", ()=>{ suggest.querySelector(".active")?.classList.remove("active"); item.classList.add("active"); cmpActive = idx; });
+        suggest.appendChild(item);
+      });
+      suggest.classList.remove("hidden");
+    }
+    function hideCmpSuggest(){ suggest.classList.add("hidden"); }
+    function chooseCmp(ax){
+      cmpAth = ax;
+      cmpPts = buildTimeSeriesForDiscipline({ ...cmpAth, meets: mergeDuplicateMeets(cmpAth.meets) }, discKey);
+      legend.querySelector(".time-key--cmp")?.remove();
+      legend.appendChild(
+        el("span", { class:"time-key time-key--cmp" },
+          el("span", { class:"time-key-dot green"}), el("span",{class:"time-key-label"}, cmpAth.name)
+        )
+      );
+      clearBtn.classList.remove("hidden");
+      hideCmpSuggest();
+      cmpInput.value = cmpQuery = "";
+      paint();
+    }
+    cmpInput.addEventListener("input", e => { cmpQuery = e.target.value || ""; updateCmpSuggest(); });
+    cmpInput.addEventListener("keydown", e => {
+      if (!cmpResults.length) return;
+      if (e.key === "ArrowDown"){ e.preventDefault(); cmpActive = (cmpActive+1) % cmpResults.length; updateCmpSuggest(); }
+      else if (e.key === "ArrowUp"){ e.preventDefault(); cmpActive = (cmpActive-1+cmpResults.length) % cmpResults.length; updateCmpSuggest(); }
+      else if (e.key === "Enter"){ e.preventDefault(); chooseCmp(cmpResults[cmpActive>=0?cmpActive:0]); }
+      else if (e.key === "Escape"){ hideCmpSuggest(); }
+    });
+    document.addEventListener("click", (e) => { if (!cmpWrap.contains(e.target)) hideCmpSuggest(); });
+    clearBtn.addEventListener("click", () => {
+      cmpAth = null; cmpPts = null;
+      clearBtn.classList.add("hidden");
+      legend.querySelector(".time-key--cmp")?.remove();
+      paint();
+    });
+
+    // Domain & Paint
+    const mmss = (sec) => {
+      if (!Number.isFinite(sec)) return "—";
+      const m = Math.floor(sec/60);
+      const s = Math.floor(sec%60);
+      const cs = Math.round((sec - Math.floor(sec)) * 100);
+      const sPart = m ? String(s).padStart(2,"0") : String(s);
+      return (m? `${m}:${sPart}`: sPart) + "." + String(cs).padStart(2,"0");
+    };
+
+    let xMin, xMax, yMin, yMax, activeIdx = null, activeSeries = "blue";
+    const updateDomains = () => {
+      const all = (cmpPts && cmpPts.length) ? basePts.concat(cmpPts) : basePts;
+
+      // X wie gehabt
+      if (!all.length){ xMin = 0; xMax = 1; }
+      else {
+        xMin = Math.floor(Math.min(...all.map(p => p.age)));
+        xMax = Math.ceil (Math.max(...all.map(p => p.age)));
+        if (xMax === xMin) xMax = xMin + 1;
+      }
+
+      // Y nach Disziplin
+      const base = getYAxisBaseSec(discKey);
+      const step = getYAxisStepSec(discKey);
+      const maxData = all.length ? Math.max(...all.map(p => p.sec)) : base + step * 3;
+
+      yMin = base;
+      const wanted = Math.max(maxData, base + step * 2); // etwas Luft
+      yMax = ceilToStep(wanted, step);
+      if (yMax <= yMin) yMax = yMin + step;
+    };
+
+
+
+
+    function paint(){
+      updateDomains();
+      const rect = vp.getBoundingClientRect();
+      const W = Math.max(320, Math.floor(rect.width));
+      const H = Math.max(260, vp.clientHeight);
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      svg.setAttribute("width", W); svg.setAttribute("height", H);
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+      const m  = { l: 10, r: 10, t: 12, b: 56 };
+      const cw = W - m.l - m.r;
+      const ch = H - m.t - m.b;
+      const fx = v => m.l + ((v - xMin) / (xMax - xMin)) * cw;
+      const fy = v => m.t + ch - ((v - yMin) / (yMax - yMin)) * ch;
+
+      // Grid
+      const grid  = s("g", { class: "time-grid" });
+      const yAxis = s("g", { class: "time-yaxis" });
+
+      const yStep = getYAxisStepSec(discKey);
+      for (let v = yMin, first=true; v <= yMax + 1e-9; v += yStep){
+        const yy = fy(v);
+        grid.appendChild(s("line", { x1:m.l, y1:yy, x2:W-m.r, y2:yy, class: first ? "hline0" : "hline" }));
+        yAxis.appendChild(s("text", { x:m.l, y:yy-2, "text-anchor":"start" }, mmss(v)));
+        first = false;
+      }
+
+
+      // X-Ticks wie gehabt (ganze Jahre)
+      const xAxis = s("g", { class: "time-xaxis" });
+      const tickLen = 8;
+      for (let v = Math.floor(xMin); v <= Math.ceil(xMax); v++){
+        const xx = fx(v);
+        grid.appendChild(s("line", { x1: xx, y1: m.t + ch, x2: xx, y2: m.t + ch + tickLen, class: "xtick" }));
+        xAxis.appendChild(s("text", { x: xx, y: m.t + ch + tickLen + 6, "text-anchor": "middle" }, String(v)));
+      }
+      xAxis.appendChild(s("text", { x: m.l + cw/2, y: m.t + ch + tickLen + 26, "text-anchor": "middle" }, "Alter"));
+      yAxis.appendChild(s("text", { x: m.l, y: m.t - 4, "text-anchor": "start" }, "Zeit"));
+
+      svg.appendChild(grid);
+      svg.appendChild(xAxis);
+      svg.appendChild(yAxis);
+
+
+
+      // Gradients
+      const defs = s("defs");
+      const gidB = `time-grad-b-${Math.random().toString(36).slice(2)}`;
+      const gidG = `time-grad-g-${Math.random().toString(36).slice(2)}`;
+      const mkGrad = (id, color) => {
+        const g = s("linearGradient", { id, x1:"0", y1:"0", x2:"0", y2:"1" });
+        g.appendChild(s("stop", { offset:"0%",   "stop-color":color, "stop-opacity":"0.22" }));
+        g.appendChild(s("stop", { offset:"100%", "stop-color":color, "stop-opacity":"0" }));
+        return g;
+      };
+      defs.appendChild(mkGrad(gidB, "#1d4ed8"));
+      defs.appendChild(mkGrad(gidG, "#10b981"));
+      svg.appendChild(defs);
+
+      // Draw series
+      const drawSeries = (pts, colorClass, withArea=false, fillId=null) => {
+        if (!pts || !pts.length) return;
+        const pathD = pts.map((p,i)=> `${i?"L":"M"}${fx(p.age)} ${fy(p.sec)}`).join(" ");
+        if (withArea){
+          const areaD = `${pathD} L${fx(pts[pts.length-1].age)} ${fy(yMin)} L${fx(pts[0].age)} ${fy(yMin)} Z`;
+          svg.appendChild(s("path", { d: areaD, class:`time-area ${colorClass}`, fill:`url(#${fillId})` }));
+        }
+        svg.appendChild(s("path", { d: pathD, class:`time-line ${colorClass}` }));
+
+        const dots = s("g", { class:`time-dots ${colorClass}` });
+        pts.forEach((p, idx) => {
+          const c = s("circle", {
+            cx: fx(p.age), cy: fy(p.sec), r:4.5, class:"time-dot", tabindex:0,
+            "data-idx": idx, "data-series": colorClass,
+            "data-name": (colorClass==="blue" ? (a?.name||"") : (cmpAth?.name||"")),
+            "data-time": mmss(p.sec),
+            "data-date": (new Date(p.date)).toLocaleDateString("de-DE"),
+            "data-meet": p.meet_name || "—"
+          });
+          const show = () => {
+            activeIdx = idx; activeSeries = colorClass;
+            c.setAttribute("data-active","1");
+            const name = c.dataset.name ? ` – ${c.dataset.name}` : "";
+            tip.querySelector(".tt-l1").textContent = `${c.dataset.time}${name}`;
+            tip.querySelector(".tt-l2").textContent = `${c.dataset.date} — ${c.dataset.meet || "—"}`;
+            positionTip(c);
+          };
+          const hide = () => {
+            if (activeIdx === idx && activeSeries === colorClass){ activeIdx = null; }
+            c.removeAttribute("data-active");
+            tip.style.opacity = "0";
+            tip.style.transform = "translate(-9999px,-9999px)";
+            tip.setAttribute("aria-hidden","true");
+          };
+          c.addEventListener("pointerenter", show);
+          c.addEventListener("pointerleave", hide);
+          c.addEventListener("focus", show);
+          c.addEventListener("blur", hide);
+          c.addEventListener("pointerdown", (e)=>{ e.stopPropagation(); show(); });
+          dots.appendChild(c);
+        });
+        svg.appendChild(dots);
+      };
+
+      if (basePts.length) drawSeries(basePts, "blue", true, gidB);
+      if (cmpPts  && cmpPts.length) drawSeries(cmpPts,  "green", true, gidG);
+
+      function positionTip(circle){
+        const pt = svg.createSVGPoint();
+        pt.x = +circle.getAttribute("cx");
+        pt.y = +circle.getAttribute("cy");
+        const scr = pt.matrixTransform(svg.getScreenCTM());
+        const cardRect = card.getBoundingClientRect();
+        const px = scr.x - cardRect.left;
+        const py = scr.y - cardRect.top;
+
+        tip.style.opacity = "1";
+        tip.style.transform = "translate(0,0)";
+        tip.setAttribute("aria-hidden","false");
+        tip.style.left = "0px"; tip.style.top  = "0px";
+        const tr = tip.getBoundingClientRect();
+
+        const offX = 6, offY = 10;
+        let L = Math.round(px + offX - tr.width*0.12);
+        let T = Math.round(py - offY - tr.height - 6);
+        const maxL = card.clientWidth  - tr.width  - 8;
+        const maxT = card.clientHeight - tr.height - 8;
+        L = Math.max(8, Math.min(L, maxL));
+        T = Math.max(8, Math.min(T, maxT));
+        tip.style.left = `${L}px`;
+        tip.style.top  = `${T}px`;
+      }
+
+      // Reposition tooltip on resize
+      if (activeIdx != null){
+        const sel = `.time-dots.${activeSeries} .time-dot[data-idx="${activeIdx}"]`;
+        const active = svg.querySelector(sel);
+        if (active) positionTip(active);
+      }
+
+      // Click outside hides tooltip
+      if (!card._timeOutsideHandlerAttached){
+        card.addEventListener("pointerdown", (e)=>{
+          if (!svg.contains(e.target)){
+            activeIdx = null;
+            tip.style.opacity = "0";
+            tip.style.transform = "translate(-9999px,-9999px)";
+            tip.setAttribute("aria-hidden","true");
+            svg.querySelectorAll('.time-dot[data-active="1"]').forEach(n => n.removeAttribute("data-active"));
+          }
+        }, { passive:true });
+        card._timeOutsideHandlerAttached = true;
+      }
+
+      // Empty state
+      if (!basePts.length && !(cmpPts && cmpPts.length)){
+        const empty = el("div", { class:"best-empty" },
+          "Keine Zeiten für ", (DISCIPLINES.find(d=>d.key===discKey)?.label || "diese Disziplin"), "."
+        );
+        svg.appendChild(s("g")); // nur damit SVG existiert
+        if (!card.querySelector(".best-empty")) card.appendChild(empty);
+      } else {
+        card.querySelector(".best-empty")?.remove();
+      }
+    }
+
+    const ro = new ResizeObserver(paint);
+    ro.observe(vp);
+    requestAnimationFrame(paint);
+
+    return card;
+  }
+
+
+
 
 
   /* baut die Serie [{age,lsc,date,meet_name}] aus (gemergten) meets */
@@ -1735,7 +2169,7 @@ function hasStartVal(v){
 
             Mehrkampf_Platz: "5",
             "200m_Hindernis_Zeit": "2:18,50", "200m_Hindernis_Platz": "5",
-            "50m_Retten_Zeit": "0:34,85",  "50m_Retten_Platz": "1",
+            "50m_Retten_Zeit": "0:34,00",  "50m_Retten_Platz": "1",
           },
           {
             meet_name: "LMS - 2025",
@@ -1751,7 +2185,7 @@ function hasStartVal(v){
 
             Mehrkampf_Platz: "1",
 
-            "50m_Retten_Zeit": "0:34,10",  "50m_Retten_Platz": "1",
+            "50m_Retten_Zeit": "0:38,50",  "50m_Retten_Platz": "1",
             "100m_Retten_Zeit": "0:57,40", "100m_Retten_Platz": "1",
             "100m_Kombi_Zeit": "1:13,90",  "100m_Kombi_Platz": "2",
             "100m_Lifesaver_Zeit": "1:00,80", "100m_Lifesaver_Platz": "2",
@@ -1772,7 +2206,7 @@ function hasStartVal(v){
 
             Mehrkampf_Platz: "1",
 
-            "50m_Retten_Zeit": "0:34,10",  "50m_Retten_Platz": "1",
+            "50m_Retten_Zeit": "0:39,60",  "50m_Retten_Platz": "1",
             "100m_Retten_Zeit": "0:57,40", "100m_Retten_Platz": "1",
             "100m_Kombi_Zeit": "1:13,90",  "100m_Kombi_Platz": "2",
             "100m_Lifesaver_Zeit": "1:00,80", "100m_Lifesaver_Platz": "2",
@@ -1803,7 +2237,7 @@ function hasStartVal(v){
 
             Mehrkampf_Platz: "2",
 
-            "50m_Retten_Zeit": "0:34,20",  "50m_Retten_Platz": "2",
+            "50m_Retten_Zeit": "0:33,20",  "50m_Retten_Platz": "2",
             "100m_Retten_Zeit": "0:57,90", "100m_Retten_Platz": "1",
             "100m_Kombi_Zeit": "DQ",       "100m_Kombi_Platz": "",
             "100m_Lifesaver_Zeit": "1:02,45", "100m_Lifesaver_Platz": "3",
@@ -1824,7 +2258,7 @@ function hasStartVal(v){
 
             Mehrkampf_Platz: "56",
 
-            "50m_Retten_Zeit": "0:34,85",  "50m_Retten_Platz": "3",
+            "50m_Retten_Zeit": "0:34,00",  "50m_Retten_Platz": "3",
             "100m_Retten_Zeit": "0:58,40", "100m_Retten_Platz": "2",
             "100m_Kombi_Zeit": "1:14,80",  "100m_Kombi_Platz": "5",
             "100m_Lifesaver_Zeit": "1:01,90", "100m_Lifesaver_Platz": "2",
@@ -1845,7 +2279,7 @@ function hasStartVal(v){
 
             Mehrkampf_Platz: "1",
 
-            "50m_Retten_Zeit": "0:34,10",  "50m_Retten_Platz": "1",
+            "50m_Retten_Zeit": "0:35,50",  "50m_Retten_Platz": "1",
             "100m_Retten_Zeit": "0:57,40", "100m_Retten_Platz": "1",
             "100m_Kombi_Zeit": "1:13,90",  "100m_Kombi_Platz": "2",
             "100m_Lifesaver_Zeit": "1:00,80", "100m_Lifesaver_Platz": "2",
@@ -2124,6 +2558,7 @@ function hasStartVal(v){
     const grid = h("div", { class: "ath-bests-grid" }); Refs.bestGrid = grid;
     const section = h("div", { class: "ath-profile-section bests" }, header, grid);
     paintBestzeitenGrid(athlete);
+    section.appendChild(renderTimeChart(athlete));
     return section;
   }
 
@@ -2252,6 +2687,7 @@ function hasStartVal(v){
     grid.appendChild(infoTileMetersFlip("Wettkampfmeter", totalMeters, meets.total)); // ← NEU
 
     return h("div", { class: "ath-profile-section info" }, header, grid, chartCard, pieCard);
+
 
     function infoTile(label, value){
       return h("div", { class: "info-tile" }, h("div", { class: "info-label" }, label), h("div", { class: "info-value" }, value));
