@@ -1389,8 +1389,8 @@ body{
 
 @media (max-width: 720px){
   .ath-tabs.full-bleed{
-    width: calc(100% + 20px);
-    margin-left: -10px;
+    width: calc(100% + 10px);
+    margin-left: -5px;
   }
 }
 
