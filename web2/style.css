@@ -601,7 +601,7 @@ body{
 .ath-profile .ath-profile-section.bests{
   padding-left: 0;
   padding-right: 0;
-  border-color: #ffffff;
+  border-color: transparent;
 }
 
 .ath-profile-section.muted{
@@ -786,7 +786,6 @@ body{
 /* ————— Bestzeiten Sektion ————— */
 .ath-profile-section.bests{
   background: transparent;
-  border: 1px solid rgba(17,24,39,0.08);
 }
 
 .ath-bests-header{
