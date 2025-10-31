@@ -455,7 +455,7 @@ body{
 .ath-suggest-meta{ color: #374151; font-weight: 700; font-size: .92rem }
 
 /* Profilansicht */
-.ath-profile-wrap{ margin-top: 6px; }
+.ath-profile-wrap{ margin-top: 6px;}
 
 .ath-profile{
   background: #FAFCFD;
@@ -1377,7 +1377,7 @@ body{
   position: relative;
   background: #ffffff;
   /* Full bleed innerhalb der Karte (du nutzt 16px Innenabstand) */
-  width: calc(100% + 32px);
+  width: calc(100% + 10px);
   margin-left: -16px;
   margin-right: 0;
   border-top: 1px solid rgba(17,24,39,0.08);
