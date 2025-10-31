@@ -1380,12 +1380,11 @@ body{
   box-shadow: 0 0 10px rgba(32, 32, 32, 0.048);
 }
 
-/*@media (max-width: 720px){
+@media(min-width:720px){
   .ath-tabs.full-bleed{
-    width: calc(100% + 10px);
-    margin-left: -5px;
+    width: calc(100% + 32px);
   }
-}*/
+}
 
 .ath-tabs-list{
   display:flex;
@@ -1451,6 +1450,14 @@ body{
   margin-left: -28px;                      /* in die Karten-Ränder ziehen */
   width: calc(100% + 53px);
 }
+
+@media(min-width:720px){
+  .meets-list{ 
+    width: calc(100% + 56px);
+  }
+}
+
+
 .meet-row{
   display: grid;
   /* Datum | Platz | Name | Land | Bahn */
