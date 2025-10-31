@@ -1368,11 +1368,6 @@ body{
 
 /* ===== Subtabs (Bestzeiten | Info | Wettkämpfe) ===== */
 
-.ath-profile .ath-tab-panel[data-key="meets"]{
-  margin-left: -16px;
-  width: calc(100% + 32px);
-}
-
 .ath-tabs.full-bleed{
   position: relative;
   background: #ffffff;
@@ -1453,8 +1448,8 @@ body{
 .meets-list{ 
   display: grid; 
   margin-top: 4px; 
-  margin-left: -12px;                      /* in die Karten-Ränder ziehen */
-  width: calc(100% + 24px);
+  margin-left: -28px;                      /* in die Karten-Ränder ziehen */
+  width: calc(100% + 56px);
 }
 .meet-row{
   display: grid;
