@@ -1449,7 +1449,7 @@ body{
   display: grid; 
   margin-top: 4px; 
   margin-left: -28px;                      /* in die Karten-Ränder ziehen */
-  width: calc(100% + 56px);
+  width: calc(100% + 53px);
 }
 .meet-row{
   display: grid;
