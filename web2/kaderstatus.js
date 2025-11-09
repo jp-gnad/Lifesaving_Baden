@@ -502,9 +502,8 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
 
 
     (async function main() {
-      const aktuellesJahr = 2025; // oder dynamisch new Date().getFullYear()
+      const aktuellesJahr = 2025;
 
-      // 1) Normzeiten + Platzierungskriterien VORAB laden
       await Promise.all([
         ladePflichtzeiten(aktuellesJahr),
         ladePlatzierungsKriterien(aktuellesJahr),
@@ -514,23 +513,16 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
         ladeAnmeldungen(aktuellesJahr)
       ]);
 
-        console.log(`Kriterien ${aktuellesJahr} geladen:`,
-                    (PLATZIERUNGS_KRITERIEN[aktuellesJahr] || []).length);
-        console.log(`Kriterien ${aktuellesJahr - 1} geladen:`,
-                    (PLATZIERUNGS_KRITERIEN[aktuellesJahr - 1] || []).length);
-
-      // 2. Sportler-Excel laden → gibt datenbank zurück
       const datenbank = await ladeExcelUndVerarbeite();
-
-      // 3. Matrix aufbauen
       const result = verarbeiteDatenbank(datenbank, aktuellesJahr);
 
-      // 4. Ausgabe
+      // Tabelle bauen
+      baueKaderTabelle(result, aktuellesJahr);
+
+      // Optional: Debug-Ausgabe
       console.log("===== Ergebnisse =====");
       for (const [name, daten] of result.entries()) {
-        console.log("Name:", name);
-        console.log(
-          "Name:", name,
+        console.log("Name:", name,
           "Geschlecht:", daten.geschlecht,
           "| Jahrgang:", daten.jahrgang,
           "| Alter:", daten.alter,
@@ -711,6 +703,215 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
       return personenMap;
     }
 
+    function baueKaderTabelle(result, aktuellesJahr) {
+      // Ergebnis in Array überführen, filtern und sortieren
+      const personenArray = Array.from(result.entries())
+        .filter(([_, p]) => p.Kaderstatus !== "")
+        .sort((a, b) => {
+          const [nameA, pA] = a;
+          const [nameB, pB] = b;
+          const gA = pA.geschlecht === "weiblich" ? 0 : 1;
+          const gB = pB.geschlecht === "weiblich" ? 0 : 1;
+          if (gA !== gB) return gA - gB;
+          const ogA = (pA.ortsgruppe || "").toString().trim();
+          const ogB = (pB.ortsgruppe || "").toString().trim();
+          const cmpOG = ogA === "" && ogB !== "" ? 1
+                      : ogB === "" && ogA !== "" ? -1
+                      : ogA.localeCompare(ogB, "de", { sensitivity: "base" });
+          if (cmpOG !== 0) return cmpOG;
+          return nameA.localeCompare(nameB, "de", { sensitivity: "base" });
+        });
+
+      // Container holen
+      const container = document.getElementById("kader-container");
+      if (!container) {
+        console.error('#kader-container nicht gefunden – Tabelle kann nicht erzeugt werden.');
+        return;
+      }
+      container.innerHTML = ""; // ggf. vorherige Ausgabe leeren
+
+      // Tabelle + Head
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const trHead = document.createElement("tr");
+      trHead.innerHTML = `
+        <th></th>
+        <th>Sportler / Ortsgruppe</th>
+        <th colspan="4" style="text-align:center;">Kriterien</th>
+        <th style="text-align:center;">Status</th>
+      `;
+      thead.appendChild(trHead);
+      table.appendChild(thead);
+
+      // Zeilen
+      const tbody = document.createElement("tbody");
+      for (const [name, person] of personenArray) {
+        const tr = document.createElement("tr");
+        tr.dataset.kaderstatus = person.Kaderstatus;
+        tr.dataset.aktuellesalter = person.aktuellesAlter;
+        const farbe = person.geschlecht === "maennlich" ? "#1e90ff" : "#ff69b4";
+
+        // 1) Cap
+        const tdCap = document.createElement("td");
+        tdCap.style.textAlign = "right";
+        const imgCap = document.createElement("img");
+        const ortsgruppe = person.ortsgruppe || "placeholder";
+        imgCap.src = `./svg/${encodeURIComponent(`Cap-${ortsgruppe}.svg`)}`;
+        imgCap.style.width = "35px";
+        imgCap.alt = `Cap von ${person.ortsgruppe}`;
+        imgCap.onerror = () => { imgCap.onerror = null; imgCap.src = `./svg/Cap-Baden_light.svg`; };
+        tdCap.appendChild(imgCap);
+        tr.appendChild(tdCap);
+
+        // 2) Name/Zusatz
+        const tdName = document.createElement("td");
+        tdName.innerHTML = `
+          <span style="color:${farbe}; font-weight:bold;">
+            ${name} (${person.jahrgang})
+          </span><br>
+          <small style="color: rgb(68, 68, 69); font-weight: bold;">
+            DLRG ${person.ortsgruppe || ""}
+          </small>
+        `;
+        tr.appendChild(tdName);
+
+        // 3) Icon_Time
+        const tdIcon_time = document.createElement("td");
+        tdIcon_time.style.textAlign = "center";
+        const imgIcon_time = document.createElement("img");
+        const icon1 = person.Icon_Time === "green" ? "icon_time_green.svg"
+                    : person.Icon_Time === "yellow" ? "icon_time_yellow.svg"
+                    : "icon_time_grey.svg";
+        imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/${encodeURIComponent(icon1)}`;
+        imgIcon_time.style.width = "35px";
+        tdIcon_time.appendChild(imgIcon_time);
+        tr.appendChild(tdIcon_time);
+
+        // 4) Icon_Comp
+        const tdIcon_comp = document.createElement("td");
+        tdIcon_comp.style.textAlign = "center";
+        const imgIcon_comp = document.createElement("img");
+        const icon2 = person.Icon_Comp === "green" ? "icon_medal_green.svg"
+                    : person.Icon_Comp === "yellow" ? "icon_medal_yellow.svg"
+                    : "icon_medal_grey.svg";
+        imgIcon_comp.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/${encodeURIComponent(icon2)}`;
+        imgIcon_comp.style.width = "35px";
+        tdIcon_comp.appendChild(imgIcon_comp);
+        tr.appendChild(tdIcon_comp);
+
+        // 5) Icon_Ocean
+        const tdIcon_ocean = document.createElement("td");
+        tdIcon_ocean.style.textAlign = "center";
+        const imgIcon_ocean = document.createElement("img");
+        const icon3 = person.Icon_Ocean === "green" ? "icon_ocean_green.svg"
+                    : person.Icon_Ocean === "yellow" ? "icon_ocean_yellow.svg"
+                    : "icon_ocean_grey.svg";
+        imgIcon_ocean.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/${encodeURIComponent(icon3)}`;
+        imgIcon_ocean.style.width = "35px";
+        tdIcon_ocean.appendChild(imgIcon_ocean);
+        tr.appendChild(tdIcon_ocean);
+
+        // 6) Icon_Coach
+        const tdIcon_coach = document.createElement("td");
+        tdIcon_coach.style.textAlign = "center";
+        const imgIcon_coach = document.createElement("img");
+        const icon4 = person.Icon_Coach === "green" ? "icon_trainer_green.svg"
+                    : person.Icon_Coach === "yellow" ? "icon_trainer_yellow.svg"
+                    : "icon_trainer_grey.svg";
+        imgIcon_coach.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/${encodeURIComponent(icon4)}`;
+        imgIcon_coach.style.width = "35px";
+        tdIcon_coach.appendChild(imgIcon_coach);
+        tr.appendChild(tdIcon_coach);
+
+        // 7) Status-Zelle mit Tooltip (grün/gelb)
+        const tdStatus = document.createElement("td");
+        tdStatus.classList.add("status-cell");
+        const wrapper = document.createElement("div");
+        wrapper.className = "status-wrapper";
+        const icon = document.createElement("img");
+        icon.className = "status-icon";
+        icon.src = person.angemeldet
+          ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/icon_status_green.svg"
+          : "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/icon_status_yellow.svg";
+        icon.alt = person.angemeldet ? "Status: angemeldet" : "Anmeldung erforderlich";
+        icon.style.width = "27.5px";
+        icon.setAttribute("tabindex", "0");
+        icon.setAttribute("aria-haspopup", "true");
+        icon.setAttribute("aria-expanded", "false");
+
+        // Tooltip
+        const tooltip = document.createElement("div");
+        tooltip.className = "status-tooltip";
+        tooltip.setAttribute("role", "tooltip");
+        tooltip.setAttribute("aria-hidden", "true");
+        tooltip.textContent = person.angemeldet
+          ? `Kaderberechtigt bis ${berechneKaderBis(person, aktuellesJahr)}`
+          : "Anmeldung erforderlich";
+        document.body.appendChild(tooltip);
+
+        function positionTooltip() {
+          const margin = 8;
+          const r = icon.getBoundingClientRect();
+          tooltip.style.visibility = "hidden";
+          tooltip.classList.add("is-visible");
+          const tW = tooltip.offsetWidth, tH = tooltip.offsetHeight;
+          let left = r.right + margin;
+          let top  = Math.round(r.top + r.height / 2 - tH / 2);
+          tooltip.classList.remove("left");
+          if (left + tW > window.innerWidth - 8) {
+            left = r.left - margin - tW;
+            tooltip.classList.add("left");
+          }
+          if (top < 8) top = 8;
+          if (top + tH > window.innerHeight - 8) top = window.innerHeight - tH - 8;
+          tooltip.style.left = `${left}px`;
+          tooltip.style.top  = `${top}px`;
+          tooltip.style.visibility = "";
+        }
+        function hide() {
+          tooltip.classList.remove("is-visible");
+          tooltip.setAttribute("aria-hidden", "true");
+          icon.setAttribute("aria-expanded", "false");
+          document.removeEventListener("click", onDocClick);
+          document.removeEventListener("keydown", onKey);
+          window.removeEventListener("scroll", onScrollOrResize, true);
+          window.removeEventListener("resize", onScrollOrResize);
+          if (window.__closeOpenStatusTooltip === hide) window.__closeOpenStatusTooltip = null;
+        }
+        function show() {
+          if (window.__closeOpenStatusTooltip && window.__closeOpenStatusTooltip !== hide) {
+            window.__closeOpenStatusTooltip();
+          }
+          positionTooltip();
+          tooltip.classList.add("is-visible");
+          tooltip.setAttribute("aria-hidden", "false");
+          icon.setAttribute("aria-expanded", "true");
+          document.addEventListener("click", onDocClick);
+          document.addEventListener("keydown", onKey);
+          window.addEventListener("scroll", onScrollOrResize, true);
+          window.addEventListener("resize", onScrollOrResize);
+          window.__closeOpenStatusTooltip = hide;
+        }
+        const onDocClick = (e) => { if (!wrapper.contains(e.target) && !tooltip.contains(e.target)) hide(); };
+        const onKey = (e) => { if (e.key === "Escape") hide(); };
+        const onScrollOrResize = () => { if (tooltip.classList.contains("is-visible")) positionTooltip(); };
+        icon.addEventListener("click", (e) => { e.stopPropagation(); tooltip.classList.contains("is-visible") ? hide() : show(); });
+        icon.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tooltip.classList.contains("is-visible") ? hide() : show(); } });
+
+        wrapper.appendChild(icon);
+        tdStatus.appendChild(wrapper);
+        tr.appendChild(tdStatus);
+
+        tbody.appendChild(tr);
+      }
+
+      table.appendChild(tbody);
+      container.appendChild(table);
+
+      if (window.applyKaderFilter) window.applyKaderFilter();
+    }
+
+
 
 
     // Hilfsfunktion: immer schnellste Zeit behalten
@@ -729,25 +930,39 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
       const arrayBuffer = await response.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: "array" });
 
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+      // gezielt Tabelle2 nehmen, falls vorhanden, sonst erstes Blatt
+      let sheetName = "Tabelle2";
+      if (!workbook.Sheets[sheetName]) {
+        // Fallback, falls der Name sich mal ändert oder das Blatt nicht existiert
+        sheetName = workbook.SheetNames[0];
+      }
+      console.log("Verwendetes Sheet:", sheetName);
 
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+      // Datenbank aufbauen
       const datenbank = [];
-      for (let i = 1; i < rows.length; i++) {
+      // ⬇️ WICHTIG: wir haben KEINE Überschrift in Zeile 1 → bei Index 0 anfangen
+      for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
+        // Spalte B (Index 1) = Name muss belegt sein
         if (!row[1]) continue;
 
         const geschlechtRaw = row[0]?.toString().toLowerCase();
         const geschlecht = geschlechtRaw === "m" ? "maennlich" : "weiblich";
         const name = row[1];
+
         const jahrgangRaw = row[11];
         const jahrgang = jahrgangRaw?.toString().padStart(2, "0");
         const jahrRaw = row[9];
         const alter = berechneAlter(jahrRaw, jahrgangRaw);
+
         const ortsgruppe = row[12] || "";
         const wettkampfName = row[10] ? row[10].toString() : "";
         const landesverband = row[13] || "";
         const mehrkampfPlatzierung = row[14];
+
         const parsePlatz = v => {
           const n = parseInt(v, 10);
           return Number.isFinite(n) && n >= 1 ? n : null;
@@ -758,7 +973,7 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
           return n !== null && (min === null || n < min) ? n : min;
         }, null);
 
-        // Excel-Datum -> korrektes Datum (UTC, Excel-Basis inkl. 1900-Bug-Korrektur)
+        // Excel-Datum -> Datum
         const excelBase = new Date(Date.UTC(1900, 0, 1));
         const wettkampfDatum = new Date(excelBase.getTime() + (jahrRaw - 1) * 24 * 60 * 60 * 1000);
         const jahr = wettkampfDatum.getUTCFullYear();
@@ -772,17 +987,15 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
           { zeit: row[8], nr: 6 }
         ];
 
-        // Jahrgang (zweistellig) in 4-stelliges Jahr umwandeln
         let jahrgangNum = parseInt(jahrgangRaw, 10);
         if (isNaN(jahrgangNum)) {
           jahrgangNum = null;
         } else {
           jahrgangNum += 1900;
           while (new Date().getFullYear() - jahrgangNum > 100) {
-            jahrgangNum += 100; // Jahrhundert-Korrektur
+            jahrgangNum += 100;
           }
         }
-
 
         for (const d of disziplinen) {
           const zeit = parseZeit(d.zeit);
@@ -806,6 +1019,10 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
           }
         }
       }
+
+      console.log("Excel geladen, Einträge:", datenbank.length);
+      return datenbank;
+
 
       // --> Ab hier ERST verarbeiten, DANN sortieren & Tabelle bauen
       const aktuellesJahr = new Date().getFullYear();
@@ -1234,9 +1451,10 @@ const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/ma
       }
 
 
+      // ...
       console.log("Excel geladen, Einträge:", datenbank.length);
-      // Diese Funktion baut die Tabelle -> ein Return ist nicht zwingend nötig
-      return datenbank; // neu
+      return datenbank;   // <-- Danach KEIN weiterer Code mehr in dieser Funktion
+
     }
 
 
