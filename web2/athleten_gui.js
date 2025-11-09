@@ -20,6 +20,193 @@
 
   // ---------- Konstanten / Pfade ----------
   const FLAG_BASE_URL = "./svg"; // dein SVG-Ordner
+  const MIN_QUERY_LEN = 5;
+  const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/data/test (1).xlsx";
+  let AllMeetsByAthleteId = new Map();        // id -> Meet[]
+
+
+  async function ensureXLSX(){
+    if (window.XLSX) return;
+    await new Promise((res, rej) => {
+      const s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+
+  // ---- Excel lesen (Blatt "Tabelle2") -> 2D-Array ohne Header ----
+  async function loadWorkbookArray(sheetName = "Tabelle2"){
+  await ensureXLSX();
+  const url = encodeURI(EXCEL_URL);               // encodiert Space/Klammern sicher
+  const resp = await fetch(url, { mode: "cors", cache: "no-store" });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const buf  = await resp.arrayBuffer();
+  const wb   = XLSX.read(buf, { type: "array" });
+  const ws   = wb.Sheets[sheetName] || wb.Sheets[wb.SheetNames[0]];
+  return XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: "" });
+}
+
+  // ---- Spalten (0-basiert) aus 'Tabelle2' ----
+  const COLS = {
+    gender: 0,              // A: m|w
+    name: 1,                // B
+    lsc: 2,                 // C: "766,95"
+    z_100l: 3,              // D: 100m_Lifesaver_Zeit
+    z_50r: 4,               // E: 50m_Retten_Zeit
+    z_200s: 5,              // F: 200m_SuperLifesaver_Zeit
+    z_100k: 6,              // G: 100m_Kombi_Zeit
+    z_100r: 7,              // H: 100m_Retten_Zeit
+    z_200h: 8,              // I: 200m_Hindernis_Zeit
+    excelDate: 9,           // J: Excel-Seriennummer
+    meet_name: 10,          // K
+    yy2: 11,                // L: Jahrgang (zweistellig, z.B. 02, 99)
+    ortsgruppe: 12,         // M
+    // N (13) unwichtig
+    p_mehrkampf: 14,        // O: Mehrkampf_Platz
+    p_100l: 15,             // P
+    p_50r: 16,              // Q
+    p_200s: 17,             // R
+    p_100k: 18,             // S
+    p_100r: 19,             // T
+    p_200h: 20,             // U
+    pool: 21,               // V: "25"|"50"
+    regelwerk: 22,          // W: "National"|"international"
+    land: 23,               // X: "GER" (nur für Deutschland) sonst ausgeschrieben
+    startrecht: 24,         // Y: "OG"|"LV"|"BV"
+    wertung: 25,            // Z: "Mehrkampf"|"Einzelkampf"|"Einzel-/Mehrkampf"
+    vorlaeufe: 26           // AA: 1|2
+  };
+
+  // ---- Hilfen: Datum & Normalisierungen ----
+  function excelSerialToISO(n){
+    const num = Number(n);
+    if (!Number.isFinite(num)) return "";
+    // Excel (1900-Date-System); 1899-12-30 ist "0"
+    const base = new Date(Date.UTC(1899, 11, 30));
+    const d = new Date(base.getTime() + num * 86400000);
+    return d.toISOString().slice(0,10);
+  }
+  function normalizeRegelwerk(s){
+    const t = String(s||"").toLowerCase();
+    if (t.startsWith("nat")) return "National";
+    if (t.startsWith("int")) return "International";
+    return s || "";
+  }
+  function normalizeLand(x){
+    const t = String(x||"").trim();
+    if (!t) return "";
+    if (t.toUpperCase() === "GER") return "Deutschland";
+    return t; // andere Länder sind ausgeschrieben laut Vorgabe
+  }
+  function normalizePool(v){
+    return (String(v).trim() === "25" || String(v).trim() === "50") ? String(v).trim() : "";
+  }
+  function normalizeStartrecht(s){
+    const t = String(s||"").trim().toUpperCase();
+    return (t==="OG"||t==="LV"||t==="BV"||t==="BZ") ? t : "";
+  }
+  function toNumOrBlank(v){
+    const n = parseInt(String(v).replace(/[^\d\-]/g,""), 10);
+    return Number.isFinite(n) ? String(n) : String(v||"").trim();
+  }
+  function parseTwoDigitYearWithMeetYear(twoDigit, meetISO){
+    // Regel: starte bei 1900+yy; addiere +100 solange (meetYear - year) > 100
+    const yy = Number(twoDigit);
+    const meetYear = Number((meetISO||"").slice(0,4));
+    if (!Number.isFinite(yy) || !Number.isFinite(meetYear)) return null;
+    let y = 1900 + yy;
+    while (meetYear - y > 100) y += 100;
+    return y;
+  }
+  function makeAthleteId(name, gender, birthYear){
+    const base = (name||"").toLowerCase().normalize("NFKD").replace(/\p{Diacritic}/gu,"").replace(/\s+/g,"-").replace(/[^a-z0-9\-]/g,"");
+    const g = (String(gender||"").toLowerCase().startsWith("w")) ? "w" : "m";
+    return `ath_${base}_${birthYear||"x"}_${g}`;
+  }
+
+  // ---- Row -> Minimal-Athlet ----
+  function mapRowToAthleteMinimal(row){
+    const name   = String(row[COLS.name]||"").trim();
+    const gender = String(row[COLS.gender]||"").trim();
+    const iso    = excelSerialToISO(row[COLS.excelDate]);
+    const yy2    = row[COLS.yy2];
+    const by     = parseTwoDigitYearWithMeetYear(yy2, iso);
+    const og     = String(row[COLS.ortsgruppe]||"").trim();
+
+    return {
+      id: makeAthleteId(name, gender, by),
+      name,
+      jahrgang: by,
+      geschlecht: gender,
+      ortsgruppe: og
+    };
+  }
+
+  // ---- Row -> Meet (GUI-kompatibel) ----
+  function mapRowToMeet(row){
+    const iso  = excelSerialToISO(row[COLS.excelDate]);
+    const meet = {
+      meet_name: String(row[COLS.meet_name]||"").trim(),
+      date: iso,
+      pool: normalizePool(row[COLS.pool]),
+      Ortsgruppe: String(row[COLS.ortsgruppe]||"").trim(),
+      Regelwerk: normalizeRegelwerk(row[COLS.regelwerk]),
+      Land: normalizeLand(row[COLS.land]),
+      Startrecht: normalizeStartrecht(row[COLS.startrecht]),
+      Wertung: String(row[COLS.wertung]||"").trim(),
+      Vorläufe: String(row[COLS.vorlaeufe] ?? "").trim(),
+      LSC: String(row[COLS.lsc] ?? "").toString().trim(),            // "766,95"
+      Mehrkampf_Platz: toNumOrBlank(row[COLS.p_mehrkampf]),
+      "50m_Retten_Zeit": String(row[COLS.z_50r] ?? "").trim(),
+      "50m_Retten_Platz": toNumOrBlank(row[COLS.p_50r]),
+      "100m_Retten_Zeit": String(row[COLS.z_100r] ?? "").trim(),
+      "100m_Retten_Platz": toNumOrBlank(row[COLS.p_100r]),
+      "100m_Kombi_Zeit": String(row[COLS.z_100k] ?? "").trim(),
+      "100m_Kombi_Platz": toNumOrBlank(row[COLS.p_100k]),
+      "100m_Lifesaver_Zeit": String(row[COLS.z_100l] ?? "").trim(),
+      "100m_Lifesaver_Platz": toNumOrBlank(row[COLS.p_100l]),
+      "200m_SuperLifesaver_Zeit": String(row[COLS.z_200s] ?? "").trim(),
+      "200m_SuperLifesaver_Platz": toNumOrBlank(row[COLS.p_200s]),
+      "200m_Hindernis_Zeit": String(row[COLS.z_200h] ?? "").trim(),
+      "200m_Hindernis_Platz": toNumOrBlank(row[COLS.p_200h])
+    };
+    return meet;
+  }
+
+  function buildIndicesFromRows(rows){
+    const minimalById = new Map();   // id -> minimaler Athlet
+    const meetsById   = new Map();   // id -> Meet[]
+
+    for (let i=0; i<rows.length; i++){
+      const row = rows[i];
+      if (!row || row.length === 0) continue;
+
+      const aMin = mapRowToAthleteMinimal(row);
+      if (!aMin.name || !aMin.jahrgang) continue; // ohne stabile Basis überspringen
+
+      if (!minimalById.has(aMin.id)) {
+        minimalById.set(aMin.id, aMin);
+      } else {
+        // Falls Jahrgang beim ersten Auftreten noch null wäre (sollte nicht vorkommen), überschreiben
+        const cur = minimalById.get(aMin.id);
+        if (!cur.jahrgang && aMin.jahrgang) minimalById.set(aMin.id, { ...cur, jahrgang: aMin.jahrgang });
+      }
+
+      const meet = mapRowToMeet(row);
+      if (!meetsById.has(aMin.id)) meetsById.set(aMin.id, []);
+      meetsById.get(aMin.id).push(meet);
+    }
+
+    // global setzen
+    AllMeetsByAthleteId = meetsById;
+
+    // leichte Liste für Suggestions
+    const athletesLight = Array.from(minimalById.values());
+    athletesLight.sort((l,r) => l.name.localeCompare(r.name, "de"));
+    return athletesLight;
+  }
+
 
   // Zählt Starts je Startrecht (OG/BZ/LV/BV)
   function countStartrechte(a){
@@ -1363,7 +1550,7 @@ function hasStartVal(v){
 
     function updateCmpSuggest(){
       const q = cmpQuery.trim();
-      if (q.length < 2){ cmpResults = []; cmpActive = -1; paintCmpSuggest(); return; }
+      if (q.length < MIN_QUERY_LEN){ cmpResults = []; cmpActive = -1; paintCmpSuggest(); return; }
 
       const nq = normalizeLocal(q);
       const pool = (AppState?.athletes || []).filter(x => x?.id !== a?.id); // sich selbst ausblenden
@@ -1385,8 +1572,7 @@ function hasStartVal(v){
     function paintCmpSuggest(){
       suggest.innerHTML = "";
       if (!cmpQuery || cmpResults.length === 0){
-        const msg = cmpQuery.length < 2 ? "Mind. 2 Zeichen eingeben" : "Keine Treffer";
-        suggest.appendChild(hEl("div", { class:"lsc-suggest-empty" }, msg));
+        const msg = cmpQuery.length < MIN_QUERY_LEN ? `Mind. ${MIN_QUERY_LEN} Zeichen eingeben` : "Keine Treffer";        suggest.appendChild(hEl("div", { class:"lsc-suggest-empty" }, msg));
         suggest.classList.remove("hidden");
         return;
       }
@@ -1746,8 +1932,8 @@ function hasStartVal(v){
     function updateCmpSuggest(){
       const q = cmpQuery.trim();
       suggest.innerHTML = "";
-      if (q.length < 2){
-        suggest.appendChild(el("div", { class:"time-suggest-empty" }, "Mind. 2 Zeichen eingeben"));
+      if (q.length < MIN_QUERY_LEN){
+        suggest.appendChild(el("div", { class:"time-suggest-empty" }, `Mind. ${MIN_QUERY_LEN} Zeichen eingeben`));
         suggest.classList.remove("hidden"); return;
       }
       const nq = normalizeLocal(q);
@@ -2480,7 +2666,7 @@ function hasStartVal(v){
     const mount = $("#athleten-container"); if (!mount) return;
     mount.innerHTML = "";
     const ui = h("section", { class: "ath-ui", role: "region", "aria-label": "Athletenbereich" });
-    ui.appendChild(h("p", { class: "ath-ui-note" }, "Suche nach Name (ab 2 Zeichen). Treffer erscheinen im Dropdown. Auswahl öffnet das Profil."));
+    ui.appendChild(h("p", { class: "ath-ui-note" }, "Suche nach Name (ab 5 Zeichen). Treffer erscheinen im Dropdown. Auswahl öffnet das Profil."));
     ui.appendChild(renderSearch());
     const profile = h("div", { id: "ath-profile" }); Refs.profileMount = profile; ui.appendChild(profile);
     mount.appendChild(ui);
@@ -2509,7 +2695,7 @@ function hasStartVal(v){
 
   function updateSuggestions() {
     const q = AppState.query.trim();
-    if (q.length < 2) { AppState.suggestions = []; AppState.activeIndex = -1; hideSuggestions(); return; }
+    if (q.length < MIN_QUERY_LEN) { AppState.suggestions = []; AppState.activeIndex = -1; hideSuggestions(); return; }
     const nq = normalize(q);
     let list = AppState.athletes.map(a => ({ a, nName: normalize(a.name) })).filter(({ nName }) => nName.includes(nq));
     list.sort((l, r) => {
@@ -2532,7 +2718,7 @@ function hasStartVal(v){
     if (!q || !AppState.suggestions.length) {
       box.appendChild(
         h("div", { class: "ath-suggest-empty" },
-          q.length < 2 ? "Mind. 2 Zeichen eingeben" : "Keine Treffer"
+          q.length < MIN_QUERY_LEN ? `Mind. ${MIN_QUERY_LEN} Zeichen eingeben` : "Keine Treffer"
         )
       );
       box.classList.remove("hidden");
@@ -3138,6 +3324,13 @@ function hasStartVal(v){
 
   // ---------- Profil ----------
   function openProfile(a) {
+
+    // Meets aus der Map nachladen, falls (noch) nicht vorhanden
+    if (!Array.isArray(a.meets) || a.meets.length === 0){
+      const list = AllMeetsByAthleteId.get(a.id) || [];
+      a = { ...a, meets: list };
+    }
+
     // NEU: zuerst meets mergen
     const mergedMeets = mergeDuplicateMeets(a.meets);
 
@@ -3223,5 +3416,28 @@ function hasStartVal(v){
 
 
   // ---------- Boot ----------
-  document.addEventListener("DOMContentLoaded", renderApp);
+  document.addEventListener("DOMContentLoaded", async () => {
+    // UI sofort aufbauen (Suchleiste + leeres Profilmount)
+    renderApp();
+
+    // Optionale Ladeanzeige in der Suggest-Box
+    if (Refs.suggest) {
+      Refs.suggest.classList.remove("hidden");
+      Refs.suggest.innerHTML = '<div class="ath-suggest-empty">Daten werden geladen …</div>';
+    }
+
+    try {
+      const rows = await loadWorkbookArray("Tabelle2");
+      const light = buildIndicesFromRows(rows);
+      AppState.athletes = light;      // nur leichte Objekte für die Suche
+      hideSuggestions();               // Platzhalter entfernen
+    } catch (err) {
+      console.error(err);
+      if (Refs.suggest) {
+        Refs.suggest.classList.remove("hidden");
+        Refs.suggest.innerHTML = '<div class="ath-suggest-empty">Fehler beim Laden der Daten.</div>';
+      }
+    }
+  });
+
 })();
