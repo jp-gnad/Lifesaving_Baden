@@ -183,14 +183,11 @@
       if (!row || row.length === 0) continue;
 
       const aMin = mapRowToAthleteMinimal(row);
-      if (!aMin.name || !aMin.jahrgang) continue; // ohne stabile Basis überspringen
+      if (!aMin.name || aMin.jahrgang) {/* ok */}
+      else continue;
 
       if (!minimalById.has(aMin.id)) {
         minimalById.set(aMin.id, aMin);
-      } else {
-        // Falls Jahrgang beim ersten Auftreten noch null wäre (sollte nicht vorkommen), überschreiben
-        const cur = minimalById.get(aMin.id);
-        if (!cur.jahrgang && aMin.jahrgang) minimalById.set(aMin.id, { ...cur, jahrgang: aMin.jahrgang });
       }
 
       const meet = mapRowToMeet(row);
@@ -198,7 +195,25 @@
       meetsById.get(aMin.id).push(meet);
     }
 
-    // global setzen
+    // ★★★ NEU: ortsgruppe der Minimal-Objekte = OG des letzten (neuesten) Wettkampfs
+    for (const [id, min] of minimalById.entries()){
+      const list = meetsById.get(id) || [];
+      let latest = null;
+      let lastOG = (min.ortsgruppe || "").trim();
+
+      for (const m of list){
+        const dStr = String(m?.date || "").slice(0,10);
+        const d = new Date(dStr);
+        if (isNaN(d)) continue;
+        if (!latest || d > latest){
+          latest = d;
+          if (m?.Ortsgruppe) lastOG = String(m.Ortsgruppe).trim();
+        }
+      }
+      minimalById.set(id, { ...min, ortsgruppe: lastOG });
+    }
+
+    // global setzen (für Profile etc.)
     AllMeetsByAthleteId = meetsById;
 
     // leichte Liste für Suggestions
@@ -206,6 +221,7 @@
     athletesLight.sort((l,r) => l.name.localeCompare(r.name, "de"));
     return athletesLight;
   }
+
 
 
   // Zählt Starts je Startrecht (OG/BZ/LV/BV)
@@ -536,6 +552,7 @@
     "Dänemark":"DEN",
     "Ägypten":"EGY",
     "Großbritannien":"GBR",
+    "Australien":"AUS",
   };
 
   function iso3FromLand(landName){
@@ -724,7 +741,7 @@
         const medal    = medalForPlace(placeStr);
 
         const placeEl = h("span", { class: "m-place" },
-          placeStr ? placeStr : "—",
+          placeStr || "",   // ← leer statt "—"
           medal ? h("img", {
             class: "m-medal",
             src: `${FLAG_BASE_URL}/${medal.file}`,
@@ -734,6 +751,7 @@
             onerror: (e)=>e.currentTarget.remove()
           }) : null
         );
+
 
         // Bahn
         const poolEl = h("span", { class: "m-pool" }, poolLabel(m.pool));
@@ -850,7 +868,7 @@
           const medal = isEinzel ? medalForPlace(placeStr) : null;
 
           const placeEl = h("span", { class: "pl" },
-            placeStr ? placeStr : "—",
+            placeStr || "",   // ← leer statt "—"
             medal ? h("img", {
               class: "res-medal",
               src: `${FLAG_BASE_URL}/${medal.file}`,
