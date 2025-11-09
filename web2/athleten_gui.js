@@ -1513,6 +1513,27 @@ function hasStartVal(v){
   }
 
 
+  // Einheitliche Tick-Logik für Altersachse
+  function yearTicksForWidth(xMin, xMax, widthPx){
+    const span = xMax - xMin;
+    let step = 1;
+    if ((widthPx < 720 && span > 15) || (widthPx >= 720 && span > 30)) {
+      step = 5;
+    }
+    let start = Math.ceil(xMin / step) * step;
+    if (start > xMax) start = Math.floor(xMin); // Fallback
+
+    const ticks = [];
+    for (let v = start; v <= Math.floor(xMax + 1e-9); v += step) ticks.push(v);
+
+    // Sicherheitsnetz, falls Rundung leer ergibt
+    if (!ticks.length) {
+      ticks.push(Math.floor(xMin), Math.ceil(xMax));
+    }
+    return ticks;
+  }
+
+
   // ---- LSC-Chart Renderer mit X-Achsen-Label & Vergleichssuche (1 Vergleich max., ersetzt alte Auswahl) ----
   function renderLSCChart(a){
     // kleine Helfer
@@ -1719,17 +1740,37 @@ function hasStartVal(v){
         const yy = fy(val);
         grid.appendChild(s("line", { x1:m.l, y1:yy, x2:W-m.r, y2:yy, class:"hline" }));
       }
-      const xAxis = s("g", { class:"lsc-xaxis" });
+      
+      // --- X-Achse: identisch zum Zeit-Chart ---
+      const xAxis = s("g", { class: "lsc-xaxis" });
       const tickLen = 8;
-      for (let v = Math.floor(xMin); v <= Math.ceil(xMax); v++){
-        const xx = fx(v);
-        grid.appendChild(s("line", { x1:xx, y1:y0, x2:xx, y2:y0 + tickLen, class:"xtick" }));
-        xAxis.appendChild(s("text", { x: xx, y: y0 + tickLen + 6, "text-anchor":"middle" }, String(v)));
+
+      const spanYears = xMax - xMin;
+      let xStep = 1;
+      if ((W < 720 && spanYears > 15) || (W >= 720 && spanYears > 30)) {
+        xStep = 5;
       }
-      xAxis.appendChild(s("text", { x: m.l + cw/2, y: y0 + tickLen + 26, "text-anchor":"middle" }, "Alter"));
+      const startTick = Math.ceil(xMin / xStep) * xStep;
+
+      for (let v = startTick; v <= Math.floor(xMax); v += xStep) {
+        const xx = fx(v);
+        // Tick an der Basislinie (wie im Zeit-Chart)
+        grid.appendChild(s("line", {
+          x1: xx, y1: m.t + ch, x2: xx, y2: m.t + ch + tickLen, class: "xtick"
+        }));
+        // Label
+        xAxis.appendChild(
+          s("text", { x: xx, y: m.t + ch + tickLen + 6, "text-anchor": "middle" }, String(v))
+        );
+      }
+      // Achsenbeschriftung
+      xAxis.appendChild(
+        s("text", { x: m.l + cw/2, y: m.t + ch + tickLen + 26, "text-anchor": "middle" }, "Alter")
+      );
 
       svg.appendChild(grid);
       svg.appendChild(xAxis);
+
 
       // Gradients (blau + grün)
       const defs = s("defs");
@@ -2124,16 +2165,25 @@ function hasStartVal(v){
         first = false;
       }
 
+      // --- X-Achse: dynamischer Schritt (1 oder 5 Jahre) ---
+      const spanYears = xMax - xMin;
+      let xStep = 1;
+      if ((W < 720 && spanYears > 15) || (W >= 720 && spanYears > 30)) {
+        xStep = 5;
+      }
+      const startTick = Math.ceil(xMin / xStep) * xStep;
 
-      // X-Ticks wie gehabt (ganze Jahre)
       const xAxis = s("g", { class: "time-xaxis" });
       const tickLen = 8;
-      for (let v = Math.floor(xMin); v <= Math.ceil(xMax); v++){
+
+      for (let v = startTick; v <= Math.floor(xMax); v += xStep) {
         const xx = fx(v);
+        // kleine Tick-Markierung an der Basislinie
         grid.appendChild(s("line", { x1: xx, y1: m.t + ch, x2: xx, y2: m.t + ch + tickLen, class: "xtick" }));
         xAxis.appendChild(s("text", { x: xx, y: m.t + ch + tickLen + 6, "text-anchor": "middle" }, String(v)));
       }
       xAxis.appendChild(s("text", { x: m.l + cw/2, y: m.t + ch + tickLen + 26, "text-anchor": "middle" }, "Alter"));
+
       yAxis.appendChild(s("text", { x: m.l, y: m.t - 4, "text-anchor": "start" }, ""));
 
       svg.appendChild(grid);
@@ -2356,365 +2406,6 @@ function hasStartVal(v){
 
   // ---------- UI: Suche ----------
   const AppState = {
-    athletes: [
-      // Alte Struktur (funktioniert weiterhin)
-      {
-        id: "a1",
-        name: "Lena Hoffmann",
-        ortsgruppe: "Karlsruhe",
-        geschlecht: "weiblich",
-        jahrgang: 2007,
-        poolLen: "50",
-        medals: { gold: 18, silver: 6, bronze: 7, title: "Medaillen" },
-        lsc: 742,
-        totalDisciplines: 20,
-        countriesDE: ["Deutschland","Schweiz","Italien"],
-        meets: [
-          { date: "2023-03-16", pool: "50", Land: "Deutschland" },
-          { date: "2023-05-11", pool: "25", Land: "Deutschland" },
-          { date: "2023-06-29", pool: "50", Land: "Schweiz" },
-          { date: "2024-02-01", pool: "50", Land: "Italien" }
-        ],
-        pbs: {
-          "50": { "50_retten": 32.18, "100_retten_flosse": 55.42, "100_kombi": 70.31, "100_lifesaver": 63.05, "200_super": 146.22, "200_hindernis": 139.88 },
-          "25": { "50_retten": 31.50, "100_lifesaver": 54.10 }
-        },
-        stats: {
-          "50": { "50_retten": { starts:12,dq:1 }, "100_retten_flosse":{ starts:8,dq:0 }, "100_kombi":{ starts:6,dq:0 }, "100_lifesaver":{ starts:10,dq:2 }, "200_super":{ starts:4,dq:0 }, "200_hindernis":{ starts:7,dq:1 } },
-          "25": { "50_retten": { starts:9,dq:0 }, "100_lifesaver":{ starts:5,dq:1 } }
-        }
-      },
-      // Neue Zielstruktur – Beispiel (gekürzt)
-      {
-        id: "ath_jan-philipp",
-        name: "Jan-Philipp Gnad",
-        geschlecht: "männlich",
-        jahrgang: 2001,
-        poolLen: "50",
-        meets: [
-          {
-            meet_name: "BMS-KA - 2024",
-            date: "2024-03-16",
-            pool: "25",
-            Ortsgruppe: "Wettersbach",
-            Regelwerk: "National",
-            Land: "Deutschland",
-            Startrecht: "OG",
-            Wertung: "Einzelkampf",
-            Vorläufe: "1",
-            LSC: "792,40",
-
-            Mehrkampf_Platz: "",
-
-            "50m_Retten_Zeit": "0:34,20",  "50m_Retten_Platz": "2",
-            "100m_Retten_Zeit": "0:57,90", "100m_Retten_Platz": "1",
-            "100m_Kombi_Zeit": "DQ",       "100m_Kombi_Platz": "",
-            "100m_Lifesaver_Zeit": "1:02,45", "100m_Lifesaver_Platz": "3",
-            "200m_SuperLifesaver_Zeit": "2:40,30", "200m_SuperLifesaver_Platz": "1",
-            "200m_Hindernis_Zeit": "2:25,50", "200m_Hindernis_Platz": "2"
-          },
-          {
-            meet_name: "Orange-Cup - 2024",
-            date: "2025-11-09",
-            pool: "50",
-            Ortsgruppe: "Masch",
-            Regelwerk: "International",
-            Land: "Niederlande",
-            Startrecht: "BV",
-            Wertung: "Mehrkampf",
-            Vorläufe: "1",
-            LSC: "815,20",
-
-            Mehrkampf_Platz: "2",
-
-            "50m_Retten_Zeit": "0:34,85",  "50m_Retten_Platz": "2",
-            "100m_Retten_Zeit": "0:58,40", "100m_Retten_Platz": "15",
-            "100m_Kombi_Zeit": "1:14,80",  "100m_Kombi_Platz": "15",
-            "100m_Lifesaver_Zeit": "1:01,90", "100m_Lifesaver_Platz": "6",
-            "200m_SuperLifesaver_Zeit": "2:39,80", "200m_SuperLifesaver_Platz": "5",
-            "200m_Hindernis_Zeit": "2:22,22", "200m_Hindernis_Platz": "4"
-          },
-          {
-            meet_name: "Orange-Cup - 2024",
-            date: "2025-11-09",
-            pool: "50",
-            Ortsgruppe: "Masch",
-            Regelwerk: "International",
-            Land: "Niederlande",
-            Startrecht: "BV",
-            Wertung: "Einzelkampf",
-            Vorläufe: "2",
-            LSC: "815,23",
-
-            Mehrkampf_Platz: "5",
-            "200m_Hindernis_Zeit": "2:18,50", "200m_Hindernis_Platz": "5",
-            "50m_Retten_Zeit": "0:34,00",  "50m_Retten_Platz": "1",
-          },
-          {
-            meet_name: "LMS - 2025",
-            date: "2025-05-18",
-            pool: "50",
-            Ortsgruppe: "Malsch",
-            Regelwerk: "International",
-            Land: "Deutschland",
-            Startrecht: "OG",
-            Wertung: "Mehrkampf",
-            Vorläufe: "1",
-            LSC: "830,75",
-
-            Mehrkampf_Platz: "1",
-
-            "50m_Retten_Zeit": "0:38,50",  "50m_Retten_Platz": "1",
-            "100m_Retten_Zeit": "0:57,40", "100m_Retten_Platz": "1",
-            "100m_Kombi_Zeit": "1:13,90",  "100m_Kombi_Platz": "2",
-            "100m_Lifesaver_Zeit": "1:00,80", "100m_Lifesaver_Platz": "2",
-            "200m_SuperLifesaver_Zeit": "2:38,50", "200m_SuperLifesaver_Platz": "1",
-            "200m_Hindernis_Zeit": "2:22,95", "200m_Hindernis_Platz": "2"
-          },
-          {
-            meet_name: "BP - 2025",
-            date: "2025-07-27",
-            pool: "50",
-            Ortsgruppe: "Ettlingen",
-            Regelwerk: "National",
-            Land: "Deutschland",
-            Startrecht: "LV",
-            Wertung: "Mehrkampf",
-            Vorläufe: "1",
-            LSC: "830,75",
-
-            Mehrkampf_Platz: "1",
-
-            "50m_Retten_Zeit": "0:39,60",  "50m_Retten_Platz": "1",
-            "100m_Retten_Zeit": "0:57,40", "100m_Retten_Platz": "1",
-            "100m_Kombi_Zeit": "1:13,90",  "100m_Kombi_Platz": "2",
-            "100m_Lifesaver_Zeit": "1:00,80", "100m_Lifesaver_Platz": "2",
-            "200m_SuperLifesaver_Zeit": "2:38,50", "200m_SuperLifesaver_Platz": "1",
-            "200m_Hindernis_Zeit": "2:22,95", "200m_Hindernis_Platz": "2"
-          }
-        ]
-      },
-      {
-        id: "ath_julian",
-        name: "Julian von Auenmüller",
-        AktuelleOrtsgruppe: "Oberhausen Rheinhausen",
-        geschlecht: "männlich",
-        jahrgang: 2001,
-        poolLen: "50",
-        meets: [
-          {
-            meet_name: "BMS-KA - 2024",
-            date: "2024-03-16",
-            pool: "25",
-            Ortsgruppe: "Oberhausen Rheinhausen",
-            Regelwerk: "National",
-            Land: "Deutschland",
-            Startrecht: "OG",
-            Wertung: "Einzelkampf",
-            Vorläufe: "1",
-            LSC: "685,40",
-
-            Mehrkampf_Platz: "2",
-
-            "50m_Retten_Zeit": "0:33,20",  "50m_Retten_Platz": "2",
-            "100m_Retten_Zeit": "0:57,90", "100m_Retten_Platz": "1",
-            "100m_Kombi_Zeit": "DQ",       "100m_Kombi_Platz": "",
-            "100m_Lifesaver_Zeit": "1:02,45", "100m_Lifesaver_Platz": "3",
-            "200m_SuperLifesaver_Zeit": "2:40,30", "200m_SuperLifesaver_Platz": "1",
-            "200m_Hindernis_Zeit": "2:25,50", "200m_Hindernis_Platz": "2"
-          },
-          {
-            meet_name: "Orange-Cup - 2024",
-            date: "2024-11-09",
-            pool: "50",
-            Ortsgruppe: "Oberhausen Rheinhausen",
-            Regelwerk: "International",
-            Land: "Niederlande",
-            Startrecht: "LV",
-            Wertung: "Einzel-/Mehrkampf",
-            Vorläufe: "1",
-            LSC: "752,20",
-
-            Mehrkampf_Platz: "56",
-
-            "50m_Retten_Zeit": "0:34,00",  "50m_Retten_Platz": "3",
-            "100m_Retten_Zeit": "0:58,40", "100m_Retten_Platz": "2",
-            "100m_Kombi_Zeit": "1:14,80",  "100m_Kombi_Platz": "5",
-            "100m_Lifesaver_Zeit": "1:01,90", "100m_Lifesaver_Platz": "2",
-            "200m_SuperLifesaver_Zeit": "2:39,80", "200m_SuperLifesaver_Platz": "4",
-            "200m_Hindernis_Zeit": "", "200m_Hindernis_Platz": ""
-          },
-          {
-            meet_name: "LMS - 2025",
-            date: "2025-05-18",
-            pool: "50",
-            Ortsgruppe: "Oberhausen Rheinhausen",
-            Regelwerk: "National",
-            Land: "Deutschland",
-            Startrecht: "OG",
-            Wertung: "Mehrkampf",
-            Vorläufe: "1",
-            LSC: "880,75",
-
-            Mehrkampf_Platz: "1",
-
-            "50m_Retten_Zeit": "0:35,50",  "50m_Retten_Platz": "1",
-            "100m_Retten_Zeit": "0:57,40", "100m_Retten_Platz": "1",
-            "100m_Kombi_Zeit": "1:13,90",  "100m_Kombi_Platz": "2",
-            "100m_Lifesaver_Zeit": "1:00,80", "100m_Lifesaver_Platz": "2",
-            "200m_SuperLifesaver_Zeit": "2:38,50", "200m_SuperLifesaver_Platz": "1",
-            "200m_Hindernis_Zeit": "2:22,95", "200m_Hindernis_Platz": "2"
-          }
-        ]
-      },
-      {
-        id: "ath_lisa",
-        name: "Lisa Brenzinger",
-        AktuelleOrtsgruppe: "Malsch",
-        geschlecht: "weiblich",
-        jahrgang: 1999,
-        poolLen: "50",
-        meets: [
-          {
-            meet_name: "BMS-RN-MA - 2023",
-            date: "2023-10-07",
-            pool: "25",
-            Ortsgruppe: "Malsch",
-            Regelwerk: "National",
-            Land: "Deutschland",
-            Startrecht: "OG",
-            Wertung: "Einzelkampf",
-            Vorläufe: "1",
-            LSC: "801,12",
-
-            Mehrkampf_Platz: "",
-
-            "50m_Retten_Zeit": "0:33,50",  "50m_Retten_Platz": "1",
-            "100m_Retten_Zeit": "0:56,70", "100m_Retten_Platz": "2",
-            "100m_Kombi_Zeit": "1:12,90",  "100m_Kombi_Platz": "3",
-            "100m_Lifesaver_Zeit": "1:00,30", "100m_Lifesaver_Platz": "2",
-            "200m_SuperLifesaver_Zeit": "2:36,20", "200m_SuperLifesaver_Platz": "3",
-            "200m_Hindernis_Zeit": "", "200m_Hindernis_Platz": ""
-          },
-          {
-            meet_name: "French-Rescue - 2024",
-            date: "2024-06-15",
-            pool: "50",
-            Ortsgruppe: "Malsch",
-            Regelwerk: "International",
-            Land: "Frankreich",
-            Startrecht: "LV",
-            Wertung: "Einzel-/Mehrkampf",
-            Vorläufe: "1",
-            LSC: "842,90",
-
-            Mehrkampf_Platz: "1",
-
-            "50m_Retten_Zeit": "0:33,90",  "50m_Retten_Platz": "2",
-            "100m_Retten_Zeit": "0:57,20", "100m_Retten_Platz": "1",
-            "100m_Kombi_Zeit": "1:13,10",  "100m_Kombi_Platz": "2",
-            "100m_Lifesaver_Zeit": "1:00,10", "100m_Lifesaver_Platz": "1",
-            "200m_SuperLifesaver_Zeit": "2:35,50", "200m_SuperLifesaver_Platz": "2",
-            "200m_Hindernis_Zeit": "2:21,80", "200m_Hindernis_Platz": "3"
-          },
-          {
-            meet_name: "MISP-2025",
-            date: "2025-02-22",
-            pool: "25",
-            Ortsgruppe: "Malsch",
-            Regelwerk: "International",
-            Land: "Belgien",
-            Startrecht: "LV",
-            Wertung: "Mehrkampf",
-            Vorläufe: "1",
-            LSC: "856,33",
-
-            Mehrkampf_Platz: "1",
-
-            "50m_Retten_Zeit": "0:33,20",  "50m_Retten_Platz": "1",
-            "100m_Retten_Zeit": "0:56,10", "100m_Retten_Platz": "1",
-            "100m_Kombi_Zeit": "1:11,90",  "100m_Kombi_Platz": "1",
-            "100m_Lifesaver_Zeit": "0:59,60", "100m_Lifesaver_Platz": "1",
-            "200m_SuperLifesaver_Zeit": "2:33,80", "200m_SuperLifesaver_Platz": "1",
-            "200m_Hindernis_Zeit": "2:18,90", "200m_Hindernis_Platz": "2"
-          }
-        ]
-      },
-      {
-        id: "ath_lea",
-        name: "Lea Hunger",
-        AktuelleOrtsgruppe: "Weil am Rhein",
-        geschlecht: "weiblich",
-        jahrgang: 2011,
-        poolLen: "50",
-        meets: [
-          {
-            meet_name: "BMS-HR-ML - 2024",
-            date: "2024-04-20",
-            pool: "25",
-            Ortsgruppe: "Weil am Rhein",
-            Regelwerk: "National",
-            Land: "Deutschland",
-            Startrecht: "OG",
-            Wertung: "Mehrkampf",
-            Vorläufe: "1",
-            LSC: "612,10",
-
-            Mehrkampf_Platz: "3",
-
-            "50m_Retten_Zeit": "0:43,50",  "50m_Retten_Platz": "4",
-            "100m_Retten_Zeit": "1:18,20", "100m_Retten_Platz": "5",
-            "100m_Kombi_Zeit": "DQ",       "100m_Kombi_Platz": "",
-            "100m_Lifesaver_Zeit": "1:25,00", "100m_Lifesaver_Platz": "6",
-            "200m_SuperLifesaver_Zeit": "3:25,40", "200m_SuperLifesaver_Platz": "3",
-            "200m_Hindernis_Zeit": "3:01,80", "200m_Hindernis_Platz": "4"
-          },
-          {
-            meet_name: "SLRG - 2024",
-            date: "2024-09-28",
-            pool: "50",
-            Ortsgruppe: "Weil am Rhein",
-            Regelwerk: "National",
-            Land: "Schweiz",
-            Startrecht: "LV",
-            Wertung: "Einzelkampf",
-            Vorläufe: "1",
-            LSC: "640,55",
-
-            Mehrkampf_Platz: "",
-
-            "50m_Retten_Zeit": "0:42,80",  "50m_Retten_Platz": "5",
-            "100m_Retten_Zeit": "1:17,50", "100m_Retten_Platz": "5",
-            "100m_Kombi_Zeit": "1:36,20",  "100m_Kombi_Platz": "6",
-            "100m_Lifesaver_Zeit": "1:23,80", "100m_Lifesaver_Platz": "5",
-            "200m_SuperLifesaver_Zeit": "", "200m_SuperLifesaver_Platz": "",
-            "200m_Hindernis_Zeit": "2:58,40", "200m_Hindernis_Platz": "5"
-          },
-          {
-            meet_name: "Bodensee-Pokal -2025",
-            date: "2025-07-27",
-            pool: "50",
-            Ortsgruppe: "Weil am Rhein",
-            Regelwerk: "National",
-            Land: "Deutschland",
-            Startrecht: "LV",
-            Wertung: "Mehrkampf",
-            Vorläufe: "1",
-            LSC: "658,20",
-
-            Mehrkampf_Platz: "2",
-
-            "50m_Retten_Zeit": "0:41,95",  "50m_Retten_Platz": "3",
-            "100m_Retten_Zeit": "1:16,90", "100m_Retten_Platz": "4",
-            "100m_Kombi_Zeit": "1:35,10",  "100m_Kombi_Platz": "4",
-            "100m_Lifesaver_Zeit": "1:22,60", "100m_Lifesaver_Platz": "4",
-            "200m_SuperLifesaver_Zeit": "3:18,90", "200m_SuperLifesaver_Platz": "3",
-            "200m_Hindernis_Zeit": "2:55,70", "200m_Hindernis_Platz": "3"
-          }
-        ]
-      }
-    ],
-
     query: "", suggestions: [], activeIndex: -1, selectedAthleteId: null, poolLen: "50"
   };
 
@@ -3463,8 +3154,12 @@ function hasStartVal(v){
       h("div", { class: "ath-card-buttom" },
         tabsWrap,
         h("div", { class: "ath-profile-section muted" },
-          "Hier kommt später die Statistik (GUI) aus deiner Excel-Datenbank rein."
+          h("p", {}, "Die Datenbank erfasst nur Einzel-Pool-Wettkämpfe von Badischen Schwimmerinnen und Schwimmern im Rettungssport."),
+          h("p", {}, "Staffeln und Freigewässer sind nicht enthalten."),
+          h("p", {}, "Platzierungen sind noch nicht alle eingetragen."),
+          h("p", {}, "Sollten Fehler oder neue Ergebnisse gefunden werden, wenden sie sich bitte an jan-philipp.gnad@dlrg.org")
         )
+
       ),
     );
     mount.innerHTML = "";
