@@ -446,43 +446,57 @@
     const list = Array.isArray(meets) ? meets.slice() : [];
     const groups = new Map();
 
-    // 1) gruppieren
+    // 1) Gruppieren nach (meet_name + date)
     list.forEach((m, idx) => {
       if (!m || !m.meet_name) return;
       const k = meetKey(m);
       if (!groups.has(k)) groups.set(k, []);
-      // Lauf-Index merken (Reihenfolge in der Quelle => Laufnummer)
-      groups.get(k).push({ ...m, _lauf: (groups.get(k).length + 1), _srcIndex: idx });
+
+      // Laufnummer robust aus Vorläufe ziehen (1,2,3,...) – Fallback: Reihenfolge
+      const raw = (m.Vorläufe ?? m._lauf ?? "").toString().trim();
+      const parsed = parseInt(raw, 10);
+      const runNo = Number.isFinite(parsed) && parsed > 0
+        ? parsed
+        : (groups.get(k).length + 1);
+
+      groups.get(k).push({
+        ...m,
+        _lauf: runNo,           // ← echte Laufnummer
+        _lauf_raw: raw,         // optional für Debug
+        _srcIndex: idx          // Fallback-Stabilität
+      });
     });
 
     const merged = [];
 
-    // 2) jede Gruppe zusammenfassen
-    for (const runs of groups.values()){
-      // Sortiert nach ursprünglicher Reihenfolge → Lauf 1, 2, ...
-      runs.sort((a,b) => a._srcIndex - b._srcIndex);
+    // 2) Jede Gruppe zusammenfassen
+    for (const runs0 of groups.values()){
+      // nach echter Laufnummer sortieren; bei Gleichstand: Quellreihenfolge
+      const runs = runs0.sort((a, b) => (a._lauf - b._lauf) || (a._srcIndex - b._srcIndex));
 
-      const highest = runs[runs.length - 1]; // höchster Lauf
-      const out = { ...highest };            // Meta vom höchsten Lauf
-      out._runs = runs.map(r => ({ ...r })); // volle Transparenz der Läufe
-      out._lauf_max = runs.length;
+      // höchster Lauf = Finale (oder letztes vorhandenes)
+      const highest = runs[runs.length - 1];
+      const out = { ...highest };
+      out._runs = runs.map(r => ({ ...r }));
+      // Maximal vorhandene Laufnummer (nicht bloß Anzahl)
+      out._lauf_max = runs.reduce((m, r) => Math.max(m, Number(r._lauf)||0), 0) || runs.length;
 
-      // Für alle Disziplinfelder: Wert vom höchsten Lauf, falls vorhanden;
-      // sonst fallback auf ersten vorhandenen in (Lauf absteigend).
+      // Felder der Disziplinen: Wert vom höchsten verfügbaren Lauf, sonst nächstniedriger
       const ALL_TIME_FIELDS = MEET_DISC_TIME_FIELDS.slice();
       const PLACE_FIELDS = MEET_DISC_TIME_FIELDS.map(f => f.replace(/_Zeit$/i, "_Platz"));
 
       function pickFromHighest(field){
         for (let i = runs.length - 1; i >= 0; i--){
-          if (nonEmpty(runs[i][field])) return runs[i][field];
+          const v = runs[i][field];
+          if (v != null && String(v).trim() !== "") return v;
         }
-        return ""; // leer, wenn keiner
+        return "";
       }
 
       ALL_TIME_FIELDS.forEach(f => { out[f] = pickFromHighest(f); });
       PLACE_FIELDS.forEach(f => { out[f] = pickFromHighest(f); });
 
-      // Mehrkampf/LSC/Wertung/Startrecht/Regelwerk etc. → auch vom höchsten Lauf
+      // Meta immer vom höchsten Lauf
       out.Mehrkampf_Platz = pickFromHighest("Mehrkampf_Platz");
       out.LSC             = pickFromHighest("LSC");
       out.Wertung         = highest.Wertung || out.Wertung || "";
@@ -495,10 +509,10 @@
       merged.push(out);
     }
 
-    // nach Datum absteigend wie gehabt
     merged.sort((l, r) => new Date(r.date) - new Date(l.date));
     return merged;
   }
+
 
 
   function fmtDateShort(dStr){
@@ -537,21 +551,22 @@
     return null;
   }
 
-  function roundLabelFromIndex(idx, total){
-    // idx = 1-basiert (Lauf 1, 2, ...)
-    if (!Number.isFinite(total) || total <= 1) return null;
+  function roundLabelFromLauf(laufNummer, maxLauf){
+    const ln = Number(laufNummer);
+    const mx = Number(maxLauf);
+    if (!Number.isFinite(ln) || !Number.isFinite(mx) || mx <= 1) return null;
 
-    // Explizite Fälle
-    if (total === 2) return idx === 1 ? "Vorlauf" : "Finale";
-    if (total === 3) return idx === 1 ? "Vorlauf" : (idx === 2 ? "Halbfinale" : "Finale");
-    if (total === 4) return idx === 1 ? "Vorlauf" : (idx === 2 ? "Viertelfinale" : (idx === 3 ? "Halbfinale" : "Finale"));
+    if (mx === 2) return ln === 1 ? "Vorlauf" : (ln === 2 ? "Finale" : null);
+    if (mx === 3) return ln === 1 ? "Vorlauf" : (ln === 2 ? "Halbfinale" : (ln === 3 ? "Finale" : null));
+    if (mx === 4) return ln === 1 ? "Vorlauf" : (ln === 2 ? "Viertelfinale" : (ln === 3 ? "Halbfinale" : (ln === 4 ? "Finale" : null)));
 
-    // Fallback (selten >4): alles vor letztem = "Vorlauf", vorletztes = "Halbfinale", drittletztes = "Viertelfinale", letztes = "Finale"
-    if (idx === total) return "Finale";
-    if (idx === total - 1) return "Halbfinale";
-    if (idx === total - 2) return "Viertelfinale";
+    // generischer Fallback für >4
+    if (ln === mx) return "Finale";
+    if (ln === mx - 1) return "Halbfinale";
+    if (ln === mx - 2) return "Viertelfinale";
     return "Vorlauf";
   }
+
 
 
   function shortMeetName(name){
@@ -846,7 +861,8 @@
             }) : null
           );
 
-          const rLabel = roundLabelFromIndex(i + 1, runs.length);
+          const total = Number.isFinite(m._lauf_max) ? m._lauf_max : runs.length;
+          const rLabel = roundLabelFromLauf(run._lauf, total);
           const discWrap = h("span", { class: "d-wrap" },
             h("span", { class: "d" }, f.label),
             (rLabel ? h("span", { class: "d-sub" }, rLabel) : null)
@@ -1030,6 +1046,12 @@
     if (idx < 0 || !query) return text;
     return text.slice(0, idx) + "<mark>" + text.slice(idx, idx + nQuery.length) + "</mark>" + text.slice(idx + nQuery.length);
   };
+
+  function withHydratedMeets(ax){
+    const meets = AllMeetsByAthleteId.get(ax.id) || ax.meets || [];
+    return { ...ax, meets };
+  }
+
 
   function formatSeconds(sec) {
     if (sec == null || isNaN(sec)) return "—";
@@ -1599,12 +1621,14 @@ function hasStartVal(v){
     function hideCmpSuggest(){ suggest.classList.add("hidden"); }
 
     function chooseCmp(ax){
-      // REPLACE-MODUS: bestehende Auswahl (Legende & Daten) ersetzen
-      cmpAth = ax;
-      const merged = mergeDuplicateMeets(cmpAth.meets);
-      cmpPts = buildLSCSeries({ ...cmpAth, meets: merged });
+      // Athlet mit Meets anreichern und Meetings mergen
+      const full = withHydratedMeets(ax);
+      const merged = mergeDuplicateMeets(full.meets);
 
-      // alte Vergleichslegende entfernen (falls vorhanden)
+      cmpAth = { ...full, meets: merged };
+      cmpPts = buildLSCSeries(cmpAth);
+
+      // Legende aktualisieren
       legend.querySelector(".lsc-key--cmp")?.remove();
       legend.appendChild(
         hEl("span", { class:"lsc-key lsc-key--cmp" },
@@ -1617,8 +1641,9 @@ function hasStartVal(v){
       hideCmpSuggest();
       dismissKeyboard();
       cmpInput.value = cmpQuery = "";
-      paint(); // neu zeichnen inkl. grün
+      paint();
     }
+
 
     cmpInput.addEventListener("input", e => { cmpQuery = e.target.value || ""; updateCmpSuggest(); });
     cmpInput.addEventListener("keydown", e => {
@@ -1851,10 +1876,19 @@ function hasStartVal(v){
         });
         sel.addEventListener("change", () => {
           discKey = sel.value;
-          basePts = buildTimeSeriesForDiscipline(a, discKey);
-          cmpPts  = cmpAth ? buildTimeSeriesForDiscipline({ ...cmpAth, meets: mergeDuplicateMeets(cmpAth.meets) }, discKey) : null;
+          basePts = buildTimeSeriesForDiscipline(a, discKey); // a hat gemergte meets
+
+          if (cmpAth){
+            const full = withHydratedMeets(cmpAth);
+            const merged = mergeDuplicateMeets(full.meets);
+            cmpPts = buildTimeSeriesForDiscipline({ ...full, meets: merged }, discKey);
+          } else {
+            cmpPts = null;
+          }
           paint();
         });
+
+
         return sel;
       })()
     );
@@ -1970,20 +2004,27 @@ function hasStartVal(v){
     }
     function hideCmpSuggest(){ suggest.classList.add("hidden"); }
     function chooseCmp(ax){
-      cmpAth = ax;
-      cmpPts = buildTimeSeriesForDiscipline({ ...cmpAth, meets: mergeDuplicateMeets(cmpAth.meets) }, discKey);
+      const full   = withHydratedMeets(ax);
+      const merged = mergeDuplicateMeets(full.meets);
+
+      cmpAth = { ...full, meets: merged };
+      cmpPts = buildTimeSeriesForDiscipline(cmpAth, discKey);
+
       legend.querySelector(".time-key--cmp")?.remove();
       legend.appendChild(
         el("span", { class:"time-key time-key--cmp" },
-          el("span", { class:"time-key-dot green"}), el("span",{class:"time-key-label"}, cmpAth.name)
+          el("span", { class:"time-key-dot green"}),
+          el("span", { class:"time-key-label" }, cmpAth.name)
         )
       );
+
       clearBtn.classList.remove("hidden");
       hideCmpSuggest();
       dismissKeyboard();
       cmpInput.value = cmpQuery = "";
       paint();
     }
+
     cmpInput.addEventListener("input", e => { cmpQuery = e.target.value || ""; updateCmpSuggest(); });
     cmpInput.addEventListener("keydown", e => {
       if (!cmpResults.length) return;
