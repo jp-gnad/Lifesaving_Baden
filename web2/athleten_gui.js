@@ -1740,6 +1740,22 @@ function hasStartVal(v){
         const yy = fy(val);
         grid.appendChild(s("line", { x1:m.l, y1:yy, x2:W-m.r, y2:yy, class:"hline" }));
       }
+
+      // --- Y-Achse: nur 200/400/600/800 P, oberhalb der Linie ---
+      const yAxis = s("g", { class: "lsc-yaxis" });
+      const labelOffset = 6; // Pixel nach oben
+      [200, 400, 600, 800].forEach(v => {
+        const yy = fy(v);
+        yAxis.appendChild(
+          s("text", {
+            x: m.l,
+            y: yy - labelOffset,        // oberhalb der Linie
+            "text-anchor": "start"      // linksbündig am Rand
+          }, `${v}P`)
+        );
+      });
+      svg.appendChild(yAxis);
+
       
       // --- X-Achse: identisch zum Zeit-Chart ---
       const xAxis = s("g", { class: "lsc-xaxis" });

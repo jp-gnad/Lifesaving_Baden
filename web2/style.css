@@ -2005,3 +2005,10 @@ body{
 .time-suggest-name{ font-weight:700; color:#0f172a; }
 .time-year{ color:#64748b; font-weight:600; margin-left:6px; }
 .time-suggest-sub{ color:#475569; font-size:12px; }
+
+/* Helles Grau und dezenter Look für die LSC-Y-Achse */
+.lsc-yaxis text{
+  fill: #9ca3af;   /* hellgrau */
+  opacity: .85;
+  font-size: 12px;
+}
