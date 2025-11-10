@@ -266,39 +266,71 @@
 
 
   // Baut Zeit-Punkte für eine Disziplin (alle Läufe mit gültiger Zeit; DQ wird ignoriert)
-  function buildTimeSeriesForDiscipline(a, discKey){
+  // Baut ALLE Läufe für eine Disziplin, optional gefiltert nach Bahn(en).
+  // opts.lanes: Set oder Array mit "25"/"50" (Default: beide)
+  function buildTimeSeriesForDiscipline(a, discKey, opts = {}) {
     const dMeta = DISCIPLINES.find(d => d.key === discKey);
     if (!dMeta) return [];
     const jahrgang = Number(a?.jahrgang);
     if (!Number.isFinite(jahrgang)) return [];
 
-    const byDate = new Map();
-    for (const m of Array.isArray(a.meets) ? a.meets : []){
+    const lanesWanted = new Set(
+      Array.isArray(opts.lanes) || (opts.lanes instanceof Set)
+        ? Array.from(opts.lanes)
+        : ["25","50"]
+    );
+
+    const meets = Array.isArray(a.meets) ? a.meets : [];
+    const birth = new Date(`${jahrgang}-07-01T00:00:00Z`);
+    const rows = [];
+
+    for (const m of meets) {
       const dateISO = String(m?.date || "").slice(0,10);
       if (!dateISO) continue;
+      const d = new Date(dateISO);
+      if (isNaN(d)) continue;
 
       const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
-      let best = { lauf: -1, sec: NaN, meet_name: "" };
+      const laufMax = Number.isFinite(m?._lauf_max) ? m._lauf_max
+                    : runs.reduce((mx,r)=>Math.max(mx, parseInt(r?._lauf || r?.Vorläufe || 1,10)||1), 1);
 
-      for (const r of runs){
-        const lauf = Number(r?._lauf || r?.Vorläufe || 1);
+      for (const r of runs) {
+        const lauf = parseInt((r?._lauf ?? r?.Vorläufe ?? 1), 10);
         const raw  = r?.[dMeta.meetZeit] ?? m?.[dMeta.meetZeit] ?? "";
         const sec  = parseTimeToSec(raw);
-        if (Number.isFinite(lauf) && Number.isFinite(sec) && lauf >= best.lauf){
-          best = { lauf, sec, meet_name: String(m.meet_name || m.meet || "").replace(/\s+-\s+.*$/, "").trim() };
-        }
+        if (!Number.isFinite(lauf) || !Number.isFinite(sec)) continue;
+
+        // Bahn ermitteln (Run → Meet) und filtern
+        const pool = String(r?.pool || m?.pool || "").trim();
+        if (!lanesWanted.has(pool)) continue;
+
+        const ageYears = (d - birth) / (365.2425*24*3600*1000);
+        const age = Math.round(ageYears * 100) / 100;
+        const meetName = String(m.meet_name || m.meet || "").replace(/\s+-\s+.*$/, "").trim();
+
+        // Rundenlabel nur „Vorlauf“/„Finale“ anzeigen
+        const rl = roundLabelFromLauf(lauf, laufMax);
+        const showRound = (rl === "Vorlauf" || rl === "Finale") ? rl : "";
+
+        rows.push({
+          age,
+          sec,
+          date: dateISO,
+          meet_name: meetName,
+          lauf,
+          lauf_max: laufMax,
+          round: showRound,   // ← nur Vorlauf/Finale, sonst ""
+          pool                  // "25" | "50" (für spätere Nutzung falls nötig)
+        });
       }
-      if (!Number.isFinite(best.sec)) continue;
-
-      const birth = new Date(`${jahrgang}-07-01T00:00:00Z`);
-      const ageYears = (new Date(dateISO) - birth) / (365.2425*24*3600*1000);
-      const age = Math.round(ageYears * 100) / 100;
-
-      byDate.set(dateISO, { age, sec: best.sec, date: dateISO, meet_name: best.meet_name });
     }
 
-    return Array.from(byDate.values()).sort((l, r) => new Date(l.date) - new Date(r.date));
+    // Datum ↑, dann Lauf ↑ → vertikale Verbindung am gleichen x
+    rows.sort((a,b) => (new Date(a.date) - new Date(b.date)) || (a.lauf - b.lauf));
+    return rows;
   }
+
+
 
 
 
@@ -1932,42 +1964,78 @@ function hasStartVal(v){
       return node;
     };
 
+    // ▶︎ NEU: Card-Container anlegen, bevor wir head/vp/tooltip anhängen
+    const card = el("div", { class:"ath-time-card" });
+
     // Disziplin-Vorauswahl: erste mit Daten, sonst erste in Liste
     const firstWithData = DISCIPLINES.find(d => buildTimeSeriesForDiscipline(a, d.key).length > 0);
     let discKey = (firstWithData || DISCIPLINES[0]).key;
 
-    // Serien
-    let basePts = buildTimeSeriesForDiscipline(a, discKey);
-    let cmpAth = null, cmpPts = null;
+    // Bahn-Filter (Default: beide aktiv)
+    const lanes = new Set(["25","50"]);
 
-    // Card + Kopf mit Dropdown
-    const card = el("div", { class:"ath-time-card" });
+    // Serien (werden durch recomputeSeries() gesetzt)
+    let basePts = [], cmpAth = null, cmpPts = null;
+
+    // Segment-Buttons für 50/25 m
+    const btn50 = el("button", {
+      class: "seg-btn active", type: "button", "aria-pressed": "true",
+      onclick: () => toggleLane("50", btn50)
+    }, "50m Bahn");
+
+    const btn25 = el("button", {
+      class: "seg-btn active", type: "button", "aria-pressed": "true",
+      onclick: () => toggleLane("25", btn25)
+    }, "25m Bahn");
+
+    const laneSeg = el("div", { class: "seg time-lanes" }, btn50, btn25);
+
+    // Disziplin-Select
+    const sel = el("select", { class:"time-disc" });
+    DISCIPLINES.forEach(d => {
+      sel.appendChild(el("option", { value:d.key, selected: d.key===discKey }, d.label));
+    });
+    sel.addEventListener("change", () => {
+      discKey = sel.value;
+      recomputeSeries();   // ← jetzt über Helper (nutzt lanes)
+      paint();
+    });
+
     const head = el("div", { class:"time-head" },
       el("h4", {}, "Zeit-Verlauf"),
-      (() => {
-        const sel = el("select", { class:"time-disc" });
-        DISCIPLINES.forEach(d => {
-          sel.appendChild(el("option", { value:d.key, selected: d.key===discKey }, d.label));
-        });
-        sel.addEventListener("change", () => {
-          discKey = sel.value;
-          basePts = buildTimeSeriesForDiscipline(a, discKey); // a hat gemergte meets
-
-          if (cmpAth){
-            const full = withHydratedMeets(cmpAth);
-            const merged = mergeDuplicateMeets(full.meets);
-            cmpPts = buildTimeSeriesForDiscipline({ ...full, meets: merged }, discKey);
-          } else {
-            cmpPts = null;
-          }
-          paint();
-        });
-
-
-        return sel;
-      })()
+      laneSeg,
+      sel
     );
     card.appendChild(head);
+    recomputeSeries();
+
+
+    function setBtnState(btn, on){
+      btn.classList.toggle("active", !!on);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+
+    function toggleLane(code, btn){
+      const isOn = lanes.has(code);
+      if (isOn && lanes.size === 1) return;   // mindestens eine Bahn muss aktiv bleiben
+      if (isOn) lanes.delete(code); else lanes.add(code);
+      setBtnState(btn, lanes.has(code));
+      recomputeSeries();
+      paint();
+    }
+
+    function recomputeSeries(){
+      basePts = buildTimeSeriesForDiscipline(a, discKey, { lanes });
+      if (cmpAth){
+        const full   = withHydratedMeets(cmpAth);
+        const merged = mergeDuplicateMeets(full.meets);
+        cmpPts = buildTimeSeriesForDiscipline({ ...full, meets: merged }, discKey, { lanes });
+      } else {
+        cmpPts = null;
+      }
+    }
+
+
 
     // Y-Achsen-Start (Sekunden) je Disziplin
     function getYAxisBaseSec(dKey){
@@ -2083,7 +2151,8 @@ function hasStartVal(v){
       const merged = mergeDuplicateMeets(full.meets);
 
       cmpAth = { ...full, meets: merged };
-      cmpPts = buildTimeSeriesForDiscipline(cmpAth, discKey);
+      recomputeSeries();
+      paint();
 
       legend.querySelector(".time-key--cmp")?.remove();
       legend.appendChild(
@@ -2113,6 +2182,7 @@ function hasStartVal(v){
       cmpAth = null; cmpPts = null;
       clearBtn.classList.add("hidden");
       legend.querySelector(".time-key--cmp")?.remove();
+      recomputeSeries();
       paint();
     });
 
@@ -2240,14 +2310,16 @@ function hasStartVal(v){
             "data-name": (colorClass==="blue" ? (a?.name||"") : (cmpAth?.name||"")),
             "data-time": mmss(p.sec),
             "data-date": (new Date(p.date)).toLocaleDateString("de-DE"),
-            "data-meet": p.meet_name || "—"
+            "data-meet": p.meet_name || "—",
+            "data-round": p.round || ""  
           });
           const show = () => {
             activeIdx = idx; activeSeries = colorClass;
             c.setAttribute("data-active","1");
             const name = c.dataset.name ? ` – ${c.dataset.name}` : "";
             tip.querySelector(".tt-l1").textContent = `${c.dataset.time}${name}`;
-            tip.querySelector(".tt-l2").textContent = `${c.dataset.date} — ${c.dataset.meet || "—"}`;
+            const roundTxt = c.dataset.round ? ` (${c.dataset.round})` : "";
+            tip.querySelector(".tt-l2").textContent = `${c.dataset.date} — ${c.dataset.meet}${roundTxt}`;
             positionTip(c);
           };
           const hide = () => {

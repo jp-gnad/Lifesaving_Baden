@@ -1914,15 +1914,61 @@ body{
   position:relative;
 }
 .time-head{
-  display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px;
+  display:grid;
+  width:100%;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "title title"
+    "lanes  select";
+  align-items:center;
+  column-gap:16px;
+  row-gap:12px;
+  margin-bottom:12px;  /* aus dem alten Flex-Block übernommen */
+  font-size: 2em;
 }
-.time-head h4{
-  margin:0; font-weight:800; color:#0f172a; font-size:1.35rem;
+
+/* Titel mittig über beiden */
+.time-head > h4{
+  grid-area:title;
+  margin:0;
+  text-align:center;
 }
-.time-disc{
+
+/* Links: 50m/25m-Schalter */
+.time-head .time-lanes{
+  grid-area:lanes;
+  justify-self:start;
+}
+
+/* Rechts: Dropdown */
+.time-head .time-disc{
+  grid-area:select;
+  justify-self:end;
   border:1px solid rgba(17,24,39,0.16);
-  background:#fff; border-radius:10px; padding:8px 10px; font-weight:700;
+  background:#fff;
+  border-radius:10px;
+  padding:8px 10px;
+  font-weight:700;
 }
+
+@media (max-width: 640px){
+  .time-head{
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "title"
+      "lanes"
+      "select";
+    justify-items: center;
+  }
+
+  /* NEU: Buttons im schmalen Zustand zentrieren */
+  .time-head .time-lanes{ justify-self: center; }
+
+  /* bereits vorhanden: Dropdown zentrieren */
+  .time-head .time-disc{ justify-self: center; }
+}
+
+
 
 .time-viewport{ position:relative; height:clamp(340px, 44vw, 520px); }
 @media (max-width:720px){ .time-viewport{ height:clamp(380px, 64vw, 560px); } }
