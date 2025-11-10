@@ -1900,7 +1900,7 @@ body{
   background:#fff;
   border:1px solid rgba(17,24,39,0.12);
   border-radius:16px;
-  padding:20px 22px 18px;
+  padding: 14px 6px 6px 6px;
   position:relative;
 }
 .time-head{
