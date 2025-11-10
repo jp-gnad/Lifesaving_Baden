@@ -355,58 +355,48 @@ body{
 .ath-ui-search{
   display: grid;
   grid-template-columns: 1fr auto auto;
-  gap: 10px;
-  padding: 10px;
-  background: rgba(255,255,255,0.9);
-  border: 1px solid rgba(17,24,39,0.08);
-  border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(2,6,23,.10);
-  backdrop-filter: blur(4px);
+  gap: 0px;
+  background: transparent;
 }
 
 .ath-input{
-  border: 1px solid rgba(17,24,39,0.12);
+  border: 1px solid #0069B4;
   background: #fff;
-  border-radius: 10px;
+  border-radius: 4px 0px 0px 4px;
   padding: 12px 14px;
   font-size: 1rem;
   outline: none;
 }
-.ath-input:focus{
-  border-color: #2563eb33;
-  box-shadow: 0 0 0 4px #3b82f611;
-}
+.ath-input:focus{ }
 
 .ath-btn{
   appearance: none;
-  border-radius: 10px;
+  border-radius: 0px 4px 4px 0px;
   padding: 12px 14px;
   font-weight: 700;
   font-size: .95rem;
   cursor: pointer;
-  border: 1px solid rgba(17,24,39,0.12);
+  border: none;
   background: #fff;
-  transition: transform .06s ease, box-shadow .2s ease, opacity .2s ease;
 }
-.ath-btn:hover{ transform: translateY(-1px); box-shadow: 0 8px 20px rgba(2,6,23,.12) }
+
 .ath-btn.primary{
-  background: linear-gradient(135deg, #2563eb, #60a5fa);
-  border: 1px solid transparent;
+  background: #0069B4;
   color: #fff;
 }
+.ath-btn:hover{background-color: #005491;}
+
 
 /* Dropdown für Treffer */
 .ath-suggest{
   position: absolute;
   z-index: 40;
-  left: 10px; right: 10px;
+  left: 0px; right: 0px;
   top: calc(100% + 8px);
   max-height: 320px;
   overflow: auto;
   background: #fff;
-  border: 1px solid rgba(17,24,39,0.10);
-  border-radius: 12px;
-  box-shadow: 0 22px 60px rgba(2,6,23,.18);
+  border-radius: 5px;
 }
 .ath-suggest.hidden{ display: none }
 
