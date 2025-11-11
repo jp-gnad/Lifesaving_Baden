@@ -2504,7 +2504,6 @@ function hasStartVal(v){
     const mount = $("#athleten-container"); if (!mount) return;
     mount.innerHTML = "";
     const ui = h("section", { class: "ath-ui", role: "region", "aria-label": "Athletenbereich" });
-    ui.appendChild(h("p", { class: "ath-ui-note" }, "Suche nach Name (ab 5 Zeichen). Treffer erscheinen im Dropdown. Auswahl öffnet das Profil."));
     ui.appendChild(renderSearch());
     const profile = h("div", { id: "ath-profile" }); Refs.profileMount = profile; ui.appendChild(profile);
     mount.appendChild(ui);
@@ -2517,8 +2516,36 @@ function hasStartVal(v){
     const searchBtn = h("button", { class: "ath-btn primary", type: "button", title: "Ersten Treffer öffnen",
       onclick: () => { if (AppState.suggestions.length > 0) openProfile(AppState.suggestions[0]); } }, "Öffnen");
     wrap.appendChild(h("div", { class: "ath-ui-search", role: "search" }, input, searchBtn));
-    const suggest = h("div", { class: "ath-suggest hidden", role: "listbox", id: "ath-suggest" }); Refs.suggest = suggest; wrap.appendChild(suggest);
-    document.addEventListener("click", (e) => { if (!Refs.searchWrap.contains(e.target)) hideSuggestions(); });
+    const suggest = h("div", { class: "ath-suggest hidden", role: "listbox", id: "ath-suggest" });
+    Refs.suggest = suggest; wrap.appendChild(suggest);
+    // ----- Suggest nach <body> portieren und an das Eingabefeld „ankleben“
+    document.body.appendChild(suggest);
+
+    function placeSuggest(){
+      // Anker ist die ganze Suchzeile (Input + Button), damit die Breite passt
+      const anchor = wrap.querySelector(".ath-ui-search");
+      if (!anchor || suggest.classList.contains("hidden")) return;
+      const r = anchor.getBoundingClientRect();
+      suggest.style.setProperty("--ath-suggest-x", r.left + "px");
+      suggest.style.setProperty("--ath-suggest-y", (r.bottom + 8) + "px");
+      suggest.style.setProperty("--ath-suggest-w", r.width + "px");
+      suggest.classList.add("portal"); // aktiviert fixed-Layout per CSS
+    }
+
+    // bei Anzeige/Resize/Scroll neu positionieren
+    window.addEventListener("resize", placeSuggest);
+    window.addEventListener("scroll", placeSuggest, { passive:true });
+
+    // ... in renderSearch(), direkt NACH definition von placeSuggest():
+    Refs.placeSuggest = placeSuggest;
+
+
+    document.addEventListener("click", (e) => {
+      if (!Refs.searchWrap.contains(e.target) && !suggest.contains(e.target)) {
+        hideSuggestions();
+      }
+    });
+
     return wrap;
   }
 
@@ -2597,6 +2624,11 @@ function hasStartVal(v){
     });
 
     box.classList.remove("hidden");
+    // NEU: nach dem Anzeigen sofort korrekt an den Anker „ankleben“
+    Refs.placeSuggest && Refs.placeSuggest();
+
+    // (optional, aber robust auf iOS wegen Layout-Latenz)
+    requestAnimationFrame(() => { Refs.placeSuggest && Refs.placeSuggest(); });
   }
 
 
@@ -3261,12 +3293,6 @@ function hasStartVal(v){
   document.addEventListener("DOMContentLoaded", async () => {
     // UI sofort aufbauen (Suchleiste + leeres Profilmount)
     renderApp();
-
-    // Optionale Ladeanzeige in der Suggest-Box
-    if (Refs.suggest) {
-      Refs.suggest.classList.remove("hidden");
-      Refs.suggest.innerHTML = '<div class="ath-suggest-empty">Daten werden geladen …</div>';
-    }
 
     try {
       const rows = await loadWorkbookArray("Tabelle2");
