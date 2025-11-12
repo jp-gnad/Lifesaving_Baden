@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "DLRG";
+  src: url("/Lifesaving_Baden/web3/fonts/LT_50141_regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Seiteninhalt Startseite */
 main#content {
   max-width: 1100px;

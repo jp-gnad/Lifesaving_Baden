@@ -8,11 +8,11 @@ document.addEventListener("DOMContentLoaded", () => {
     <div class="footer-inner">
       <p>© ${year} Lifesaving Baden</p>
       <nav aria-label="Fußnavigation" class="footnav">
-        <a href="Datenschutz.html">Datenschutz</a>
+        <a href="datenschutz.html">Datenschutz</a>
         <span aria-hidden="true">·</span>
-        <a href="Impressum.html">Impressum</a>
+        <a href="impressum.html">Impressum</a>
         <span aria-hidden="true">·</span>
-        <a href="Infos.html">Infos</a>
+        <a href="infos.html">Infos</a>
       </nav>
     </div>
   `;
