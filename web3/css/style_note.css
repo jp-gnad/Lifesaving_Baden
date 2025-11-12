@@ -1,0 +1,26 @@
+/* Footer */
+#site-footer {
+  margin-top: 3rem;
+  border-top: 1px solid #e5e5e5;
+  background: #fafafa;
+}
+
+#site-footer .footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+#site-footer .footnav a {
+  text-decoration: none;
+  color: inherit;
+  margin-right: 0.5rem;
+}
+#site-footer .footnav a:hover {
+  text-decoration: underline;
+}

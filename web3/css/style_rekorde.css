@@ -1,0 +1,67 @@
+/* Layout */
+main#content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+
+.hint {
+  color: #444;
+  margin: 0 0 0.75rem 0;
+}
+
+.status {
+  font-size: 0.95rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+/* Tabelle */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid #eee;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+table.records {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px; /* bei schmalen Screens Scroll statt Quetschen */
+}
+
+table.records thead th {
+  text-align: left;
+  font-weight: 700;
+  padding: 0.75rem 0.9rem;
+  background: #f7fbff;
+  border-bottom: 1px solid #e6f0fa;
+  white-space: nowrap;
+}
+
+table.records tbody td {
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: top;
+}
+
+table.records tbody tr:nth-child(even) td {
+  background: #fcfdff;
+}
+
+td.mono {
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+td.empty {
+  text-align: center;
+  color: #666;
+}
+
+/* Responsiv */
+@media (max-width: 640px) {
+  .hint { font-size: 0.95rem; }
+  thead th, tbody td { padding: 0.55rem 0.7rem; }
+}

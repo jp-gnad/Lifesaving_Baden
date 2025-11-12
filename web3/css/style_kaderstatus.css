@@ -1,0 +1,95 @@
+/* Layout */
+main#content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+
+.hint {
+  color: #444;
+  margin: 0 0 0.75rem 0;
+}
+
+.status {
+  font-size: 0.95rem;
+  color: #333;
+  margin: 0.5rem 0 0.75rem 0;
+}
+
+/* Filterleiste */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.25rem 0 0.5rem 0;
+}
+.filters .search,
+.filters select {
+  padding: 0.55rem 0.6rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.5rem;
+  background: #fff;
+  font: inherit;
+}
+.filters .search {
+  flex: 1 1 260px;
+  min-width: 180px;
+}
+.filters select {
+  flex: 0 0 auto;
+}
+.filters .search:focus,
+.filters select:focus {
+  outline: none;
+  border-color: #0a66c2;
+  box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.15);
+}
+
+/* Tabelle */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid #eee;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+table.squad {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+table.squad thead th {
+  text-align: left;
+  font-weight: 700;
+  padding: 0.75rem 0.9rem;
+  background: #f7fbff;
+  border-bottom: 1px solid #e6f0fa;
+  white-space: nowrap;
+}
+
+table.squad tbody td {
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: top;
+}
+
+table.squad tbody tr:nth-child(even) td {
+  background: #fcfdff;
+}
+
+td.mono {
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+td.empty {
+  text-align: center;
+  color: #666;
+}
+
+/* Responsiv */
+@media (max-width: 640px) {
+  thead th, tbody td { padding: 0.55rem 0.7rem; }
+}

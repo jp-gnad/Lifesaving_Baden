@@ -1,0 +1,140 @@
+@font-face {
+  font-family: "DLRG";
+  src: url("../fonts/LT_50141_regular") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+:root{
+  --hdr-h: 64px;                 /* Höhe von Box 1 UND Box 2 */
+  --bg:#ffffff; 
+  --fg:#0f172a; 
+  --border:#e5e7eb; 
+  --accent:#0a66c2; 
+  --nav-bg:#f3f4f6;
+  --dlrg_red: rgb(227,6,19);
+  --dlrg_yellow: rgb(225,237,0);
+  --black: #000000;
+  --hdr-h: 80px;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  color:var(--fg);
+  background:var(--bg);
+  font-family: "DLRG", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+
+/* Sticky Header als Rahmen für beide Boxen */
+#site-header{
+  position:sticky; top:0; z-index:1000;
+  height: var(--hdr-h);
+  background: var(--black);
+}
+
+/* Box 1: Hintergrund mit Brand (links) */
+.hdr-bg{height:100%}
+.hdr-container{
+  max-width:1100px; margin:0 auto;
+  height:100%;
+  padding:0 1rem;
+  display:flex; align-items:center; justify-content:flex-start;
+  position:absolute; top:0; left:0;
+}
+.brand{
+  font-weight: 700; 
+  text-decoration:none; 
+  color:var(--dlrg_yellow); 
+  font-size: 2.2em;
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  line-height: 1;
+}
+
+/* SVG-Logo skaliert sich an die Headerhöhe an */
+.brand-logo{
+  display:block;
+  height:calc(var(--hdr-h) - 20px); /* passt in die Box, oben/unten 10px Luft */
+  width:auto;
+  object-fit:contain;
+}
+
+/* Optional: falls der Text zu lang wäre, kürzen */
+.brand-title{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:60vw; /* verhindert Überschneidung mit der rechten Nav-Box */
+}
+
+/* Box 2: Nav (liegt oben rechts, gleiche Höhe wie Box 1) */
+.hdr-nav-wrap{
+  position:absolute; top:0; right:0;
+  height:var(--hdr-h);
+  display:flex; align-items:center;
+}
+.hdr-nav{
+  height:100%;                     /* exakt gleiche Höhe wie Box 1 */
+  display:flex; align-items:center;
+  background: var(--dlrg_yellow);
+  border-radius: 100px 0 0 100px;
+  box-shadow:0 8px 22px rgba(0, 0, 0, 0.154);
+  overflow:hidden;                 /* saubere, abgerundete Kanten */
+}
+
+/* Nav-Inhalt als einzeilige Leiste */
+.nav{
+  display:flex; align-items:center; gap:.5rem;
+  padding:0 .5rem;
+  list-style:none;
+  flex-wrap:nowrap; white-space:nowrap;
+  font-size: 1.25em;
+  margin-left: 20px;
+  margin-right: 50px;
+}
+.nav li{list-style:none}
+.nav a{
+  display: inline-block;
+  text-decoration:none; color:var(--black);
+  padding:.55rem .9rem; border-radius:.55rem;
+}
+/* Aktiv: nur Unterstreichung, keine Farbfläche */
+.nav a.active{
+  color: var(--dlrg_red);
+}
+
+/* Falls du eine Hover-Farbe hast, hier für aktive Links unterdrücken */
+.nav a:hover{
+  background: none;            /* überschreibt evtl. frühere Regeln */
+  color: var(--black);              /* oder: var(--fg) */
+  text-decoration: underline;
+  text-underline-offset: 1.4em;
+  text-decoration-thickness: 4px;
+  text-decoration-skip-ink: auto;
+}
+
+/* Falls du eine Hover-Farbe hast, hier für aktive Links unterdrücken */
+.nav a.active:hover{
+  color: var(--dlrg_red);  
+  text-decoration: none;
+}
+
+
+
+/* Fokus sichtbar */
+.nav a:focus-visible{
+  outline:2px solid #000; outline-offset:2px;
+}
+
+/* Kleinere Screens: etwas kompakter + horizontales Scrollen bei Bedarf */
+@media (max-width:720px){
+  :root{ --hdr-h: 56px; }
+  .nav{ gap:.15rem; }
+  .nav a{ padding:.45rem .7rem; }
+  .hdr-nav{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+}

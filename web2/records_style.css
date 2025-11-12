@@ -1,0 +1,63 @@
+/* Pseudo-Element komplett deaktivieren */
+body::before {
+  content: none !important;
+}
+
+/* Optional gegen horizontales Scrollen bei Full-Bleed */
+html, body { overflow-x: clip; }
+
+/* Standard-Box (grau, full-bleed) */
+.records-box {
+  background: grey;
+  padding: 1.25rem;
+  width: 100vw;
+  margin-inline: calc(50% - 50vw); /* aus dem Wrapper „ausbrechen“ */
+  box-sizing: border-box;
+}
+
+/* Bild-Box (zweite Box) mit konstantem Seitenverhältnis 16:5 */
+.records-box--image {
+  /* Full-Bleed über komplette Bildschirmbreite */
+  width: 100vw;
+  margin-inline: calc(50% - 50vw);
+
+  /* fixes Seitenverhältnis: Breite : Höhe = 16 : 5 */
+  aspect-ratio: 16 / 4;
+
+  /* KEINE feste/minimale Höhe setzen, sonst wird das Ratio überstimmt */
+  /* min-height: 40vh;  <-- entfernen */
+
+  position: relative;
+  color: #fff;
+  overflow: hidden;
+  text-align: center;
+
+  /* Hintergrundbild */
+  background-image: url("./images/hintergrund.jpg");
+  background-size: cover;
+  background-position: 50% 100%;  /* bei Bedarf anpassen (z.B. center center) */
+  background-repeat: no-repeat;
+}
+
+/* Lesbarkeit verbessern (Overlay) */
+.records-box--image::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.5));
+  pointer-events: none;
+}
+
+/* Inhalt über das Overlay heben */
+.records-box--image > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Optional: beide Boxen nebeneinander auf großen Bildschirmen
+   (bei Full-Bleed-Elementen sind sie typischerweise trotzdem untereinander) */
+#records-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+}

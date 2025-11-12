@@ -1,0 +1,11 @@
+main#content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+
+.imprint h1 { margin: 0 0 0.5rem 0; }
+.imprint section { margin: 1rem 0; }
+.imprint h2 { font-size: 1.15rem; margin: 0.75rem 0 0.35rem; }
+.placeholder { color: #666; font-style: italic; }
+.asof { color: #555; margin-top: 1rem; font-size: 0.95rem; }

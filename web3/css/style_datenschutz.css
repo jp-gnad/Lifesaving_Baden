@@ -1,0 +1,17 @@
+main#content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+
+.privacy h1 { margin: 0 0 0.5rem 0; }
+.privacy .hint { color: #444; margin-bottom: 1rem; }
+
+.privacy section { margin: 1rem 0; }
+.privacy h2 { font-size: 1.15rem; margin: 0.75rem 0 0.35rem; }
+
+.plain { margin: 0.25rem 0 0 1.2rem; }
+.plain li { margin: 0.25rem 0; }
+
+.placeholder { color: #666; font-style: italic; }
+.asof { color: #555; margin-top: 1rem; font-size: 0.95rem; }
