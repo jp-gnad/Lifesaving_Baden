@@ -4,8 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   main.innerHTML = `
     <section class="hero">
-      <h1>Willkommen</h1>
-      <p>Dies ist die Startseite des Projekts „Lifesaving Baden“.</p>
+      <h1>Pool Lifesaving</h1>
     </section>
 
     <section class="updates">
