@@ -1,10 +1,11 @@
 @font-face {
   font-family: "DLRG";
-  src: url("../fonts/LT_50141_regular") format("woff");
+  src: url("/Lifesaving_Baden/web3/fonts/LT_50141_regular.woff") format("woff");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
+
 
 
 :root{
@@ -15,7 +16,7 @@
   --accent:#0a66c2; 
   --nav-bg:#f3f4f6;
   --dlrg_red: rgb(227,6,19);
-  --dlrg_yellow: rgb(225,237,0);
+  --dlrg_yellow: rgb(255,237,0);
   --black: #000000;
   --hdr-h: 80px;
 }
@@ -67,7 +68,6 @@ body{
 /* Optional: falls der Text zu lang wäre, kürzen */
 .brand-title{
   white-space:nowrap;
-  overflow:hidden;
   text-overflow:ellipsis;
   max-width:60vw; /* verhindert Überschneidung mit der rechten Nav-Box */
 }
