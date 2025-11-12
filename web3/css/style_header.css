@@ -54,7 +54,7 @@ body{
   position:absolute; top:0; left:0;
 }
 .brand{
-  font-weight: 700; 
+  font-weight: 800; 
   text-decoration:none; 
   color:var(--dlrg_yellow); 
   font-size: 2.2em;
@@ -164,8 +164,8 @@ body{
     margin-right: 10px;
   }
 
-  .brand-title{
-    font-weight: 800;          /* nutzt den Heavy-Schnitt */
+  .brand{
+    font-size: 1.5em;
   }
 
   /* Desktop-Stile neutralisieren */
