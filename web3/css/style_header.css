@@ -147,66 +147,80 @@ body{
 /* Für die Dropdown-Positionierung */
 .hdr-nav{ position: relative; }
 
-/* Kleinere Screens: etwas kompakter + horizontales Scrollen bei Bedarf */
+
 @media (max-width:1000px){
   :root{ --hdr-h: 70px; }
-  .nav{ gap:.15rem; }
-  .nav a{ padding:.45rem .7rem; }
-   .hdr-nav{
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    height: 100%;
+
+  /* Hamburger sichtbar */
+  .menu-toggle{
+    display:inline-flex; align-items:center; justify-content:center;
+    margin-right: 10px;
+  }
+
+  /* Desktop-Stile neutralisieren */
+  .hdr-nav{ background: transparent; border: none; box-shadow: none; height: 100%; }
+  .hdr-nav .nav{ display: none; } /* geschlossen -> unsichtbar */
+
+  /* GEÖFFNET: volle Breite, unter dem Header, über dem Content */
+  .hdr-nav{ position: static; } /* Referenz egal, wir arbeiten fixed */
+  .hdr-nav.open .nav{
+    position: fixed;
+    top: 50px;
+    left: -20px;
+    right: 0;
+    display: block !important;
+    background: var(--bg);
+    border: 0;
+    border-radius: 0;
+    box-shadow: 0 12px 28px rgba(0,0,0,.12);
+    padding: 0;                     /* Listeneinträge übernehmen Abstand */
+    z-index: 2000;
+    max-height: calc(100vh - var(--hdr-h));
+    overflow:auto;
+    width: 100%;
+  }
+
+  /* Listeneinträge wie im Screenshot: große Zeilen, Trennlinien, Chevron rechts */
+  .hdr-nav.open .nav li{
+    list-style: none;
+    border-top: 1px solid #e5e7eb;
+    background: #fff;
+  }
+  .hdr-nav.open .nav li:first-child{ border-top: 0; }
+
+  .hdr-nav.open .nav a{
     display: flex;
     align-items: center;
-    gap:.25rem;
-  }
-  
-  /* Hamburger einblenden, Text-Navi ausblenden */
-  .menu-toggle{ display:inline-flex; align-items:center; justify-content:center; margin-right: px;}
-
-  /* Liste standardmäßig verstecken */
-  .hdr-nav .nav{
-    display: none;
-  }
-
-  /* Geöffnet: Dropdown vertikal unter dem Header, rechts ausgerichtet */
-  .hdr-nav.open .nav{
-    position: absolute;
-    top: calc(var(--hdr-h));
-    right: 0;
-    display: block;
-    background: var(--nav-bg);
-    border: 1px solid var(--border);
-    border-radius: .9rem;
-    box-shadow: 0 12px 28px rgba(0,0,0,.12);
-    padding: .4rem;
-    min-width: 220px;
-    z-index: 1001;
-  }
-
-  .hdr-nav.open .nav li{ list-style: none; }
-  .hdr-nav.open .nav a{
-    display: block;
-    padding: .55rem .8rem;
-    border-radius: .55rem;
-    text-decoration: none;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: 1rem 1.25rem;
+    font-size: 1.35rem;
     color: var(--fg);
+    text-decoration: none;          /* keine Unterstreichung mobil */
     white-space: nowrap;
   }
-  .hdr-nav.open .nav a:hover{ background:#e8eef7; }
-
-  /* Aktiv: nur Unterstreichung (wie gewünscht) */
-  .hdr-nav.open .nav a.active{
-    background: none;
-    color: inherit;
-    text-decoration: underline;
-    text-underline-offset: 0.18em;
-    text-decoration-thickness: 2px;
-    text-decoration-skip-ink: auto;
+  .hdr-nav.open .nav a:hover{
+    background: #f9fafb;            /* dezentes Hover statt Unterstreichung */
   }
 
+  /* Chevron rechts */
+  .hdr-nav.open .nav a::after{
+    content: "›";                    /* einfacher, robuster Pfeil */
+    font-weight: 700;
+    color: var(--accent);
+    margin-left: .75rem;
+  }
+
+  /* Aktiver Punkt: rote Schrift, Chevron folgt der Farbe */
+  .hdr-nav.open .nav a.active{
+    color: var(--dlrg_red);
+  }
+  .hdr-nav.open .nav a.active::after{
+    color: var(--dlrg_red);
+  }
 }
+
+
 
 
 /* Farbe steuert die Icon-Farbe */

@@ -52,9 +52,12 @@ document.addEventListener("DOMContentLoaded", () => {
     toggle.setAttribute("aria-expanded", "true");
   }
 
-  toggle.addEventListener("click", () => {
-    if (nav.classList.contains("open")) { closeMenu(); } else { openMenu(); }
+  toggle.addEventListener("click", (e) => {
+    e.stopPropagation(); // verhindert sofortiges Schließen durch den document-Handler
+    nav.classList.toggle("open");
+    toggle.setAttribute("aria-expanded", nav.classList.contains("open") ? "true" : "false");
   });
+
 
   // Schließen bei Klick außerhalb
   document.addEventListener("click", (e) => {
