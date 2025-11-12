@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   headerEl.innerHTML = `
     <div class="hdr-bg">
       <div class="hdr-container">
-        <a class="brand" href="Startseite.html">
+        <a class="brand" href="startseite.html">
           <img class="brand-logo" src="./svg/logo.svg" alt="" aria-hidden="true">
           <span class="brand-title">Lifesaving Baden</span>
         </a>
@@ -20,10 +20,10 @@ document.addEventListener("DOMContentLoaded", () => {
           </svg>
         </button>
         <ul id="primary-menu" class="nav">
-          <li><a href="Punkterechner.html">Punkterechner</a></li>
-          <li><a href="Rekorde.html">Rekorde</a></li>
-          <li><a href="Kaderstatus.html">Kaderstatus</a></li>
-          <li><a href="Athleten.html">Athleten</a></li>
+          <li><a href="punkterechner.html">Punkterechner</a></li>
+          <li><a href="rekorde.html">Rekorde</a></li>
+          <li><a href="kaderstatus.html">Kaderstatus</a></li>
+          <li><a href="athleten.html">Athleten</a></li>
         </ul>
       </nav>
     </div>
