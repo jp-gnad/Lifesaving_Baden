@@ -6,7 +6,7 @@ main#content {
 
 .hero {
   position: relative;
-  background: url("../png/hintergrund1.jpg") center/cover no-repeat;
+  background-image: url("https://jp-gnad.github.io/Lifesaving_Baden/web3/png/hintergrund1.jpg");
   background-position: center 40%;
   height: 300px;
   text-align: center;
