@@ -7,8 +7,11 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="hdr-container">
         <a class="brand" href="startseite.html">
           <img class="brand-logo" src="./svg/logo.svg" alt="" aria-hidden="true">
-          <span class="brand-title">Lifesaving Baden</span>
+          <span class="brand-title">Lifesaving <span class="brand-baden">Baden</span></span>
         </a>
+
+        <!-- NEU: Elch rechts neben der Brand -->
+        <img class="brand-mascot" src="./png/elch.png" alt="" aria-hidden="true">
       </div>
     </div>
 

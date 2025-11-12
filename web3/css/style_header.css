@@ -52,6 +52,7 @@ body{
   padding:0 1rem;
   display:flex; align-items:center; justify-content:flex-start;
   position:absolute; top:0; left:0;
+  gap: .75rem; 
 }
 .brand{
   font-weight: 800; 
@@ -63,6 +64,15 @@ body{
   gap: 1rem;
   line-height: 1;
 }
+/* Elch-Icon: an Headerhöhe angepasst */
+.brand-mascot{
+  display:block;
+  height: calc(var(--hdr-h) - 45px);  /* etwas Luft oben/unten */
+  width: auto;
+  object-fit: contain;
+}
+
+.brand .brand-baden { color: #fff; }
 
 /* SVG-Logo skaliert sich an die Headerhöhe an */
 .brand-logo{
