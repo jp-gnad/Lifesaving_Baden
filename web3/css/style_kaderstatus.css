@@ -91,6 +91,11 @@ body {
   padding: 0.75rem 0.75rem 0.5rem;
 }
 
+@media (max-width:720px){
+  #kader-container {max-width: 100%;}
+  .kader-box {padding: 0;}
+}
+
 .kader-box h3 {
   margin: 0 0 0.5rem;
   font-size: 1rem;
