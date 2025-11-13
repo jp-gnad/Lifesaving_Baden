@@ -495,6 +495,27 @@ function applyZebraStripes() {
 }
 
 // =====================
+// Zebra-Streifen für mehrere Tabellen
+// =====================
+function applyZebraStripes() {
+  const tables = document.querySelectorAll("#kader-container table");
+  tables.forEach(table => {
+    const rows = table.querySelectorAll("tbody tr");
+    let visibleIndex = 0;
+    rows.forEach(row => {
+      if (row.style.display === "none") {
+        row.classList.remove("odd", "even");
+        return;
+      }
+      row.classList.remove("odd", "even");
+      row.classList.add(visibleIndex % 2 === 0 ? "even" : "odd");
+      visibleIndex++;
+    });
+  });
+}
+
+
+// =====================
 // Excel laden und in Datenbank umwandeln
 // =====================
 
@@ -742,18 +763,47 @@ function verarbeiteDatenbank(datenbank, aktuellesJahr) {
 }
 
 // =====================
-// Tabelle bauen
+// Tabelle(n) bauen – 4 Gruppen
 // =====================
-
 function baueKaderTabelle(result, aktuellesJahr) {
-  const personenArray = Array.from(result.entries())
-    .filter(([_, p]) => p.Kaderstatus !== "")
-    .sort((a, b) => {
+  const container = document.getElementById("kader-container");
+  if (!container) {
+    console.error('#kader-container nicht gefunden – Tabellen können nicht erzeugt werden.');
+    return;
+  }
+  container.innerHTML = "";
+
+  // Alle Personen mit gültigem Kaderstatus holen
+  const allPersons = Array.from(result.entries())
+    .filter(([_, p]) => p.Kaderstatus === "Badenkader" || p.Kaderstatus === "Juniorenkader");
+
+  // 4 Gruppen: Offener Kader m/w = Badenkader, Juniorenkader m/w
+  const offenM = [];
+  const offenW = [];
+  const juniorM = [];
+  const juniorW = [];
+
+  for (const [name, p] of allPersons) {
+    if (p.Kaderstatus === "Badenkader") {
+      if (p.geschlecht === "maennlich") {
+        offenM.push([name, p]);
+      } else {
+        offenW.push([name, p]);
+      }
+    } else if (p.Kaderstatus === "Juniorenkader") {
+      if (p.geschlecht === "maennlich") {
+        juniorM.push([name, p]);
+      } else {
+        juniorW.push([name, p]);
+      }
+    }
+  }
+
+  // Sortierung innerhalb jeder Gruppe: Ortsgruppe, dann Name
+  function sortGroup(arr) {
+    arr.sort((a, b) => {
       const [nameA, pA] = a;
       const [nameB, pB] = b;
-      const gA = pA.geschlecht === "weiblich" ? 0 : 1;
-      const gB = pB.geschlecht === "weiblich" ? 0 : 1;
-      if (gA !== gB) return gA - gB;
       const ogA = (pA.ortsgruppe || "").toString().trim();
       const ogB = (pB.ortsgruppe || "").toString().trim();
       const cmpOG = ogA === "" && ogB !== "" ? 1
@@ -762,194 +812,220 @@ function baueKaderTabelle(result, aktuellesJahr) {
       if (cmpOG !== 0) return cmpOG;
       return nameA.localeCompare(nameB, "de", { sensitivity: "base" });
     });
-
-  const container = document.getElementById("kader-container");
-  if (!container) {
-    console.error('#kader-container nicht gefunden – Tabelle kann nicht erzeugt werden.');
-    return;
   }
-  container.innerHTML = "";
 
-  const table = document.createElement("table");
-  const thead = document.createElement("thead");
-  const trHead = document.createElement("tr");
-  trHead.innerHTML = `
-    <th></th>
-    <th>Sportler / Ortsgruppe</th>
-    <th colspan="4" style="text-align:center;">Kriterien</th>
-    <th style="text-align:center;">Status</th>
-  `;
-  thead.appendChild(trHead);
-  table.appendChild(thead);
+  sortGroup(offenM);
+  sortGroup(offenW);
+  sortGroup(juniorM);
+  sortGroup(juniorW);
 
-  const tbody = document.createElement("tbody");
-  for (const [name, person] of personenArray) {
-    const tr = document.createElement("tr");
-    tr.dataset.kaderstatus = person.Kaderstatus;
-    tr.dataset.aktuellesalter = person.aktuellesAlter;
-    const farbe = person.geschlecht === "maennlich" ? "#1e90ff" : "#ff69b4";
+  // Hilfsfunktion: Tabelle für eine Gruppe bauen (Struktur wie bisher)
+  function createTableForGroup(personenArray) {
+    const table = document.createElement("table");
 
-    // Cap
-    const tdCap = document.createElement("td");
-    tdCap.style.textAlign = "right";
-    const imgCap = document.createElement("img");
-    const ortsgruppe = person.ortsgruppe || "placeholder";
-    imgCap.src = `./svg/${encodeURIComponent(`Cap-${ortsgruppe}.svg`)}`;
-    imgCap.style.width = "35px";
-    imgCap.alt = `Cap von ${person.ortsgruppe}`;
-    imgCap.onerror = () => { imgCap.onerror = null; imgCap.src = `./svg/Cap-Baden_light.svg`; };
-    tdCap.appendChild(imgCap);
-    tr.appendChild(tdCap);
-
-    // Name/Zusatz
-    const tdName = document.createElement("td");
-    tdName.innerHTML = `
-      <span style="color:${farbe}; font-weight:bold;">
-        ${name} (${person.jahrgang})
-      </span><br>
-      <small style="color: rgb(68, 68, 69); font-weight: bold;">
-        DLRG ${person.ortsgruppe || ""}
-      </small>
+    const thead = document.createElement("thead");
+    const trHead = document.createElement("tr");
+    trHead.innerHTML = `
+      <th></th>
+      <th>Sportler / Ortsgruppe</th>
+      <th colspan="4" style="text-align:center;">Kriterien</th>
+      <th style="text-align:center;">Status</th>
     `;
-    tr.appendChild(tdName);
+    thead.appendChild(trHead);
+    table.appendChild(thead);
 
-    // Icon_Time
-    const tdIcon_time = document.createElement("td");
-    tdIcon_time.style.textAlign = "center";
-    const imgIcon_time = document.createElement("img");
-    const icon1 = person.Icon_Time === "green" ? "icon_time_green.svg"
-                : person.Icon_Time === "yellow" ? "icon_time_yellow.svg"
-                : "icon_time_grey.svg";
-    imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/${encodeURIComponent(icon1)}`;
-    imgIcon_time.style.width = "35px";
-    tdIcon_time.appendChild(imgIcon_time);
-    tr.appendChild(tdIcon_time);
+    const tbody = document.createElement("tbody");
 
-    // Icon_Comp
-    const tdIcon_comp = document.createElement("td");
-    tdIcon_comp.style.textAlign = "center";
-    const imgIcon_comp = document.createElement("img");
-    const icon2 = person.Icon_Comp === "green" ? "icon_medal_green.svg"
-                : person.Icon_Comp === "yellow" ? "icon_medal_yellow.svg"
-                : "icon_medal_grey.svg";
-    imgIcon_comp.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/${encodeURIComponent(icon2)}`;
-    imgIcon_comp.style.width = "35px";
-    tdIcon_comp.appendChild(imgIcon_comp);
-    tr.appendChild(tdIcon_comp);
+    for (const [name, person] of personenArray) {
+      const tr = document.createElement("tr");
+      tr.dataset.kaderstatus = person.Kaderstatus;
+      tr.dataset.aktuellesalter = person.aktuellesAlter;
+      const farbe = person.geschlecht === "maennlich" ? "#1e90ff" : "#ff69b4";
 
-    // Icon_Ocean
-    const tdIcon_ocean = document.createElement("td");
-    tdIcon_ocean.style.textAlign = "center";
-    const imgIcon_ocean = document.createElement("img");
-    const icon3 = person.Icon_Ocean === "green" ? "icon_ocean_green.svg"
-                : person.Icon_Ocean === "yellow" ? "icon_ocean_yellow.svg"
-                : "icon_ocean_grey.svg";
-    imgIcon_ocean.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/${encodeURIComponent(icon3)}`;
-    imgIcon_ocean.style.width = "35px";
-    tdIcon_ocean.appendChild(imgIcon_ocean);
-    tr.appendChild(tdIcon_ocean);
+      // 1) Cap
+      const tdCap = document.createElement("td");
+      tdCap.style.textAlign = "right";
+      const imgCap = document.createElement("img");
+      const ortsgruppe = person.ortsgruppe || "placeholder";
+      imgCap.src = `./svg/${encodeURIComponent(`Cap-${ortsgruppe}.svg`)}`;
+      imgCap.style.width = "35px";
+      imgCap.alt = `Cap von ${person.ortsgruppe}`;
+      imgCap.onerror = () => { imgCap.onerror = null; imgCap.src = `./svg/Cap-Baden_light.svg`; };
+      tdCap.appendChild(imgCap);
+      tr.appendChild(tdCap);
 
-    // Icon_Coach
-    const tdIcon_coach = document.createElement("td");
-    tdIcon_coach.style.textAlign = "center";
-    const imgIcon_coach = document.createElement("img");
-    const icon4 = person.Icon_Coach === "green" ? "icon_trainer_green.svg"
-                : person.Icon_Coach === "yellow" ? "icon_trainer_yellow.svg"
-                : "icon_trainer_grey.svg";
-    imgIcon_coach.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/${encodeURIComponent(icon4)}`;
-    imgIcon_coach.style.width = "35px";
-    tdIcon_coach.appendChild(imgIcon_coach);
-    tr.appendChild(tdIcon_coach);
+      // 2) Name/Zusatz
+      const tdName = document.createElement("td");
+      tdName.innerHTML = `
+        <span style="color:${farbe}; font-weight:bold;">
+          ${name} (${person.jahrgang})
+        </span><br>
+        <small style="color: rgb(68, 68, 69); font-weight: bold;">
+          DLRG ${person.ortsgruppe || ""}
+        </small>
+      `;
+      tr.appendChild(tdName);
 
-    // Status + Tooltip
-    const tdStatus = document.createElement("td");
-    tdStatus.classList.add("status-cell");
-    const wrapper = document.createElement("div");
-    wrapper.className = "status-wrapper";
-    const icon = document.createElement("img");
-    icon.className = "status-icon";
-    icon.src = person.angemeldet
-      ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/icon_status_green.svg"
-      : "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/icon_status_yellow.svg";
-    icon.alt = person.angemeldet ? "Status: angemeldet" : "Anmeldung erforderlich";
-    icon.style.width = "27.5px";
-    icon.setAttribute("tabindex", "0");
-    icon.setAttribute("aria-haspopup", "true");
-    icon.setAttribute("aria-expanded", "false");
+      // 3) Icon_Time
+      const tdIcon_time = document.createElement("td");
+      tdIcon_time.style.textAlign = "center";
+      const imgIcon_time = document.createElement("img");
+      const icon1 = person.Icon_Time === "green" ? "icon_time_green.svg"
+                  : person.Icon_Time === "yellow" ? "icon_time_yellow.svg"
+                  : "icon_time_grey.svg";
+      imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/${encodeURIComponent(icon1)}`;
+      imgIcon_time.style.width = "35px";
+      tdIcon_time.appendChild(imgIcon_time);
+      tr.appendChild(tdIcon_time);
 
-    const tooltip = document.createElement("div");
-    tooltip.className = "status-tooltip";
-    tooltip.setAttribute("role", "tooltip");
-    tooltip.setAttribute("aria-hidden", "true");
-    tooltip.textContent = person.angemeldet
-      ? `Kaderberechtigt bis ${berechneKaderBis(person, aktuellesJahr)}`
-      : "Anmeldung erforderlich";
-    document.body.appendChild(tooltip);
+      // 4) Icon_Comp
+      const tdIcon_comp = document.createElement("td");
+      tdIcon_comp.style.textAlign = "center";
+      const imgIcon_comp = document.createElement("img");
+      const icon2 = person.Icon_Comp === "green" ? "icon_medal_green.svg"
+                  : person.Icon_Comp === "yellow" ? "icon_medal_yellow.svg"
+                  : "icon_medal_grey.svg";
+      imgIcon_comp.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/${encodeURIComponent(icon2)}`;
+      imgIcon_comp.style.width = "35px";
+      tdIcon_comp.appendChild(imgIcon_comp);
+      tr.appendChild(tdIcon_comp);
 
-    function positionTooltip() {
-      const margin = 8;
-      const r = icon.getBoundingClientRect();
-      tooltip.style.visibility = "hidden";
-      tooltip.classList.add("is-visible");
-      const tW = tooltip.offsetWidth, tH = tooltip.offsetHeight;
-      let left = r.right + margin;
-      let top  = Math.round(r.top + r.height / 2 - tH / 2);
-      tooltip.classList.remove("left");
-      if (left + tW > window.innerWidth - 8) {
-        left = r.left - margin - tW;
-        tooltip.classList.add("left");
-      }
-      if (top < 8) top = 8;
-      if (top + tH > window.innerHeight - 8) top = window.innerHeight - tH - 8;
-      tooltip.style.left = `${left}px`;
-      tooltip.style.top  = `${top}px`;
-      tooltip.style.visibility = "";
-    }
-    function hide() {
-      tooltip.classList.remove("is-visible");
+      // 5) Icon_Ocean
+      const tdIcon_ocean = document.createElement("td");
+      tdIcon_ocean.style.textAlign = "center";
+      const imgIcon_ocean = document.createElement("img");
+      const icon3 = person.Icon_Ocean === "green" ? "icon_ocean_green.svg"
+                  : person.Icon_Ocean === "yellow" ? "icon_ocean_yellow.svg"
+                  : "icon_ocean_grey.svg";
+      imgIcon_ocean.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/${encodeURIComponent(icon3)}`;
+      imgIcon_ocean.style.width = "35px";
+      tdIcon_ocean.appendChild(imgIcon_ocean);
+      tr.appendChild(tdIcon_ocean);
+
+      // 6) Icon_Coach
+      const tdIcon_coach = document.createElement("td");
+      tdIcon_coach.style.textAlign = "center";
+      const imgIcon_coach = document.createElement("img");
+      const icon4 = person.Icon_Coach === "green" ? "icon_trainer_green.svg"
+                  : person.Icon_Coach === "yellow" ? "icon_trainer_yellow.svg"
+                  : "icon_trainer_grey.svg";
+      imgIcon_coach.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/${encodeURIComponent(icon4)}`;
+      imgIcon_coach.style.width = "35px";
+      tdIcon_coach.appendChild(imgIcon_coach);
+      tr.appendChild(tdIcon_coach);
+
+      // 7) Status-Zelle mit Tooltip
+      const tdStatus = document.createElement("td");
+      tdStatus.classList.add("status-cell");
+      const wrapper = document.createElement("div");
+      wrapper.className = "status-wrapper";
+      const statusIcon = document.createElement("img");
+      statusIcon.className = "status-icon";
+      statusIcon.src = person.angemeldet
+        ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/icon_status_green.svg"
+        : "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/icon_status_yellow.svg";
+      statusIcon.alt = person.angemeldet ? "Status: angemeldet" : "Anmeldung erforderlich";
+      statusIcon.style.width = "27.5px";
+      statusIcon.setAttribute("tabindex", "0");
+      statusIcon.setAttribute("aria-haspopup", "true");
+      statusIcon.setAttribute("aria-expanded", "false");
+
+      const tooltip = document.createElement("div");
+      tooltip.className = "status-tooltip";
+      tooltip.setAttribute("role", "tooltip");
       tooltip.setAttribute("aria-hidden", "true");
-      icon.setAttribute("aria-expanded", "false");
-      document.removeEventListener("click", onDocClick);
-      document.removeEventListener("keydown", onKey);
-      window.removeEventListener("scroll", onScrollOrResize, true);
-      window.removeEventListener("resize", onScrollOrResize);
-      if (window.__closeOpenStatusTooltip === hide) window.__closeOpenStatusTooltip = null;
-    }
-    function show() {
-      if (window.__closeOpenStatusTooltip && window.__closeOpenStatusTooltip !== hide) {
-        window.__closeOpenStatusTooltip();
+      tooltip.textContent = person.angemeldet
+        ? `Kaderberechtigt bis ${berechneKaderBis(person, aktuellesJahr)}`
+        : "Anmeldung erforderlich";
+      document.body.appendChild(tooltip);
+
+      function positionTooltip() {
+        const margin = 8;
+        const r = statusIcon.getBoundingClientRect();
+        tooltip.style.visibility = "hidden";
+        tooltip.classList.add("is-visible");
+        const tW = tooltip.offsetWidth, tH = tooltip.offsetHeight;
+        let left = r.right + margin;
+        let top  = Math.round(r.top + r.height / 2 - tH / 2);
+        tooltip.classList.remove("left");
+        if (left + tW > window.innerWidth - 8) {
+          left = r.left - margin - tW;
+          tooltip.classList.add("left");
+        }
+        if (top < 8) top = 8;
+        if (top + tH > window.innerHeight - 8) top = window.innerHeight - tH - 8;
+        tooltip.style.left = `${left}px`;
+        tooltip.style.top  = `${top}px`;
+        tooltip.style.visibility = "";
       }
-      positionTooltip();
-      tooltip.classList.add("is-visible");
-      tooltip.setAttribute("aria-hidden", "false");
-      icon.setAttribute("aria-expanded", "true");
-      document.addEventListener("click", onDocClick);
-      document.addEventListener("keydown", onKey);
-      window.addEventListener("scroll", onScrollOrResize, true);
-      window.addEventListener("resize", onScrollOrResize);
-      window.__closeOpenStatusTooltip = hide;
+      function hide() {
+        tooltip.classList.remove("is-visible");
+        tooltip.setAttribute("aria-hidden", "true");
+        statusIcon.setAttribute("aria-expanded", "false");
+        document.removeEventListener("click", onDocClick);
+        document.removeEventListener("keydown", onKey);
+        window.removeEventListener("scroll", onScrollOrResize, true);
+        window.removeEventListener("resize", onScrollOrResize);
+        if (window.__closeOpenStatusTooltip === hide) window.__closeOpenStatusTooltip = null;
+      }
+      function show() {
+        if (window.__closeOpenStatusTooltip && window.__closeOpenStatusTooltip !== hide) {
+          window.__closeOpenStatusTooltip();
+        }
+        positionTooltip();
+        tooltip.classList.add("is-visible");
+        tooltip.setAttribute("aria-hidden", "false");
+        statusIcon.setAttribute("aria-expanded", "true");
+        document.addEventListener("click", onDocClick);
+        document.addEventListener("keydown", onKey);
+        window.addEventListener("scroll", onScrollOrResize, true);
+        window.addEventListener("resize", onScrollOrResize);
+        window.__closeOpenStatusTooltip = hide;
+      }
+      const onDocClick = (e) => { if (!wrapper.contains(e.target) && !tooltip.contains(e.target)) hide(); };
+      const onKey = (e) => { if (e.key === "Escape") hide(); };
+      const onScrollOrResize = () => { if (tooltip.classList.contains("is-visible")) positionTooltip(); };
+      statusIcon.addEventListener("click", (e) => { e.stopPropagation(); tooltip.classList.contains("is-visible") ? hide() : show(); });
+      statusIcon.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tooltip.classList.contains("is-visible") ? hide() : show(); } });
+
+      wrapper.appendChild(statusIcon);
+      tdStatus.appendChild(wrapper);
+
+      // kein zusätzlicher Kader-Badge mehr
+      tr.appendChild(tdStatus);
+      tbody.appendChild(tr);
+
     }
-    const onDocClick = (e) => { if (!wrapper.contains(e.target) && !tooltip.contains(e.target)) hide(); };
-    const onKey = (e) => { if (e.key === "Escape") hide(); };
-    const onScrollOrResize = () => { if (tooltip.classList.contains("is-visible")) positionTooltip(); };
-    icon.addEventListener("click", (e) => { e.stopPropagation(); tooltip.classList.contains("is-visible") ? hide() : show(); });
-    icon.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tooltip.classList.contains("is-visible") ? hide() : show(); } });
 
-    wrapper.appendChild(icon);
-    tdStatus.appendChild(wrapper);
-
-    // Kader-Badge darunter
-    const badge = document.createElement("div");
-    badge.className = "kader-badge";
-    badge.textContent = person.Kaderstatus || "";
-    tdStatus.appendChild(badge);
-
-    tr.appendChild(tdStatus);
-    tbody.appendChild(tr);
+    table.appendChild(tbody);
+    return table;
   }
 
-  table.appendChild(tbody);
-  container.appendChild(table);
+  // Grid-Container für 4 Boxen
+  const grid = document.createElement("div");
+  grid.className = "kader-grid";
+
+  function addTableBox(title, arr) {
+    if (!arr.length) return; // leere Gruppe auslassen
+    const box = document.createElement("div");
+    box.className = "kader-box";
+
+    const heading = document.createElement("h3");
+    heading.textContent = title;
+    box.appendChild(heading);
+
+    const table = createTableForGroup(arr);
+    box.appendChild(table);
+
+    grid.appendChild(box);
+  }
+
+  addTableBox("Offener Kader – männlich", offenM);
+  addTableBox("Offener Kader – weiblich", offenW);
+  addTableBox("Juniorenkader – männlich", juniorM);
+  addTableBox("Juniorenkader – weiblich", juniorW);
+
+  container.appendChild(grid);
 
   if (window.applyKaderFilter) window.applyKaderFilter();
   applyZebraStripes();

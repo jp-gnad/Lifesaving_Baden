@@ -42,7 +42,6 @@ main#content {
    ================================ */
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #222;
   line-height: 1.5;
 }
@@ -74,10 +73,33 @@ body {
    ================================ */
 
 #kader-container {
-  max-width: 1100px;
+  max-width: 95%;
   margin: 0 auto 3rem;
   padding: 0.5rem;
   overflow-x: auto;
+}
+
+/* Grid für 4 Kader-Tabellen (2x2 auf Desktop, untereinander auf Handy) */
+
+.kader-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+/* Box um jede Tabelle (mit Überschrift) */
+.kader-box {
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e1e4e8;
+  padding: 0.75rem 0.75rem 0.5rem;
+}
+
+/* Überschrift über jeder Teil-Tabelle */
+.kader-box h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 #kader-container table {
@@ -166,20 +188,6 @@ body {
   cursor: pointer;
 }
 
-/* Kader-Badge unter dem Status-Icon */
-
-.kader-badge {
-  margin-top: 0.25rem;
-  display: inline-block;
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  border: 1px solid transparent;
-}
-
 /* Farbgebung nach Kaderstatus über data-Attribut des <tr> */
 
 tr[data-kaderstatus="Badenkader"] .kader-badge {
@@ -254,6 +262,10 @@ tr[data-kaderstatus=""] .kader-badge {
 @media (max-width: 768px) {
   #kader-container {
     padding: 0.25rem;
+  }
+
+  .kader-grid {
+    grid-template-columns: 1fr;  /* alle Boxen untereinander */
   }
 
   #kader-container table {
