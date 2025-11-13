@@ -9,17 +9,17 @@ document.addEventListener("DOMContentLoaded", () => {
       <section>
         <h2>Angaben gemäß § 5 TMG</h2>
         <p>
-          <strong>Name:</strong> <span class="placeholder">[Vor- und Nachname]</span><br>
-          <strong>Adresse:</strong> <span class="placeholder">[Straße, PLZ Ort]</span><br>
-          <strong>E-Mail:</strong> <span class="placeholder">[E-Mail-Adresse]</span><br>
-          <strong>Telefon:</strong> <span class="placeholder">[Telefonnummer, optional]</span>
+          <strong>Name:</strong> <span class="placeholder">Jan-Philipp Gnad</span><br>
+          <strong>Adresse:</strong> <span class="placeholder">Am Zollstock 36</span><br>
+          <strong>E-Mail:</strong> <span class="placeholder">jan-philipp.gnad@dlrg.org</span><br>
+          <strong>Telefon:</strong> <span class="placeholder">+49 (0)1575 4047493</span>
         </p>
       </section>
 
       <section>
         <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
         <p>
-          <span class="placeholder">[Vor- und Nachname, Anschrift]</span>
+          <span class="placeholder">Jan-Philipp Gnad, Am Zollstock 36</span>
         </p>
       </section>
 
@@ -66,7 +66,9 @@ document.addEventListener("DOMContentLoaded", () => {
       <section>
         <h2>Bildnachweise</h2>
         <p>
-          <span class="placeholder">[Quelle(n) und Lizenz(en) der verwendeten Bilder/Logos eintragen]</span>
+          <span class="placeholder">DLRG - Steph Dittschar</span><br>
+          <span class="placeholder">DLRG - Daniel Reinelt</span><br>
+          <span class="placeholder">DLRG - Denis Fömer</span><br>
         </p>
       </section>
 

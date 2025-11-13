@@ -11,8 +11,6 @@ document.addEventListener("DOMContentLoaded", () => {
         <a href="datenschutz.html">Datenschutz</a>
         <span aria-hidden="true">·</span>
         <a href="impressum.html">Impressum</a>
-        <span aria-hidden="true">·</span>
-        <a href="infos.html">Infos</a>
       </nav>
     </div>
   `;

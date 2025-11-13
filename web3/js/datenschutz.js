@@ -13,10 +13,10 @@ document.addEventListener("DOMContentLoaded", () => {
       <section>
         <h2>1. Verantwortlicher</h2>
         <p>
-          <strong>Name:</strong> <span class="placeholder">[Vor- und Nachname]</span><br>
-          <strong>Adresse:</strong> <span class="placeholder">[Straße, PLZ Ort]</span><br>
-          <strong>E-Mail:</strong> <span class="placeholder">[E-Mail-Adresse]</span><br>
-          <strong>Telefon:</strong> <span class="placeholder">[Telefonnummer, optional]</span>
+          <strong>Name:</strong> <span class="placeholder">Jan-Philipp Gnad</span><br>
+          <strong>Adresse:</strong> <span class="placeholder">Am Zollstock 36, 76228 Karlsruhe</span><br>
+          <strong>E-Mail:</strong> <span class="placeholder">jan-philipp.gnad@dlrg.org</span><br>
+          <strong>Telefon:</strong> <span class="placeholder">+49 (0)1575 4047493</span>
         </p>
       </section>
 

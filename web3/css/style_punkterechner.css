@@ -1,130 +1,37 @@
-/* Layout */
+
+/* Seiteninhalt Startseite */
 main#content {
-  max-width: 900px;
   margin: 0 auto;
-  padding: 1.25rem;
 }
 
-/* Headline & Hinweise */
-.tool h1 {
-  margin: 0 0 0.5rem 0;
+.hero {
+  position: relative;
+  background: url("../png/hintergrund1.JPG") center/cover no-repeat;  background-position: center 40%;
+  height: 300px;
+  text-align: center;
+  padding-top: 125px;
+  color: white;
 }
-.tool .hint {
-  margin: 0 0 1rem 0;
-  color: #444;
-}
-
-/* Formular */
-.calc .grid {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 0.75rem 1rem;
-  align-items: center;
-  margin-bottom: 1rem;
+.hero::before{
+  content: "";
+  position: absolute;
+  inset: 0;                  /* über die ganze Fläche */
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.257), rgba(0, 0, 0, 0.825));
+  pointer-events: none;      /* klicks gehen durch */
 }
 
-.calc label {
-  font-weight: 600;
+.hero h1 {
+  position: relative;
+  font-size: 2.75em;
+  z-index: 1;
 }
 
-.calc input,
-.calc select {
-  width: 100%;
-  padding: 0.55rem 0.6rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 0.5rem;
-  background: #fff;
-  font: inherit;
+.updates h2 {
+  margin-top: 1.5rem;
 }
 
-.calc input:focus,
-.calc select:focus {
-  outline: none;
-  border-color: #0a66c2;
-  box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.15);
-}
 
-.actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.btn-primary,
-.btn-ghost {
-  appearance: none;
-  border: 1px solid transparent;
-  border-radius: 0.6rem;
-  padding: 0.6rem 0.9rem;
-  cursor: pointer;
-  font: inherit;
-}
-
-.btn-primary {
-  background: #0a66c2;
-  color: #fff;
-}
-.btn-primary:hover {
-  filter: brightness(0.95);
-}
-
-.btn-ghost {
-  background: #f6f7f9;
-  border-color: #e5e5e5;
-}
-.btn-ghost:hover {
-  background: #eef1f4;
-}
-
-/* Ergebnisbox */
-.result .box {
-  border: 1px solid #e6f0fa;
-  background: #f7fbff;
-  border-radius: 0.8rem;
-  padding: 0.9rem;
-}
-.result .box-error {
-  border: 1px solid #ffd5d5;
-  background: #fff6f6;
-  border-radius: 0.8rem;
-  padding: 0.9rem;
-}
-
-.result .row {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.25rem 0;
-}
-.result .row.total {
-  border-top: 1px dashed #cfe3f8;
-  margin-top: 0.35rem;
-  padding-top: 0.5rem;
-  font-weight: 700;
-}
-
-.result .label {
-  color: #444;
-}
-
-/* Kleinkram */
-.footnote {
-  color: #555;
-  margin-top: 0.5rem;
-  font-size: 0.95rem;
-}
-
-.sr-only {
-  position: absolute !important;
-  width: 1px; height: 1px;
-  padding: 0; margin: -1px;
-  overflow: hidden; clip: rect(0,0,0,0);
-  white-space: nowrap; border: 0;
-}
-
-/* Responsiv */
-@media (max-width: 640px) {
-  .calc .grid {
-    grid-template-columns: 1fr;
-  }
+@media (max-width:720px){
+  .hero h1 {font-size: 2.0em; }
+  .hero {height: 200px; padding-top: 80px;}
 }
