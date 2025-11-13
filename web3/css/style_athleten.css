@@ -51,14 +51,7 @@ main#content {
   display: none !important;
 }
 
-.ath-profile-wrap {
-  max-width: 1180px;
-  margin: 0 auto 4rem;
-  padding: 0 1.5rem 4rem;
-}
-
 /* Abstand nach dem Hero-Bereich */
-.hero + .ath-profile-wrap,
 .hero + #athleten-container {
   margin-top: 2.5rem;
 }
@@ -279,14 +272,6 @@ main#content {
    Profilkopf (Name, Chips, Medaillen)
    ========================================================= */
 
-.ath-profile {
-  background: #ffffff;
-  border-radius: 1.25rem;
-  box-shadow:
-    0 22px 60px rgba(15, 23, 42, 0.25),
-    0 0 0 1px rgba(15, 23, 42, 0.03);
-  padding: 1.5rem 1.75rem 1.75rem;
-}
 
 .ath-profile-head {
   display: grid;
@@ -418,15 +403,6 @@ main#content {
 
 .kv .v {
   color: #4b5563;
-}
-
-/* Hinweis-Block unten im Profil */
-
-.ath-card-buttom {
-  margin-top: 1.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
 }
 
 .ath-profile-section.muted {
@@ -1657,12 +1633,7 @@ main#content {
   .ath-ui {
     padding-inline: 1rem;
   }
-  .ath-profile-wrap {
-    padding-inline: 1rem;
-  }
-  .ath-profile {
-    padding: 1.2rem 1.1rem 1.5rem;
-  }
+ 
   .ath-profile-head {
     grid-template-columns: minmax(0, 1fr);
   }

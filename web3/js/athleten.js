@@ -3230,9 +3230,12 @@ document.addEventListener("DOMContentLoaded", () => {
     dismissKeyboard();
     hideSuggestions();
 
-
-    const mount = Refs.profileMount; if (!mount) return;
-    if (!ax) { mount.innerHTML = ""; mount.classList.remove("ath-profile-wrap"); return; }
+    const mount = Refs.profileMount;
+    if (!mount) return;
+    if (!ax) {
+      mount.innerHTML = "";
+      return;
+    }
 
     const KV = (k, v) =>
       h("span", { class: "kv", "data-key": k },
@@ -3240,68 +3243,90 @@ document.addEventListener("DOMContentLoaded", () => {
         h("span", { class: "v" }, v)
       );
 
-    // ★ aktuelle OG aus Meets berechnen (mit Fallback auf evtl. altes Feld)
+    // aktuelle OG aus Meets berechnen (mit Fallback auf evtl. altes Feld)
     const currOG = currentOrtsgruppeFromMeets(ax) || ax.ortsgruppe || "";
-    // --- Tabs + Panels ---
+
+    // Tabs + Panels (Bestzeiten, Überblick, etc.)
     const tabsWrap = renderAthTabsAndPanels(ax);
-    const profile = h("article", { class: "ath-profile" },
-      h("div", { class: "ath-profile-head" },
-      
-        // Cap lädt intern bereits die aktuelle OG
-        renderCapAvatar(ax),
 
-        h("div", { class: "ath-profile-title" },
-          h("h2", {}, ax.name),
+    // ---- Kopfbereich des Profils (bleibt visuell gleich) ----
+    const header = h("div", { class: "ath-profile-head" },
 
-          // Chips-Zeile: Gender + AK + Aktivitätsstatus
-          (() => {
-            const gt   = genderTag(ax.geschlecht);
-            const ak   = akLabelFromJahrgang(ax.jahrgang);
-            const meets = computeMeetInfo(ax);
-            const act   = activityStatusFromLast(meets.last);
-            const lastStr = fmtDate(meets.last);
-            const age  = ageFromJahrgang(ax.jahrgang);
-            const band = (age != null && age <= 18) ? "youth" : "open";
+      // Cap lädt intern bereits die aktuelle OG
+      renderCapAvatar(ax),
 
-            const srIcons = renderStartrechtIcons(ax); // kann null sein
+      h("div", { class: "ath-profile-title" },
+        h("h2", {}, ax.name),
 
-            return h("div", { class: "gender-row" },
-              h("span", { class: `gender-chip ${gt.cls}`, title: gt.full, "aria-label": `Geschlecht: ${gt.full}` }, gt.full),
-              h("span", { class: `ak-chip ${band}`,       title: `Altersklasse ${ak}`, "aria-label": `Altersklasse ${ak}` }, ak),
-              h("span", { class: `status-chip ${act.key}`, title: `Letzter Wettkampf: ${lastStr}`, "aria-label": `Aktivitätsstatus: ${act.label}. Letzter Wettkampf: ${lastStr}` },
-                h("span", { class: "status-dot" }), act.label
-              ),
-              srIcons
-            );
-          })(),
+        // Chips-Zeile: Gender + AK + Aktivitätsstatus
+        (() => {
+          const gt    = genderTag(ax.geschlecht);
+          const ak    = akLabelFromJahrgang(ax.jahrgang);
+          const meets = computeMeetInfo(ax);
+          const act   = activityStatusFromLast(meets.last);
+          const lastStr = fmtDate(meets.last);
+          const age   = ageFromJahrgang(ax.jahrgang);
+          const band  = (age != null && age <= 18) ? "youth" : "open";
 
-          // ★ Meta: OG + Jahrgang (OG = aktuelle)
-          // ...innerhalb der ath-profile-title:
-          h("div", { class: "ath-profile-meta" },
-            KV("Ortsgruppe", currOG),
-            KV("Jahrgang", String(ax.jahrgang)),
-            KV("Länderpins", renderCountryFlagsInline(ax) || "—")   // ← NEU
-          ),
+          const srIcons = renderStartrechtIcons(ax); // kann null sein
+
+          return h("div", { class: "gender-row" },
+            h("span", {
+              class: `gender-chip ${gt.cls}`,
+              title: gt.full,
+              "aria-label": `Geschlecht: ${gt.full}`
+            }, gt.full),
+            h("span", {
+              class: `ak-chip ${band}`,
+              title: `Altersklasse ${ak}`,
+              "aria-label": `Altersklasse ${ak}`
+            }, ak),
+            h("span", {
+              class: `status-chip ${act.key}`,
+              title: `Letzter Wettkampf: ${lastStr}`,
+              "aria-label": `Aktivitätsstatus: ${act.label}. Letzter Wettkampf: ${lastStr}`
+            },
+              h("span", { class: "status-dot" }),
+              act.label
+            ),
+            srIcons
+          );
+        })(),
+
+        // Meta: OG + Jahrgang + Länderpins
+        h("div", { class: "ath-profile-meta" },
+          KV("Ortsgruppe", currOG),
+          KV("Jahrgang", String(ax.jahrgang)),
+          KV("Länderpins", renderCountryFlagsInline(ax) || "—")
         ),
-        renderMedalStats(ax)
-        
       ),
-      h("div", { class: "ath-card-buttom" },
-        tabsWrap,
-        h("div", { class: "ath-profile-section muted" },
-          h("p", {}, "Die Datenbank erfasst nur Einzel-Pool-Wettkämpfe von Badischen Schwimmerinnen und Schwimmern im Rettungssport."),
-          h("p", {}, "Staffeln und Freigewässer sind nicht enthalten."),
-          h("p", {}, "Platzierungen sind noch nicht alle eingetragen."),
-          h("p", {}, "Sollten Fehler oder neue Ergebnisse gefunden werden, wenden sie sich bitte an jan-philipp.gnad@dlrg.org")
-        )
 
-      ),
+      // Medaillenkarte rechts
+      renderMedalStats(ax)
     );
+
+    // Hinweis-Block unten
+    const disclaimer = h("div", { class: "ath-profile-section muted" },
+      h("p", {}, "Die Datenbank erfasst nur Einzel-Pool-Wettkämpfe von Badischen Schwimmerinnen und Schwimmern im Rettungssport."),
+      h("p", {}, "Staffeln und Freigewässer sind nicht enthalten."),
+      h("p", {}, "Platzierungen sind noch nicht alle eingetragen."),
+      h("p", {}, "Sollten Fehler oder neue Ergebnisse gefunden werden, wenden sie sich bitte an jan-philipp.gnad@dlrg.org")
+    );
+
+    // NEU: kein umschließender Card-Container (.ath-profile) mehr,
+    // alles wird direkt in das Mount-Element geschrieben.
     mount.innerHTML = "";
-    mount.classList.add("ath-profile-wrap");
-    mount.appendChild(profile);
-    requestAnimationFrame(() => window.scrollTo({ top: 275, behavior: 'smooth' }));
+    mount.append(
+      header,
+      tabsWrap,
+      disclaimer
+    );
+
+    requestAnimationFrame(() =>
+      window.scrollTo({ top: 275, behavior: 'smooth' })
+    );
   }
+
 
 
   // ---------- Boot ----------
