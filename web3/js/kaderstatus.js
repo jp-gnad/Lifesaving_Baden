@@ -15,8 +15,8 @@ function normWk(s) {
     .replace(/[–—−]/g, "-").replace(/\s+/sg," ").trim();
 }
 
-function minNum(a, b) { 
-  return a == null ? b : (b == null ? a : Math.min(a, b)); 
+function minNum(a, b) {
+  return a == null ? b : (b == null ? a : Math.min(a, b));
 }
 
 // nutzt deine Ranks:
@@ -310,12 +310,6 @@ async function ladePlatzierungsKriterien(aktuellesJahr) {
 
 const AK_INDEX = { U17: 0, U19: 1, Offen: 2 };
 
-function getAltersklasse(alter) {
-  if (alter < 17) return "U17";
-  if (alter < 19) return "U19";
-  return "Offen";
-}
-
 function createEmptyMatrix() {
   return Array.from({ length: 6 }, () =>
     Array.from({ length: 3 }, () =>
@@ -473,49 +467,6 @@ function bestimmeKaderstatus(matrix, alter) {
 }
 
 // =====================
-// Zebra-Streifen
-// =====================
-
-function applyZebraStripes() {
-  const rows = document.querySelectorAll("#kader-container table tr");
-  let visibleIndex = 0;
-
-  rows.forEach((row, index) => {
-    if (index === 0) return; // Header auslassen
-
-    if (row.style.display === "none") {
-      row.classList.remove("odd", "even");
-      return;
-    }
-
-    row.classList.remove("odd", "even");
-    row.classList.add(visibleIndex % 2 === 0 ? "even" : "odd");
-    visibleIndex++;
-  });
-}
-
-// =====================
-// Zebra-Streifen für mehrere Tabellen
-// =====================
-function applyZebraStripes() {
-  const tables = document.querySelectorAll("#kader-container table");
-  tables.forEach(table => {
-    const rows = table.querySelectorAll("tbody tr");
-    let visibleIndex = 0;
-    rows.forEach(row => {
-      if (row.style.display === "none") {
-        row.classList.remove("odd", "even");
-        return;
-      }
-      row.classList.remove("odd", "even");
-      row.classList.add(visibleIndex % 2 === 0 ? "even" : "odd");
-      visibleIndex++;
-    });
-  });
-}
-
-
-// =====================
 // Excel laden und in Datenbank umwandeln
 // =====================
 
@@ -602,7 +553,7 @@ async function ladeExcelUndVerarbeite() {
           datum: wettkampfDatum,
           wettkampf: wettkampfName,
           mehrkampfPlatzierung,
-          einzelkampfPlatzierung,
+          einzelkampfPlatzierung
         });
       }
     }
@@ -763,8 +714,30 @@ function verarbeiteDatenbank(datenbank, aktuellesJahr) {
 }
 
 // =====================
-// Tabelle(n) bauen – 4 Gruppen
+// Zebra-Streifen für mehrere Tabellen
 // =====================
+
+function applyZebraStripes() {
+  const tables = document.querySelectorAll("#kader-container table");
+  tables.forEach(table => {
+    const rows = table.querySelectorAll("tbody tr.athlete-row");
+    let visibleIndex = 0;
+    rows.forEach(row => {
+      if (row.style.display === "none") {
+        row.classList.remove("odd", "even");
+        return;
+      }
+      row.classList.remove("odd", "even");
+      row.classList.add(visibleIndex % 2 === 0 ? "even" : "odd");
+      visibleIndex++;
+    });
+  });
+}
+
+// =====================
+// Tabellen bauen – 4 Gruppen + Mobile-Details
+// =====================
+
 function baueKaderTabelle(result, aktuellesJahr) {
   const container = document.getElementById("kader-container");
   if (!container) {
@@ -777,7 +750,7 @@ function baueKaderTabelle(result, aktuellesJahr) {
   const allPersons = Array.from(result.entries())
     .filter(([_, p]) => p.Kaderstatus === "Badenkader" || p.Kaderstatus === "Juniorenkader");
 
-  // 4 Gruppen: Offener Kader m/w = Badenkader, Juniorenkader m/w
+  // 4 Gruppen
   const offenM = [];
   const offenW = [];
   const juniorM = [];
@@ -799,7 +772,6 @@ function baueKaderTabelle(result, aktuellesJahr) {
     }
   }
 
-  // Sortierung innerhalb jeder Gruppe: Ortsgruppe, dann Name
   function sortGroup(arr) {
     arr.sort((a, b) => {
       const [nameA, pA] = a;
@@ -819,7 +791,7 @@ function baueKaderTabelle(result, aktuellesJahr) {
   sortGroup(juniorM);
   sortGroup(juniorW);
 
-  // Hilfsfunktion: Tabelle für eine Gruppe bauen (Struktur wie bisher)
+  // Hilfsfunktion: Tabelle für eine Gruppe
   function createTableForGroup(personenArray) {
     const table = document.createElement("table");
 
@@ -828,7 +800,7 @@ function baueKaderTabelle(result, aktuellesJahr) {
     trHead.innerHTML = `
       <th></th>
       <th>Sportler / Ortsgruppe</th>
-      <th colspan="4" style="text-align:center;">Kriterien</th>
+      <th class="criteria-cell" colspan="4" style="text-align:center;">Kriterien</th>
       <th style="text-align:center;">Status</th>
     `;
     thead.appendChild(trHead);
@@ -840,6 +812,7 @@ function baueKaderTabelle(result, aktuellesJahr) {
       const tr = document.createElement("tr");
       tr.dataset.kaderstatus = person.Kaderstatus;
       tr.dataset.aktuellesalter = person.aktuellesAlter;
+      tr.classList.add("athlete-row");
       const farbe = person.geschlecht === "maennlich" ? "#1e90ff" : "#ff69b4";
 
       // 1) Cap
@@ -869,6 +842,7 @@ function baueKaderTabelle(result, aktuellesJahr) {
       // 3) Icon_Time
       const tdIcon_time = document.createElement("td");
       tdIcon_time.style.textAlign = "center";
+      tdIcon_time.classList.add("criteria-cell");
       const imgIcon_time = document.createElement("img");
       const icon1 = person.Icon_Time === "green" ? "icon_time_green.svg"
                   : person.Icon_Time === "yellow" ? "icon_time_yellow.svg"
@@ -881,6 +855,7 @@ function baueKaderTabelle(result, aktuellesJahr) {
       // 4) Icon_Comp
       const tdIcon_comp = document.createElement("td");
       tdIcon_comp.style.textAlign = "center";
+      tdIcon_comp.classList.add("criteria-cell");
       const imgIcon_comp = document.createElement("img");
       const icon2 = person.Icon_Comp === "green" ? "icon_medal_green.svg"
                   : person.Icon_Comp === "yellow" ? "icon_medal_yellow.svg"
@@ -893,6 +868,7 @@ function baueKaderTabelle(result, aktuellesJahr) {
       // 5) Icon_Ocean
       const tdIcon_ocean = document.createElement("td");
       tdIcon_ocean.style.textAlign = "center";
+      tdIcon_ocean.classList.add("criteria-cell");
       const imgIcon_ocean = document.createElement("img");
       const icon3 = person.Icon_Ocean === "green" ? "icon_ocean_green.svg"
                   : person.Icon_Ocean === "yellow" ? "icon_ocean_yellow.svg"
@@ -905,6 +881,7 @@ function baueKaderTabelle(result, aktuellesJahr) {
       // 6) Icon_Coach
       const tdIcon_coach = document.createElement("td");
       tdIcon_coach.style.textAlign = "center";
+      tdIcon_coach.classList.add("criteria-cell");
       const imgIcon_coach = document.createElement("img");
       const icon4 = person.Icon_Coach === "green" ? "icon_trainer_green.svg"
                   : person.Icon_Coach === "yellow" ? "icon_trainer_yellow.svg"
@@ -990,11 +967,50 @@ function baueKaderTabelle(result, aktuellesJahr) {
 
       wrapper.appendChild(statusIcon);
       tdStatus.appendChild(wrapper);
-
-      // kein zusätzlicher Kader-Badge mehr
       tr.appendChild(tdStatus);
+
       tbody.appendChild(tr);
 
+      // Details-Zeile für Mobile (Kriterien unter dem Athleten)
+      const detailsRow = document.createElement("tr");
+      detailsRow.className = "details-row";
+      const detailsCell = document.createElement("td");
+      detailsCell.colSpan = 7;
+
+      const detailsWrapper = document.createElement("div");
+      detailsWrapper.className = "criteria-detail";
+
+      function addCrit(iconFile, labelText) {
+        const item = document.createElement("div");
+        item.className = "criteria-detail-item";
+        const img = document.createElement("img");
+        img.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/svg/${encodeURIComponent(iconFile)}`;
+        img.alt = labelText;
+        img.style.width = "26px";
+        const span = document.createElement("span");
+        span.textContent = labelText;
+        item.appendChild(img);
+        item.appendChild(span);
+        detailsWrapper.appendChild(item);
+      }
+
+      addCrit(icon1, "Pflichtzeiten");
+      addCrit(icon2, "Platzierungen");
+      addCrit(icon3, "Ocean");
+      addCrit(icon4, "Trainer");
+
+      detailsCell.appendChild(detailsWrapper);
+      detailsRow.appendChild(detailsCell);
+      tbody.appendChild(detailsRow);
+
+      // Klick auf Zeile: Details auf/zu (auf Mobile sichtbar)
+      tr.addEventListener("click", (e) => {
+        // Klick auf Status-Icon / Tooltip soll nur Tooltip bedienen
+        if (e.target.closest(".status-wrapper") || e.target.closest(".status-tooltip")) {
+          return;
+        }
+        detailsRow.classList.toggle("is-open");
+      });
     }
 
     table.appendChild(tbody);
@@ -1006,7 +1022,7 @@ function baueKaderTabelle(result, aktuellesJahr) {
   grid.className = "kader-grid";
 
   function addTableBox(title, arr) {
-    if (!arr.length) return; // leere Gruppe auslassen
+    if (!arr.length) return;
     const box = document.createElement("div");
     box.className = "kader-box";
 
@@ -1039,7 +1055,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const main = document.getElementById("content");
   if (!main) return;
 
-  // Dein bisheriger Inhalt (Hero + Aktuelles) bleibt erhalten
+  // Layout im <main> erzeugen
   main.innerHTML = `
     <section class="hero">
       <h1>Kaderstatus</h1>

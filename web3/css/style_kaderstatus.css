@@ -6,7 +6,7 @@ main#content {
 
 .hero {
   position: relative;
-  background: url("../png/hintergrund1.JPG") center/cover no-repeat;  background-position: center 40%;
+  background: url("../png/hintergrund2.jpg") center/cover no-repeat;  background-position: center 40%;
   height: 300px;
   text-align: center;
   padding-top: 125px;
@@ -36,9 +36,8 @@ main#content {
   .hero {height: 200px; padding-top: 80px;}
 }
 
-
 /* ================================
-   Grundlayout Kaderseite
+   Grundlayout
    ================================ */
 
 body {
@@ -69,25 +68,22 @@ body {
 }
 
 /* ================================
-   Kader-Tabelle
+   Kader-Tabellen: Container & Grid
    ================================ */
 
 #kader-container {
   max-width: 95%;
   margin: 0 auto 3rem;
   padding: 0.5rem;
-  overflow-x: auto;
 }
 
-/* Grid für 4 Kader-Tabellen (2x2 auf Desktop, untereinander auf Handy) */
-
+/* 2x2-Grid für vier Teil-Tabellen (Desktop) */
 .kader-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
 }
 
-/* Box um jede Tabelle (mit Überschrift) */
 .kader-box {
   background: #ffffff;
   border-radius: 8px;
@@ -95,12 +91,15 @@ body {
   padding: 0.75rem 0.75rem 0.5rem;
 }
 
-/* Überschrift über jeder Teil-Tabelle */
 .kader-box h3 {
   margin: 0 0 0.5rem;
   font-size: 1rem;
   font-weight: 600;
 }
+
+/* ================================
+   Tabellen-Styling
+   ================================ */
 
 #kader-container table {
   width: 100%;
@@ -131,7 +130,7 @@ body {
 /* Cap-Spalte etwas schmaler */
 #kader-container td:first-child,
 #kader-container th:first-child {
-  width: 50px;
+  width: 52px;
 }
 
 /* Name-Spalte */
@@ -139,39 +138,12 @@ body {
   min-width: 220px;
 }
 
-/* Icon-Spalten mittig */
-#kader-container td:nth-child(3),
-#kader-container td:nth-child(4),
-#kader-container td:nth-child(5),
-#kader-container td:nth-child(6),
-#kader-container td:nth-child(7) {
+/* Kriterien-Spalten mittig */
+#kader-container td.criteria-cell {
   text-align: center;
 }
 
-/* Icons in Tabelle */
-#kader-container img {
-  display: inline-block;
-}
-
-/* Hover-Effekt */
-#kader-container tbody tr:hover {
-  background: #eef3fb;
-}
-
-/* Zebra-Streifen (werden per JS .even / .odd gesetzt) */
-
-#kader-container tbody tr.even {
-  background: #fafbfc;
-}
-
-#kader-container tbody tr.odd {
-  background: #ffffff;
-}
-
-/* ================================
-   Status-Spalte & Badge
-   ================================ */
-
+/* Status-Spalte */
 .status-cell {
   text-align: center;
   white-space: nowrap;
@@ -188,24 +160,23 @@ body {
   cursor: pointer;
 }
 
-/* Farbgebung nach Kaderstatus über data-Attribut des <tr> */
-
-tr[data-kaderstatus="Badenkader"] .kader-badge {
-  background: #e6f2ff;
-  color: #064f9a;
-  border-color: #b3d4ff;
+/* Icons in Tabellen */
+#kader-container img {
+  display: inline-block;
 }
 
-tr[data-kaderstatus="Juniorenkader"] .kader-badge {
-  background: #fff6e6;
-  color: #8a4b00;
-  border-color: #ffd699;
+/* Hover-Effekt auf Desktop */
+#kader-container tbody tr.athlete-row:hover {
+  background: #eef3fb;
 }
 
-/* Fallback, falls leerer Status (sollte eigentlich nicht vorkommen) */
+/* Zebra-Streifen (werden via JS gesetzt) */
+#kader-container tbody tr.athlete-row.even {
+  background: #fafbfc;
+}
 
-tr[data-kaderstatus=""] .kader-badge {
-  display: none;
+#kader-container tbody tr.athlete-row.odd {
+  background: #ffffff;
 }
 
 /* ================================
@@ -229,7 +200,6 @@ tr[data-kaderstatus=""] .kader-badge {
   transition: opacity 0.12s ease-out, transform 0.12s ease-out;
 }
 
-/* sichtbarer Zustand (per JS .is-visible) */
 .status-tooltip.is-visible {
   opacity: 1;
   transform: translateY(0);
@@ -248,7 +218,7 @@ tr[data-kaderstatus=""] .kader-badge {
   border-color: transparent #24292e transparent transparent;
 }
 
-/* Wenn Tooltip links vom Icon steht (Klasse .left wird per JS gesetzt) */
+/* Wenn Tooltip links vom Icon steht */
 .status-tooltip.left::after {
   right: auto;
   left: 100%;
@@ -256,27 +226,79 @@ tr[data-kaderstatus=""] .kader-badge {
 }
 
 /* ================================
+   Details-Zeilen (Mobile-Kriterien)
+   ================================ */
+
+.details-row {
+  display: none;          /* Standard: ausgeblendet */
+  background: #f7f9fc;
+}
+
+.details-row td {
+  padding-top: 0.25rem;
+  padding-bottom: 0.6rem;
+}
+
+.criteria-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem 1.4rem;
+  align-items: center;
+}
+
+.criteria-detail-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #555;
+}
+
+/* ================================
    Responsive
    ================================ */
 
-@media (max-width: 768px) {
-  #kader-container {
-    padding: 0.25rem;
-  }
-
+@media (max-width: 900px) {
   .kader-grid {
-    grid-template-columns: 1fr;  /* alle Boxen untereinander */
+    grid-template-columns: 1fr; /* alle Tabellen untereinander */
   }
 
   #kader-container table {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
   }
 
   #kader-container th,
   #kader-container td {
-    padding: 0.4rem 0.45rem;
+    padding: 0.45rem 0.55rem;
   }
 
+  /* Kriterien-Spalten und -Header ausblenden */
+  #kader-container th.criteria-cell,
+  #kader-container td.criteria-cell {
+    display: none;
+  }
+
+  /* Athlete-Row klickbar machen (für Details) */
+  #kader-container tbody tr.athlete-row {
+    cursor: pointer;
+  }
+
+  /* Details-Zeilen werden über Klasse .is-open eingeblendet */
+  .details-row {
+    display: none;
+  }
+
+  .details-row.is-open {
+    display: table-row;
+  }
+
+  /* Hover-Farbe auf Mobile weniger stark auffällig */
+  #kader-container tbody tr.athlete-row:hover {
+    background: #f3f6fb;
+  }
+}
+
+@media (max-width: 768px) {
   .updates {
     margin: 1.5rem 0.5rem;
   }
