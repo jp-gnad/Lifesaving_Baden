@@ -77,6 +77,22 @@ body {
   padding: 0.5rem;
 }
 
+/* Gruppe Offener Kader / Juniorenkader */
+
+.kader-group-section {
+  max-width: 95%;
+  margin: 2rem auto 0;
+}
+
+.kader-group-heading {
+  margin: 0 0 0.75rem;
+  text-align: center;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: black;   /* Blau wie im Screenshot */
+}
+
+
 /* 2x2-Grid für vier Teil-Tabellen (Desktop) */
 .kader-grid {
   display: grid;

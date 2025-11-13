@@ -1005,7 +1005,6 @@ function baueKaderTabelle(result, aktuellesJahr) {
 
       // Klick auf Zeile: Details auf/zu (auf Mobile sichtbar)
       tr.addEventListener("click", (e) => {
-        // Klick auf Status-Icon / Tooltip soll nur Tooltip bedienen
         if (e.target.closest(".status-wrapper") || e.target.closest(".status-tooltip")) {
           return;
         }
@@ -1017,35 +1016,61 @@ function baueKaderTabelle(result, aktuellesJahr) {
     return table;
   }
 
-  // Grid-Container für 4 Boxen
-  const grid = document.createElement("div");
-  grid.className = "kader-grid";
-
-  function addTableBox(title, arr) {
+  // Hilfsfunktion: Box in ein gegebenes Grid einfügen
+  function addTableBox(gridElement, arr) {
     if (!arr.length) return;
     const box = document.createElement("div");
     box.className = "kader-box";
 
-    const heading = document.createElement("h3");
-    heading.textContent = title;
-    box.appendChild(heading);
-
+    // keine Unter-Überschrift in der Box, nur Tabelle
     const table = createTableForGroup(arr);
     box.appendChild(table);
 
-    grid.appendChild(box);
+    gridElement.appendChild(box);
   }
 
-  addTableBox("Offener Kader – männlich", offenM);
-  addTableBox("Offener Kader – weiblich", offenW);
-  addTableBox("Juniorenkader – männlich", juniorM);
-  addTableBox("Juniorenkader – weiblich", juniorW);
+  // ===== Block "Offener Kader" =====
+  if (offenM.length || offenW.length) {
+    const offSection = document.createElement("section");
+    offSection.className = "kader-group-section";
 
-  container.appendChild(grid);
+    const offHeading = document.createElement("h2");
+    offHeading.className = "kader-group-heading";
+    offHeading.textContent = "Badenkader";
+    offSection.appendChild(offHeading);
+
+    const offGrid = document.createElement("div");
+    offGrid.className = "kader-grid";
+    addTableBox(offGrid, offenM);
+    addTableBox(offGrid, offenW);
+    offSection.appendChild(offGrid);
+
+    container.appendChild(offSection);
+  }
+
+  // ===== Block "Juniorenkader" =====
+  if (juniorM.length || juniorW.length) {
+    const junSection = document.createElement("section");
+    junSection.className = "kader-group-section";
+
+    const junHeading = document.createElement("h2");
+    junHeading.className = "kader-group-heading";
+    junHeading.textContent = "Juniorenkader";
+    junSection.appendChild(junHeading);
+
+    const junGrid = document.createElement("div");
+    junGrid.className = "kader-grid";
+    addTableBox(junGrid, juniorM);
+    addTableBox(junGrid, juniorW);
+    junSection.appendChild(junGrid);
+
+    container.appendChild(junSection);
+  }
 
   if (window.applyKaderFilter) window.applyKaderFilter();
   applyZebraStripes();
 }
+
 
 // =====================
 // DOMContentLoaded: Hero + Updates + Kader-Container & Daten laden
