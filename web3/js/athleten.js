@@ -1768,8 +1768,15 @@ document.addEventListener("DOMContentLoaded", () => {
       updateXDomain();
 
       const rect = vp.getBoundingClientRect();
-      const W = Math.max(320, Math.floor(rect.width));
-      const H = Math.max(260, vp.clientHeight);
+      const W = Math.max(320, Math.floor(rect.width || 320));
+
+      const H = Math.max(220, Math.round(W * 0.5)); // oder fester Wert, z.B. 240
+      vp.style.height = H + "px";
+
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      svg.setAttribute("width", W);
+      svg.setAttribute("height", H);
+
 
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
       svg.setAttribute("width", W);
@@ -2239,11 +2246,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
      function paint(){
       updateDomains();
+
       const rect = vp.getBoundingClientRect();
-      const W = Math.max(320, Math.floor(rect.width));
-      const H = Math.max(260, vp.clientHeight);
+      const W = Math.max(320, Math.floor(rect.width || 320));
+      const H = Math.max(260, Math.round(W * 0.55)); // z.B. 260–400px, abhängig von der Breite
+      // Wenn du es ganz simpel willst: const H = 260;
+      // optional: Viewport-Div explizit auf diese Höhe setzen
+      vp.style.height = H + "px";
+
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-      svg.setAttribute("width", W); svg.setAttribute("height", H);
+      svg.setAttribute("width", W);
+      svg.setAttribute("height", H);
+
       while (svg.firstChild) svg.removeChild(svg.firstChild);
 
       const m = { l: 8, r: 8, t: 28, b: 48 };
