@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <h2>Angaben gemäß § 5 TMG</h2>
         <p>
           <strong>Name:</strong> <span class="placeholder">Jan-Philipp Gnad</span><br>
-          <strong>Adresse:</strong> <span class="placeholder">Am Zollstock 36</span><br>
+          <strong>Adresse:</strong> <span class="placeholder">Am Zollstock 36, 76228 Karlsuhe</span><br>
           <strong>E-Mail:</strong> <span class="placeholder">jan-philipp.gnad@dlrg.org</span><br>
           <strong>Telefon:</strong> <span class="placeholder">+49 (0)1575 4047493</span>
         </p>
