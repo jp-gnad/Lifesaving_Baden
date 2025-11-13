@@ -35,3 +35,1667 @@ main#content {
   .hero h1 {font-size: 2.0em; }
   .hero {height: 200px; padding-top: 80px;}
 }
+
+
+
+
+
+/* =========================================================
+   Athleten-Seite – spezifische Styles
+   (für athleten.js / athleten_gui.js)
+   ========================================================= */
+
+/* Kleinere Utility-Klassen -------------------------------- */
+
+.hidden {
+  display: none !important;
+}
+
+.ath-profile-wrap {
+  max-width: 1180px;
+  margin: 0 auto 4rem;
+  padding: 0 1.5rem 4rem;
+}
+
+/* Abstand nach dem Hero-Bereich */
+.hero + .ath-profile-wrap,
+.hero + #athleten-container {
+  margin-top: 2.5rem;
+}
+
+/* =========================================================
+   Suche / Einstieg (Athleten-UI)
+   ========================================================= */
+
+.ath-ui {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 1.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.ath-search-wrap {
+  position: relative;
+}
+
+.ath-ui-search {
+  display: flex;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.ath-input {
+  flex: 1;
+  padding: 0.7rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  font-size: 0.95rem;
+  outline: none;
+  background-color: #ffffff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ath-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+/* Buttons allgemein / primär */
+.ath-btn {
+  border-radius: 999px;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background: #e5e7eb;
+  color: #111827;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.15s ease, transform 0.1s ease,
+    box-shadow 0.15s ease;
+}
+
+.ath-btn.primary {
+  background: #dc2626;
+  color: #ffffff;
+  box-shadow: 0 8px 16px rgba(220, 38, 38, 0.18);
+}
+
+.ath-btn.primary:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(185, 28, 28, 0.25);
+}
+
+.ath-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* =========================================================
+   Such-Suggestions (Dropdown unter der Suche)
+   ========================================================= */
+
+.ath-suggest {
+  position: absolute;
+  inset-inline: 0;
+  margin-top: 0.25rem;
+  background: #ffffff;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.22);
+  max-height: 19rem;
+  overflow-y: auto;
+  padding: 0.3rem 0;
+  z-index: 40;
+}
+
+/* Portal-Modus – Position kommt über CSS-Variablen aus JS */
+.ath-suggest.portal {
+  position: fixed;
+  left: var(--ath-suggest-x, 0px);
+  top: var(--ath-suggest-y, 0px);
+  width: var(--ath-suggest-w, 100%);
+}
+
+.ath-suggest-empty {
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.ath-suggest-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.ath-suggest-item:hover,
+.ath-suggest-item.active {
+  background: #eff6ff;
+}
+
+.ath-suggest-avatar {
+  flex-shrink: 0;
+}
+
+.ath-suggest-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.ath-suggest-name {
+  font-weight: 500;
+  color: #111827;
+}
+
+.ath-suggest-name mark {
+  background: #facc15;
+  padding: 0 0.05em;
+}
+
+.ath-year {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.ath-suggest-sub {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+/* =========================================================
+   Avatar (Kappen)
+   ========================================================= */
+
+.ath-avatar {
+  position: relative;
+  border-radius: 999px;
+  overflow: hidden;
+  background: radial-gradient(circle at 30% 10%, #f9fafb 0, #e5e7eb 45%, #d1d5db 100%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ath-avatar.xl {
+  width: 7rem;
+  height: 7rem;
+}
+
+.ath-avatar.sm {
+  width: 2.4rem;
+  height: 2.4rem;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Startrecht-Symbole (LV / BV-Caps) */
+
+.sr-icons {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin-left: 0.75rem;
+}
+
+.sr-icon {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+}
+
+/* Länder-Pins */
+
+.kv-flags {
+  display: inline-flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.ath-flag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flag-img {
+  width: 1.25rem;
+  height: auto;
+}
+
+/* =========================================================
+   Profilkopf (Name, Chips, Medaillen)
+   ========================================================= */
+
+.ath-profile {
+  background: #ffffff;
+  border-radius: 1.25rem;
+  box-shadow:
+    0 22px 60px rgba(15, 23, 42, 0.25),
+    0 0 0 1px rgba(15, 23, 42, 0.03);
+  padding: 1.5rem 1.75rem 1.75rem;
+}
+
+.ath-profile-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1.3fr) minmax(0, 0.9fr);
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.ath-profile-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.ath-profile-title h2 {
+  margin: 0;
+  font-size: 1.7rem;
+  letter-spacing: 0.02em;
+}
+
+.gender-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+/* Chips ----------------------------------------------------- */
+
+.gender-chip,
+.ak-chip,
+.status-chip {
+  font-size: 0.78rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Geschlecht */
+.gender-chip.m {
+  background: #dbeafe;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+.gender-chip.w {
+  background: #fce7f3;
+  border-color: #f9a8d4;
+  color: #be185d;
+}
+
+/* Altersklasse */
+.ak-chip.youth {
+  background: #ecfdf5;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+.ak-chip.open {
+  background: #fef9c3;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+/* Aktivitätsstatus */
+.status-chip {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #4b5563;
+}
+
+.status-chip .status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #9ca3af;
+}
+
+.status-chip.active {
+  background: #ecfdf5;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+.status-chip.active .status-dot {
+  background: #22c55e;
+}
+
+.status-chip.pause {
+  background: #fef3c7;
+  border-color: #fde68a;
+  color: #92400e;
+}
+.status-chip.pause .status-dot {
+  background: #facc15;
+}
+
+.status-chip.inactive {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #6b7280;
+}
+.status-chip.inactive .status-dot {
+  background: #9ca3af;
+}
+
+/* Key-Value Zeile (Ortsgruppe, Jahrgang, Länderpins) */
+
+.ath-profile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 1rem;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.kv {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.kv .k {
+  font-weight: 500;
+  color: #374151;
+}
+
+.kv .v {
+  color: #4b5563;
+}
+
+/* Hinweis-Block unten im Profil */
+
+.ath-card-buttom {
+  margin-top: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.ath-profile-section.muted {
+  font-size: 0.85rem;
+  color: #6b7280;
+  border-radius: 0.75rem;
+  background: #f9fafb;
+  padding: 0.9rem 1rem;
+}
+
+.ath-profile-section.muted p {
+  margin: 0.15rem 0;
+}
+
+/* =========================================================
+   Medaillen-Karte
+   ========================================================= */
+
+.med-card {
+  background: linear-gradient(135deg, #0f172a, #020617);
+  color: #e5e7eb;
+  border-radius: 1rem;
+  padding: 1rem 1.1rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.med-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.med-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.med-total {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.med-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.med-col {
+  text-align: center;
+}
+
+.med-count {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.med-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-top: 0.25rem;
+}
+
+/* Balken */
+.med-barWrap {
+  height: 72px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.8);
+  padding: 0.15rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  margin-top: 0.35rem;
+}
+
+.med-bar {
+  width: 100%;
+  border-radius: 999px;
+}
+
+/* Farbgebung */
+.med-col.gold .med-bar {
+  background: linear-gradient(180deg, #facc15, #b45309);
+}
+.med-col.silver .med-bar {
+  background: linear-gradient(180deg, #e5e7eb, #6b7280);
+}
+.med-col.bronze .med-bar {
+  background: linear-gradient(180deg, #f97316, #7c2d12);
+}
+
+/* =========================================================
+   Tabs (Bestzeiten / Info / Wettkämpfe)
+   ========================================================= */
+
+.ath-tabs-wrap {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.ath-tabs {
+  position: relative;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.ath-tabs-list {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.ath-tab {
+  position: relative;
+  border: none;
+  background: transparent;
+  padding: 0.55rem 0.95rem 0.7rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6b7280;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.ath-tab.active {
+  color: #111827;
+}
+
+.ath-tabs-underline {
+  position: absolute;
+  bottom: -1px;
+  height: 2px;
+  background: #dc2626;
+  border-radius: 999px;
+  transition: left 0.2s ease, width 0.2s ease;
+}
+
+/* Panels */
+.ath-tab-panels {
+  position: relative;
+}
+
+.ath-tab-panel {
+  display: none;
+}
+
+.ath-tab-panel.active {
+  display: block;
+}
+
+/* =========================================================
+   Bestzeiten + Flip-Kacheln
+   ========================================================= */
+
+.ath-profile-section.bests {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ath-bests-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ath-bests-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+/* Bahn-Switch */
+.ath-bests-switch .seg {
+  display: inline-flex;
+  border-radius: 999px;
+  background: #f3f4f6;
+  padding: 0.15rem;
+}
+
+.seg-btn {
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: #6b7280;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.seg-btn.active {
+  background: #ffffff;
+  color: #111827;
+  box-shadow: 0 0 0 1px rgba(209, 213, 219, 0.8);
+}
+
+/* Grid der Bestzeiten */
+.ath-bests-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.9rem;
+}
+
+/* Flip-Kachel generisch (Bestzeiten + Info-Flip-Tiles) */
+
+.best-tile,
+.info-tile {
+  position: relative;
+  background: transparent;
+  border-radius: 0.9rem;
+  perspective: 1200px;
+}
+
+.best-tile .tile-inner,
+.info-tile.flip .tile-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.4s ease;
+}
+
+.tile-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: inherit;
+  padding: 0.85rem 0.95rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.tile-front {
+  z-index: 1;
+}
+
+.tile-back {
+  transform: rotateY(180deg);
+}
+
+/* Hover-Flip (Desktop) */
+@media (hover: hover) and (pointer: fine) {
+  .best-tile:hover .tile-inner,
+  .info-tile.flip:hover .tile-inner {
+    transform: rotateY(180deg);
+  }
+}
+
+/* Lock-Flip (Klick) */
+.best-tile.is-flipped .tile-inner,
+.info-tile.flip.is-flipped .tile-inner {
+  transform: rotateY(180deg);
+}
+
+.best-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.best-time {
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* Rückseite: Statistiken */
+.tile-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.stat {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+}
+
+.stat .k {
+  color: #6b7280;
+}
+
+.stat .v {
+  font-weight: 500;
+  color: #111827;
+}
+
+/* Leerer Zustand */
+.best-empty {
+  padding: 0.9rem 1rem;
+  border-radius: 0.8rem;
+  background: #f9fafb;
+  border: 1px dashed #e5e7eb;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+/* =========================================================
+   Info-Grid / Kacheln (LSC, Wettkämpfe, Starts, DQ, etc.)
+   ========================================================= */
+
+.ath-profile-section.info {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.ath-info-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.ath-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.85rem;
+}
+
+.info-tile {
+  background: #f9fafb;
+  border-radius: 0.9rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.info-tile.accent.lsc-tile {
+  background: radial-gradient(circle at 10% 0%, #fee2e2 0, #fee2e2 25%, #fee2e2 50%, #fee2e2 100%);
+  border-color: #fecaca;
+}
+
+.info-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.info-value {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.info-value.big {
+  font-size: 1.6rem;
+}
+
+/* LSC-Kachel Label (LSC <-> Lifesaving Score) */
+
+.lsc-label {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: baseline;
+}
+
+.lsc-label .label {
+  font-size: 0.8rem;
+}
+
+.lsc-label .label-long {
+  display: none;
+}
+
+.lsc-label.show-long .label-short {
+  display: none;
+}
+.lsc-label.show-long .label-long {
+  display: inline;
+}
+
+/* Progress-Balken (Bahnverteilung & Regelwerk) */
+
+.info-progress {
+  margin-top: 0.35rem;
+  width: 100%;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+  position: relative;
+}
+
+.info-progress .p50,
+.info-progress .pIntl {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+}
+
+.info-progress .p50 {
+  background: linear-gradient(90deg, #0ea5e9, #2563eb);
+}
+
+.info-progress .pIntl {
+  background: linear-gradient(90deg, #22c55e, #15803d);
+}
+
+.info-legend {
+  margin-top: 0.3rem;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+/* Regelwerk-Text */
+.info-tile.regelwerk .lintl {
+  font-size: 0.78rem;
+}
+
+/* Starts-Flip / DQ-Flip / Jahre / Meter */
+
+.info-tile.flip {
+  cursor: pointer;
+}
+
+/* DQ-Zeilen */
+.dq-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+}
+
+.dq-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+}
+
+.dq-row .lane {
+  font-weight: 500;
+  color: #374151;
+}
+
+.dq-row .pct {
+  color: #111827;
+}
+
+.dq-row .meta {
+  color: #6b7280;
+}
+
+/* Info-Untertitel */
+.info-sub {
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+/* =========================================================
+   LSC-Verlaufsdiagramm
+   ========================================================= */
+
+.ath-lsc-card {
+  margin-top: 1.25rem;
+  padding: 1.1rem 1.1rem 1.3rem;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.lsc-head h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.lsc-viewport {
+  position: relative;
+  width: 100%;
+  min-height: 260px;
+}
+
+.lsc-svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* SVG-Gitter & Achsen */
+.lsc-grid .hline0 {
+  stroke: #cbd5f5;
+  stroke-width: 1;
+}
+.lsc-grid .hline {
+  stroke: #e5e7eb;
+  stroke-width: 1;
+}
+.lsc-xaxis text,
+.lsc-yaxis text {
+  font-size: 10px;
+  fill: #6b7280;
+}
+
+/* Linien / Flächen */
+.lsc-area.blue {
+  fill-opacity: 0.45;
+}
+.lsc-area.green {
+  fill-opacity: 0.45;
+}
+
+.lsc-line.blue {
+  stroke: #1d4ed8;
+  stroke-width: 2;
+  fill: none;
+}
+.lsc-line.green {
+  stroke: #10b981;
+  stroke-width: 2;
+  fill: none;
+}
+
+.lsc-dot {
+  fill: #ffffff;
+  stroke-width: 1.8;
+  cursor: pointer;
+}
+
+.lsc-dots.blue .lsc-dot {
+  stroke: #1d4ed8;
+}
+.lsc-dots.green .lsc-dot {
+  stroke: #10b981;
+}
+
+.lsc-dot[data-active="1"] {
+  stroke-width: 2.6;
+}
+
+/* Tooltip */
+.lsc-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: #111827;
+  color: #f9fafb;
+  font-size: 0.78rem;
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  box-shadow: 0 16px 35px rgba(15, 23, 42, 0.45);
+  opacity: 0;
+  transform: translate(-9999px, -9999px);
+  transition: opacity 0.12s ease;
+  z-index: 15;
+}
+
+.lsc-tooltip .tt-l1 {
+  font-weight: 600;
+}
+.lsc-tooltip .tt-l2 {
+  margin-top: 0.05rem;
+  opacity: 0.85;
+}
+
+/* Legende */
+.lsc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: #4b5563;
+}
+
+.lsc-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.lsc-key-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 999px;
+}
+
+.lsc-key-dot.blue {
+  background: #1d4ed8;
+}
+.lsc-key-dot.green {
+  background: #10b981;
+}
+
+/* Vergleichssuche LSC */
+.lsc-compare-wrap {
+  margin-top: 0.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.lsc-search-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.lsc-input {
+  flex: 1;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  font-size: 0.82rem;
+}
+
+.lsc-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+}
+
+.lsc-clear {
+  border-radius: 999px;
+  border: none;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.78rem;
+  background: #f3f4f6;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+/* Ergebnisliste im LSC-Card */
+.lsc-suggest {
+  margin-top: 0.3rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  max-height: 12rem;
+  overflow-y: auto;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+}
+
+.lsc-suggest.hidden {
+  display: none;
+}
+
+.lsc-suggest-empty {
+  padding: 0.55rem 0.75rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.lsc-suggest-item {
+  display: flex;
+  gap: 0.55rem;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.lsc-suggest-item:hover,
+.lsc-suggest-item.active {
+  background: #eff6ff;
+}
+
+.lsc-suggest-avatar {
+  flex-shrink: 0;
+}
+
+.lsc-suggest-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.lsc-suggest-name {
+  font-weight: 500;
+  color: #111827;
+}
+
+.lsc-year {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* =========================================================
+   Zeit-Verlaufsdiagramm
+   ========================================================= */
+
+.ath-time-card {
+  margin-top: 1.5rem;
+  padding: 1.1rem 1.1rem 1.3rem;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.time-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.time-head h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Lane-Buttons in Zeit-Card */
+.time-lanes {
+  display: inline-flex;
+  border-radius: 999px;
+  background: #f3f4f6;
+  padding: 0.15rem;
+}
+
+.time-disc {
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  font-size: 0.8rem;
+  background: #ffffff;
+}
+
+.time-viewport {
+  position: relative;
+  width: 100%;
+  min-height: 260px;
+}
+
+.time-svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Gitter & Achsen */
+.time-grid .hline0 {
+  stroke: #e5e7eb;
+  stroke-width: 1;
+}
+.time-grid .hline {
+  stroke: #f3f4f6;
+  stroke-width: 1;
+}
+.time-xaxis text,
+.time-yaxis text {
+  font-size: 10px;
+  fill: #6b7280;
+}
+
+.time-grid .xtick {
+  stroke: #d1d5db;
+  stroke-width: 1;
+}
+
+/* Linien / Flächen */
+.time-area.blue {
+  fill-opacity: 0.45;
+}
+.time-area.green {
+  fill-opacity: 0.45;
+}
+
+.time-line.blue {
+  stroke: #1d4ed8;
+  stroke-width: 2;
+  fill: none;
+}
+.time-line.green {
+  stroke: #10b981;
+  stroke-width: 2;
+  fill: none;
+}
+
+.time-dot {
+  fill: #ffffff;
+  stroke-width: 1.8;
+  cursor: pointer;
+}
+.time-dots.blue .time-dot {
+  stroke: #1d4ed8;
+}
+.time-dots.green .time-dot {
+  stroke: #10b981;
+}
+.time-dot[data-active="1"] {
+  stroke-width: 2.6;
+}
+
+/* Tooltip Zeit */
+.time-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: #111827;
+  color: #f9fafb;
+  font-size: 0.78rem;
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.55rem;
+  box-shadow: 0 16px 35px rgba(15, 23, 42, 0.45);
+  opacity: 0;
+  transform: translate(-9999px, -9999px);
+  transition: opacity 0.12s ease;
+  z-index: 15;
+}
+
+.time-tooltip .tt-l1 {
+  font-weight: 600;
+}
+.time-tooltip .tt-l2 {
+  margin-top: 0.05rem;
+  opacity: 0.85;
+}
+
+/* Legende */
+.time-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: #4b5563;
+}
+
+.time-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.time-key-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 999px;
+}
+.time-key-dot.blue {
+  background: #1d4ed8;
+}
+.time-key-dot.green {
+  background: #10b981;
+}
+
+/* Vergleichssuche Zeit */
+.time-compare-wrap {
+  margin-top: 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.time-search-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.time-input {
+  flex: 1;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  font-size: 0.82rem;
+}
+
+.time-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+}
+
+.time-clear {
+  border-radius: 999px;
+  border: none;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.78rem;
+  background: #f3f4f6;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+/* Vorschlagsliste im Zeit-Card */
+.time-suggest {
+  margin-top: 0.3rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  max-height: 12rem;
+  overflow-y: auto;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+}
+
+.time-suggest.hidden {
+  display: none;
+}
+
+.time-suggest-empty {
+  padding: 0.55rem 0.75rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.time-suggest-item {
+  display: flex;
+  gap: 0.55rem;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.time-suggest-item:hover,
+.time-suggest-item.active {
+  background: #eff6ff;
+}
+
+.time-suggest-avatar {
+  flex-shrink: 0;
+}
+
+.time-suggest-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.time-suggest-name {
+  font-weight: 500;
+  color: #111827;
+}
+
+.time-year {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.time-suggest-sub {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* =========================================================
+   Disziplin-Verteilung (Donut)
+   ========================================================= */
+
+.ath-pie-card {
+  margin-top: 1.1rem;
+  padding: 1.1rem 1.1rem 1.25rem;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.pie-head h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.pie-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pie-svg {
+  max-width: 260px;
+}
+
+/* Farben für die Segmente */
+.pie-slice {
+  stroke: #ffffff;
+  stroke-width: 1;
+}
+
+/* Zuordnung bewusst nur farblich – Benennung egal */
+.pie-c-200h { fill: #0ea5e9; }   /* 50 Retten */
+.pie-c-100k { fill: #22c55e; }   /* 100 Retten m. Flossen */
+.pie-c-100l { fill: #f97316; }   /* 100 Kombi */
+.pie-c-200s { fill: #6366f1; }   /* 100 Lifesaver */
+.pie-c-50r  { fill: #ec4899; }   /* 200 Super */
+.pie-c-100rf{ fill: #a855f7; }   /* 200 Hindernis */
+
+.pie-center .c1 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  fill: #111827;
+}
+.pie-center .c2 {
+  font-size: 0.8rem;
+  fill: #6b7280;
+}
+
+/* Legende */
+.pie-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #4b5563;
+}
+
+.pie-leg-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pie-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 999px;
+}
+
+/* gleiche Farben wie Segmente */
+.pie-dot.pie-c-200h { background: #0ea5e9; }
+.pie-dot.pie-c-100k { background: #22c55e; }
+.pie-dot.pie-c-100l { background: #f97316; }
+.pie-dot.pie-c-200s { background: #6366f1; }
+.pie-dot.pie-c-50r  { background: #ec4899; }
+.pie-dot.pie-c-100rf{ background: #a855f7; }
+
+.pie-leg-label {
+  flex: 1;
+}
+
+.pie-leg-val {
+  font-variant-numeric: tabular-nums;
+  color: #111827;
+}
+
+/* =========================================================
+   Wettkämpfe-Liste
+   ========================================================= */
+
+.ath-profile-section.meets {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.ath-info-header.meets-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.ath-info-header.meets-head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Jahr-Navigation */
+.nav-btn {
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  width: 1.8rem;
+  height: 1.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  background: #ffffff;
+  cursor: pointer;
+  color: #4b5563;
+}
+
+.nav-btn:hover {
+  background: #f3f4f6;
+}
+
+/* Liste */
+.meets-list {
+  margin-top: 0.35rem;
+  border-radius: 0.9rem;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  overflow: hidden;
+}
+
+.meet-row {
+  display: grid;
+  grid-template-columns: 3.5rem 3.5rem minmax(0, 1fr) auto auto;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.meet-row:last-of-type {
+  border-bottom: none;
+}
+
+.meet-row:hover {
+  background: #f3f4ff;
+}
+
+.meet-row.open {
+  background: #eff6ff;
+}
+
+/* Spalten */
+.m-date {
+  color: #6b7280;
+}
+
+.m-place {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.m-medal {
+  width: 1rem;
+  height: 1rem;
+}
+
+.m-name {
+  font-weight: 500;
+  color: #111827;
+}
+
+.m-country {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+}
+
+.m-flag {
+  width: 1.1rem;
+  height: auto;
+}
+
+.m-iso {
+  color: #6b7280;
+}
+
+.m-pool {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+/* Details-Bereich */
+
+.meet-details {
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  padding: 0 0.9rem;
+  overflow: hidden;
+  height: 0;
+  transition: height 0.25s ease;
+}
+
+.meet-res {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  font-size: 0.8rem;
+}
+
+/* Lauf / Disziplin */
+.d-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.d {
+  font-weight: 500;
+  color: #111827;
+}
+
+.d-sub {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Platz mit Medaille */
+.pl {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.res-medal {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.t {
+  font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================
+   Responsives Verhalten
+   ========================================================= */
+
+@media (max-width: 960px) {
+  .ath-profile-head {
+    grid-template-columns: auto minmax(0, 1.8fr);
+    grid-template-rows: auto auto;
+  }
+  .med-card {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .ath-ui {
+    padding-inline: 1rem;
+  }
+  .ath-profile-wrap {
+    padding-inline: 1rem;
+  }
+  .ath-profile {
+    padding: 1.2rem 1.1rem 1.5rem;
+  }
+  .ath-profile-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ath-profile-title {
+    order: 2;
+  }
+  .med-card {
+    order: 3;
+  }
+  .ath-bests-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+  .pie-wrap {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .meet-row {
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    row-gap: 0.3rem;
+  }
+  .m-place {
+    grid-column: 2;
+  }
+}
+
+/* Ganz kleine Bildschirme */
+@media (max-width: 480px) {
+  .ath-ui-search {
+    flex-direction: column;
+  }
+  .ath-btn.primary {
+    width: 100%;
+    justify-content: center;
+  }
+}
