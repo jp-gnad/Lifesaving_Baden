@@ -35,3 +35,237 @@ main#content {
   .hero h1 {font-size: 2.0em; }
   .hero {height: 200px; padding-top: 80px;}
 }
+
+
+/* ================================
+   Grundlayout Kaderseite
+   ================================ */
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #222;
+  line-height: 1.5;
+}
+
+/* Aktuelles-Box oben */
+
+.updates {
+  max-width: 1100px;
+  margin: 2rem auto 1.5rem;
+  padding: 1rem 1.5rem;
+  background: #f6f8fa;
+  border-radius: 8px;
+  border: 1px solid #e1e4e8;
+}
+
+.updates h2 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+}
+
+.updates ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+/* ================================
+   Kader-Tabelle
+   ================================ */
+
+#kader-container {
+  max-width: 1100px;
+  margin: 0 auto 3rem;
+  padding: 0.5rem;
+  overflow-x: auto;
+}
+
+#kader-container table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+#kader-container thead tr {
+  background: #f0f2f5;
+}
+
+#kader-container th,
+#kader-container td {
+  padding: 0.55rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e1e4e8;
+  vertical-align: middle;
+}
+
+#kader-container th {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+/* Cap-Spalte etwas schmaler */
+#kader-container td:first-child,
+#kader-container th:first-child {
+  width: 50px;
+}
+
+/* Name-Spalte */
+#kader-container td:nth-child(2) {
+  min-width: 220px;
+}
+
+/* Icon-Spalten mittig */
+#kader-container td:nth-child(3),
+#kader-container td:nth-child(4),
+#kader-container td:nth-child(5),
+#kader-container td:nth-child(6),
+#kader-container td:nth-child(7) {
+  text-align: center;
+}
+
+/* Icons in Tabelle */
+#kader-container img {
+  display: inline-block;
+}
+
+/* Hover-Effekt */
+#kader-container tbody tr:hover {
+  background: #eef3fb;
+}
+
+/* Zebra-Streifen (werden per JS .even / .odd gesetzt) */
+
+#kader-container tbody tr.even {
+  background: #fafbfc;
+}
+
+#kader-container tbody tr.odd {
+  background: #ffffff;
+}
+
+/* ================================
+   Status-Spalte & Badge
+   ================================ */
+
+.status-cell {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.status-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.status-icon {
+  cursor: pointer;
+}
+
+/* Kader-Badge unter dem Status-Icon */
+
+.kader-badge {
+  margin-top: 0.25rem;
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid transparent;
+}
+
+/* Farbgebung nach Kaderstatus über data-Attribut des <tr> */
+
+tr[data-kaderstatus="Badenkader"] .kader-badge {
+  background: #e6f2ff;
+  color: #064f9a;
+  border-color: #b3d4ff;
+}
+
+tr[data-kaderstatus="Juniorenkader"] .kader-badge {
+  background: #fff6e6;
+  color: #8a4b00;
+  border-color: #ffd699;
+}
+
+/* Fallback, falls leerer Status (sollte eigentlich nicht vorkommen) */
+
+tr[data-kaderstatus=""] .kader-badge {
+  display: none;
+}
+
+/* ================================
+   Tooltip für Status-Icon
+   ================================ */
+
+.status-tooltip {
+  position: fixed;
+  z-index: 9999;
+  max-width: 260px;
+  background: #24292e;
+  color: #fff;
+  padding: 0.45rem 0.7rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: opacity 0.12s ease-out, transform 0.12s ease-out;
+}
+
+/* sichtbarer Zustand (per JS .is-visible) */
+.status-tooltip.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Pfeil rechts neben Icon (Standardfall) */
+.status-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  transform: translateY(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent #24292e transparent transparent;
+}
+
+/* Wenn Tooltip links vom Icon steht (Klasse .left wird per JS gesetzt) */
+.status-tooltip.left::after {
+  right: auto;
+  left: 100%;
+  border-color: transparent transparent transparent #24292e;
+}
+
+/* ================================
+   Responsive
+   ================================ */
+
+@media (max-width: 768px) {
+  #kader-container {
+    padding: 0.25rem;
+  }
+
+  #kader-container table {
+    font-size: 0.85rem;
+  }
+
+  #kader-container th,
+  #kader-container td {
+    padding: 0.4rem 0.45rem;
+  }
+
+  .updates {
+    margin: 1.5rem 0.5rem;
+  }
+}

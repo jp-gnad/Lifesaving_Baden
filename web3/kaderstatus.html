@@ -22,21 +22,24 @@
   <!-- iOS / Safari Homescreen -->
   <link rel="apple-touch-icon" href="https://jp-gnad.github.io/Lifesaving_Baden/web3/png/apple-touch-icon.png" sizes="180x180">
 
-  <!-- Safari „Pinned Tab“ (monochrom; ggf. separate vereinfachte SVG verwenden) -->
+  <!-- Safari „Pinned Tab“ -->
   <link rel="mask-icon" href="https://jp-gnad.github.io/Lifesaving_Baden/web3/svg/logo.svg" color="#000000">
 
   <!-- PWA/Android Homescreen -->
   <link rel="manifest" href="https://jp-gnad.github.io/Lifesaving_Baden/web3/js/site.webmanifest">
-
 </head>
 <body>
   <header id="site-header"></header>
 
+  <!-- Wird von kaderstatus.js per DOMContentLoaded gefüllt -->
   <main id="content" tabindex="-1"></main>
 
   <footer id="site-footer"></footer>
 
-  <!-- JS -->
+  <!-- JS-Bibliothek für Excel (XLSX) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+
+  <!-- Eigene JS-Dateien -->
   <script src="./js/header.js" defer></script>
   <script src="./js/kaderstatus.js" defer></script>
   <script src="./js/note.js" defer></script>
