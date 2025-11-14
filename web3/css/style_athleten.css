@@ -88,15 +88,18 @@ html, body {
   flex: 1;
   padding: 0.7rem 0.9rem;
   border-radius: 999px;
-  border: 1px solid #d1d5db;
+  border: 1px solid #d1d5db8b;
   font-size: 0.95rem;
+  color: white;
   outline: none;
-  background-color: #ffffff;
+  background-color: #83838375;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  margin-top: -70px;
+  max-height: 40px;
 }
 
 .ath-input:focus {
-  border-color: #2563eb;
+  border-color: rgba(255, 238, 0, 0.469);
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
 }
 
@@ -112,7 +115,16 @@ html, body {
   font-weight: 500;
   white-space: nowrap;
   transition: background 0.15s ease, transform 0.1s ease,
-    box-shadow 0.15s ease;
+  box-shadow 0.15s ease;
+  margin-top: -70px;
+  max-height: 40px;
+}
+
+@media (max-width:720px){
+  .ath-input, .ath-btn {
+    margin-top: -47px;
+    max-height: 35px;
+  }
 }
 
 .ath-btn.primary {
