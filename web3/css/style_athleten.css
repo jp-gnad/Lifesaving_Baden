@@ -273,62 +273,42 @@ html, body {
   height: auto;
 }
 
-
-/* Container für die flippbare Kappe */
 .cap-flip {
-  display: inline-block;
   position: relative;
-  /* gleiche Größe wie dein bisheriger Avatar-Container, falls nötig anpassen */
-  /* Wenn deine .cap-avatar-Klasse bereits Größe vorgibt, hier nichts erzwingen */
-  perspective: 900px;
+  display: inline-block;
+  perspective: 1000px;
 }
 
-/* Nur wenn wirklich ein Bild vorhanden ist, Cursor als Hinweis */
-.cap-flip.has-back {
-  cursor: pointer;
-}
-
-/* Innenleben, das gedreht wird */
 .cap-inner {
   position: relative;
-  width: 100%;
-  height: 100%;
   transform-style: preserve-3d;
-  transition: transform 0.4s ease;
+  transition: transform 0.6s;
 }
 
-/* Vorder- und Rückseite */
 .cap-face {
   position: absolute;
   inset: 0;
   backface-visibility: hidden;
 }
 
-/* Rückseite mit dem PNG */
-.cap-face.cap-back {
+.cap-front {
+  z-index: 2;
+}
+
+.cap-back {
   transform: rotateY(180deg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
-/* Bild auf der Rückseite */
-.cap-face.cap-back img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 999px; /* rund, wenn deine Kappe rund ist */
-}
-
-/* Flip-Zustand */
+/* eigentlicher Flip */
 .cap-flip.is-flipped .cap-inner {
   transform: rotateY(180deg);
 }
 
-/* Sicherheit: wenn keine Rückseite, Backface nicht anzeigen */
-.cap-flip:not(.has-back) .cap-face.cap-back {
-  display: none;
+/* optional: Cursor nur, wenn Rückseite existiert */
+.cap-flip.has-back {
+  cursor: pointer;
 }
+
 
 
 /* =========================================================
@@ -483,88 +463,60 @@ html, body {
 /* =========================================================
    Medaillen-Karte
    ========================================================= */
-
-.med-card {
-  background: linear-gradient(135deg, #0f172a, #020617);
-  color: #e5e7eb;
-  border-radius: 1rem;
-  padding: 1rem 1.1rem 0.85rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  min-width: 0;
+.med-card{
+  background: transparent;
+  padding:10px 12px;
+  display:grid;
+  gap:8px;
+  margin-bottom: 20px;
+}
+.med-head{
+  display:flex; align-items:baseline; justify-content:space-between;
+}
+.med-title{
+  letter-spacing:.06em; font-size:.78rem; font-weight:700; color:#64748b; text-transform:uppercase;
+}
+.med-total{
+  font-size:1.6rem; font-weight:800; color:#111827; line-height:1;
+}
+.med-grid{
+  display:grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap:8px; align-items:end;
+}
+.med-col{
+  display:grid; grid-template-rows:auto auto 1fr auto; /* count, barWrap, label */
+  gap:4px; justify-items:center; text-align:center; min-width: 0;
+}
+.med-count{ font-weight:800; color:#111827; }
+.med-barWrap{
+  width:100%; height: 100px; /* visuelle Maxhöhe */
+  display:flex; align-items:end; justify-content:center;
+}
+.med-bar{
+  width: 80%; border-radius:0; background:#e5e7eb; /* fallback */
+}
+/* Farben für Gold / Silber / Bronze */
+.med-col.gold .med-count{ color:#FFB819; }
+.med-col.silver .med-count{ color:#a7a7a7; }
+.med-col.bronze .med-count{ color:#A58844; }
+.med-col.gold .med-bar{   background:linear-gradient(160deg,#FCD274,#fcd17428); }
+.med-col.silver .med-bar{ background:linear-gradient(160deg,#DDDEDE,#dddede3f); }
+.med-col.bronze .med-bar{ background:linear-gradient(180deg,#C7B78E,#c7b78e3f); }
+.med-label{
+  margin-top:2px; font-size:.78rem; font-weight:700; letter-spacing:.06em; color:#64748b; white-space: nowrap;
+}
+/* Optional: etwas Platz links, damit’s nicht zu nah am Text klebt */
+.ath-profile-head .med-card{ margin-right:20px; justify-self:end; }
+@media (min-width:720px){
+  .ath-profile-head .med-card{ width: auto; height: 102%; }
+}
+/* Mobile: Widget unter den Kopf umbrechen (wie zuvor) */
+@media (max-width:720px){
+  .ath-profile-head{ grid-template-columns:48px 1fr; align-items:start; }
+  .ath-profile-head .med-card{ grid-column:1 / -1; margin-top: 35px; justify-self:stretch; }
+  .med-title{ margin-bottom: 15px; }
 }
 
-.med-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 0.5rem;
-}
-
-.med-title {
-  font-size: 0.9rem;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #9ca3af;
-}
-
-.med-total {
-  font-size: 1.2rem;
-  font-weight: 600;
-}
-
-.med-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
-  align-items: flex-end;
-}
-
-.med-col {
-  text-align: center;
-}
-
-.med-count {
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.med-label {
-  font-size: 0.7rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  margin-top: 0.25rem;
-}
-
-/* Balken */
-.med-barWrap {
-  height: 72px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.8);
-  padding: 0.15rem;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  margin-top: 0.35rem;
-}
-
-.med-bar {
-  width: 100%;
-  border-radius: 999px;
-}
-
-/* Farbgebung */
-.med-col.gold .med-bar {
-  background: linear-gradient(180deg, #facc15, #b45309);
-}
-.med-col.silver .med-bar {
-  background: linear-gradient(180deg, #e5e7eb, #6b7280);
-}
-.med-col.bronze .med-bar {
-  background: linear-gradient(180deg, #f97316, #7c2d12);
-}
 
 /* =========================================================
    Tabs (Bestzeiten / Info / Wettkämpfe)
@@ -695,6 +647,7 @@ html, body {
   position: relative;
   width: 100%;
   height: 100%;
+  min-height: 90px;
   transform-style: preserve-3d;
   transition: transform 0.4s ease;
 }
@@ -711,6 +664,7 @@ html, body {
   flex-direction: column;
   justify-content: space-between;
   gap: 0.4rem;
+  border-radius: 5px;
 }
 
 .tile-front {
@@ -800,19 +754,10 @@ html, body {
   gap: 0.85rem;
 }
 
-.info-tile {
-  background: #f9fafb;
-  border-radius: 0.9rem;
-  padding: 0.9rem 1rem;
-  border: 1px solid #e5e7eb;
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-}
-
 .info-tile.accent.lsc-tile {
   background: radial-gradient(circle at 10% 0%, #fee2e2 0, #fee2e2 25%, #fee2e2 50%, #fee2e2 100%);
   border-color: #fecaca;
+  padding: 0.85rem 0.95rem;
 }
 
 .info-label {

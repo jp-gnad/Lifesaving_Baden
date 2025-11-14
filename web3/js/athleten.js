@@ -1297,9 +1297,10 @@ document.addEventListener("DOMContentLoaded", () => {
     wrap.appendChild(img);
     return wrap;
   }
+  
+  // Wrapper nur für das große Profil: Kappe vorne, Foto hinten (falls vorhanden)
   // Wrapper nur für das große Profil: Kappe vorne, Foto hinten (falls vorhanden)
   function renderCapAvatarProfile(a) {
-    // bestehende Kappe bauen
     const frontCap = renderCapAvatar(a);
     if (!frontCap) return null;
 
@@ -1317,43 +1318,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const inner = h("div", { class: "cap-inner" });
     const front = h("div", { class: "cap-face cap-front" }, frontCap);
-    const back  = h("div", { class: "cap-face cap-back" }); // wird ggf. mit Bild gefüllt
+    const back  = h("div", { class: "cap-face cap-back" });
 
     inner.appendChild(front);
     inner.appendChild(back);
     wrap.appendChild(inner);
 
-    // Nur versuchen, ein Bild zu laden, wenn ein Name vorhanden ist
-    if (name) {
-      // Deine Konvention:
-      // "Jan-Philipp Gnad" -> "Jan-PhilippGnad.png"
-      const fileBase = name.replace(/\s+/g, "");
-      const fileName = fileBase + ".png";
-
-      const img = new Image();
-      img.alt = `Portrait von ${name}`;
-      img.loading = "lazy";
-
-      img.onload = () => {
-        console.log("[cap] Bild gefunden:", img.src);
-        back.appendChild(img);
-        wrap.dataset.hasBack = "1";
-        wrap.classList.add("has-back");
-      };
-
-      img.onerror = () => {
-        console.warn("[cap] Bild NICHT gefunden:", img.src);
-        wrap.dataset.hasBack = "0";
-      };
-
-      // Pfad anpassen, falls du auf GitHub Pages in einem Unterordner bist (siehe Anmerkung unten)
-      img.src = `/png/pp/${fileName}`;
-    }
-
+    // Flip-Handler ist IMMER registriert, prüft aber hasBack
     const toggle = () => {
-      // Flip nur, wenn Bild existiert
+      console.log("[cap] Klick auf Kappe, hasBack =", wrap.dataset.hasBack);
       if (wrap.dataset.hasBack !== "1") {
-        console.log("[cap] Kein Back-Bild, Flip deaktiviert");
+        // Kein Bild → nichts flippen
         return;
       }
       const locked = wrap.classList.toggle("is-flipped");
@@ -1373,8 +1348,56 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
+    // Wenn kein Name → keine Portraitlogik, nur Kappe
+    if (!name) {
+      wrap.dataset.hasBack = "0";
+      return wrap;
+    }
+
+    // Dateiname: Leerzeichen raus, dann .png in png/pp/
+    const baseName = name.replace(/\s+/g, "");
+    const fileName = baseName + ".png";
+    const imgPath  = "png/pp/" + fileName;
+
+    console.log("[cap] Roh-Name aus Daten:", JSON.stringify(name));
+    console.log("[cap] Datei-Basisname:", JSON.stringify(baseName));
+    console.log("[cap] Dateiname:", JSON.stringify(fileName));
+    console.log("[cap] Vollständiger Bild-Pfad:", JSON.stringify(imgPath));
+
+    const img = new Image();
+    img.alt = `Portrait von ${name}`;
+    img.loading = "lazy";
+
+    img.addEventListener("load", () => {
+      console.log("[cap] load-Event, Bild erfolgreich geladen:", img.src,
+                  "naturalWidth=", img.naturalWidth, "naturalHeight=", img.naturalHeight);
+      back.appendChild(img);
+      wrap.dataset.hasBack = "1";
+      wrap.classList.add("has-back");
+    });
+
+    img.addEventListener("error", () => {
+      console.warn("[cap] error-Event, Portrait nicht gefunden oder nicht ladbar:", img.src);
+      wrap.dataset.hasBack = "0";
+      wrap.classList.add("no-back");
+    });
+
+    img.src = imgPath;
+
+    // Debug: nach 1 s Zustand des Bildes loggen
+    setTimeout(() => {
+      console.log("[cap] Timeout-Check nach 1s:",
+        "complete=", img.complete,
+        "naturalWidth=", img.naturalWidth,
+        "naturalHeight=", img.naturalHeight,
+        "src=", img.src
+      );
+    }, 1000);
+
     return wrap;
   }
+
+
 
 
 
