@@ -120,12 +120,7 @@ html, body {
   max-height: 40px;
 }
 
-@media (max-width:720px){
-  .ath-input, .ath-btn {
-    margin-top: -47px;
-    max-height: 35px;
-  }
-}
+
 
 .ath-btn.primary {
   background: #dc2626;
@@ -144,6 +139,14 @@ html, body {
   box-shadow: none;
 }
 
+
+@media (max-width:720px){
+  .ath-input, .ath-btn {
+    margin-top: -47px;
+    max-height: 35px;
+  }
+  .ath-btn {display: none;}
+}
 /* =========================================================
    Such-Suggestions (Dropdown unter der Suche)
    ========================================================= */
