@@ -1297,6 +1297,85 @@ document.addEventListener("DOMContentLoaded", () => {
     wrap.appendChild(img);
     return wrap;
   }
+  // Wrapper nur für das große Profil: Kappe vorne, Foto hinten (falls vorhanden)
+  function renderCapAvatarProfile(a) {
+    // bestehende Kappe bauen
+    const frontCap = renderCapAvatar(a);
+    if (!frontCap) return null;
+
+    const name = String(a?.name || "").trim();
+
+    const wrap = h("div", {
+      class: "cap-flip",
+      role: "button",
+      tabindex: "0",
+      "aria-pressed": "false",
+      "aria-label": name
+        ? `Profilansicht für ${name} umdrehen`
+        : "Profilansicht umdrehen"
+    });
+
+    const inner = h("div", { class: "cap-inner" });
+    const front = h("div", { class: "cap-face cap-front" }, frontCap);
+    const back  = h("div", { class: "cap-face cap-back" }); // wird ggf. mit Bild gefüllt
+
+    inner.appendChild(front);
+    inner.appendChild(back);
+    wrap.appendChild(inner);
+
+    // Nur versuchen, ein Bild zu laden, wenn ein Name vorhanden ist
+    if (name) {
+      // Deine Konvention:
+      // "Jan-Philipp Gnad" -> "Jan-PhilippGnad.png"
+      const fileBase = name.replace(/\s+/g, "");
+      const fileName = fileBase + ".png";
+
+      const img = new Image();
+      img.alt = `Portrait von ${name}`;
+      img.loading = "lazy";
+
+      img.onload = () => {
+        console.log("[cap] Bild gefunden:", img.src);
+        back.appendChild(img);
+        wrap.dataset.hasBack = "1";
+        wrap.classList.add("has-back");
+      };
+
+      img.onerror = () => {
+        console.warn("[cap] Bild NICHT gefunden:", img.src);
+        wrap.dataset.hasBack = "0";
+      };
+
+      // Pfad anpassen, falls du auf GitHub Pages in einem Unterordner bist (siehe Anmerkung unten)
+      img.src = `/png/pp/${fileName}`;
+    }
+
+    const toggle = () => {
+      // Flip nur, wenn Bild existiert
+      if (wrap.dataset.hasBack !== "1") {
+        console.log("[cap] Kein Back-Bild, Flip deaktiviert");
+        return;
+      }
+      const locked = wrap.classList.toggle("is-flipped");
+      wrap.setAttribute("aria-pressed", locked ? "true" : "false");
+    };
+
+    if ("onpointerdown" in window) {
+      wrap.addEventListener("pointerdown", toggle);
+    } else {
+      wrap.addEventListener("click", toggle);
+      wrap.addEventListener("touchstart", toggle, { passive: true });
+    }
+    wrap.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        toggle();
+      }
+    });
+
+    return wrap;
+  }
+
 
 
   const SUPPORTED_FLAGS_DE = new Set([
@@ -3267,7 +3346,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const header = h("div", { class: "ath-profile-head" },
 
       // Cap lädt intern bereits die aktuelle OG
-      renderCapAvatar(ax),
+      renderCapAvatarProfile(ax),
 
       h("div", { class: "ath-profile-title" },
         h("h2", {}, ax.name),

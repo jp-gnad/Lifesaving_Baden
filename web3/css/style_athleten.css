@@ -273,6 +273,64 @@ html, body {
   height: auto;
 }
 
+
+/* Container für die flippbare Kappe */
+.cap-flip {
+  display: inline-block;
+  position: relative;
+  /* gleiche Größe wie dein bisheriger Avatar-Container, falls nötig anpassen */
+  /* Wenn deine .cap-avatar-Klasse bereits Größe vorgibt, hier nichts erzwingen */
+  perspective: 900px;
+}
+
+/* Nur wenn wirklich ein Bild vorhanden ist, Cursor als Hinweis */
+.cap-flip.has-back {
+  cursor: pointer;
+}
+
+/* Innenleben, das gedreht wird */
+.cap-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.4s ease;
+}
+
+/* Vorder- und Rückseite */
+.cap-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+}
+
+/* Rückseite mit dem PNG */
+.cap-face.cap-back {
+  transform: rotateY(180deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Bild auf der Rückseite */
+.cap-face.cap-back img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 999px; /* rund, wenn deine Kappe rund ist */
+}
+
+/* Flip-Zustand */
+.cap-flip.is-flipped .cap-inner {
+  transform: rotateY(180deg);
+}
+
+/* Sicherheit: wenn keine Rückseite, Backface nicht anzeigen */
+.cap-flip:not(.has-back) .cap-face.cap-back {
+  display: none;
+}
+
+
 /* =========================================================
    Profilkopf (Name, Chips, Medaillen)
    ========================================================= */
