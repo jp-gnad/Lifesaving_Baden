@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------- Konstanten / Pfade ----------
   const FLAG_BASE_URL = "./svg"; // dein SVG-Ordner
   const MIN_QUERY_LEN = 5;
-  const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web2/data/test (1).xlsx";
+  const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web3/utilities/test (1).xlsx";
   let AllMeetsByAthleteId = new Map();        // id -> Meet[]
 
 
