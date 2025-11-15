@@ -973,7 +973,6 @@ html, body {
    ========================================================= */
 
 .ath-lsc-card {
-  margin-top: 1.25rem;
   padding: 1.1rem 1.1rem 1.3rem;
   border-radius: 1rem;
   border: 1px solid #e5e7eb;
@@ -1197,15 +1196,11 @@ html, body {
    Zeit-Verlaufsdiagramm
    ========================================================= */
 
-.ath-time-card {
-  margin-top: 1.5rem;
-  padding: 1.1rem 1.1rem 1.3rem;
-  border-radius: 1rem;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
+.ath-time-card{
+  margin-top:18px;
+  background:#fff;
+  border-radius:16px;
+  position:relative;
 }
 
 .time-head {
