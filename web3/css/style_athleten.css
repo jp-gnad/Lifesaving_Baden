@@ -1027,7 +1027,8 @@ html, body {
 .lsc-viewport {
   position: relative;
   width: 100%;
-  min-height: 260px;
+  height: auto;
+  min-height: 600px;
 }
 
 .lsc-svg {
@@ -1295,7 +1296,8 @@ html, body {
 .time-viewport {
   position: relative;
   width: 100%;
-  min-height: 260px;
+  height: auto;
+  min-height: 600px;
 }
 
 .time-svg {
