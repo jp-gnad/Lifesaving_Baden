@@ -316,6 +316,7 @@ html, body {
   perspective: 1000px;       /* nötig für 3D-Flip */
   cursor: pointer;
   grid-area: cap;
+  transform: translateY(var(--cap-offset-y, 0));
 }
 
 
@@ -442,6 +443,11 @@ html, body {
   margin: 0;
   font-size: 3.7rem;
   letter-spacing: 0.02em;
+}
+
+/* Cap immer vertikal zur Titelspalte zentrieren */
+.ath-profile-head .cap-flip {
+  align-self: center;
 }
 
 .gender-row {
@@ -1866,4 +1872,3 @@ html, body {
     white-space: nowrap;  /* darf NICHT in zwei Zeilen brechen */
   }
 }
-

@@ -59,44 +59,70 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function fitProfileName() {
     const h2 = document.querySelector(".ath-profile-title h2");
-    if (!h2) return;
-
-    // Nur für schmale Bildschirme relevant
-    if (window.innerWidth > 720) {
-      h2.style.fontSize = "";
+    if (!h2) {
+      alignCapToName();  // zur Sicherheit trotzdem versuchen zu alignen
       return;
     }
 
     const rest = h2.querySelector(".name-rest");
-    if (!rest) return;
 
-    // zunächst auf Standard zurücksetzen
-    h2.style.fontSize = "";
+    // Desktop: keine Sonderbehandlung, aber Cap trotzdem ausrichten
+    if (window.innerWidth > 720 || !rest) {
+      if (rest) rest.style.fontSize = "";
+      alignCapToName();
+      return;
+    }
 
-    // Ausgangsgröße (aus CSS)
-    const computed = getComputedStyle(h2);
+    // Mobile: nur den zweiten Teil dynamisch skalieren
+    rest.style.fontSize = "";
+
+    const computed  = getComputedStyle(rest);
     const maxSizePx = parseFloat(computed.fontSize) || 20;
-    const minSizePx = maxSizePx * 0.7;       // nicht kleiner als 70% der Ausgangsgröße
-
+    const minSizePx = maxSizePx * 0.7;
     let size = maxSizePx;
-    const step = 0.5;                        // in 0.5px-Schritten verkleinern
+    const step = 0.5;
 
-    // verfügbarer Platz für die Zeile (Breite des h2-Blocks)
     const availableWidth = () => h2.clientWidth;
 
-    // solange der zweite Teil breiter ist als der Platz → Schrift verkleinern
     while (size > minSizePx) {
-      h2.style.fontSize = size + "px";
-
-      // Layout erzwingen
+      rest.style.fontSize = size + "px";
       const needWidth = rest.scrollWidth;
 
       if (needWidth <= availableWidth()) {
-        break; // passt in eine Zeile → fertig
+        break; // passt in eine Zeile
       }
       size -= step;
     }
+
+    // Nach dem Namens-Fitting: Cap exakt an den Namen anpassen
+    alignCapToName();
   }
+
+
+  function alignCapToName() {
+    const head = document.querySelector(".ath-profile-head");
+    if (!head) return;
+
+    const cap = head.querySelector(".cap-flip");
+    const h2  = head.querySelector(".ath-profile-title h2");
+    if (!cap || !h2) return;
+
+    // Offset zurücksetzen
+    cap.style.setProperty("--cap-offset-y", "0px");
+
+    // Bounding-Boxes holen
+    const capRect  = cap.getBoundingClientRect();
+    const nameRect = h2.getBoundingClientRect();
+
+    const capCenter  = capRect.top  + capRect.height  / 2;
+    const nameCenter = nameRect.top + nameRect.height / 2;
+
+    const delta = nameCenter - capCenter; // wie weit Cap nach unten/oben muss
+
+    cap.style.setProperty("--cap-offset-y", `${delta}px`);
+  }
+
+
 
   let nameFitHandlerInstalled = false;
 
@@ -3624,12 +3650,12 @@ document.addEventListener("DOMContentLoaded", () => {
       disclaimer
     );
 
+    // Name & Cap nach dem Einfügen anpassen
     installNameFitHandlerOnce();
-
     requestAnimationFrame(() => {
-      fitProfileName();
-      window.scrollTo({ top: 275, behavior: 'smooth' });
+      fitProfileName();  // richtet auch das Cap aus
     });
+
   }
 
 
