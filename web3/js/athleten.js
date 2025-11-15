@@ -2037,11 +2037,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function paint(){
       updateXDomain();
+      const MIN_CHART_HEIGHT = 320;   // oben in der Funktion definieren
 
       const rect = vp.getBoundingClientRect();
-      const W = Math.max(320, Math.floor(rect.width || 320));
-
-      const H = Math.max(220, Math.round(W * 0.5)); // oder fester Wert, z.B. 240
+      const W = Math.max(320, Math.floor(rect.width));
+      const H = Math.max(MIN_CHART_HEIGHT, vp.clientHeight || 0);
       vp.style.height = H + "px";
 
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
