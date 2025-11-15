@@ -1149,6 +1149,7 @@ html, body {
 .lsc-input:focus {
   outline: none;
   border-color: #d1d5db;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
 }
 
 .lsc-clear {
@@ -1369,6 +1370,7 @@ html, body {
   gap: 0.75rem;
   font-size: 0.8rem;
   color: #4b5563;
+   margin-bottom: 10px;
 }
 
 .time-key {
@@ -1408,7 +1410,6 @@ html, body {
   border-radius: 999px;
   border: 1px solid #d1d5db;
   font-size: 0.82rem;
-  margin-top: 10px;
 }
 
 .time-input:focus {

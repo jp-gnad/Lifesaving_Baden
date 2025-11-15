@@ -2186,7 +2186,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ---- Y-Achsen-Spezifikation je Disziplin (Sekunden) ----
     // Keys: siehe DISCIPLINES (50_retten, 100_retten_flosse, 100_kombi, 100_lifesaver, 200_super, 200_hindernis)
     const Y_SPEC = {
-      "50_retten":         { base:  20, step: 10 },
+      "50_retten":         { base:  25, step: 5 },
       "100_retten_flosse": { base:  40, step: 10 },
       "100_kombi":         { base:  50, step: 10 },
       "100_lifesaver":     { base:  40, step: 10 },
