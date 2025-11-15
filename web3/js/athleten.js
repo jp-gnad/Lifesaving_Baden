@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // ----------------------------------------------------------
-// athleten_gui.js  (vollständig, nichts entfernt)
+// athleten.js
 // ----------------------------------------------------------
 (function () {
   // ---------- Mini-Helfer ----------
@@ -38,6 +38,75 @@ document.addEventListener("DOMContentLoaded", () => {
     return el;
   };
   const hDiv = h; // Kurzform
+
+  function renderAthleteName(name) {
+    const full = (name || "").toString().trim();
+    const idx = full.indexOf(" ");
+    if (idx === -1) {
+      // Kein Leerzeichen → einfach komplett ausgeben
+      return [full];
+    }
+
+    const first = full.slice(0, idx);      // vor dem ersten Leerzeichen
+    const rest  = full.slice(idx + 1);     // nach dem ersten Leerzeichen
+
+    return [
+      h("span", { class: "name-first" }, first),
+      " ",
+      h("span", { class: "name-rest" }, rest)
+    ];
+  }
+
+  function fitProfileName() {
+    const h2 = document.querySelector(".ath-profile-title h2");
+    if (!h2) return;
+
+    // Nur für schmale Bildschirme relevant
+    if (window.innerWidth > 720) {
+      h2.style.fontSize = "";
+      return;
+    }
+
+    const rest = h2.querySelector(".name-rest");
+    if (!rest) return;
+
+    // zunächst auf Standard zurücksetzen
+    h2.style.fontSize = "";
+
+    // Ausgangsgröße (aus CSS)
+    const computed = getComputedStyle(h2);
+    const maxSizePx = parseFloat(computed.fontSize) || 20;
+    const minSizePx = maxSizePx * 0.7;       // nicht kleiner als 70% der Ausgangsgröße
+
+    let size = maxSizePx;
+    const step = 0.5;                        // in 0.5px-Schritten verkleinern
+
+    // verfügbarer Platz für die Zeile (Breite des h2-Blocks)
+    const availableWidth = () => h2.clientWidth;
+
+    // solange der zweite Teil breiter ist als der Platz → Schrift verkleinern
+    while (size > minSizePx) {
+      h2.style.fontSize = size + "px";
+
+      // Layout erzwingen
+      const needWidth = rest.scrollWidth;
+
+      if (needWidth <= availableWidth()) {
+        break; // passt in eine Zeile → fertig
+      }
+      size -= step;
+    }
+  }
+
+  let nameFitHandlerInstalled = false;
+
+  function installNameFitHandlerOnce() {
+    if (nameFitHandlerInstalled) return;
+    nameFitHandlerInstalled = true;
+    window.addEventListener("resize", fitProfileName);
+  }
+
+
 
   // ---------- Konstanten / Pfade ----------
   const FLAG_BASE_URL = "./svg"; // dein SVG-Ordner
@@ -3489,7 +3558,7 @@ document.addEventListener("DOMContentLoaded", () => {
       renderCapAvatarProfile(ax),
 
       h("div", { class: "ath-profile-title" },
-        h("h2", {}, ax.name),
+        h("h2", {}, ...renderAthleteName(ax.name)),
 
         // Chips-Zeile: Gender + AK + Aktivitätsstatus
         (() => {
@@ -3555,9 +3624,12 @@ document.addEventListener("DOMContentLoaded", () => {
       disclaimer
     );
 
-    requestAnimationFrame(() =>
-      window.scrollTo({ top: 275, behavior: 'smooth' })
-    );
+    installNameFitHandlerOnce();
+
+    requestAnimationFrame(() => {
+      fitProfileName();
+      window.scrollTo({ top: 275, behavior: 'smooth' });
+    });
   }
 
 

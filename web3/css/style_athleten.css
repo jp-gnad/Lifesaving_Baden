@@ -1831,7 +1831,10 @@ html, body {
 
 
 
-
+.ath-profile-title h2 .name-first,
+.ath-profile-title h2 .name-rest {
+  display: inline;
+}
 
 @media (max-width: 720px) {
   .cap-flip {
@@ -1840,6 +1843,27 @@ html, body {
   }
   .ath-profile-title h2{
     font-size: 2.0em;
+  }
+  .ath-profile-title h2 .name-rest {
+    display: block;        /* Zeilenumbruch nach dem ersten Teil */
+  }
+  .gender-row {
+    margin-left: -100px;
+  }
+}
+
+
+/* Standard: beide Teile ganz normal */
+.ath-profile-title h2 .name-first,
+.ath-profile-title h2 .name-rest {
+  display: inline;
+}
+
+/* Unter 720px: zweiter Teil in eigener Zeile, darf aber nicht umbrechen */
+@media (max-width: 720px) {
+  .ath-profile-title h2 .name-rest {
+    display: block;       /* Zeilenumbruch nach dem ersten Teil */
+    white-space: nowrap;  /* darf NICHT in zwei Zeilen brechen */
   }
 }
 
