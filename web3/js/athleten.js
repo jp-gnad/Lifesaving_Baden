@@ -60,43 +60,91 @@ document.addEventListener("DOMContentLoaded", () => {
   function fitProfileName() {
     const h2 = document.querySelector(".ath-profile-title h2");
     if (!h2) {
-      alignCapToName();  // zur Sicherheit trotzdem versuchen zu alignen
-      return;
-    }
-
-    const rest = h2.querySelector(".name-rest");
-
-    // Desktop: keine Sonderbehandlung, aber Cap trotzdem ausrichten
-    if (window.innerWidth > 720 || !rest) {
-      if (rest) rest.style.fontSize = "";
       alignCapToName();
       return;
     }
 
-    // Mobile: nur den zweiten Teil dynamisch skalieren
-    rest.style.fontSize = "";
+    const rest = h2.querySelector(".name-rest");
+    const vw   = window.innerWidth;
 
-    const computed  = getComputedStyle(rest);
-    const maxSizePx = parseFloat(computed.fontSize) || 20;
-    const minSizePx = maxSizePx * 0.7;
+    // vorherige Overrides zurücksetzen
+    h2.style.fontSize   = "";
+    h2.style.whiteSpace = "";
+    if (rest) rest.style.fontSize = "";
+
+    // --------------------------------------------------
+    // 1) Desktop: > 720px → kompletter Name in 1 Zeile
+    // --------------------------------------------------
+    if (vw > 720) {
+      // sicherstellen, dass er nicht umbrechen darf
+      h2.style.whiteSpace = "nowrap";
+
+      // Ausgangsgröße der Überschrift
+      const computed = getComputedStyle(h2);
+      let sizePx     = parseFloat(computed.fontSize) || 24;
+
+      // 1.4em in Pixel umrechnen (Basis: <html>)
+      const rootComputed = getComputedStyle(document.documentElement);
+      const rootPx       = parseFloat(rootComputed.fontSize) || 16;
+      const minPx        = rootPx * 1.4;  // 1.4em
+
+      const step = 0.5; // in 0.5px-Schritten verkleinern
+
+      while (sizePx > minPx) {
+        h2.style.fontSize = sizePx + "px";
+
+        // passt der Text ohne Überlauf in den Block?
+        if (h2.scrollWidth <= h2.clientWidth + 0.5) {
+          break;
+        }
+        sizePx -= step;
+      }
+
+      alignCapToName();
+      return;
+    }
+
+    // --------------------------------------------------
+    // 2) Mittelbereich: 720–1000px → normales Verhalten
+    // --------------------------------------------------
+    if (vw > 720) {
+      // keine spezielle Skalierung nötig,
+      // Cap aber trotzdem zum Namen ausrichten
+      alignCapToName();
+      return;
+    }
+
+    // --------------------------------------------------
+    // 3) Mobil: ≤ 720px → nur .name-rest dynamisch skalieren
+    // --------------------------------------------------
+    if (!rest) {
+      alignCapToName();
+      return;
+    }
+
+    // aktuelle Schriftgröße des zweiten Teils
+    const computedRest = getComputedStyle(rest);
+    let maxSizePx = parseFloat(computedRest.fontSize) || 20;
+    const minSizePx = maxSizePx * 0.7;  // nicht kleiner als 70% der Ausgangsgröße
     let size = maxSizePx;
     const step = 0.5;
 
-    const availableWidth = () => h2.clientWidth;
-
     while (size > minSizePx) {
       rest.style.fontSize = size + "px";
-      const needWidth = rest.scrollWidth;
 
-      if (needWidth <= availableWidth()) {
-        break; // passt in eine Zeile
+      // passt .name-rest in eine Zeile?
+      const needWidth = rest.scrollWidth;
+      const avail     = h2.clientWidth;
+
+      if (needWidth <= avail) {
+        break;
       }
       size -= step;
     }
 
-    // Nach dem Namens-Fitting: Cap exakt an den Namen anpassen
     alignCapToName();
   }
+
 
 
   function alignCapToName() {
@@ -136,7 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- Konstanten / Pfade ----------
   const FLAG_BASE_URL = "./svg"; // dein SVG-Ordner
-  const MIN_QUERY_LEN = 5;
+  const MIN_QUERY_LEN = 3;
   const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web3/utilities/test (1).xlsx";
   let AllMeetsByAthleteId = new Map();        // id -> Meet[]
 

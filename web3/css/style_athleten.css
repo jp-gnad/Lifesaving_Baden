@@ -316,7 +316,6 @@ html, body {
   perspective: 1000px;       /* nötig für 3D-Flip */
   cursor: pointer;
   grid-area: cap;
-  transform: translateY(var(--cap-offset-y, 0));
 }
 
 
@@ -445,11 +444,6 @@ html, body {
   letter-spacing: 0.02em;
 }
 
-/* Cap immer vertikal zur Titelspalte zentrieren */
-.ath-profile-head .cap-flip {
-  align-self: center;
-}
-
 .gender-row {
   display: flex;
   flex-wrap: wrap;
@@ -540,28 +534,29 @@ html, body {
 
 /* Key-Value Zeile (Ortsgruppe, Jahrgang, Länderpins) */
 
-.ath-profile-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem 1rem;
+/* Meta-Tabelle */
+.ath-profile-meta{
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 14px;
+  row-gap: 16px;
+  align-items: center;
+  margin-top: 2px;
   font-size: 0.85rem;
   color: #4b5563;
 }
-
-.kv {
-  display: inline-flex;
+.ath-profile-meta .kv{ display: contents; }
+.ath-profile-meta .k{
+  text-align: left;
+  white-space: nowrap;
+  color: #6b7280;
+}
+.ath-profile-meta .v{
+  text-align: left;
   align-items: center;
-  gap: 0.35rem;
 }
-
-.kv .k {
-  font-weight: 500;
-  color: #374151;
-}
-
-.kv .v {
-  color: #4b5563;
-}
+.ath-profile-meta .kv[data-key="Länderpins"] .k,
+.ath-profile-meta .kv[data-key="Länderpins"] .v{ margin-top: -2.5px; }
 
 .ath-profile-section.muted {
   font-size: 0.85rem;
@@ -1870,5 +1865,14 @@ html, body {
   .ath-profile-title h2 .name-rest {
     display: block;       /* Zeilenumbruch nach dem ersten Teil */
     white-space: nowrap;  /* darf NICHT in zwei Zeilen brechen */
+    font-weight: 900;
   }
+  .cap-flip{
+    transform: translateY(var(--cap-offset-y, 0));
+  }
+  /* Cap immer vertikal zur Titelspalte zentrieren */
+  .ath-profile-head .cap-flip {
+    align-self: center;
+  }
+  .ath-profile-meta .k{ margin-left: -95px; }
 }
