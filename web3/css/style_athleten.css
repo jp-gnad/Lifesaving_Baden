@@ -287,42 +287,112 @@ html, body {
   width: 1.25rem;
   height: auto;
 }
-
+/* Äußerer Wrapper: klickbare, runde „Karte“ */
 .cap-flip {
   position: relative;
   display: inline-block;
-  perspective: 1000px;
+  width: 160px;              /* Größe anpassen nach Bedarf */
+  height: 160px;
+  border-radius: 50%;
+  perspective: 1000px;       /* nötig für 3D-Flip */
+  cursor: pointer;
 }
 
+/* Innerer Bereich, der wirklich rotiert */
 .cap-inner {
   position: relative;
+  width: 100%;
+  height: 100%;
   transform-style: preserve-3d;
-  transition: transform 0.6s;
+  transition: transform 0.6s ease;
 }
 
-.cap-face {
-  position: absolute;
-  inset: 0;
-  backface-visibility: hidden;
-}
-
-.cap-front {
-  z-index: 2;
-}
-
-.cap-back {
-  transform: rotateY(180deg);
-}
-
-/* eigentlicher Flip */
+/* Flip-Zustand */
 .cap-flip.is-flipped .cap-inner {
   transform: rotateY(180deg);
 }
 
-/* optional: Cursor nur, wenn Rückseite existiert */
-.cap-flip.has-back {
-  cursor: pointer;
+/* Vorder- und Rückseite */
+.cap-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  backface-visibility: hidden;
+  overflow: hidden; /* sorgt für runde Form und schneidet Überstände ab */
 }
+
+/* Vorderseite (SVG-Kappe) */
+.cap-front {
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Rückseite (Portrait-Bild oder Fallback-SVG) */
+.cap-back {
+  transform: rotateY(180deg);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Bild auf der Rückseite */
+.cap-back img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Optional: Klassen aus JS, falls du optisch unterscheiden willst */
+.cap-flip.no-back .cap-back {
+  background: transparent;
+}
+
+.cap-flip.has-back .cap-back {
+  background: transparent;
+}
+
+/* Optionale Hover-Interaktion (nur Desktop) */
+@media (hover: hover) {
+  .cap-flip:hover .cap-inner {
+    transform: translateY(-2px) rotateY(var(--flip-rot, 0deg));
+  }
+
+  .cap-flip.is-flipped:hover .cap-inner {
+    --flip-rot: 180deg;
+  }
+}
+
+.cap-front {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Alles, was in der Vorderseite steckt, auf volle Größe ziehen */
+.cap-front > * {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.cap-back > * {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Falls es ein img oder svg ist */
+.cap-front img,
+.cap-front svg {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+}
+
 
 
 
@@ -707,7 +777,7 @@ html, body {
 .best-label {
   font-size: 0.8rem;
   font-weight: 500;
-  color: #6b7280;
+  color: rgb(227, 6, 19)  ;
 }
 
 .best-time {
@@ -715,6 +785,13 @@ html, body {
   font-weight: 600;
   letter-spacing: 0.03em;
 }
+
+.best-meet {
+  font-size: 0.8rem;
+  opacity: 0.5;
+  margin-top: -6px;
+}
+
 
 /* Rückseite: Statistiken */
 .tile-stats {
@@ -777,7 +854,7 @@ html, body {
 
 .info-label {
   font-size: 0.8rem;
-  color: #6b7280;
+  color: rgb(227, 6, 19);
 }
 
 .info-value {
@@ -795,6 +872,7 @@ html, body {
   display: inline-flex;
   gap: 0.35rem;
   align-items: baseline;
+  font-weight: 700;
 }
 
 .lsc-label .label {
@@ -1147,8 +1225,9 @@ html, body {
 .time-lanes {
   display: inline-flex;
   border-radius: 999px;
-  background: #f3f4f6;
+  background: transparent;
   padding: 0.15rem;
+  gap: 5px;
 }
 
 .time-disc {
@@ -1410,12 +1489,12 @@ html, body {
 }
 
 /* Zuordnung bewusst nur farblich – Benennung egal */
-.pie-c-200h { fill: #0ea5e9; }   /* 50 Retten */
-.pie-c-100k { fill: #22c55e; }   /* 100 Retten m. Flossen */
-.pie-c-100l { fill: #f97316; }   /* 100 Kombi */
-.pie-c-200s { fill: #6366f1; }   /* 100 Lifesaver */
-.pie-c-50r  { fill: #ec4899; }   /* 200 Super */
-.pie-c-100rf{ fill: #a855f7; }   /* 200 Hindernis */
+.pie-c-50r   { fill:#e2001a; }
+.pie-c-200h  { fill:#ffd400; }
+.pie-c-100rf { fill:#b50014; }
+.pie-c-100k  { fill:#f0b400; }
+.pie-c-100l  { fill:#ff9800; }
+.pie-c-200s  { fill:#e88500; }
 
 .pie-center .c1 {
   font-size: 1.8rem;
@@ -1449,12 +1528,12 @@ html, body {
 }
 
 /* gleiche Farben wie Segmente */
-.pie-dot.pie-c-200h { background: #0ea5e9; }
-.pie-dot.pie-c-100k { background: #22c55e; }
-.pie-dot.pie-c-100l { background: #f97316; }
-.pie-dot.pie-c-200s { background: #6366f1; }
-.pie-dot.pie-c-50r  { background: #ec4899; }
-.pie-dot.pie-c-100rf{ background: #a855f7; }
+.pie-dot.pie-c-50r   { background-color:#e2001a; }
+.pie-dot.pie-c-200h  { background-color:#ffd400; }
+.pie-dot.pie-c-100rf { background-color:#b50014; }
+.pie-dot.pie-c-100k  { background-color:#f0b400; }
+.pie-dot.pie-c-100l  { background-color:#ff9800; }
+.pie-dot.pie-c-200s  { background-color:#e88500; }
 
 .pie-leg-label {
   flex: 1;

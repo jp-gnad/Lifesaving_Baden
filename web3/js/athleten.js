@@ -1297,9 +1297,8 @@ document.addEventListener("DOMContentLoaded", () => {
     wrap.appendChild(img);
     return wrap;
   }
-  
-  // Wrapper nur für das große Profil: Kappe vorne, Foto hinten (falls vorhanden)
-  // Wrapper nur für das große Profil: Kappe vorne, Foto hinten (falls vorhanden)
+  // Wrapper nur für das große Profil: Kappe vorne, Foto hinten (dynamisches PNG nach Name)
+  // Fallback: wenn kein Bild gefunden → vorne verwendetes SVG auch hinten anzeigen
   function renderCapAvatarProfile(a) {
     const frontCap = renderCapAvatar(a);
     if (!frontCap) return null;
@@ -1324,13 +1323,8 @@ document.addEventListener("DOMContentLoaded", () => {
     inner.appendChild(back);
     wrap.appendChild(inner);
 
-    // Flip-Handler ist IMMER registriert, prüft aber hasBack
+    // Flip-Handler: immer flippen
     const toggle = () => {
-      console.log("[cap] Klick auf Kappe, hasBack =", wrap.dataset.hasBack);
-      if (wrap.dataset.hasBack !== "1") {
-        // Kein Bild → nichts flippen
-        return;
-      }
       const locked = wrap.classList.toggle("is-flipped");
       wrap.setAttribute("aria-pressed", locked ? "true" : "false");
     };
@@ -1341,6 +1335,7 @@ document.addEventListener("DOMContentLoaded", () => {
       wrap.addEventListener("click", toggle);
       wrap.addEventListener("touchstart", toggle, { passive: true });
     }
+
     wrap.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
@@ -1348,54 +1343,62 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // Wenn kein Name → keine Portraitlogik, nur Kappe
+    // Hilfsfunktion: SVG der Vorderseite als Fallback auf die Rückseite kopieren
+    function attachFallbackSvg() {
+      // vorhandenen Inhalt der Rückseite leeren
+      back.innerHTML = "";
+      const fallback = frontCap.cloneNode(true);
+      back.appendChild(fallback);
+      wrap.dataset.hasBack = "1";
+      wrap.classList.add("has-back", "fallback-back");
+      wrap.classList.remove("no-back");
+    }
+
+    // Falls kein Name vorhanden ist → gleich Fallback-SVG hinten verwenden
     if (!name) {
-      wrap.dataset.hasBack = "0";
+      attachFallbackSvg();
       return wrap;
     }
 
-    // Dateiname: Leerzeichen raus, dann .png in png/pp/
+    // Basisname: alle Leerzeichen entfernen
     const baseName = name.replace(/\s+/g, "");
     const fileName = baseName + ".png";
     const imgPath  = "png/pp/" + fileName;
 
-    console.log("[cap] Roh-Name aus Daten:", JSON.stringify(name));
-    console.log("[cap] Datei-Basisname:", JSON.stringify(baseName));
-    console.log("[cap] Dateiname:", JSON.stringify(fileName));
-    console.log("[cap] Vollständiger Bild-Pfad:", JSON.stringify(imgPath));
+    console.log("[cap] Name:", JSON.stringify(name));
+    console.log("[cap] Datei:", imgPath);
 
-    const img = new Image();
+    // Bild direkt in den DOM hängen
+    const img = document.createElement("img");
     img.alt = `Portrait von ${name}`;
     img.loading = "lazy";
 
+    back.appendChild(img);
+    img.src = imgPath;
+
     img.addEventListener("load", () => {
-      console.log("[cap] load-Event, Bild erfolgreich geladen:", img.src,
-                  "naturalWidth=", img.naturalWidth, "naturalHeight=", img.naturalHeight);
-      back.appendChild(img);
+      console.log("[cap] Portrait geladen:", img.src);
       wrap.dataset.hasBack = "1";
       wrap.classList.add("has-back");
+      wrap.classList.remove("no-back");
     });
 
     img.addEventListener("error", () => {
-      console.warn("[cap] error-Event, Portrait nicht gefunden oder nicht ladbar:", img.src);
-      wrap.dataset.hasBack = "0";
-      wrap.classList.add("no-back");
+      console.warn("[cap] Portrait nicht gefunden:", img.src);
+      // Bild entfernen, wenn vorhanden
+      if (img.parentNode === back) {
+        back.removeChild(img);
+      }
+      // Fallback: Ortsgruppen-SVG wie auf der Vorderseite auch hinten anzeigen
+      attachFallbackSvg();
     });
-
-    img.src = imgPath;
-
-    // Debug: nach 1 s Zustand des Bildes loggen
-    setTimeout(() => {
-      console.log("[cap] Timeout-Check nach 1s:",
-        "complete=", img.complete,
-        "naturalWidth=", img.naturalWidth,
-        "naturalHeight=", img.naturalHeight,
-        "src=", img.src
-      );
-    }, 1000);
 
     return wrap;
   }
+
+
+
+
 
 
 
@@ -2108,12 +2111,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const btn50 = el("button", {
       class: "seg-btn active", type: "button", "aria-pressed": "true",
       onclick: () => toggleLane("50", btn50)
-    }, "50m Bahn");
+    }, "50m");
 
     const btn25 = el("button", {
       class: "seg-btn active", type: "button", "aria-pressed": "true",
       onclick: () => toggleLane("25", btn25)
-    }, "25m Bahn");
+    }, "25m");
 
     const laneSeg = el("div", { class: "seg time-lanes" }, btn50, btn25);
 
@@ -2130,8 +2133,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const head = el("div", { class:"time-head" },
       el("h4", {}, "Zeit-Verlauf"),
-      laneSeg,
-      sel
+      sel,
+      laneSeg
     );
     card.appendChild(head);
     recomputeSeries();
@@ -2789,10 +2792,56 @@ document.addEventListener("DOMContentLoaded", () => {
     const lane    = AppState.poolLen || "50";
     const times   = (athlete.pbs   && athlete.pbs[lane])   || {};
     const statsMap= (athlete.stats && athlete.stats[lane]) || {};
+    const meets   = Array.isArray(athlete.meets) ? athlete.meets : [];
 
     Refs.bestGrid.innerHTML = "";
 
-    // --- NEU: Disziplinen anzeigen, wenn (PB-Zeit vorhanden) ODER (DQ>0) ---
+    // Hilfsfunktion: finde den Wettkampf, bei dem die PB geschwommen wurde
+    function findPbMeetNameForDisc(d, bestSec) {
+      if (!Number.isFinite(bestSec)) return "";
+
+      let bestName = "";
+      let bestDate = null;
+
+      for (const m of meets) {
+        if (!m) continue;
+
+        // Bahn prüfen wie in deriveFromMeets()
+        const mLane = (m.pool === "25" ? "25" : (m.pool === "50" ? "50" : null));
+        if (mLane !== lane) continue;
+
+        const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
+
+        for (const r of runs) {
+          const raw = r[d.meetZeit];
+          const sec = parseTimeToSec(raw);
+          if (!Number.isFinite(sec)) continue;
+
+          // exakt gleiche Zeit wie PB?
+          if (Math.abs(sec - bestSec) > 1e-9) continue;
+
+          // → HIER: NICHT kürzen, sondern Originalname aus Excel verwenden
+          const rawName = String(m.meet_name || m.meet || "").trim();
+          const nm      = rawName;
+
+          const dStr    = String(m.date || "").slice(0, 10);
+          const dObj    = new Date(dStr);
+
+          if (!bestName) {
+            bestName = nm;
+            bestDate = Number.isNaN(dObj.getTime()) ? null : dObj;
+          } else if (!Number.isNaN(dObj.getTime()) && bestDate && dObj < bestDate) {
+            bestName = nm;
+            bestDate = dObj;
+          }
+        }
+      }
+
+      console.log("[bests] PB-Meet", d.key, "Lane", lane, "sec=", bestSec, "→", bestName);
+      return bestName;
+    }
+
+
     const showList = DISCIPLINES.filter(d => {
       const hasTime = Number.isFinite(times[d.key]);
       const dqOnly  = Number(statsMap[d.key]?.dq || 0) > 0;
@@ -2818,24 +2867,32 @@ document.addEventListener("DOMContentLoaded", () => {
       const frontValue = hasTime ? formatSeconds(sec) : (dq > 0 ? "DQ" : "—");
       const aria = hasTime ? `Bestzeit ${formatSeconds(sec)}` : (dq > 0 ? "DQ" : "keine Zeit");
 
+      // Wettkampfname aus meets anhand der PB-Zeit bestimmen
+      const compName = hasTime ? findPbMeetNameForDisc(d, sec) : "";
+
       const tile = h("article", {
         class: "best-tile",
         role: "button",
         tabindex: "0",
         "aria-pressed": "false",
-        "aria-label": `${d.label} – ${aria}`
+        "aria-label": `${d.label} – ${aria}${compName ? " – " + compName : ""}`
       });
 
       const inner = h("div", { class: "tile-inner" });
 
-      const front = h("div", { class: "tile-face tile-front" },
+      const frontChildren = [
         h("div", { class: "best-label" }, d.label),
         h("div", { class: "best-time"  }, frontValue)
-      );
+      ];
+      if (compName) {
+        frontChildren.push(
+          h("div", { class: "best-meet" }, compName)
+        );
+      }
 
-      // BACK (Schnitt + Starts + DQ)
+      const front = h("div", { class: "tile-face tile-front" }, ...frontChildren);
+
       const avgSec = avgTimeForDiscipline(athlete, lane, d);
-
       const back = h("div", { class: "tile-face tile-back" },
         h("div", { class: "tile-stats" },
           statRow("Schnitt", Number.isFinite(avgSec) ? formatSeconds(avgSec) : "—"),
@@ -2854,14 +2911,27 @@ document.addEventListener("DOMContentLoaded", () => {
         tile.setAttribute("aria-pressed", locked ? "true" : "false");
       };
       if ("onpointerdown" in window) tile.addEventListener("pointerdown", toggleLock);
-      else { tile.addEventListener("click", toggleLock); tile.addEventListener("touchstart", toggleLock, { passive: true }); }
-      tile.addEventListener("keydown", (e) => { if (e.key==="Enter"||e.key===" "){ e.preventDefault(); toggleLock(); } });
+      else {
+        tile.addEventListener("click", toggleLock);
+        tile.addEventListener("touchstart", toggleLock, { passive: true });
+      }
+      tile.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggleLock();
+        }
+      });
 
       function statRow(k, v){
-        return h("div", { class: "stat" }, h("span", { class: "k" }, k), h("span", { class: "v" }, String(v)));
+        return h("div", { class: "stat" },
+          h("span", { class: "k" }, k),
+          h("span", { class: "v" }, String(v))
+        );
       }
     });
   }
+
+
 
 
   // ---------- Medaillen ----------
@@ -3083,7 +3153,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // BACK – nur Startrechte mit >0 anzeigen
       const list = [];
-      const labelMap = { OG: "OG", BZ: "BZ", LV: "LV", BV: "BV" };
+      const labelMap = { OG: "Ortsgrppe", BZ: "Bezirk", LV: "Landesverband", BV: "Bundesverband" };
       (["OG","BZ","LV","BV"]).forEach(k => {
         const v = per[k] || 0;
         if (v > 0) {
@@ -3465,4 +3535,3 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 })();
-
