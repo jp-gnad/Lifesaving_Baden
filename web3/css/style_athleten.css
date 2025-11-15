@@ -315,7 +315,9 @@ html, body {
   border-radius: 50%;
   perspective: 1000px;       /* nötig für 3D-Flip */
   cursor: pointer;
+  grid-area: cap;
 }
+
 
 /* Innerer Bereich, der wirklich rotiert */
 .cap-inner {
@@ -423,7 +425,9 @@ html, body {
 .ath-profile-head {
   display: grid;
   grid-template-columns: auto minmax(0, 1.3fr) minmax(0, 0.9fr);
-  gap: 1.5rem;
+  column-gap: 1rem;
+  row-gap: 0.75rem;
+  grid-template-areas: "cap title medal";
   align-items: flex-start;
 }
 
@@ -431,6 +435,7 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  grid-area: title;
 }
 
 .ath-profile-title h2 {
@@ -610,14 +615,21 @@ html, body {
   margin-top:2px; font-size:.78rem; font-weight:700; letter-spacing:.06em; color:#64748b; white-space: nowrap;
 }
 /* Optional: etwas Platz links, damit’s nicht zu nah am Text klebt */
-.ath-profile-head .med-card{ margin-right:20px; justify-self:end; }
-@media (min-width:720px){
-  .ath-profile-head .med-card{ width: auto; height: 102%; }
-}
+.ath-profile-head .med-card{ margin-right:20px; justify-self:end; grid-area: medal;}
+
 /* Mobile: Widget unter den Kopf umbrechen (wie zuvor) */
 @media (max-width:720px){
-  .ath-profile-head{ grid-template-columns:48px 1fr; align-items:start; }
-  .ath-profile-head .med-card{ grid-column:1 / -1; margin-top: 35px; justify-self:stretch; }
+  .ath-profile-head {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "cap title"
+      "medal medal";
+    align-items: flex-start;
+  } 
+  .ath-profile-head .med-card {
+    margin-top: 35px;
+    justify-self: stretch;
+  }
   .med-title{ margin-bottom: 15px; }
 }
 
@@ -1783,30 +1795,12 @@ html, body {
    Responsives Verhalten
    ========================================================= */
 
-@media (max-width: 960px) {
-  .ath-profile-head {
-    grid-template-columns: auto minmax(0, 1.8fr);
-    grid-template-rows: auto auto;
-  }
-  .med-card {
-    grid-column: 1 / -1;
-  }
-}
 
 @media (max-width: 768px) {
   .ath-ui {
     padding-inline: 1rem;
   }
  
-  .ath-profile-head {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .ath-profile-title {
-    order: 2;
-  }
-  .med-card {
-    order: 3;
-  }
   .ath-bests-grid {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }
@@ -1832,6 +1826,20 @@ html, body {
   .ath-btn.primary {
     width: 100%;
     justify-content: center;
+  }
+}
+
+
+
+
+
+@media (max-width: 720px) {
+  .cap-flip {
+    width: 80px;              /* Größe anpassen nach Bedarf */
+    height: 80px;
+  }
+  .ath-profile-title h2{
+    font-size: 2.0em;
   }
 }
 
