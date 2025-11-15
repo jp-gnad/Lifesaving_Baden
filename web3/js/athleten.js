@@ -1960,8 +1960,8 @@ document.addEventListener("DOMContentLoaded", () => {
         g.appendChild(sLocal("stop", { offset:"100%", "stop-color":color, "stop-opacity":"0" }));
         return g;
       };
-      defs.appendChild(mkGrad(gradBlueId,  "#1d4ed8"));
-      defs.appendChild(mkGrad(gradGreenId, "#10b981"));
+      defs.appendChild(mkGrad(gradBlueId,  "rgb(227,6,19)"));
+      defs.appendChild(mkGrad(gradGreenId, "rgb(5,105,180)"));
       svg.appendChild(defs);
 
       // Serie zeichnen
@@ -2016,8 +2016,10 @@ document.addEventListener("DOMContentLoaded", () => {
         svg.appendChild(dots);
       };
 
+      if (cmpPts && cmpPts.length) {
+        drawSeries(cmpPts, "green", true,  gradGreenId);
+      }
       drawSeries(basePts, "blue",  true,  gradBlueId);
-      if (cmpPts && cmpPts.length) drawSeries(cmpPts, "green", true,  gradGreenId);
 
       // Tooltip positionieren (iOS-robust)
       function positionTipNearCircle(circle){
@@ -2422,8 +2424,8 @@ document.addEventListener("DOMContentLoaded", () => {
         g.appendChild(s("stop", { offset:"100%", "stop-color":color, "stop-opacity":"0" }));
         return g;
       };
-      defs.appendChild(mkGrad(gidB, "#1d4ed8"));
-      defs.appendChild(mkGrad(gidG, "#10b981"));
+      defs.appendChild(mkGrad(gidB, "rgb(227,6,19)"));
+      defs.appendChild(mkGrad(gidG, "rgb(5,105,180)"));
       svg.appendChild(defs);
 
       // Draw series
@@ -2473,8 +2475,8 @@ document.addEventListener("DOMContentLoaded", () => {
         svg.appendChild(dots);
       };
 
-      if (basePts.length) drawSeries(basePts, "blue", true, gidB);
-      if (cmpPts  && cmpPts.length) drawSeries(cmpPts,  "green", true, gidG);
+      if (cmpPts && cmpPts.length) {drawSeries(cmpPts, "green", true, gidG);}
+      if (basePts.length) {drawSeries(basePts, "blue", true, gidB);}
 
       function positionTip(circle){
         const pt = svg.createSVGPoint();

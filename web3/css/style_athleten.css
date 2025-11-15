@@ -291,8 +291,8 @@ html, body {
 .cap-flip {
   position: relative;
   display: inline-block;
-  width: 160px;              /* Größe anpassen nach Bedarf */
-  height: 160px;
+  width: 120px;              /* Größe anpassen nach Bedarf */
+  height: 120px;
   border-radius: 50%;
   perspective: 1000px;       /* nötig für 3D-Flip */
   cursor: pointer;
@@ -792,7 +792,7 @@ html, body {
 
 .best-meet {
   font-size: 0.8rem;
-  opacity: 0.5;
+  opacity: 0.3;
   margin-top: -6px;
 }
 
@@ -977,10 +977,7 @@ html, body {
    ========================================================= */
 
 .ath-lsc-card {
-  padding: 1.1rem 1.1rem 1.3rem;
   border-radius: 1rem;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
@@ -1004,8 +1001,8 @@ html, body {
 
 /* SVG-Gitter & Achsen */
 .lsc-grid .hline0 {
-  stroke: #cbd5f5;
-  stroke-width: 1;
+  stroke: #d1d5db;
+  stroke-width: 2;
 }
 .lsc-grid .hline {
   stroke: #e5e7eb;
@@ -1017,6 +1014,14 @@ html, body {
   fill: #6b7280;
 }
 
+.lsc-xaxis text {transform: translateY(5px);}
+
+.lsc-grid .xtick {
+  stroke: #d1d5db;
+  stroke-width: 1;
+}
+
+
 /* Linien / Flächen */
 .lsc-area.blue {
   fill-opacity: 0.45;
@@ -1026,12 +1031,12 @@ html, body {
 }
 
 .lsc-line.blue {
-  stroke: #1d4ed8;
+  stroke: rgb(227, 6, 19);
   stroke-width: 2;
   fill: none;
 }
 .lsc-line.green {
-  stroke: #10b981;
+  stroke: rgb(5,105,180);
   stroke-width: 2;
   fill: none;
 }
@@ -1043,10 +1048,10 @@ html, body {
 }
 
 .lsc-dots.blue .lsc-dot {
-  stroke: #1d4ed8;
+  stroke: rgb(227, 6, 19);
 }
 .lsc-dots.green .lsc-dot {
-  stroke: #10b981;
+  stroke: rgb(5,105,180);
 }
 
 .lsc-dot[data-active="1"] {
@@ -1099,10 +1104,10 @@ html, body {
 }
 
 .lsc-key-dot.blue {
-  background: #1d4ed8;
+  background: rgb(227, 6, 19);
 }
 .lsc-key-dot.green {
-  background: #10b981;
+  background: rgb(5,105,180);
 }
 
 /* Vergleichssuche LSC */
@@ -1250,8 +1255,9 @@ html, body {
 
 /* Gitter & Achsen */
 .time-grid .hline0 {
-  stroke: #e5e7eb;
-  stroke-width: 1;
+  stroke: #d1d5db;
+;
+  stroke-width: 2;
 }
 .time-grid .hline {
   stroke: #f3f4f6;
@@ -1262,6 +1268,8 @@ html, body {
   font-size: 10px;
   fill: #6b7280;
 }
+.time-xaxis text {transform: translateY(5px);}
+.time-yaxis text {transform: translateY(-5px);}
 
 .time-grid .xtick {
   stroke: #d1d5db;
@@ -1277,12 +1285,12 @@ html, body {
 }
 
 .time-line.blue {
-  stroke: #1d4ed8;
+  stroke: rgb(227, 6, 19);
   stroke-width: 2;
   fill: none;
 }
 .time-line.green {
-  stroke: #10b981;
+  stroke: rgb(5, 105, 180);
   stroke-width: 2;
   fill: none;
 }
@@ -1293,10 +1301,10 @@ html, body {
   cursor: pointer;
 }
 .time-dots.blue .time-dot {
-  stroke: #1d4ed8;
+  stroke: rgb(227, 6, 19);
 }
 .time-dots.green .time-dot {
-  stroke: #10b981;
+  stroke: rgb(5,105,180);
 }
 .time-dot[data-active="1"] {
   stroke-width: 2.6;
@@ -1347,10 +1355,10 @@ html, body {
   border-radius: 999px;
 }
 .time-key-dot.blue {
-  background: #1d4ed8;
+  background: rgb(227, 6, 19);
 }
 .time-key-dot.green {
-  background: #10b981;
+  background: rgb(5,105,180);
 }
 
 /* Vergleichssuche Zeit */
@@ -1376,8 +1384,7 @@ html, body {
 
 .time-input:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+  border: 1px solid #d1d5db;
 }
 
 .time-clear {
@@ -1447,6 +1454,12 @@ html, body {
 .time-suggest-sub {
   font-size: 0.75rem;
   color: #6b7280;
+}
+
+
+.time-area,
+.lsc-area {
+  pointer-events: none;   /* Flächen ignorieren Maus/Touch */
 }
 
 /* =========================================================
@@ -1771,3 +1784,4 @@ html, body {
     justify-content: center;
   }
 }
+
