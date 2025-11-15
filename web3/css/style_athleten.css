@@ -981,6 +981,7 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
+  position: relative;
 }
 
 .lsc-head h4 {
@@ -1042,9 +1043,11 @@ html, body {
 }
 
 .lsc-dot {
-  fill: #ffffff;
-  stroke-width: 1.8;
-  cursor: pointer;
+  fill: white;  
+  stroke-width:1.25;
+  r:3px;
+  transition:r .18s ease;
+  vector-effect:non-scaling-stroke;
 }
 
 .lsc-dots.blue .lsc-dot {
@@ -1056,6 +1059,18 @@ html, body {
 
 .lsc-dot[data-active="1"] {
   stroke-width: 2.6;
+}
+
+/* aktiver / hover Punkt nur größer, nicht anders gefärbt */
+.lsc-dot[data-active="1"],
+.lsc-dot:hover{
+  r: 5px;
+}
+
+/* Fokus-Ring vom Browser unterdrücken */
+.lsc-dot:focus,
+.lsc-dot:focus-visible{
+  outline: none;
 }
 
 /* Tooltip */
@@ -1295,10 +1310,12 @@ html, body {
   fill: none;
 }
 
-.time-dot {
-  fill: #ffffff;
-  stroke-width: 1.8;
-  cursor: pointer;
+.time-dot{
+  fill: white;  
+  stroke-width:1.25;
+  r:3px;
+  transition:r .18s ease;
+  vector-effect:non-scaling-stroke;
 }
 .time-dots.blue .time-dot {
   stroke: rgb(227, 6, 19);
@@ -1308,6 +1325,18 @@ html, body {
 }
 .time-dot[data-active="1"] {
   stroke-width: 2.6;
+}
+
+/* aktiver / hover Punkt nur größer, nicht anders gefärbt */
+.time-dot[data-active="1"],
+.time-dot:hover{
+  r: 5px;
+}
+
+/* Fokus-Ring vom Browser unterdrücken */
+.time-dot:focus,
+.time-dot:focus-visible{
+  outline: none;
 }
 
 /* Tooltip Zeit */
@@ -1380,6 +1409,7 @@ html, body {
   border-radius: 999px;
   border: 1px solid #d1d5db;
   font-size: 0.82rem;
+  margin-top: 10px;
 }
 
 .time-input:focus {
