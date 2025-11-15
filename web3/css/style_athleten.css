@@ -253,6 +253,25 @@ html, body {
   height: 100%;
   object-fit: contain;
 }
+/* Flip-Animation für die große Cap im Profilkopf */
+.ath-avatar.cap-flip-on-open {
+  transform-origin: center center;
+  transform-style: preserve-3d;
+  animation: cap-flip-on-open 0.9s ease-out;
+}
+
+@keyframes cap-flip-on-open {
+  0%   { transform: rotateY(0deg); }
+  50%  { transform: rotateY(180deg); }   /* Rückseite */
+  100% { transform: rotateY(360deg); }   /* wieder Vorderseite */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ath-avatar.cap-flip-on-open {
+    animation: none;
+  }
+}
+
 
 /* Startrecht-Symbole (LV / BV-Caps) */
 
@@ -416,7 +435,7 @@ html, body {
 
 .ath-profile-title h2 {
   margin: 0;
-  font-size: 1.7rem;
+  font-size: 3.7rem;
   letter-spacing: 0.02em;
 }
 
@@ -854,6 +873,7 @@ html, body {
   background: radial-gradient(circle at 10% 0%, #fee2e2 0, #fee2e2 25%, #fee2e2 50%, #fee2e2 100%);
   border-color: #fecaca;
   padding: 0.85rem 0.95rem;
+  min-height: 100px;
 }
 
 .info-label {

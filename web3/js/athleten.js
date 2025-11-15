@@ -1275,7 +1275,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------- Caps & Flags ----------
   function capFileFromOrtsgruppe(rawOG){ return `Cap-${String(rawOG||"").trim()}.svg`; }
 
-  function renderCapAvatar(a, size = "xl", extraClass = ""){
+  function renderCapAvatar(a, size = "xl", extraClass = "") {
     const wrap = h("div", { class: `ath-avatar ${size} ${extraClass}` });
 
     const ogNow = currentOrtsgruppeFromMeets(a) || a.ortsgruppe || "";
@@ -1297,6 +1297,8 @@ document.addEventListener("DOMContentLoaded", () => {
     wrap.appendChild(img);
     return wrap;
   }
+
+
   // Wrapper nur für das große Profil: Kappe vorne, Foto hinten (dynamisches PNG nach Name)
   // Fallback: wenn kein Bild gefunden → vorne verwendetes SVG auch hinten anzeigen
   function renderCapAvatarProfile(a) {
@@ -1323,7 +1325,8 @@ document.addEventListener("DOMContentLoaded", () => {
     inner.appendChild(back);
     wrap.appendChild(inner);
 
-    // Flip-Handler: immer flippen
+    // --- Flip-Logik wie bisher ---------------------------------
+
     const toggle = () => {
       const locked = wrap.classList.toggle("is-flipped");
       wrap.setAttribute("aria-pressed", locked ? "true" : "false");
@@ -1343,18 +1346,43 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // Hilfsfunktion: SVG der Vorderseite als Fallback auf die Rückseite kopieren
+    // --- NEU: Intro-Flip beim Öffnen ---------------------------
+
+    let introDone = false;
+    function runIntroFlip() {
+      if (introDone) return;
+      introDone = true;
+
+      // optional: Bewegungsreduktion respektieren
+      if (window.matchMedia &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        return;
+      }
+
+      // kleine Verzögerung, damit das Element sicher im DOM ist
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          toggle();              // Vorderseite -> Rückseite
+          setTimeout(() => {
+            toggle();            // Rückseite -> Vorderseite
+          }, 550);               // Dauer der "Rückflip"-Phase
+        }, 200);
+      });
+    }
+
+    // --- Rückseiten-Content (Portrait oder Fallback) -----------
+
     function attachFallbackSvg() {
-      // vorhandenen Inhalt der Rückseite leeren
       back.innerHTML = "";
       const fallback = frontCap.cloneNode(true);
       back.appendChild(fallback);
       wrap.dataset.hasBack = "1";
       wrap.classList.add("has-back", "fallback-back");
       wrap.classList.remove("no-back");
+      runIntroFlip();           // Intro-Flip auch hier starten
     }
 
-    // Falls kein Name vorhanden ist → gleich Fallback-SVG hinten verwenden
+    // Kein Name → sofort Fallback-SVG hinten verwenden
     if (!name) {
       attachFallbackSvg();
       return wrap;
@@ -1365,10 +1393,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const fileName = baseName + ".png";
     const imgPath  = "png/pp/" + fileName;
 
-    console.log("[cap] Name:", JSON.stringify(name));
-    console.log("[cap] Datei:", imgPath);
-
-    // Bild direkt in den DOM hängen
     const img = document.createElement("img");
     img.alt = `Portrait von ${name}`;
     img.loading = "lazy";
@@ -1377,24 +1401,23 @@ document.addEventListener("DOMContentLoaded", () => {
     img.src = imgPath;
 
     img.addEventListener("load", () => {
-      console.log("[cap] Portrait geladen:", img.src);
       wrap.dataset.hasBack = "1";
       wrap.classList.add("has-back");
       wrap.classList.remove("no-back");
+      runIntroFlip();           // Intro-Flip, sobald Portrait da ist
     });
 
     img.addEventListener("error", () => {
-      console.warn("[cap] Portrait nicht gefunden:", img.src);
-      // Bild entfernen, wenn vorhanden
       if (img.parentNode === back) {
         back.removeChild(img);
       }
-      // Fallback: Ortsgruppen-SVG wie auf der Vorderseite auch hinten anzeigen
+      // Fallback: OG-Cap auch auf der Rückseite
       attachFallbackSvg();
     });
 
     return wrap;
   }
+
 
 
 
@@ -2838,8 +2861,6 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         }
       }
-
-      console.log("[bests] PB-Meet", d.key, "Lane", lane, "sec=", bestSec, "→", bestName);
       return bestName;
     }
 
@@ -3552,7 +3573,6 @@ document.addEventListener("DOMContentLoaded", () => {
       AppState.athletes = light;      // nur leichte Objekte für die Suche
       hideSuggestions();               // Platzhalter entfernen
     } catch (err) {
-      console.error(err);
       if (Refs.suggest) {
         Refs.suggest.classList.remove("hidden");
         Refs.suggest.innerHTML = '<div class="ath-suggest-empty">Fehler beim Laden der Daten.</div>';
