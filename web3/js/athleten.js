@@ -2929,6 +2929,30 @@ document.addEventListener("DOMContentLoaded", () => {
         );
       }
     });
+
+    function fitBestLabels() {
+      const labels = document.querySelectorAll('.best-label');
+      const MAX = 0.8;   // rem
+      const MIN = 0.55;  // rem (oder was du als Untergrenze möchtest)
+
+      labels.forEach(label => {
+        // Start immer bei Maximalgröße
+        let size = MAX;
+        label.style.fontSize = MAX + 'rem';
+        label.style.whiteSpace = 'nowrap';
+
+        // Solange der Text breiter ist als das Label, Schrittweise verkleinern
+        while (label.scrollWidth > label.clientWidth && size > MIN) {
+          size -= 0.02; // Schrittweite
+          label.style.fontSize = size.toFixed(2) + 'rem';
+        }
+      });
+    }
+
+    // Beim Laden und bei Fenstergröße ändern ausführen
+    window.addEventListener('load', fitBestLabels);
+    window.addEventListener('resize', fitBestLabels);
+
   }
 
 

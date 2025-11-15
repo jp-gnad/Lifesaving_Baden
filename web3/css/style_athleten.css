@@ -775,10 +775,14 @@ html, body {
 }
 
 .best-label {
-  font-size: 0.8rem;
+  display: block;
+  width: 100%;
+  font-size: 0.8rem;        /* maximale Schriftgröße */
   font-weight: 500;
-  color: rgb(227, 6, 19)  ;
+  color: rgb(227, 6, 19);
+  white-space: nowrap;      /* nie umbrechen */
 }
+
 
 .best-time {
   font-size: 1.2rem;
