@@ -579,12 +579,14 @@ html, body {
   display:grid;
   gap:8px;
   margin-bottom: 20px;
+  height: 250px;
+  width: auto;
 }
 .med-head{
   display:flex; align-items:baseline; justify-content:space-between;
 }
 .med-title{
-  letter-spacing:.06em; font-size:.78rem; font-weight:700; color:#64748b; text-transform:uppercase;
+  letter-spacing:.06em; font-size:.78rem; font-weight:700; color:#64748b; text-transform:uppercase; margin-right: 60px;
 }
 .med-total{
   font-size:1.6rem; font-weight:800; color:#111827; line-height:1;
@@ -597,9 +599,9 @@ html, body {
   display:grid; grid-template-rows:auto auto 1fr auto; /* count, barWrap, label */
   gap:4px; justify-items:center; text-align:center; min-width: 0;
 }
-.med-count{ font-weight:800; color:#111827; }
+.med-count{ font-weight:700; color:#111827; }
 .med-barWrap{
-  width:100%; height: 100px; /* visuelle Maxhöhe */
+  width:100%; height: 120px; /* visuelle Maxhöhe */
   display:flex; align-items:end; justify-content:center;
 }
 .med-bar{
@@ -613,7 +615,7 @@ html, body {
 .med-col.silver .med-bar{ background:linear-gradient(160deg,#DDDEDE,#dddede3f); }
 .med-col.bronze .med-bar{ background:linear-gradient(180deg,#C7B78E,#c7b78e3f); }
 .med-label{
-  margin-top:2px; font-size:.78rem; font-weight:700; letter-spacing:.06em; color:#64748b; white-space: nowrap;
+  font-size:.78rem; font-weight:700; letter-spacing:.06em; color:#64748b; white-space: nowrap;
 }
 /* Optional: etwas Platz links, damit’s nicht zu nah am Text klebt */
 .ath-profile-head .med-card{ margin-right:20px; justify-self:end; grid-area: medal;}

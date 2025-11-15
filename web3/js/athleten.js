@@ -3128,7 +3128,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderMedalStats(a) {
     const m = (a && a.medals) || {};
     const g = Number(m.gold || 0), s = Number(m.silver || 0), b = Number(m.bronze || 0);
-    const total = g + s + b, max = Math.max(g, s, b, 1), H = 72;
+    const total = g + s + b, max = Math.max(g, s, b, 1), H = 115;
     const bar = (cls, label, value) => {
       const hpx = Math.round((value / max) * H);
       return hDiv("div", { class: `med-col ${cls}` },
