@@ -2521,11 +2521,17 @@ document.addEventListener("DOMContentLoaded", () => {
       updateDomains();
 
       const rect = vp.getBoundingClientRect();
-      const W = Math.max(320, Math.floor(rect.width || 320));
-      const H = Math.max(260, Math.round(W * 0.55)); // z.B. 260–400px, abhängig von der Breite
-      // Wenn du es ganz simpel willst: const H = 260;
-      // optional: Viewport-Div explizit auf diese Höhe setzen
-      vp.style.height = H + "px";
+      const W = Math.max(320, Math.floor(rect.width));
+
+      // feste Mindesthöhen je nach Bildschirmbreite
+      let H;
+      if (window.innerWidth <= 480) {
+        H = 450;          // Handy sehr schmal
+      } else if (window.innerWidth <= 720) {
+        H = 500;          // Handy quer / kleines Tablet
+      } else {
+        H = 560;          // Desktop / großes Tablet
+      }
 
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
       svg.setAttribute("width", W);

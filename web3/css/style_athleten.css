@@ -1028,7 +1028,7 @@ html, body {
   position: relative;
   width: 100%;
   height: auto;
-  min-height: 600px;
+  min-height: 450px;
 }
 
 .lsc-svg {
@@ -1297,7 +1297,6 @@ html, body {
   position: relative;
   width: 100%;
   height: auto;
-  min-height: 600px;
 }
 
 .time-svg {
