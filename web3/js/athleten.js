@@ -146,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Basis-Pfad für Erfolgs-Icons
-  const ERFOLG_ICON_BASE = "/svg/Erfolge";
+  const ERFOLG_ICON_BASE = "png/Erfolge";
 
   function renderErfolgeInline(ax) {
     const meets = Array.isArray(ax.meets) ? ax.meets : [];
@@ -211,7 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
       wrap.appendChild(
         h("img", {
           class: `erfolg-icon erfolg-${key.toLowerCase()}`,
-          src: `${ERFOLG_ICON_BASE}/${key}.svg`,
+          src: `${ERFOLG_ICON_BASE}/${key}.png`,
           alt: `${label} (${count}×)`
         })
       );
