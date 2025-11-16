@@ -145,86 +145,143 @@ document.addEventListener("DOMContentLoaded", () => {
     alignCapToName();
   }
 
-  // Basis-Pfad für Erfolgs-Icons
-  const ERFOLG_ICON_BASE = "png/Erfolge";
+  // Basispfad zu deinen Erfolgs-Icons (anpassen falls nötig)
+  const ERFOLG_ICON_BASE = "png/erfolge";
+
+  // ordnet ein Meet einer Erfolgs-Kategorie zu
+  function classifyErfolg(meet) {
+    const raw = (meet.meet_name || meet.name || "");
+    if (!raw) return null;
+
+    const name = raw.toLowerCase();
+
+    // Hilfsfunktion für Wort-Token („EM“ als eigenes Wort)
+    const hasWord = (token) => {
+      const re = new RegExp(`\\b${token}\\b`, "i");
+      return re.test(raw);
+    };
+
+    // WM: "WM" als eigenes Wort oder "Weltmeisterschaft"
+    if (hasWord("wm") || name.includes("weltmeisterschaft")) {
+      return "WM";
+    }
+
+    // EM: "EM" als eigenes Wort oder "Europameisterschaft"
+    if (hasWord("em") || name.includes("europameisterschaft")) {
+      return "EM";
+    }
+
+    // JRP: "JRP" als eigenes Wort
+    if (hasWord("jrp")) {
+      return "JRP";
+    }
+
+    // DP: "DP" als eigenes Wort oder "Deutsche Meisterschaft"
+    if (hasWord("dp") || name.includes("deutsche meisterschaft")) {
+      return "DP";
+    }
+
+    return null;
+  }
+
+
+  // Jahr herausziehen
+  function getMeetYear(meet) {
+    const dRaw = meet.date || meet.datum || meet.datum_raw;
+
+    if (dRaw instanceof Date) {
+      return dRaw.getFullYear();
+    }
+    if (typeof dRaw === "string" && dRaw.trim()) {
+      const d = new Date(dRaw);
+      if (!Number.isNaN(d.getTime())) return d.getFullYear();
+
+      // Fallback: Jahreszahl direkt aus dem String ziehen
+      const m = dRaw.match(/\b(19|20)\d{2}\b/);
+      if (m) return Number(m[0]);
+    }
+
+    if (typeof meet.jahr === "number") return meet.jahr;
+
+    return null;
+  }
 
   function renderErfolgeInline(ax) {
     const meets = Array.isArray(ax.meets) ? ax.meets : [];
     if (!meets.length) return null;
 
-    // Wir zählen pro Jahr, in dem JRP oder DP vorkommt
-    const successYears = {
+    // für jede Kategorie ein Set von "Schlüsseln"
+    // DP/JRP: key = Jahr
+    // WM/EM:  key = Jahr-Art (z.B. "2024-national", "2024-interclub")
+    const buckets = {
+      DP:  new Set(),
       JRP: new Set(),
-      DP:  new Set()
+      WM:  new Set(),
+      EM:  new Set()
     };
 
-    for (const m of meets) {
-      const rawName =
-        m.meet_short ||
-        m.short ||
-        m.meet_name ||
-        m.name ||
-        "";
+    for (const meet of meets) {
+      const cat  = classifyErfolg(meet);
+      if (!cat) continue;
 
-      const name = String(rawName).toUpperCase();
-
-      // Jahr bestimmen – an dein Datenmodell ggf. anpassen
-      let year = null;
-      if (m.date) {
-        const d = new Date(m.date);
-        if (!Number.isNaN(d.getTime())) year = d.getFullYear();
-      }
-      if (year == null && m.year) {
-        year = Number(m.year);
-      }
+      const year = getMeetYear(meet);
       if (!year) continue;
 
-      if (name === "JRP" || name.includes("JRP")) {
-        successYears.JRP.add(year);
+      const name = (meet.meet_name || meet.name || "").toLowerCase();
+
+      let key;
+      if (cat === "WM" || cat === "EM") {
+        // WM / EM: Jahr + Unterart (national / interclub / sonstiges)
+        let kind = "other";
+        if (name.includes("interclub")) kind = "interclub";
+        else if (name.includes("national")) kind = "national";
+        // Kombination aus Jahr + Art
+        key = `${year}-${kind}`;
+      } else {
+        // DP / JRP: nur Jahr
+        key = String(year);
       }
-      if (name === "DP" || name.includes("DP")) {
-        successYears.DP.add(year);
-      }
+
+      buckets[cat].add(key);
     }
 
-    const jrpCount = successYears.JRP.size;
-    const dpCount  = successYears.DP.size;
+    // In welcher Reihenfolge anzeigen
+    const order = [
+      { code: "WM",  label: "Weltmeisterschaften" },
+      { code: "EM",  label: "Europameisterschaften" },
+      { code: "DP",  label: "Deutsche Meisterschaften" },
+      { code: "JRP", label: "Jugend-Rettungspokal" }
+    ];
 
-    if (!jrpCount && !dpCount) return null;
+    const frag = document.createDocumentFragment();
+    let any = false;
 
-    const wrap = h("span", { class: "erfolge-wrap" });
+    for (const { code, label } of order) {
+      const count = buckets[code].size;
+      if (!count) continue;
+      any = true;
 
-    function addErfolg(count, key, label) {
-      if (!count) return;
+      const wrap = h("span", { class: "erfolg-badge" });
 
-      // Abstand zwischen Blöcken
-      if (wrap.childNodes.length) {
-        wrap.appendChild(h("span", { class: "erfolge-gap" }, " "));
-      }
-
-      if (count > 1) {
-        wrap.appendChild(
-          h("span", { class: "erfolg-count" }, `${count}×`)
-        );
-      }
+      wrap.appendChild(
+        h("span", { class: "erfolg-count" }, `${count}×`)
+      );
 
       wrap.appendChild(
         h("img", {
-          class: `erfolg-icon erfolg-${key.toLowerCase()}`,
-          src: `${ERFOLG_ICON_BASE}/${key}.png`,
+          class: `erfolg-icon erfolg-${code.toLowerCase()}`,
+          src: `${ERFOLG_ICON_BASE}/${code}.png`,
           alt: `${label} (${count}×)`
         })
       );
+
+      frag.appendChild(wrap);
     }
 
-    // Beispiel:
-    //  - JRP in 2023 und 2024  → 2× JRP.svg
-    //  - DP in 2024           → 1× DP.svg
-    addErfolg(jrpCount, "JRP", "JRP");
-    addErfolg(dpCount,  "DP",  "DP");
-
-    return wrap;
+    if (!any) return null;
+    return frag;
   }
+
 
 
   function alignCapToName() {
@@ -3851,7 +3908,7 @@ document.addEventListener("DOMContentLoaded", () => {
           KV("Ortsgruppe", currOG),
           KV("Jahrgang", String(ax.jahrgang)),
           KV("Länderpins", renderCountryFlagsInline(ax) || "—"),
-          KV("Erfolge", renderErfolgeInline(ax) || "—")
+          KV("Historie", renderErfolgeInline(ax) || "—")
         ),
       ),
 

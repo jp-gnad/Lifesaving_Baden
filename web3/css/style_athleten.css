@@ -558,9 +558,10 @@ html, body {
 }
 .ath-profile-meta .kv[data-key="Länderpins"] .k,
 .ath-profile-meta .kv[data-key="Länderpins"] .v{ margin-top: -6px; }
+.ath-profile-meta .kv[data-key="Länderpins"] .k{ margin-top: -5px; }
 
-.ath-profile-meta .kv[data-key="Erfolge"] .k,
-.ath-profile-meta .kv[data-key="Erfolge"] .v{ margin-top: -4px; }
+.ath-profile-meta .kv[data-key="Historie"] .k,
+.ath-profile-meta .kv[data-key="Historie"] .v{ margin-top: -4px; }
 
 .ath-profile-section.muted {
   font-size: 0.85rem;
@@ -574,26 +575,37 @@ html, body {
   margin: 0.15rem 0;
 }
 
-
+/* Container der Erfolge */
 .ath-profile-meta .erfolge-wrap {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
   flex-wrap: wrap;
+  gap: 0.18rem;          /* kleiner Zwischenraum innerhalb der Gruppe */
+  margin-left: 0.25rem;  /* etwas Luft nach dem Label "Erfolge:" */
+  row-gap: 10px;
 }
 
+/* Zahl vor dem Icon */
 .erfolg-count {
   font-size: 0.78rem;
   color: #4b5563;
 }
 
+/* Icon selbst */
 .erfolg-icon {
-  width: 2rem;
-  height: 1.2rem;
-  overflow: hidden;
-  display: inline-block;
-  margin-left: -4px;
+  width: 2.1rem;
+  height: 1.25rem;
+  object-fit: contain;
+  transform: translateY(5px);
+  margin-top: -5px;
 }
+
+/* Abstand: Zahl – Icon – nächste Zahl */
+.erfolg-count + .erfolg-icon {
+  margin-left: 0.1rem;  /* Abstand Zahl ↔ Icon */
+  margin-right: 0.75rem;  /* Abstand zur nächsten Gruppe (nächste Zahl) */
+}
+
 
 
 /* =========================================================
