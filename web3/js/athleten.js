@@ -2035,206 +2035,298 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let activeIdx = null, activeSeries = "blue";
 
-    function paint(){
-      updateXDomain();
-      const MIN_CHART_HEIGHT = 320;   // oben in der Funktion definieren
+        function paint(){
+          updateXDomain();
 
-      const rect = vp.getBoundingClientRect();
-      const W = Math.max(320, Math.floor(rect.width));
-      const H = Math.max(MIN_CHART_HEIGHT, vp.clientHeight || 0);
-      vp.style.height = H + "px";
+          const rect = vp.getBoundingClientRect();
+          const W = Math.max(320, Math.floor(rect.width));
 
-      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-      svg.setAttribute("width", W);
-      svg.setAttribute("height", H);
+          // feste Mindesthöhen je nach Bildschirmbreite
+          let H;
+          if (window.innerWidth <= 480) {
+            H = 450;        // sehr schmal (Handy hochkant)
+          } else if (window.innerWidth <= 720) {
+            H = 500;        // Handy quer / kleines Tablet
+          } else {
+            H = 560;        // Desktop / großes Tablet
+          }
 
+          // Container selbst auch entsprechend hoch ziehen
+          vp.style.minHeight = H + "px";
 
-      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-      svg.setAttribute("width", W);
-      svg.setAttribute("height", H);
-      while (svg.firstChild) svg.removeChild(svg.firstChild);
+          svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+          svg.setAttribute("width", W);
+          svg.setAttribute("height", H);
 
-      const m  = { l: 8, r: 8, t: 10, b: 48 };
-      const cw = W - m.l - m.r;
-      const ch = H - m.t - m.b;
-      const fx = (v) => m.l + ((v - xMin) / (xMax - xMin)) * cw;
-      const fy = (v) => m.t + ch - ((v - yMin) / (yMax - yMin)) * ch;
+          // SVG leeren
+          while (svg.firstChild) svg.removeChild(svg.firstChild);
 
-      // Grid (0/200/400/600/800) + X-Ticks + X-Label
-      const grid  = sLocal("g", { class:"lsc-grid" });
-      const y0 = fy(0);
-      grid.appendChild(sLocal("line", { x1:m.l, y1:y0, x2:W-m.r, y2:y0, class:"hline0" }));
-      for (let val=200; val<=800; val+=200){
-        const yy = fy(val);
-        grid.appendChild(sLocal("line", { x1:m.l, y1:yy, x2:W-m.r, y2:yy, class:"hline" }));
-      }
+          const m  = { l: 8, r: 8, t: 10, b: 48 };
+          const cw = W - m.l - m.r;
+          const ch = H - m.t - m.b;
 
-      // --- Y-Achse: nur 200/400/600/800 P, oberhalb der Linie ---
-      const yAxis = sLocal("g", { class: "lsc-yaxis" });
-      const labelOffset = 6; // Pixel nach oben
-      [200, 400, 600, 800].forEach(v => {
-        const yy = fy(v);
-        yAxis.appendChild(
-          sLocal("text", {
-            x: m.l,
-            y: yy - labelOffset,        // oberhalb der Linie
-            "text-anchor": "start"      // linksbündig am Rand
-          }, `${v}P`)
-        );
-      });
-      svg.appendChild(yAxis);
+          // --- nichtlineare Y-Skala 0..1000 ---
+          // 0..400  -> 0..0.25  (zusammengeschoben)
+          // 400..800-> 0.25..0.75
+          // 800..1000->0.75..1  (Top-Bereich ohne Extra-Grid/Label)
+          function normLSC(v){
+            const val = Math.max(0, Math.min(1000, Number(v) || 0)); // clamp 0..1000
+            if (val <= 400){
+              const frac = val / 400;
+              return frac * 0.25;
+            } else if (val <= 800){
+              const frac = (val - 400) / 400;
+              return 0.25 + frac * 0.5;
+            } else {
+              const frac = (val - 800) / 200;
+              return 0.75 + frac * 0.25;
+            }
+          }
 
-      
-      // --- X-Achse: identisch zum Zeit-Chart ---
-      const xAxis = sLocal("g", { class: "lsc-xaxis" });
-      const tickLen = 8;
+          const fy = (v) => {
+            const u = normLSC(v);          // 0..1 (unten -> oben)
+            return m.t + ch - u * ch;      // in Pixel umrechnen
+          };
 
-      const spanYears = xMax - xMin;
-      let xStep = 1;
-      if ((W < 720 && spanYears > 15) || (W >= 720 && spanYears > 30)) {
-        xStep = 5;
-      }
-      const startTick = Math.ceil(xMin / xStep) * xStep;
+          const fx = (v) => m.l + ((v - xMin) / (xMax - xMin)) * cw;
 
-      for (let v = startTick; v <= Math.floor(xMax); v += xStep) {
-        const xx = fx(v);
-        // Tick an der Basislinie (wie im Zeit-Chart)
-        grid.appendChild(sLocal("line", {
-          x1: xx, y1: m.t + ch, x2: xx, y2: m.t + ch + tickLen, class: "xtick"
-        }));
-        // Label
-        xAxis.appendChild(
-          sLocal("text", { x: xx, y: m.t + ch + tickLen + 6, "text-anchor": "middle" }, String(v))
-        );
-      }
-      // Achsenbeschriftung
-      xAxis.appendChild(
-        sLocal("text", { x: m.l + cw/2, y: m.t + ch + tickLen + 26, "text-anchor": "middle" }, "Alter")
-      );
+          // --- Gitter ---
+          const grid = sLocal("g", { class: "lsc-grid" });
 
-      svg.appendChild(grid);
-      svg.appendChild(xAxis);
+          // Basislinie bei 0
+          const y0 = fy(0);
+          grid.appendChild(
+            sLocal("line", {
+              x1: m.l,
+              y1: y0,
+              x2: W - m.r,
+              y2: y0,
+              class: "hline0"
+            })
+          );
 
-
-      // Gradients (blau + grün)
-      const defs = sLocal("defs");
-      const gradBlueId  = `lsc-grad-b-${Math.random().toString(36).slice(2)}`;
-      const gradGreenId = `lsc-grad-g-${Math.random().toString(36).slice(2)}`;
-      const mkGrad = (id, color) => {
-        const g = sLocal("linearGradient", { id, x1:"0", y1:"0", x2:"0", y2:"1" });
-        g.appendChild(sLocal("stop", { offset:"0%",   "stop-color":color, "stop-opacity":"0.22" }));
-        g.appendChild(sLocal("stop", { offset:"100%", "stop-color":color, "stop-opacity":"0" }));
-        return g;
-      };
-      defs.appendChild(mkGrad(gradBlueId,  "rgb(227,6,19)"));
-      defs.appendChild(mkGrad(gradGreenId, "rgb(5,105,180)"));
-      svg.appendChild(defs);
-
-      // Serie zeichnen
-      const drawSeries = (pts, colorClass, withArea=false, fillId=null) => {
-        const pathD = pts.map((p,i)=>{
-          const Y = Math.max(0, Math.min(1000, p.lsc));
-          return `${i ? "L" : "M"}${fx(p.age)} ${fy(Y)}`;
-        }).join(" ");
-
-        if (withArea){
-          const areaD = pathD + ` L${fx(pts[pts.length-1].age)} ${y0} L${fx(pts[0].age)} ${y0} Z`;
-          svg.appendChild(sLocal("path", { d: areaD, class:`lsc-area ${colorClass}`, fill:`url(#${fillId})` }));
-        }
-        svg.appendChild(sLocal("path", { d: pathD, class:`lsc-line ${colorClass}` }));
-
-        const dots = sLocal("g", { class:`lsc-dots ${colorClass}` });
-        pts.forEach((p, idx) => {
-          const Y = Math.max(0, Math.min(1000, p.lsc));
-          const c = sLocal("circle", {
-            cx: fx(p.age), cy: fy(Y), r:4.5, class:"lsc-dot", tabindex:0,
-            "data-idx": idx, "data-series": colorClass,
-            "data-name": (colorClass==="blue" ? (a?.name||"") : (cmpAth?.name||"")),
-            "data-lsc": p.lsc.toLocaleString("de-DE", { minimumFractionDigits:2, maximumFractionDigits:2 }),
-            "data-date": (new Date(p.date)).toLocaleDateString("de-DE"),
-            "data-meet": p.meet_name || "—"
+          // horizontale Linien bei 400 / 600 / 800
+          [400, 600, 800].forEach(v => {
+            const yy = fy(v);
+            grid.appendChild(
+              sLocal("line", {
+                x1: m.l,
+                y1: yy,
+                x2: W - m.r,
+                y2: yy,
+                class: "hline"
+              })
+            );
           });
 
-          const show = () => {
-            activeIdx = idx; activeSeries = colorClass;
-            c.setAttribute("data-active","1");
-            const name = c.dataset.name ? ` – ${c.dataset.name}` : "";
-            tip.querySelector(".tt-l1").textContent = `${c.dataset.lsc} LSC${name}`;
-            tip.querySelector(".tt-l2").textContent = `${c.dataset.date} — ${c.dataset.meet || "—"}`;
-            positionTipNearCircle(c);
-          };
-          const hide = () => {
-            if (activeIdx === idx && activeSeries === colorClass){ activeIdx = null; }
-            c.removeAttribute("data-active");
-            tip.style.opacity = "0";
-            tip.style.transform = "translate(-9999px,-9999px)";
-            tip.setAttribute("aria-hidden","true");
-          };
+          svg.appendChild(grid);
 
-          c.addEventListener("pointerenter", show);
-          c.addEventListener("pointerleave", hide);
-          c.addEventListener("focus", show);
-          c.addEventListener("blur", hide);
-          c.addEventListener("pointerdown", (e)=>{ e.stopPropagation(); show(); });
+          // --- Y-Achsen-Labels: 0, 400, 600, 800 ---
+          const yAxis = sLocal("g", { class: "lsc-yaxis" });
+          const labelOffset = 6;
 
-          dots.appendChild(c);
-        });
-        svg.appendChild(dots);
-      };
+          [0, 400, 600, 800].forEach(v => {
+            const yy = fy(v);
+            yAxis.appendChild(
+              sLocal("text", {
+                x: m.l,
+                y: yy - labelOffset,
+                "text-anchor": "start"
+              }, v === 0 ? "0" : `${v}P`)
+            );
+          });
 
-      if (cmpPts && cmpPts.length) {
-        drawSeries(cmpPts, "green", true,  gradGreenId);
-      }
-      drawSeries(basePts, "blue",  true,  gradBlueId);
+          svg.appendChild(yAxis);
 
-      // Tooltip positionieren (iOS-robust)
-      function positionTipNearCircle(circle){
-        const pt = svg.createSVGPoint();
-        pt.x = +circle.getAttribute("cx");
-        pt.y = +circle.getAttribute("cy");
-        const scr = pt.matrixTransform(svg.getScreenCTM());
-        const cardRect = card.getBoundingClientRect();
-        const px = scr.x - cardRect.left;
-        const py = scr.y - cardRect.top;
+          // --- X-Achse wie bisher ---
+          const xAxis = sLocal("g", { class: "lsc-xaxis" });
+          const tickLen = 8;
 
-        tip.style.opacity = "1";
-        tip.style.transform = "translate(0,0)";
-        tip.setAttribute("aria-hidden","false");
-        tip.style.left = "0px"; tip.style.top  = "0px";
-        const tr = tip.getBoundingClientRect();
-
-        const offX = 6, offY = 10;
-        let L = Math.round(px + offX - tr.width*0.12);
-        let T = Math.round(py - offY - tr.height - 6);
-        const maxL = card.clientWidth  - tr.width  - 8;
-        const maxT = card.clientHeight - tr.height - 8;
-        L = Math.max(8, Math.min(L, maxL));
-        T = Math.max(8, Math.min(T, maxT));
-        tip.style.left = `${L}px`;
-        tip.style.top  = `${T}px`;
-      }
-
-      // Tooltip bei Resize am aktiven Punkt neu ausrichten
-      if (activeIdx != null){
-        const sel = `.lsc-dots.${activeSeries} .lsc-dot[data-idx="${activeIdx}"]`;
-        const active = svg.querySelector(sel);
-        if (active) positionTipNearCircle(active);
-      }
-
-      // Klick außerhalb schließt Tooltip
-      if (!card._lscOutsideHandlerAttached){
-        card.addEventListener("pointerdown", (e) => {
-          if (!svg.contains(e.target)){
-            activeIdx = null;
-            tip.style.opacity = "0";
-            tip.style.transform = "translate(-9999px,-9999px)";
-            tip.setAttribute("aria-hidden","true");
-            svg.querySelectorAll('.lsc-dot[data-active="1"]').forEach(n => n.removeAttribute("data-active"));
+          const spanYears = xMax - xMin;
+          let xStep = 1;
+          if ((W < 720 && spanYears > 15) || (W >= 720 && spanYears > 30)) {
+            xStep = 5;
           }
-        }, { passive:true });
-        card._lscOutsideHandlerAttached = true;
-      }
-    }
+          const startTick = Math.ceil(xMin / xStep) * xStep;
+
+          for (let v = startTick; v <= Math.floor(xMax); v += xStep) {
+            const xx = fx(v);
+            // Tick an der Basislinie
+            grid.appendChild(
+              sLocal("line", {
+                x1: xx,
+                y1: m.t + ch,
+                x2: xx,
+                y2: m.t + ch + tickLen,
+                class: "xtick"
+              })
+            );
+            // Label
+            xAxis.appendChild(
+              sLocal("text", {
+                x: xx,
+                y: m.t + ch + tickLen + 6,
+                "text-anchor": "middle"
+              }, String(v))
+            );
+          }
+
+          // X-Achsenbeschriftung
+          xAxis.appendChild(
+            sLocal("text", {
+              x: m.l + cw / 2,
+              y: m.t + ch + tickLen + 26,
+              "text-anchor": "middle"
+            }, "Alter")
+          );
+
+          svg.appendChild(xAxis);
+
+          // --- Gradients (blau + grün) ---
+          const defs = sLocal("defs");
+          const gradBlueId  = `lsc-grad-b-${Math.random().toString(36).slice(2)}`;
+          const gradGreenId = `lsc-grad-g-${Math.random().toString(36).slice(2)}`;
+          const mkGrad = (id, color) => {
+            const g = sLocal("linearGradient", { id, x1:"0", y1:"0", x2:"0", y2:"1" });
+            g.appendChild(sLocal("stop", { offset:"0%",   "stop-color":color, "stop-opacity":"0.22" }));
+            g.appendChild(sLocal("stop", { offset:"100%", "stop-color":color, "stop-opacity":"0" }));
+            return g;
+          };
+          defs.appendChild(mkGrad(gradBlueId,  "rgb(227,6,19)"));
+          defs.appendChild(mkGrad(gradGreenId, "rgb(5,105,180)"));
+          svg.appendChild(defs);
+
+          // --- Serien zeichnen ---
+          const drawSeries = (pts, colorClass, withArea=false, fillId=null) => {
+            if (!pts || !pts.length) return;
+
+            const pathD = pts.map((p,i) => {
+              const Y = Math.max(0, Math.min(1000, p.lsc));
+              return `${i ? "L" : "M"}${fx(p.age)} ${fy(Y)}`;
+            }).join(" ");
+
+            if (withArea){
+              const last  = pts[pts.length-1];
+              const first = pts[0];
+              const areaD = pathD + ` L${fx(last.age)} ${y0} L${fx(first.age)} ${y0} Z`;
+              svg.appendChild(
+                sLocal("path", {
+                  d: areaD,
+                  class: `lsc-area ${colorClass}`,
+                  fill: `url(#${fillId})`
+                })
+              );
+            }
+
+            svg.appendChild(
+              sLocal("path", {
+                d: pathD,
+                class: `lsc-line ${colorClass}`
+              })
+            );
+
+            const dots = sLocal("g", { class: `lsc-dots ${colorClass}` });
+            pts.forEach((p, idx) => {
+              const Y = Math.max(0, Math.min(1000, p.lsc));
+              const c = sLocal("circle", {
+                cx: fx(p.age),
+                cy: fy(Y),
+                r: 4.5,
+                class: "lsc-dot",
+                tabindex: 0,
+                "data-idx": idx,
+                "data-series": colorClass,
+                "data-name": (colorClass === "blue" ? (a?.name || "") : (cmpAth?.name || "")),
+                "data-lsc": p.lsc.toLocaleString("de-DE", { minimumFractionDigits:2, maximumFractionDigits:2 }),
+                "data-date": (new Date(p.date)).toLocaleDateString("de-DE"),
+                "data-meet": p.meet_name || "—"
+              });
+
+              const show = () => {
+                activeIdx = idx;
+                activeSeries = colorClass;
+                c.setAttribute("data-active","1");
+                const name = c.dataset.name ? ` – ${c.dataset.name}` : "";
+                tip.querySelector(".tt-l1").textContent = `${c.dataset.lsc} LSC${name}`;
+                tip.querySelector(".tt-l2").textContent = `${c.dataset.date} — ${c.dataset.meet || "—"}`;
+                positionTipNearCircle(c);
+              };
+              const hide = () => {
+                if (activeIdx === idx && activeSeries === colorClass){
+                  activeIdx = null;
+                }
+                c.removeAttribute("data-active");
+                tip.style.opacity = "0";
+                tip.style.transform = "translate(-9999px,-9999px)";
+                tip.setAttribute("aria-hidden","true");
+              };
+
+              c.addEventListener("pointerenter", show);
+              c.addEventListener("pointerleave", hide);
+              c.addEventListener("focus",        show);
+              c.addEventListener("blur",         hide);
+              c.addEventListener("pointerdown", (e)=>{ e.stopPropagation(); show(); });
+
+              dots.appendChild(c);
+            });
+            svg.appendChild(dots);
+          };
+
+          if (cmpPts && cmpPts.length){
+            drawSeries(cmpPts, "green", true, gradGreenId);
+          }
+          drawSeries(basePts, "blue", true, gradBlueId);
+
+          // Tooltip-Positionierung wie gehabt
+          function positionTipNearCircle(circle){
+            const pt = svg.createSVGPoint();
+            pt.x = +circle.getAttribute("cx");
+            pt.y = +circle.getAttribute("cy");
+            const scr = pt.matrixTransform(svg.getScreenCTM());
+            const cardRect = card.getBoundingClientRect();
+            const px = scr.x - cardRect.left;
+            const py = scr.y - cardRect.top;
+
+            tip.style.opacity = "1";
+            tip.style.transform = "translate(0,0)";
+            tip.setAttribute("aria-hidden","false");
+            tip.style.left = "0px";
+            tip.style.top  = "0px";
+            const tr = tip.getBoundingClientRect();
+
+            const offX = 6, offY = 10;
+            let L = Math.round(px + offX - tr.width*0.12);
+            let T = Math.round(py - offY - tr.height - 6);
+            const maxL = card.clientWidth  - tr.width  - 8;
+            const maxT = card.clientHeight - tr.height - 8;
+            L = Math.max(8, Math.min(L, maxL));
+            T = Math.max(8, Math.min(T, maxT));
+            tip.style.left = `${L}px`;
+            tip.style.top  = `${T}px`;
+          }
+
+          // Tooltip bei Resize am aktiven Punkt neu ausrichten
+          if (activeIdx != null){
+            const sel = `.lsc-dots.${activeSeries} .lsc-dot[data-idx="${activeIdx}"]`;
+            const active = svg.querySelector(sel);
+            if (active) positionTipNearCircle(active);
+          }
+
+          // Klick außerhalb schließt Tooltip
+          if (!card._lscOutsideHandlerAttached){
+            card.addEventListener("pointerdown", (e) => {
+              if (!svg.contains(e.target)){
+                activeIdx = null;
+                tip.style.opacity = "0";
+                tip.style.transform = "translate(-9999px,-9999px)";
+                tip.setAttribute("aria-hidden","true");
+                svg.querySelectorAll('.lsc-dot[data-active="1"]').forEach(n => n.removeAttribute("data-active"));
+              }
+            }, { passive:true });
+            card._lscOutsideHandlerAttached = true;
+          }
+        }
+
 
     const ro = new ResizeObserver(paint);
     ro.observe(vp);
