@@ -283,8 +283,8 @@ html, body {
 }
 
 .sr-icon {
-  width: 2rem;
-  height: 2rem;
+  width: 1.75rem;
+  height: 1.75rem;
   object-fit: contain;
 }
 
@@ -303,8 +303,9 @@ html, body {
 }
 
 .flag-img {
-  width: 1.25rem;
+  width: 1.4rem;
   height: auto;
+  margin-top: 7px;
 }
 /* Äußerer Wrapper: klickbare, runde „Karte“ */
 .cap-flip {
@@ -469,14 +470,14 @@ html, body {
 
 /* Geschlecht */
 .gender-chip.m {
-  background: #dbeafe;
-  border-color: #bfdbfe;
-  color: #1d4ed8;
+  background: rgba(0, 105, 180, 0.15);
+  border-color: rgba(0, 105, 180, 0.32);
+  color: rgb(0, 105, 180);
 }
 .gender-chip.w {
-  background: #fce7f3;
-  border-color: #f9a8d4;
-  color: #be185d;
+  background: rgba(227, 6, 21, 0.15);
+  border-color:  rgba(227, 6, 21, 0.32);
+  color: rgb(227, 6, 19);
 }
 
 /* Altersklasse */
@@ -556,7 +557,10 @@ html, body {
   align-items: center;
 }
 .ath-profile-meta .kv[data-key="Länderpins"] .k,
-.ath-profile-meta .kv[data-key="Länderpins"] .v{ margin-top: -2.5px; }
+.ath-profile-meta .kv[data-key="Länderpins"] .v{ margin-top: -6px; }
+
+.ath-profile-meta .kv[data-key="Erfolge"] .k,
+.ath-profile-meta .kv[data-key="Erfolge"] .v{ margin-top: -4px; }
 
 .ath-profile-section.muted {
   font-size: 0.85rem;
@@ -569,6 +573,29 @@ html, body {
 .ath-profile-section.muted p {
   margin: 0.15rem 0;
 }
+
+
+.ath-profile-meta .erfolge-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.erfolg-count {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.erfolg-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;   /* runde „Badges“ */
+  overflow: hidden;
+  display: inline-block;
+}
+
 
 /* =========================================================
    Medaillen-Karte

@@ -145,6 +145,86 @@ document.addEventListener("DOMContentLoaded", () => {
     alignCapToName();
   }
 
+  // Basis-Pfad für Erfolgs-Icons
+  const ERFOLG_ICON_BASE = "/svg/Erfolge";
+
+  function renderErfolgeInline(ax) {
+    const meets = Array.isArray(ax.meets) ? ax.meets : [];
+    if (!meets.length) return null;
+
+    // Wir zählen pro Jahr, in dem JRP oder DP vorkommt
+    const successYears = {
+      JRP: new Set(),
+      DP:  new Set()
+    };
+
+    for (const m of meets) {
+      const rawName =
+        m.meet_short ||
+        m.short ||
+        m.meet_name ||
+        m.name ||
+        "";
+
+      const name = String(rawName).toUpperCase();
+
+      // Jahr bestimmen – an dein Datenmodell ggf. anpassen
+      let year = null;
+      if (m.date) {
+        const d = new Date(m.date);
+        if (!Number.isNaN(d.getTime())) year = d.getFullYear();
+      }
+      if (year == null && m.year) {
+        year = Number(m.year);
+      }
+      if (!year) continue;
+
+      if (name === "JRP" || name.includes("JRP")) {
+        successYears.JRP.add(year);
+      }
+      if (name === "DP" || name.includes("DP")) {
+        successYears.DP.add(year);
+      }
+    }
+
+    const jrpCount = successYears.JRP.size;
+    const dpCount  = successYears.DP.size;
+
+    if (!jrpCount && !dpCount) return null;
+
+    const wrap = h("span", { class: "erfolge-wrap" });
+
+    function addErfolg(count, key, label) {
+      if (!count) return;
+
+      // Abstand zwischen Blöcken
+      if (wrap.childNodes.length) {
+        wrap.appendChild(h("span", { class: "erfolge-gap" }, " "));
+      }
+
+      if (count > 1) {
+        wrap.appendChild(
+          h("span", { class: "erfolg-count" }, `${count}×`)
+        );
+      }
+
+      wrap.appendChild(
+        h("img", {
+          class: `erfolg-icon erfolg-${key.toLowerCase()}`,
+          src: `${ERFOLG_ICON_BASE}/${key}.svg`,
+          alt: `${label} (${count}×)`
+        })
+      );
+    }
+
+    // Beispiel:
+    //  - JRP in 2023 und 2024  → 2× JRP.svg
+    //  - DP in 2024           → 1× DP.svg
+    addErfolg(jrpCount, "JRP", "JRP");
+    addErfolg(dpCount,  "DP",  "DP");
+
+    return wrap;
+  }
 
 
   function alignCapToName() {
@@ -3766,12 +3846,12 @@ document.addEventListener("DOMContentLoaded", () => {
             srIcons
           );
         })(),
-
-        // Meta: OG + Jahrgang + Länderpins
+        // Meta: OG + Jahrgang + Länderpins + Erfolge
         h("div", { class: "ath-profile-meta" },
           KV("Ortsgruppe", currOG),
           KV("Jahrgang", String(ax.jahrgang)),
-          KV("Länderpins", renderCountryFlagsInline(ax) || "—")
+          KV("Länderpins", renderCountryFlagsInline(ax) || "—"),
+          KV("Erfolge", renderErfolgeInline(ax) || "—")
         ),
       ),
 
