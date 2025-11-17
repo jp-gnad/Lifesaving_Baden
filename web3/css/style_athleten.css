@@ -1974,9 +1974,6 @@ html, body {
   .cap-flip{
     transform: translateY(var(--cap-offset-y, 0));
   }
-  /* Cap immer vertikal zur Titelspalte zentrieren */
-  .ath-profile-head .cap-flip {
-    align-self: center;
-  }
+
   .ath-profile-meta .k{ margin-left: -95px; }
 }
