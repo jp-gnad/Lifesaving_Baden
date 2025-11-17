@@ -145,21 +145,34 @@ document.addEventListener("DOMContentLoaded", () => {
     alignCapToName();
   }
 
-  // Basispfad zu deinen Erfolgs-Icons (anpassen falls nötig)
-  const ERFOLG_ICON_BASE = "png/erfolge";
+  // Basispfad zu deinen histories-Icons (anpassen falls nötig)
+  // Basispfad zu deinen Historie-Icons
+  const HISTORIE_ICON_BASE = "png/historie";
 
-  // ordnet ein Meet einer Erfolgs-Kategorie zu
-  function classifyErfolg(meet) {
+  const HISTORIE_TOOLTIP = {
+    DP: "Internationaler Deutschland-Pokal",
+    JRP: "Junioren Rettungspokal",
+    WM: "Weltmeisterschaft",
+    EM: "Europameisterschaft",
+    WG: "World Games",
+  };
+
+  // ordnet ein Meet einer Historie-Kategorie zu
+  function classifyHistorie(meet) {
     const raw = (meet.meet_name || meet.name || "");
     if (!raw) return null;
 
     const name = raw.toLowerCase();
 
-    // Hilfsfunktion für Wort-Token („EM“ als eigenes Wort)
     const hasWord = (token) => {
       const re = new RegExp(`\\b${token}\\b`, "i");
       return re.test(raw);
     };
+
+    // World Games zuerst prüfen (optional, aber lesbar)
+    if (hasWord("wg") || name.includes("world-games")) {
+      return "WG";
+    }
 
     // WM: "WM" als eigenes Wort oder "Weltmeisterschaft"
     if (hasWord("wm") || name.includes("weltmeisterschaft")) {
@@ -185,6 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
+
   // Jahr herausziehen
   function getMeetYear(meet) {
     const dRaw = meet.date || meet.datum || meet.datum_raw;
@@ -196,32 +210,27 @@ document.addEventListener("DOMContentLoaded", () => {
       const d = new Date(dRaw);
       if (!Number.isNaN(d.getTime())) return d.getFullYear();
 
-      // Fallback: Jahreszahl direkt aus dem String ziehen
       const m = dRaw.match(/\b(19|20)\d{2}\b/);
       if (m) return Number(m[0]);
     }
-
     if (typeof meet.jahr === "number") return meet.jahr;
-
     return null;
   }
 
-  function renderErfolgeInline(ax) {
+  function renderhistorieInline(ax) {
     const meets = Array.isArray(ax.meets) ? ax.meets : [];
     if (!meets.length) return null;
 
-    // für jede Kategorie ein Set von "Schlüsseln"
-    // DP/JRP: key = Jahr
-    // WM/EM:  key = Jahr-Art (z.B. "2024-national", "2024-interclub")
     const buckets = {
-      DP:  new Set(),
+      DP: new Set(),
       JRP: new Set(),
-      WM:  new Set(),
-      EM:  new Set()
+      WM: new Set(),
+      EM: new Set(),
+      WG: new Set(),
     };
 
     for (const meet of meets) {
-      const cat  = classifyErfolg(meet);
+      const cat = classifyHistorie(meet);
       if (!cat) continue;
 
       const year = getMeetYear(meet);
@@ -231,26 +240,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
       let key;
       if (cat === "WM" || cat === "EM") {
-        // WM / EM: Jahr + Unterart (national / interclub / sonstiges)
         let kind = "other";
         if (name.includes("interclub")) kind = "interclub";
         else if (name.includes("national")) kind = "national";
-        // Kombination aus Jahr + Art
         key = `${year}-${kind}`;
       } else {
-        // DP / JRP: nur Jahr
+        // DP / JRP / WG -> pro Jahr genau ein Eintrag
         key = String(year);
       }
 
       buckets[cat].add(key);
     }
 
-    // In welcher Reihenfolge anzeigen
     const order = [
-      { code: "WM",  label: "Weltmeisterschaften" },
-      { code: "EM",  label: "Europameisterschaften" },
-      { code: "DP",  label: "Deutsche Meisterschaften" },
-      { code: "JRP", label: "Jugend-Rettungspokal" }
+      { code: "WM", label: "Weltmeisterschaften" },
+      { code: "EM", label: "Europameisterschaften" },
+      { code: "WG", label: "World Games" },
+      { code: "DP", label: "Deutschland-Pokale" },
+      { code: "JRP", label: "Jugend-Rettungspokale" },
     ];
 
     const frag = document.createDocumentFragment();
@@ -261,17 +268,20 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!count) continue;
       any = true;
 
-      const wrap = h("span", { class: "erfolg-badge" });
+      const wrap = h("span", { class: "historie-badge" });
 
       wrap.appendChild(
-        h("span", { class: "erfolg-count" }, `${count}×`)
+        h("span", { class: "historie-count" }, `${count}×`)
       );
+
+      const info = HISTORIE_TOOLTIP[code] || label;
 
       wrap.appendChild(
         h("img", {
-          class: `erfolg-icon erfolg-${code.toLowerCase()}`,
-          src: `${ERFOLG_ICON_BASE}/${code}.png`,
-          alt: `${label} (${count}×)`
+          class: `historie-icon historie-${code.toLowerCase()}`,
+          src: `${HISTORIE_ICON_BASE}/${code}.png`,
+          alt: `${info} (${count}×)`,
+          title: info,
         })
       );
 
@@ -281,6 +291,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!any) return null;
     return frag;
   }
+
 
 
 
@@ -1890,6 +1901,131 @@ document.addEventListener("DOMContentLoaded", () => {
     const lastMeet = inYear[inYear.length - 1];
     return lastMeet?.Ortsgruppe || a?.ortsgruppe || "";
   }
+
+  function collectOrtsgruppenFromMeets(ax) {
+    const set = new Set();
+
+    if (Array.isArray(ax?.meets)) {
+      for (const m of ax.meets) {
+        const og = m?.ortsgruppe || m?.og || "";
+        if (!og) continue;
+        const norm = String(og).trim();
+        if (norm) set.add(norm);
+      }
+    }
+
+    return Array.from(set).sort((a, b) =>
+      a.localeCompare(b, "de-DE")
+    );
+  }
+
+  function renderOrtsgruppeMeta(ax) {
+    const { curr, others } = collectOrtsgruppenForAthlete(ax);
+    const currentLabel = curr || "—";
+    const hasOthers = others.length > 0;
+
+    // äußerer Wrapper wie ein normales KV
+    const kv = h(
+      "span",
+      { class: "kv kv-og", "data-key": "Ortsgruppe" }
+    );
+
+    // linke Spalte: Label
+    kv.appendChild(
+      h("span", { class: "k" }, "Ortsgruppe:")
+    );
+
+    // rechte Spalte: aktuelle OG + ggf. Dropdown
+    const v = h("span", { class: "v og-v" });
+
+    // erste Zeile: aktuelle OG + Pfeil
+    const topRow = h("span", { class: "og-main-row" });
+    const main   = h("span", { class: "og-main" }, currentLabel);
+    topRow.appendChild(main);
+
+    let moreBox = null;
+
+    if (hasOthers) {
+      // Toggle-Button in der gleichen Zeile wie die aktuelle OG
+      const btn = h(
+        "button",
+        {
+          class: "og-toggle",
+          type: "button",
+          "aria-expanded": "false",
+          "aria-label": "Weitere Ortsgruppen anzeigen",
+          onclick: () => {
+            const open = moreBox.classList.toggle("open");
+            btn.setAttribute("aria-expanded", open ? "true" : "false");
+          }
+        },
+        "▾"
+      );
+      topRow.appendChild(btn);
+
+      // Box mit den weiteren OGs – direkt UNTER der ersten Zeile
+      moreBox = h("div", { class: "og-more" });
+      others.forEach((og) => {
+        moreBox.appendChild(
+          h("div", { class: "og-item" }, og)
+        );
+      });
+    }
+
+    // Aufbau der rechten Zelle
+    v.appendChild(topRow);
+    if (hasOthers && moreBox) {
+      v.appendChild(moreBox);   // WICHTIG: in der gleichen Zelle wie die currOG
+    }
+
+    kv.appendChild(v);
+    return kv;
+  }
+
+
+
+  // Alle Ortsgruppen eines Athleten aus Profil + Meets einsammeln
+  function collectOrtsgruppenForAthlete(ax) {
+    const set = new Set();
+
+    // aktuelle OG wie bisher (currentOrtsgruppeFromMeets nutzt m.Ortsgruppe)
+    const curr = currentOrtsgruppeFromMeets(ax) || ax.ortsgruppe || "";
+    if (curr) set.add(String(curr).trim());
+
+    // aus allen Meets OGs einsammeln
+    const meets = Array.isArray(ax.meets) ? ax.meets : [];
+    for (const m of meets) {
+      const raw =
+        m.Ortsgruppe ??        // <— wichtig: großes O
+        m.ortsgruppe ??
+        m.og ??
+        m.OG ??
+        m.og_name ??
+        "";
+
+      const norm = String(raw).trim();
+      if (!norm) continue;
+      set.add(norm);
+    }
+
+    const all = Array.from(set);
+
+    // aktuelle OG bleibt oben, Rest sortiert
+    const others = all
+      .filter((og) => og !== curr)
+      .sort((a, b) => a.localeCompare(b, "de-DE"));
+
+    // Debug-Ausgabe
+    console.log("[OG] collectOrtsgruppenForAthlete:", {
+      name: ax?.name,
+      currOG: curr,
+      allOGs: all,
+      others,
+    });
+
+    return { curr, others };
+  }
+
 
 
 
@@ -3857,6 +3993,13 @@ document.addEventListener("DOMContentLoaded", () => {
     // aktuelle OG aus Meets berechnen (mit Fallback auf evtl. altes Feld)
     const currOG = currentOrtsgruppeFromMeets(ax) || ax.ortsgruppe || "";
 
+    // Debug: alle Ortsgruppen aus Meets + aktuelle OG loggen
+    const ogDebug = collectOrtsgruppenForAthlete(ax);
+    console.log("[OG] Profil geöffnet:", ax.name);
+    console.log("     aktuelle OG:", ogDebug.curr);
+    console.log("     alle OGs:", [ogDebug.curr, ...ogDebug.others]);
+
+
     // Tabs + Panels (Bestzeiten, Überblick, etc.)
     const tabsWrap = renderAthTabsAndPanels(ax);
 
@@ -3903,12 +4046,12 @@ document.addEventListener("DOMContentLoaded", () => {
             srIcons
           );
         })(),
-        // Meta: OG + Jahrgang + Länderpins + Erfolge
+        // Meta: OG + Jahrgang + Länderpins + historie
         h("div", { class: "ath-profile-meta" },
-          KV("Ortsgruppe", currOG),
+          renderOrtsgruppeMeta(ax),
           KV("Jahrgang", String(ax.jahrgang)),
           KV("Länderpins", renderCountryFlagsInline(ax) || "—"),
-          KV("Historie", renderErfolgeInline(ax) || "—")
+          KV("Historie", renderhistorieInline(ax) || "—")
         ),
       ),
 
