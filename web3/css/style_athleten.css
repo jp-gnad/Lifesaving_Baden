@@ -606,6 +606,13 @@ html, body {
   margin-right: 0.75rem;  /* Abstand zur nächsten Gruppe (nächste Zahl) */
 }
 
+@media (max-width:800px){
+  .historie-count + .historie-icon {
+    margin-left: 0.05rem;  /* Abstand Zahl ↔ Icon */
+    margin-right: 0.2rem;  /* Abstand zur nächsten Gruppe (nächste Zahl) */
+  }
+}
+
 
 /* Ortsgruppen-Zeile: Wertzelle vertikal stapeln */
 .ath-profile-meta .kv-og .v.og-v {
@@ -614,6 +621,12 @@ html, body {
   align-items: flex-start;
   gap: 0.15rem;      /* Abstand zwischen "Ettlingen ▾" und den weiteren OGs */
 }
+
+/* Nur für die Ortsgruppen-Zeile: Label oben ausrichten */
+.ath-profile-meta .kv-og .k {
+  align-self: flex-start;
+}
+
 
 /* erste Zeile: aktuelle OG + Pfeil nebeneinander */
 .og-main-row {
