@@ -1808,10 +1808,9 @@ html, body {
 /* Liste */
 .meets-list {
   margin-top: 0.35rem;
-  border-radius: 0.9rem;
-  border: 1px solid #e5e7eb;
   background: #f9fafb;
   overflow: hidden;
+  border-top: 2px solid #e5e7eb;
 }
 
 .meet-row {
