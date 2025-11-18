@@ -1017,6 +1017,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // sehr einfache Wettkampf-Liste (du kannst später erweitern)
   function renderMeetsSection(a){
     const allMeets = Array.isArray(a.meets) ? a.meets.slice() : [];
+    const jahrgang = Number(a?.jahrgang);
     if (!allMeets.length){
       const emptyBox = h("div", { class: "ath-profile-section meets" },
         h("div", { class: "ath-info-header" }, h("h3", {}, "Wettkämpfe (—)")),
@@ -1111,26 +1112,59 @@ document.addEventListener("DOMContentLoaded", () => {
           h("span", { class: "m-iso" }, ` ${iso3}`)
         );
 
-        // Datum kurz
-        const dateEl = h("span", { class: "m-date" }, fmtDateShort(m.date));
+        // Datum
+        const dateEl = buildDateEl(m.date);
+
+        // Name (wie bisher, ggf. gekürzt)
+        const meetRawName  = (m.meet_name || "").toString().trim();
+        const meetShortName = (meetRawName || "—").replace(/\s+-\s+.*$/, "");
         const nameEl = h("span", { class: "m-name" },
-          (m.meet_name || "—").replace(/\s+-\s+.*$/, "")
+          h("span", { class: "m-name-main" }, meetShortName)
         );
 
+        // Icon vor dem Namen
+        const eventIconEl = h("img", {
+          class: "m-event-icon",
+          src: `png/events/${encodeURIComponent(meetRawName)}.png`,
+          alt: meetShortName,
+          loading: "lazy",
+          decoding: "async",
+          onerror: (e) => e.currentTarget.remove()
+        });
+
+        // Alter-Spalte
+        const ageLabel = ageLabelAtMeet(m.date);
+        const ageEl = h("span", { class: "m-age" }, ageLabel || "");
+
+        // OG-Spalte
+        const ogLabel = meetOG(m);
+        const ogEl = h("span", { class: "m-og" }, ogLabel || "");
+
+        // row-Container: jetzt 8 Spalten
         const row = h("div", {
           class: "meet-row",
           role: "button",
           tabindex: "0",
           "aria-expanded": "false",
-          onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } },
+          onkeydown: (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault(); 
+              toggle();
+            }
+          },
           onclick: toggle
         },
-          dateEl,
-          placeEl,
-          nameEl,
-          landEl,
-          poolEl
+          dateEl,     // 1: Datum
+          placeEl,    // 2: Platz + Medaille
+          eventIconEl,// 3: Event-Icon
+          nameEl,     // 4: Name
+          ageEl,      // 5: Alter
+          ogEl,       // 6: OG
+          landEl,     // 7: Land+Flagge
+          poolEl      // 8: Bahn
         );
+
+
 
         const details = h("div", {
           class: "meet-details",
@@ -1170,6 +1204,76 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
+
+    function ageLabelAtMeet(dateStr){
+      if (!Number.isFinite(jahrgang)) return "";
+      const v = ageAt(dateStr, jahrgang);   // dein vorhandener Rechenweg
+      if (!Number.isFinite(v)) return "";
+      const years = Math.floor(v + 1e-6);   // ganzzahliges Alter
+      return years + " J.";
+    }
+
+
+    function buildDateEl(dateStr){
+      const d = new Date(dateStr);
+      if (isNaN(d)) {
+        // Fallback auf bestehende Kurzform
+        return h("span", { class: "m-date" }, fmtDateShort(dateStr));
+      }
+      const day   = d.getDate();
+      const month = monthShortDE(d.getMonth());
+
+      return h("span", { class: "m-date" },
+        h("span", { class: "m-date-day" }, day + "."),
+        h("span", { class: "m-date-month" }, month)
+      );
+    }
+
+    function monthShortDE(idx){
+      const names = ["Jan.", "Feb.", "Mär.", "Apr.", "Mai", "Jun.", "Jul.", "Aug.", "Sep.", "Okt.", "Nov.", "Dez."];
+      return names[idx] ?? "";
+    }
+
+    function ageAtMeet(athlete, dateStr){
+      const birthRaw =
+        athlete.birthdate ||
+        athlete.geburtsdatum ||
+        athlete.Geburtsdatum ||
+        athlete.birth_date ||
+        athlete.DOB ||
+        "";
+
+      if (!birthRaw) return "";
+
+      const b = new Date(birthRaw);
+      const d = new Date(dateStr);
+      if (isNaN(b) || isNaN(d)) return "";
+
+      let age = d.getFullYear() - b.getFullYear();
+      const m = d.getMonth() - b.getMonth();
+      if (m < 0 || (m === 0 && d.getDate() < b.getDate())) {
+        age--;
+      }
+
+      if (!Number.isFinite(age)) return "";
+      return age + " J.";
+    }
+
+
+    function meetOG(m){
+      const raw =
+        m.Ortsgruppe ||
+        m.OG ||
+        m.verein ||
+        m.Verein ||
+        m.club ||
+        m.Club ||
+        "";
+      return (raw || "").toString().trim();
+    }
+
+
+
 
     // Disziplin-Schlüssel (wie in deinen Meet-Objekten)
     function buildResultRows(m){
