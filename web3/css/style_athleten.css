@@ -2011,4 +2011,9 @@ html, body {
 
   .ath-profile-meta .k{ margin-left: -95px; }
 
+  .meets-list {
+    margin-left: -15px;
+    width: calc(100% + 30px);
+  }
+
 }
