@@ -1952,11 +1952,6 @@ html, body {
     flex-direction: column;
     align-items: flex-start;
   }
-  .meet-row {
-    grid-template-columns: 3.5rem minmax(0, 1fr);
-    grid-template-rows: auto auto auto;
-    row-gap: 0.3rem;
-  }
   .m-place {
     grid-column: 2;
   }
