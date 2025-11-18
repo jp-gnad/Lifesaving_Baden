@@ -686,7 +686,7 @@ html, body {
   font-size: 3rem;
   }
 }
-@media (min-width:720px){
+@media (max-width:720px){
   .og-cap-img {
       width: 14px;
       height: 14px;
