@@ -1564,13 +1564,24 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ---------- Caps & Flags ----------
-  function capFileFromOrtsgruppe(rawOG){ return `Cap-${String(rawOG||"").trim()}.svg`; }
+  // OG-Name -> Cap-Dateiname
+  function capFileFromOrtsgruppe(rawOG) {
+    const og = String(rawOG || "").trim();
+    if (!og) return "Cap-Baden_light.svg";
+
+    // Sonderfall: Slash im Namen, Datei ohne Slash
+    if (og === "Nieder-Olm/Wörrstadt") {
+      return "Cap-Nieder-OlmWörrstadt.svg";
+    }
+
+    return `Cap-${og}.svg`;
+  }
 
   function renderCapAvatar(a, size = "xl", extraClass = "") {
     const wrap = h("div", { class: `ath-avatar ${size} ${extraClass}` });
 
     const ogNow = currentOrtsgruppeFromMeets(a) || a.ortsgruppe || "";
-    const file  = `Cap-${ogNow}.svg`;
+    const file  = capFileFromOrtsgruppe(ogNow);
 
     const img = h("img", {
       class: "avatar-img",
@@ -1588,6 +1599,7 @@ document.addEventListener("DOMContentLoaded", () => {
     wrap.appendChild(img);
     return wrap;
   }
+
 
 
   // Wrapper nur für das große Profil: Kappe vorne, Foto hinten (dynamisches PNG nach Name)
@@ -1924,29 +1936,60 @@ document.addEventListener("DOMContentLoaded", () => {
     const currentLabel = curr || "—";
     const hasOthers = others.length > 0;
 
+    console.log("[OG] Profil", ax.name, "aktuelle OG:", curr, "weitere OGs:", others);
+
     // äußerer Wrapper wie ein normales KV
     const kv = h(
       "span",
-      { class: "kv kv-og", "data-key": "Ortsgruppe" }
-    );
-
-    // linke Spalte: Label
-    kv.appendChild(
+      { class: "kv kv-og", "data-key": "Ortsgruppe" },
       h("span", { class: "k" }, "Ortsgruppe:")
     );
 
-    // rechte Spalte: aktuelle OG + ggf. Dropdown
+    // Wert-Zeile (aktuelle OG + ggf. Toggle + weitere OGs darunter)
     const v = h("span", { class: "v og-v" });
 
-    // erste Zeile: aktuelle OG + Pfeil
-    const topRow = h("span", { class: "og-main-row" });
-    const main   = h("span", { class: "og-main" }, currentLabel);
-    topRow.appendChild(main);
-
-    let moreBox = null;
+    // erste Zeile: aktuelle OG (ohne Cap)
+    const mainRow = h(
+      "span",
+      { class: "og-main-row" },
+      h("span", { class: "og-main" }, currentLabel)
+    );
+    v.appendChild(mainRow);
 
     if (hasOthers) {
-      // Toggle-Button in der gleichen Zeile wie die aktuelle OG
+      // Box für die weiteren OGs (wird UNTER der aktuellen OG angezeigt)
+      const moreBox = h("div", { class: "og-more" });
+
+      others.forEach((og) => {
+        const ogName = String(og || "").trim();
+        if (!ogName) return;
+
+        const capFile = capFileFromOrtsgruppe(ogName);
+        const capUrl  = `${FLAG_BASE_URL}/${encodeURIComponent(capFile)}`;
+
+        const capImg = h("img", {
+          class: "og-cap-img",
+          src: capUrl,
+          alt: `Cap ${ogName}`,
+          loading: "lazy",
+          decoding: "async",
+          onerror: () => {
+            capImg.onerror = null;
+            capImg.src = `${FLAG_BASE_URL}/${encodeURIComponent("Cap-Baden_light.svg")}`;
+          }
+        });
+
+        const row = h(
+          "div",
+          { class: "og-item" },
+          h("span", { class: "og-cap" }, capImg),
+          h("span", { class: "og-item-label" }, ogName)
+        );
+
+        moreBox.appendChild(row);
+      });
+
+      // Toggle-Button
       const btn = h(
         "button",
         {
@@ -1961,21 +2004,11 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         "▾"
       );
-      topRow.appendChild(btn);
 
-      // Box mit den weiteren OGs – direkt UNTER der ersten Zeile
-      moreBox = h("div", { class: "og-more" });
-      others.forEach((og) => {
-        moreBox.appendChild(
-          h("div", { class: "og-item" }, og)
-        );
-      });
-    }
+      mainRow.appendChild(btn);
 
-    // Aufbau der rechten Zelle
-    v.appendChild(topRow);
-    if (hasOthers && moreBox) {
-      v.appendChild(moreBox);   // WICHTIG: in der gleichen Zelle wie die currOG
+      // WICHTIG: moreBox gehört in v, nicht in kv
+      v.appendChild(moreBox);
     }
 
     kv.appendChild(v);

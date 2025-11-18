@@ -669,6 +669,12 @@ html, body {
   color: #4b5563;
 }
 
+.og-cap-img {
+  width: 12px;
+  height: 12px;
+  margin-right: 4px;
+  transform: translateY(1px);
+}
 
 
 
@@ -990,7 +996,7 @@ html, body {
   background: radial-gradient(circle at 10% 0%, #fee2e2 0, #fee2e2 25%, #fee2e2 50%, #fee2e2 100%);
   border-color: #fecaca;
   padding: 0.85rem 0.95rem;
-  min-height: 100px;
+  min-height: 90px;
 }
 
 .info-label {
@@ -999,12 +1005,13 @@ html, body {
 }
 
 .info-value {
-  font-size: 1.05rem;
+  font-size: 1.4rem;
   font-weight: 600;
 }
 
 .info-value.big {
-  font-size: 1.6rem;
+  font-size: 1.7rem;
+  margin-top: 10px;
 }
 
 /* LSC-Kachel Label (LSC <-> Lifesaving Score) */
@@ -1104,7 +1111,7 @@ html, body {
 
 /* Info-Untertitel */
 .info-sub {
-  margin-top: 0.15rem;
+  margin-top: -5px;
   font-size: 0.78rem;
   color: #6b7280;
 }
@@ -1976,4 +1983,5 @@ html, body {
   }
 
   .ath-profile-meta .k{ margin-left: -95px; }
+
 }
