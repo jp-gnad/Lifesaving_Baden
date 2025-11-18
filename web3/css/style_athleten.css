@@ -283,8 +283,8 @@ html, body {
 }
 
 .sr-icon {
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 1.6rem;
+  height: 1.6rem;
   object-fit: contain;
 }
 
@@ -1818,11 +1818,13 @@ html, body {
   grid-template-columns: 3.5rem 3.5rem minmax(0, 1fr) auto auto;
   gap: 0.5rem;
   align-items: center;
-  padding: 0.5rem 0.9rem;
   font-size: 0.82rem;
   cursor: pointer;
   background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  padding-left: 5px;
 }
 
 .meet-row:last-of-type {
@@ -2049,7 +2051,6 @@ html, body {
   grid-template-columns: 3.5rem 2.3rem auto minmax(0, 1fr) auto auto;
   gap: 0.5rem;
   align-items: center;
-  padding: 0.5rem 0.9rem;
   font-size: 0.82rem;
   cursor: pointer;
   background: #ffffff;
@@ -2057,8 +2058,8 @@ html, body {
 }
 
 .m-event-icon {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 2.75rem;
+  height: 2.75rem;
   object-fit: contain;
   justify-self: center;
 }
@@ -2134,7 +2135,6 @@ html, body {
 
   gap: 0.5rem;
   align-items: center;
-  padding: 0.5rem 0.9rem;
   font-size: 0.82rem;
   cursor: pointer;
   background: #ffffff;
@@ -2166,8 +2166,6 @@ html, body {
 
 
 .m-event-icon {
-  width: 1.25rem;
-  height: 1.25rem;
   object-fit: contain;
 }
 
