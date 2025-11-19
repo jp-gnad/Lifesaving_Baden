@@ -2039,6 +2039,10 @@ html, body {
       3.5rem              /* Land+Flagge */
       2.5rem;               /* Bahn */
   }
+  .meets-list {
+    margin-left: -23px;
+    width: calc(100% + 46px);
+  }
 }
 
 @media (max-width: 640px) {
@@ -2086,9 +2090,6 @@ html, body {
 
 
 @media (max-width: 768px) {
-  .ath-ui {
-    padding-inline: 1rem;
-  }
  
   .ath-bests-grid {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -2147,15 +2148,9 @@ html, body {
     margin-top: 20px;
   };
   
-  .meets-list {
-    margin-left: -15px;
-    width: calc(100% + 30px);
-  }
   .m-date {
     flex-direction: column;
     align-items: flex-start;
   }
 }
-
-
 

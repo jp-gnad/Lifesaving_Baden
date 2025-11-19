@@ -2081,8 +2081,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const currentLabel = curr || "—";
     const hasOthers = others.length > 0;
 
-    console.log("[OG] Profil", ax.name, "aktuelle OG:", curr, "weitere OGs:", others);
-
     // äußerer Wrapper wie ein normales KV
     const kv = h(
       "span",
@@ -2192,15 +2190,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const others = all
       .filter((og) => og !== curr)
       .sort((a, b) => a.localeCompare(b, "de-DE"));
-
-    // Debug-Ausgabe
-    console.log("[OG] collectOrtsgruppenForAthlete:", {
-      name: ax?.name,
-      currOG: curr,
-      allOGs: all,
-      others,
-    });
-
     return { curr, others };
   }
 
@@ -4170,12 +4159,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // aktuelle OG aus Meets berechnen (mit Fallback auf evtl. altes Feld)
     const currOG = currentOrtsgruppeFromMeets(ax) || ax.ortsgruppe || "";
-
-    // Debug: alle Ortsgruppen aus Meets + aktuelle OG loggen
-    const ogDebug = collectOrtsgruppenForAthlete(ax);
-    console.log("[OG] Profil geöffnet:", ax.name);
-    console.log("     aktuelle OG:", ogDebug.curr);
-    console.log("     alle OGs:", [ogDebug.curr, ...ogDebug.others]);
 
 
     // Tabs + Panels (Bestzeiten, Überblick, etc.)
