@@ -374,7 +374,7 @@ document.addEventListener("DOMContentLoaded", () => {
     meet_name: 10,          // K
     yy2: 11,                // L: Jahrgang (zweistellig, z.B. 02, 99)
     ortsgruppe: 12,         // M
-    // N (13) unwichtig
+    LV_state: 13,           // N LV
     p_mehrkampf: 14,        // O: Mehrkampf_Platz
     p_100l: 15,             // P
     p_50r: 16,              // Q
@@ -387,7 +387,8 @@ document.addEventListener("DOMContentLoaded", () => {
     land: 23,               // X: "GER" (nur für Deutschland) sonst ausgeschrieben
     startrecht: 24,         // Y: "OG"|"LV"|"BV"
     wertung: 25,            // Z: "Mehrkampf"|"Einzelkampf"|"Einzel-/Mehrkampf"
-    vorlaeufe: 26           // AA: 1|2
+    vorlaeufe: 26,           // AA: 1|2
+    BV_nation: 27,           // AB GER
   };
 
   // ---- Hilfen: Datum & Normalisierungen ----
@@ -895,9 +896,121 @@ document.addEventListener("DOMContentLoaded", () => {
     "Australien":"AUS",
   };
 
+  const LV_STATE_LABEL = {
+    BA: "LV Baden",
+    BY: "LV Bayern",
+    BE: "LV Berlin",
+    BB: "LV Brandenburg",
+    HB: "LV Bremen",
+    HH: "LV Hamburg",
+    HE: "LV Hessen",
+    MV: "LV Mecklenburg-Vorp.",
+    NI: "LV Niedersachsen",
+    NR: "LV Nordrhein",
+    WF: "LV Westfahlen",
+    RP: "LV Rheinland-Pfalz",
+    SL: "LV Saarland",
+    SN: "LV Sachsen",
+    ST: "LV Sachsen-Anhalt",
+    SH: "LV Schleswig-Holstein",
+    TH: "LV Thüringen",
+  };
+
+  const ISO3_TO_EN = {
+    GER: "GERMANY",
+    POL: "POLAND",
+    FRA: "FRANCE",
+    BEL: "BELGIUM",
+    NED: "NETHERLANDS",
+    ESP: "SPAIN",
+    ITA: "ITALY",
+    SUI: "SWITZERLAND",
+    JPN: "JAPAN",
+    DEN: "DENMARK",
+    EGY: "EGYPT",
+    GBR: "GREAT BRITAIN",
+    AUS: "AUSTRALIA",
+  };
+
+
   function iso3FromLand(landName){
     return LAND_TO_ISO3[String(landName||"").trim()] || "—";
   }
+
+  function normalizeBVCode(bvRaw) {
+    if (!bvRaw) return "";
+    const s = String(bvRaw).trim();
+    if (!s) return "";
+
+    // Wenn schon ISO3 (z.B. GER)
+    if (/^[A-Z]{3}$/.test(s)) return s;
+
+    // Versuch: aus deutschem Landesnamen ISO3 machen
+    const iso = iso3FromLand(s);
+    if (iso && iso !== "—") return iso;
+
+    // Fallback: einfach groß schreiben
+    return s.toUpperCase();
+  }
+
+  /**
+   * Entscheidet basierend auf Startrecht, was in OG-Spalte und welches Cap-SVG
+   * verwendet wird.
+   *
+   * Rückgabe: { label, capKey }
+   * - label  → Text in der Ortsgruppen-Spalte
+   * - capKey → Dateiname in svg/Cap-{capKey}.svg
+   */
+  function ogInfoFromMeet(m) {
+    const ogRaw =
+      m.Ortsgruppe ??
+      m.ortsgruppe ??
+      m.OG ??
+      m.og ??
+      "";
+
+    const lvRaw =
+      m.LV_state ??
+      m.lv_state ??
+      m.LV ??
+      "";
+
+    const startRaw =
+      (m.Startrecht ?? m.startrecht ?? "").toString().trim().toUpperCase();
+
+    const bvRaw =
+      m.BV_nation ??
+      m.BV_natio ??
+      "";
+
+    // --- Startrecht LV ---
+    if (startRaw === "LV" && lvRaw) {
+      const lvCode = String(lvRaw).trim().toUpperCase(); // z.B. "BA"
+      const label  = LV_STATE_LABEL[lvCode] || lvCode;
+      return { label, capKey: lvCode };
+    }
+
+    // --- Startrecht BV ---
+    if (startRaw === "BV" && bvRaw) {
+      const code = normalizeBVCode(bvRaw);        // z.B. "GER" oder aus "Polen" → "POL"
+      const label =
+        ISO3_TO_EN[code] ||                // GERMANY, POLAND, ...
+        code ||                             // falls nicht gemappt
+        String(bvRaw).trim();               // letzter Fallback
+
+      return { label, capKey: code || String(bvRaw).trim() };
+    }
+
+    // --- Standard / Startrecht OG oder unbekannt ---
+    const og = String(ogRaw || "").trim();
+    if (og) {
+      return { label: og, capKey: og };
+    }
+
+    // Nichts Sinnvolles vorhanden
+    return { label: "", capKey: "" };
+  }
+
 
   function medalForPlace(placeStr){
     const p = parseInt(placeStr, 10);
@@ -1153,31 +1266,37 @@ document.addEventListener("DOMContentLoaded", () => {
         const ageEl = h("span", { class: "m-age" }, ageLabel || "");
 
         // OG-Spalte
-        const ogLabel = meetOG(m);
-        const ogEl = h("span", { class: "m-og" }, ogLabel || "");
+        // Informationen für OG-Text + Cap-SVG basierend auf Startrecht
+        const ogInfo = ogInfoFromMeet(m);
+        const ogLabel = ogInfo.label;
+        const capKey  = ogInfo.capKey;
 
-        // Cap-Spalte
+        // Cap-SVG-Spalte (mit Fallback auf Cap-None.svg)
         const ogCapCell = h("span", { class: "m-ogcap-cell" },
-          ogLabel
+          capKey
             ? h("img", {
                 class: "m-ogcap-icon",
-                src: `svg/Cap-${encodeURIComponent(ogLabel)}.svg`,
-                alt: ogLabel,
+                src: `svg/Cap-${encodeURIComponent(capKey)}.svg`,
+                alt: ogLabel || capKey,
                 loading: "lazy",
                 decoding: "async",
                 onerror: (e) => {
                   const img = e.currentTarget;
-                  // einmaliger Fallback auf Cap-Baden_light.svg
+                  // einmaliger Fallback auf Cap-None.svg
                   if (!img.dataset.fallback) {
                     img.dataset.fallback = "1";
-                    img.src = "svg/Cap-Baden_light.svg";
+                    img.src = "svg/Cap-None.svg";
                   } else {
-                    img.remove(); // wenn auch der Fallback fehlt: Zelle bleibt leer
+                    img.remove();
                   }
                 }
               })
             : null
         );
+
+        // OG-Text-Spalte
+        const ogEl = h("span", { class: "m-og" }, ogLabel || "");
+
 
         // row-Container: jetzt 8 Spalten
         const row = h("div", {
