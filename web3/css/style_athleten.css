@@ -688,18 +688,21 @@ html, body {
 }
 @media (max-width:720px){
   .og-cap-img {
-    width: 14px;
-    height: 14px;
-    margin-right: 4px;
-    transform: translateY(2px);
+      width: 14px;
+      height: 14px;
+      margin-right: 4px;
+      transform: translateY(2px);
+    }
+    .og-item {
+      font-size: 0.85rem; 
+    }
+    .gender-chip,
+    .ak-chip,
+    .status-chip,
+    .sr-icons {
+      margin-bottom: 1rem;
+    }
   }
-  .og-item {
-    font-size: 0.85rem; 
-  }
-}
-
-.ath-profile-meta .kv[data-key="Jahrgang"] .k,
-  .ath-profile-meta .kv[data-key="Jahrgang"] .v{ margin-top: 1px; }
 
 
 /* =========================================================
@@ -775,6 +778,7 @@ html, body {
 
 .ath-tabs-wrap {
   margin-top: 5.25rem;
+  margin-bottom: 1rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -2039,14 +2043,6 @@ html, body {
       3.5rem              /* Land+Flagge */
       2.5rem;               /* Bahn */
   }
-  .meets-list {
-    margin-left: -23px;
-    width: calc(100% + 46px);
-  }
-  .m-date {
-    flex-direction: column;
-    align-items: flex-start;
-  }   
 }
 
 @media (max-width: 640px) {
@@ -2084,7 +2080,6 @@ html, body {
     width: 0.95rem;
     height: 0.95rem;
   }
-
 }
 
 
@@ -2095,6 +2090,9 @@ html, body {
 
 
 @media (max-width: 768px) {
+  .ath-ui {
+    padding-inline: 1rem;
+  }
  
   .ath-bests-grid {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -2145,13 +2143,13 @@ html, body {
   .cap-flip{
     transform: translateY(var(--cap-offset-y, 0));
   }
-  .ath-profile-meta .k{
-    margin-left: -95px; 
+  .ath-profile-meta .k{ margin-left: -95px; }
+  .meets-list {
+    margin-left: -15px;
+    width: calc(100% + 30px);
   }
-  .ath-profile-meta .k,
-  .ath-profile-meta .v{ 
-    margin-top: 20px;
-  };
-  
+  .m-date {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
-
