@@ -1813,19 +1813,6 @@ html, body {
   border-top: 2px solid #e5e7eb;
 }
 
-.meet-row {
-  display: grid;
-  grid-template-columns: 3.5rem 3.5rem minmax(0, 1fr) auto auto;
-  gap: 0.5rem;
-  align-items: center;
-  font-size: 0.82rem;
-  cursor: pointer;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-  padding-top: 6px;
-  padding-bottom: 6px;
-  padding-left: 5px;
-}
 
 .meet-row:last-of-type {
   border-bottom: none;
@@ -1839,43 +1826,18 @@ html, body {
   background: #eff6ff;
 }
 
-/* Spalten */
-.m-date {
-  color: #6b7280;
-}
-
 .m-place {
-  font-weight: 600;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
+  font-size: 1.0rem;
 }
 
 .m-medal {
-  width: 1rem;
-  height: 1rem;
-}
-
-.m-name {
-  font-weight: 500;
-  color: #111827;
-}
-
-.m-country {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.78rem;
-}
-
-.m-flag {
-  width: 1.1rem;
-  height: auto;
-}
-
-.m-iso {
-  color: #6b7280;
+  width: 1.2rem;
+  height: 1.2rem;
 }
 
 .m-pool {
@@ -1892,15 +1854,6 @@ html, body {
   overflow: hidden;
   height: 0;
   transition: height 0.25s ease;
-}
-
-.meet-res {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 0.5rem;
-  padding: 0.35rem 0;
-  font-size: 0.8rem;
 }
 
 /* Lauf / Disziplin */
@@ -1933,9 +1886,195 @@ html, body {
   height: 0.9rem;
 }
 
-.t {
+.m-date {
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.m-date-day,
+.m-date-month {
+  line-height: 1.1;
+}
+
+
+.meet-res {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  font-size: 0.8rem;
+}
+
+.meet-res .pl {
+  justify-self: center;  /* Platz zentriert */
+}
+
+.meet-res .t {
+  justify-self: end;     /* Zeit rechtsbündig */
+  margin-right: 15px;
   font-variant-numeric: tabular-nums;
 }
+
+
+.meet-row {
+  display: grid;
+  /* 9 Spalten: Datum | Platz | Event-Icon | Name | Alter | Cap | OG | Land | Bahn */
+  grid-template-columns:
+    5.5rem              /* Datum */
+    5.5rem              /* Platz */
+    3.0rem              /* Event-Icon */
+    minmax(7rem, 1.7fr)    /* Name */
+    5.5rem              /* Alter */
+    1.25rem                /* Cap-Icon */
+    minmax(8.5rem, 1.0fr)    /* OG-Text */
+    5.5rem              /* Land+Flagge */
+    3rem;               /* Bahn */
+
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.82rem;
+  cursor: pointer;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+}
+
+/* alle Spalten linksbündig – gleiche Ausrichtung in jeder Zeile */
+.meet-row > * {
+  justify-self: start;
+  text-align: left;
+}
+
+.m-event-cell,
+.m-ogcap-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.m-ogcap-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  object-fit: contain;
+}
+
+.m-event-icon{
+  width: 2.25rem;
+  height: 2.25rem;
+  object-fit: contain;
+}
+
+.m-name {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.m-name-main {
+  font-weight: 500;
+  color: #111827;
+}
+
+.m-age,
+.m-og {
+  font-size: 0.78rem;
+  color: #4b5563;
+  white-space: nowrap; /* sorgt dafür, dass die Spalten nicht umbrechen */
+}
+
+.m-country {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+}
+
+.m-flag {
+  width: 1.1rem;
+  height: auto;
+}
+
+.m-iso {
+  color: #6b7280;
+}
+
+
+@media (max-width: 850px) {
+  .m-place {
+    font-size: 0.8rem;
+  }
+
+  .m-medal {
+    width: 1.0rem;
+    height: 1.0rem;
+  }
+  .m-name {
+    font-size: 0.8rem;
+  }
+  .m-event-icon{
+    width: 2.0rem;
+    height: 2.0rem;
+  }
+  .meet-row {
+    display: grid;
+    /* 9 Spalten: Datum | Platz | Event-Icon | Name | Alter | Cap | OG | Land | Bahn */
+    grid-template-columns:
+      2.5rem              /* Datum */
+      3.5rem              /* Platz */
+      2.5rem              /* Event-Icon */
+      minmax(7rem, 1.7fr)    /* Name */
+      3.5rem              /* Alter */
+      1.25rem                /* Cap-Icon */
+      minmax(8.5rem, 1.0fr)    /* OG-Text */
+      3.5rem              /* Land+Flagge */
+      2.5rem;               /* Bahn */
+  }
+}
+
+@media (max-width: 640px) {
+  .meet-row {
+    display: grid;
+    /* 9 Spalten: Datum | Platz | Event-Icon | Name | Alter | Cap | OG | Land | Bahn */
+    grid-template-columns:
+      2.0rem              /* Datum */
+      2.0rem              /* Platz */
+      1.75rem              /* Event-Icon */
+      minmax(6rem, 1.7fr)    /* Name */
+      1.5rem              /* Alter */
+      1.0rem                /* Cap-Icon */
+      0rem                /* OG-Text */
+      3.25rem              /* Land+Flagge */
+      2.0rem;               /* Bahn */
+  }
+  .m-og {
+    font-size: 0rem;
+    color: transparent;
+    white-space: nowrap; /* sorgt dafür, dass die Spalten nicht umbrechen */
+  }
+  .m-event-icon{
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+  .m-date {
+    font-size: 0.75rem;
+  }
+  .m-place {
+    font-size: 0.7rem;
+  }
+
+  .m-medal {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+}
+
+
 
 /* =========================================================
    Responsives Verhalten
@@ -1985,23 +2124,9 @@ html, body {
   .ath-profile-title h2{
     font-size: 2.0em;
   }
-  .ath-profile-title h2 .name-rest {
-    display: block;        /* Zeilenumbruch nach dem ersten Teil */
-  }
   .gender-row {
     margin-left: -100px;
   }
-}
-
-
-/* Standard: beide Teile ganz normal */
-.ath-profile-title h2 .name-first,
-.ath-profile-title h2 .name-rest {
-  display: inline;
-}
-
-/* Unter 720px: zweiter Teil in eigener Zeile, darf aber nicht umbrechen */
-@media (max-width: 720px) {
   .ath-profile-title h2 .name-rest {
     display: block;       /* Zeilenumbruch nach dem ersten Teil */
     white-space: nowrap;  /* darf NICHT in zwei Zeilen brechen */
@@ -2010,134 +2135,16 @@ html, body {
   .cap-flip{
     transform: translateY(var(--cap-offset-y, 0));
   }
-
   .ath-profile-meta .k{ margin-left: -95px; }
-
   .meets-list {
     margin-left: -15px;
     width: calc(100% + 30px);
   }
-
   .m-date {
     flex-direction: column;
     align-items: flex-start;
   }
-
 }
 
 
 
-
-.m-date {
-  color: #6b7280;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.15rem;
-}
-
-.m-date-day,
-.m-date-month {
-  line-height: 1.1;
-}
-
-
-.meet-res {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0;
-  font-size: 0.8rem;
-}
-
-.meet-res .pl {
-  justify-self: center;  /* Platz zentriert */
-}
-
-.meet-res .t {
-  justify-self: end;     /* Zeit rechtsbündig */
-  margin-right: 15px;
-}
-
-
-.meet-row {
-  display: grid;
-  /* 9 Spalten: Datum | Platz | Event-Icon | Name | Alter | Cap | OG | Land | Bahn */
-  grid-template-columns:
-    5.5rem              /* Datum */
-    5.5rem              /* Platz */
-    3.0rem              /* Event-Icon */
-    minmax(7rem, 1.7fr)    /* Name */
-    5.5rem              /* Alter */
-    1.25rem                /* Cap-Icon */
-    minmax(8.5rem, 1.0fr)    /* OG-Text */
-    5.5rem              /* Land+Flagge */
-    3rem;               /* Bahn */
-
-  gap: 0.5rem;
-  align-items: center;
-  padding: 0.5rem 0.9rem;
-  font-size: 0.82rem;
-  cursor: pointer;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-/* alle Spalten linksbündig – gleiche Ausrichtung in jeder Zeile */
-.meet-row > * {
-  justify-self: start;
-  text-align: left;
-}
-
-.m-event-cell,
-.m-ogcap-cell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.m-ogcap-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  object-fit: contain;
-}
-
-.m-event-icon{
-  width: 2.25rem;
-  height: 2.25rem;
-  object-fit: contain;
-}
-
-.m-name {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.25rem;
-}
-
-.m-name-main {
-  font-weight: 500;
-  color: #111827;
-}
-
-.m-age,
-.m-og {
-  font-size: 0.78rem;
-  color: #4b5563;
-  white-space: nowrap; /* sorgt dafür, dass die Spalten nicht umbrechen */
-}
-
-.m-country {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.78rem;
-}
-
-.m-flag {
-  width: 1.1rem;
-  height: auto;
-}
-
-.m-iso {
-  color: #6b7280;
-}
