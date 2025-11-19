@@ -1122,15 +1122,31 @@ document.addEventListener("DOMContentLoaded", () => {
           h("span", { class: "m-name-main" }, meetShortName)
         );
 
-        // Icon vor dem Namen
-        const eventIconEl = h("img", {
-          class: "m-event-icon",
-          src: `png/events/${encodeURIComponent(meetRawName)}.png`,
-          alt: meetShortName,
-          loading: "lazy",
-          decoding: "async",
-          onerror: (e) => e.currentTarget.remove()
-        });
+        // Zelle für das Event-Icon (mit Fallback auf DLRG.png)
+        const eventIconCell = h("span", { class: "m-event-cell" },
+          meetRawName
+            ? h("img", {
+                class: "m-event-icon",
+                src: `png/events/${encodeURIComponent(meetRawName)}.png`,
+                alt: meetShortName,
+                loading: "lazy",
+                decoding: "async",
+                onerror: (e) => {
+                  const img = e.currentTarget;
+                  // einmaliger Fallback auf DLRG.png
+                  if (!img.dataset.fallback) {
+                    img.dataset.fallback = "1";
+                    img.src = "png/events/DLRG.png";
+                  } else {
+                    // falls auch DLRG.png nicht gefunden wird → Zelle bleibt leer
+                    img.remove();
+                  }
+                }
+              })
+            : null
+        );
+
+
 
         // Alter-Spalte
         const ageLabel = ageLabelAtMeet(m.date);
@@ -1140,6 +1156,29 @@ document.addEventListener("DOMContentLoaded", () => {
         const ogLabel = meetOG(m);
         const ogEl = h("span", { class: "m-og" }, ogLabel || "");
 
+        // Cap-Spalte
+        const ogCapCell = h("span", { class: "m-ogcap-cell" },
+          ogLabel
+            ? h("img", {
+                class: "m-ogcap-icon",
+                src: `svg/Cap-${encodeURIComponent(ogLabel)}.svg`,
+                alt: ogLabel,
+                loading: "lazy",
+                decoding: "async",
+                onerror: (e) => {
+                  const img = e.currentTarget;
+                  // einmaliger Fallback auf Cap-Baden_light.svg
+                  if (!img.dataset.fallback) {
+                    img.dataset.fallback = "1";
+                    img.src = "svg/Cap-Baden_light.svg";
+                  } else {
+                    img.remove(); // wenn auch der Fallback fehlt: Zelle bleibt leer
+                  }
+                }
+              })
+            : null
+        );
+
         // row-Container: jetzt 8 Spalten
         const row = h("div", {
           class: "meet-row",
@@ -1148,21 +1187,23 @@ document.addEventListener("DOMContentLoaded", () => {
           "aria-expanded": "false",
           onkeydown: (e) => {
             if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault(); 
+              e.preventDefault();
               toggle();
             }
           },
           onclick: toggle
         },
-          dateEl,     // 1: Datum
-          placeEl,    // 2: Platz + Medaille
-          eventIconEl,// 3: Event-Icon
-          nameEl,     // 4: Name
-          ageEl,      // 5: Alter
-          ogEl,       // 6: OG
-          landEl,     // 7: Land+Flagge
-          poolEl      // 8: Bahn
+          dateEl,        // 1: Datum
+          placeEl,       // 2: Platz
+          eventIconCell, // 3: Wettkampf-Icon (PNG)
+          nameEl,        // 4: Name
+          ageEl,         // 5: Alter
+          ogCapCell,     // 6: Cap-SVG
+          h("span", { class: "m-og" }, ogLabel || ""), // 7: OG-Text
+          landEl,        // 8: Land+Flagge
+          poolEl         // 9: Bahn
         );
+
 
 
 
@@ -1207,9 +1248,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function ageLabelAtMeet(dateStr){
       if (!Number.isFinite(jahrgang)) return "";
-      const v = ageAt(dateStr, jahrgang);   // dein vorhandener Rechenweg
+      const v = ageAt(dateStr, jahrgang); // deine vorhandene Funktion
       if (!Number.isFinite(v)) return "";
-      const years = Math.floor(v + 1e-6);   // ganzzahliges Alter
+      const years = Math.floor(v + 1e-6);
       return years + " J.";
     }
 

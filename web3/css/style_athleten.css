@@ -2018,9 +2018,12 @@ html, body {
     width: calc(100% + 30px);
   }
 
+  .m-date {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
 }
-
-
 
 
 
@@ -2035,177 +2038,6 @@ html, body {
 .m-date-day,
 .m-date-month {
   line-height: 1.1;
-}
-
-/* Datum untereinander bei < 750px */
-@media (max-width: 750px) {
-  .m-date {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
-
-.meet-row {
-  display: grid;
-  grid-template-columns: 3.5rem 2.3rem auto minmax(0, 1fr) auto auto;
-  gap: 0.5rem;
-  align-items: center;
-  font-size: 0.82rem;
-  cursor: pointer;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.m-event-icon {
-  width: 2.75rem;
-  height: 2.75rem;
-  object-fit: contain;
-  justify-self: center;
-}
-
-
-@media (max-width: 768px) {
-  .m-place {
-    grid-column: 2;
-  }
-}
-
-
-.m-name {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.25rem;
-}
-
-.m-name-main {
-  font-weight: 500;
-  color: #111827;
-}
-
-.m-name-extra {
-  font-size: 0.78rem;
-  color: #4b5563;
-  display: inline-flex;
-  gap: 0.35rem;
-}
-
-.m-age {
-  font-variant-numeric: tabular-nums;
-}
-
-.m-og {
-  font-style: normal;
-}
-
-
-.meet-res {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0;
-  font-size: 0.8rem;
-}
-
-/* Platzierung mittig in der Spalte */
-.meet-res .pl {
-  justify-self: center;
-}
-
-/* Zeit rechtsbündig */
-.meet-res .t {
-  justify-self: end;
-}
-
-
-.meet-row {
-  display: grid;
-  /* 8 Spalten: Datum | Platz | Icon | Name | Alter | OG | Land | Bahn */
-  grid-template-columns:
-    4.5rem    /* Datum */
-    2.5rem    /* Platz */
-    2.5rem    /* Icon */
-    minmax(0, 1.6fr)  /* Name */
-    3.5rem    /* Alter */
-    minmax(0, 1.4fr)  /* OG */
-    4.5rem    /* Land+Flagge */
-    3rem;     /* Bahn */
-
-  gap: 0.5rem;
-  align-items: center;
-  font-size: 0.82rem;
-  cursor: pointer;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-/* alle Grid-Zellen links ausrichten */
-.meet-row > * {
-  justify-self: start;
-  text-align: left;
-}
-
-
-.m-country {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.78rem;
-}
-
-.m-flag {
-  width: 1.1rem;
-  height: auto;
-}
-
-.m-iso {
-  color: #6b7280;
-}
-
-
-.m-event-icon {
-  object-fit: contain;
-}
-
-.m-name {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.25rem;
-}
-
-.m-name-main {
-  font-weight: 500;
-  color: #111827;
-}
-
-.m-age,
-.m-og {
-  font-size: 0.78rem;
-  color: #4b5563;
-  white-space: nowrap;
-}
-
-
-.m-date {
-  color: #6b7280;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.15rem;
-}
-
-.m-date-day,
-.m-date-month {
-  line-height: 1.1;
-}
-
-/* untereinander bei kleineren Screens */
-@media (max-width: 750px) {
-  .m-date {
-    flex-direction: column;
-    align-items: flex-start;
-  }
 }
 
 
@@ -2224,4 +2056,88 @@ html, body {
 
 .meet-res .t {
   justify-self: end;     /* Zeit rechtsbündig */
+  margin-right: 15px;
+}
+
+
+.meet-row {
+  display: grid;
+  /* 9 Spalten: Datum | Platz | Event-Icon | Name | Alter | Cap | OG | Land | Bahn */
+  grid-template-columns:
+    5.5rem              /* Datum */
+    5.5rem              /* Platz */
+    3.0rem              /* Event-Icon */
+    minmax(7rem, 1.7fr)    /* Name */
+    5.5rem              /* Alter */
+    1.25rem                /* Cap-Icon */
+    minmax(8.5rem, 1.0fr)    /* OG-Text */
+    5.5rem              /* Land+Flagge */
+    3rem;               /* Bahn */
+
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* alle Spalten linksbündig – gleiche Ausrichtung in jeder Zeile */
+.meet-row > * {
+  justify-self: start;
+  text-align: left;
+}
+
+.m-event-cell,
+.m-ogcap-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.m-ogcap-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  object-fit: contain;
+}
+
+.m-event-icon{
+  width: 2.25rem;
+  height: 2.25rem;
+  object-fit: contain;
+}
+
+.m-name {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.m-name-main {
+  font-weight: 500;
+  color: #111827;
+}
+
+.m-age,
+.m-og {
+  font-size: 0.78rem;
+  color: #4b5563;
+  white-space: nowrap; /* sorgt dafür, dass die Spalten nicht umbrechen */
+}
+
+.m-country {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+}
+
+.m-flag {
+  width: 1.1rem;
+  height: auto;
+}
+
+.m-iso {
+  color: #6b7280;
 }
