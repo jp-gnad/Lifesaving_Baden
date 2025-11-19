@@ -688,15 +688,18 @@ html, body {
 }
 @media (max-width:720px){
   .og-cap-img {
-      width: 14px;
-      height: 14px;
-      margin-right: 4px;
-      transform: translateY(2px);
-    }
-    .og-item {
-      font-size: 0.85rem; 
-    }
+    width: 14px;
+    height: 14px;
+    margin-right: 4px;
+    transform: translateY(2px);
   }
+  .og-item {
+    font-size: 0.85rem; 
+  }
+}
+
+.ath-profile-meta .kv[data-key="Jahrgang"] .k,
+  .ath-profile-meta .kv[data-key="Jahrgang"] .v{ margin-top: 1px; }
 
 
 /* =========================================================
@@ -771,7 +774,7 @@ html, body {
    ========================================================= */
 
 .ath-tabs-wrap {
-  margin-top: 1.25rem;
+  margin-top: 5.25rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -1942,6 +1945,7 @@ html, body {
   padding-top: 6px;
   padding-bottom: 6px;
   padding-left: 5px;
+  min-height: 4rem;
 }
 
 /* alle Spalten linksbündig – gleiche Ausrichtung in jeder Zeile */
@@ -2135,7 +2139,14 @@ html, body {
   .cap-flip{
     transform: translateY(var(--cap-offset-y, 0));
   }
-  .ath-profile-meta .k{ margin-left: -95px; }
+  .ath-profile-meta .k{
+    margin-left: -95px; 
+  }
+  .ath-profile-meta .k,
+  .ath-profile-meta .v{ 
+    margin-top: 20px;
+  };
+  
   .meets-list {
     margin-left: -15px;
     width: calc(100% + 30px);
