@@ -2043,6 +2043,10 @@ html, body {
     margin-left: -23px;
     width: calc(100% + 46px);
   }
+  .m-date {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 @media (max-width: 640px) {
@@ -2080,6 +2084,7 @@ html, body {
     width: 0.95rem;
     height: 0.95rem;
   }
+
 }
 
 
@@ -2148,9 +2153,5 @@ html, body {
     margin-top: 20px;
   };
   
-  .m-date {
-    flex-direction: column;
-    align-items: flex-start;
-  }
 }
 
