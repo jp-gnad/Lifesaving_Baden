@@ -26,10 +26,6 @@ main#content {
   z-index: 1;
 }
 
-.updates h2 {
-  margin-top: 1.5rem;
-}
-
 
 @media (max-width:720px){
   .hero h1 {font-size: 2.0em; }
@@ -43,28 +39,6 @@ main#content {
 body {
   color: #222;
   line-height: 1.5;
-}
-
-/* Aktuelles-Box oben */
-
-.updates {
-  max-width: 1100px;
-  margin: 2rem auto 1.5rem;
-  padding: 1rem 1.5rem;
-  background: #f6f8fa;
-  border-radius: 8px;
-  border: 1px solid #e1e4e8;
-}
-
-.updates h2 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-  font-size: 1.25rem;
-}
-
-.updates ul {
-  margin: 0;
-  padding-left: 1.25rem;
 }
 
 /* ================================
@@ -319,8 +293,81 @@ body {
   }
 }
 
-@media (max-width: 768px) {
-  .updates {
-    margin: 1.5rem 0.5rem;
+
+/* ================================
+   Passwort-Schutz Kaderstatus
+   ================================ */
+
+.kader-password {
+  max-width: 420px;
+  margin: 2.5rem auto 3rem;
+  padding: 1.5rem 1.75rem;
+  background: #f6f8fa;
+  border-radius: 8px;
+  border: 1px solid #e1e4e8;
+}
+
+.kader-password h1 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
+.pw-info {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.pw-input-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.pw-input-row input[type="password"] {
+  flex: 1;
+  padding: 0.4rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #d1d5da;
+  font-size: 0.95rem;
+}
+
+.pw-input-row button {
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  border: 1px solid #0366d6;
+  background: #0366d6;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.pw-input-row button:hover {
+  background: #0256b3;
+  border-color: #0256b3;
+}
+
+.pw-error {
+  min-height: 1.2em;
+  margin-top: 0.5rem;
+  color: #c0392b;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 480px) {
+  .kader-password {
+    margin: 1.5rem 0.75rem 2rem;
+    padding: 1.25rem 1rem;
+  }
+
+  .pw-input-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pw-input-row button {
+    width: 100%;
   }
 }

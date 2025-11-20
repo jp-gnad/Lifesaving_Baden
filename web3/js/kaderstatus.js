@@ -1073,32 +1073,17 @@ function baueKaderTabelle(result, aktuellesJahr) {
 
 
 // =====================
-// DOMContentLoaded: Hero + Updates + Kader-Container & Daten laden
+// Kaderseite initialisieren (nur geschützter Bereich)
 // =====================
 
-document.addEventListener("DOMContentLoaded", async () => {
-  const main = document.getElementById("content");
-  if (!main) return;
+async function initKaderseite(aktuellesJahr) {
+  const protectedDiv = document.getElementById("kader-protected");
+  if (!protectedDiv) return;
 
-  // Layout im <main> erzeugen
-  main.innerHTML = `
-    <section class="hero">
-      <h1>Kaderstatus</h1>
-    </section>
-
-    <section class="updates">
-      <h2>Aktuelles</h2>
-      <ul>
-        <li>Erste Inhalte folgen.</li>
-      </ul>
-    </section>
-
-    <section class="kaderstatus-section">
-      <div id="kader-container"></div>
-    </section>
+  // geschützten Bereich in "normale" Kaderansicht umwandeln
+  protectedDiv.innerHTML = `
+    <div id="kader-container"></div>
   `;
-
-  const aktuellesJahr = 2025;
 
   await Promise.all([
     ladePflichtzeiten(aktuellesJahr),
@@ -1130,4 +1115,64 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("Matrix:", daten.matrix);
     console.log("----------------------");
   }
+}
+
+
+// =====================
+// DOMContentLoaded: Hero + Updates immer sichtbar, Kaderbereich mit Passwort
+// =====================
+
+document.addEventListener("DOMContentLoaded", () => {
+  const main = document.getElementById("content");
+  if (!main) return;
+
+  // Hero + Updates werden immer angezeigt
+  main.innerHTML = `
+    <section class="hero">
+      <h1>Kaderstatus</h1>
+    </section>
+
+    <section class="kaderstatus-section">
+      <div id="kader-protected">
+        <section class="kader-password">
+          <p class="pw-info">Kaderstatus derzeit noch nicht öffentlich verfügbar.</p>
+
+          <label for="pw-input">Passwort:</label>
+          <div class="pw-input-row">
+            <input type="password" id="pw-input" autocomplete="off">
+            <button type="button" id="pw-submit">Bestätigen</button>
+          </div>
+
+          <p id="pw-error" class="pw-error" aria-live="polite"></p>
+        </section>
+      </div>
+    </section>
+  `;
+
+  const input  = document.getElementById("pw-input");
+  const button = document.getElementById("pw-submit");
+  const error  = document.getElementById("pw-error");
+
+  const aktuellesJahr = 2025;  // ggf. später dynamisch machen
+
+  function checkPassword() {
+    if (input.value === "Badenkader") {
+      error.textContent = "";
+      initKaderseite(aktuellesJahr);
+    } else {
+      error.textContent = "Falsches Passwort.";
+      input.value = "";
+      input.focus();
+    }
+  }
+
+  button.addEventListener("click", checkPassword);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      checkPassword();
+    }
+  });
+
+  input.focus();
 });
