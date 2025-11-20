@@ -388,7 +388,7 @@ document.addEventListener("DOMContentLoaded", () => {
     startrecht: 24,         // Y: "OG"|"LV"|"BV"
     wertung: 25,            // Z: "Mehrkampf"|"Einzelkampf"|"Einzel-/Mehrkampf"
     vorlaeufe: 26,           // AA: 1|2
-    BV_nation: 27,           // AB GER
+    BV_natio: 27,           // AB GER
   };
 
   // ---- Hilfen: Datum & Normalisierungen ----
@@ -464,6 +464,13 @@ document.addEventListener("DOMContentLoaded", () => {
       date: iso,
       pool: normalizePool(row[COLS.pool]),
       Ortsgruppe: String(row[COLS.ortsgruppe]||"").trim(),
+
+      // NEU: LV-State aus Spalte N
+      LV_state: String(row[COLS.LV_state] ?? "").trim(),
+
+      // NEU: BV-Nation aus Spalte AB
+      BV_natio: String(row[COLS.BV_natio] ?? "").trim(),
+
       Regelwerk: normalizeRegelwerk(row[COLS.regelwerk]),
       Land: normalizeLand(row[COLS.land]),
       Startrecht: normalizeStartrecht(row[COLS.startrecht]),
@@ -486,6 +493,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     return meet;
   }
+
 
   function buildIndicesFromRows(rows){
     const minimalById = new Map();   // id -> minimaler Athlet
@@ -938,20 +946,26 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function normalizeBVCode(bvRaw) {
-    if (!bvRaw) return "";
-    const s = String(bvRaw).trim();
-    if (!s) return "";
+    const s = String(bvRaw ?? "").trim();
+    if (!s) {
+      return "";
+    }
 
     // Wenn schon ISO3 (z.B. GER)
-    if (/^[A-Z]{3}$/.test(s)) return s;
+    if (/^[A-Z]{3}$/.test(s)) {
+      return s;
+    }
 
     // Versuch: aus deutschem Landesnamen ISO3 machen
     const iso = iso3FromLand(s);
-    if (iso && iso !== "—") return iso;
+    if (iso && iso !== "—") {
+      return iso;
+    }
 
-    // Fallback: einfach groß schreiben
-    return s.toUpperCase();
+    const upper = s.toUpperCase();
+    return upper;
   }
+
 
   /**
    * Entscheidet basierend auf Startrecht, was in OG-Spalte und welches Cap-SVG
@@ -962,54 +976,142 @@ document.addEventListener("DOMContentLoaded", () => {
    * - capKey → Dateiname in svg/Cap-{capKey}.svg
    */
   function ogInfoFromMeet(m) {
-    const ogRaw =
-      m.Ortsgruppe ??
-      m.ortsgruppe ??
-      m.OG ??
-      m.og ??
-      "";
+    const ogRaw    = m.Ortsgruppe ?? m.ortsgruppe ?? "";
+    const lvRaw    = m.LV_state  ?? m.lv_state  ?? "";
+    const startRaw = String(m.Startrecht ?? m.startrecht ?? "").trim().toUpperCase();
+    const bvRaw    = m.BV_natio ?? m.BV_nation ?? "";
 
-    const lvRaw =
-      m.LV_state ??
-      m.lv_state ??
-      m.LV ??
-      "";
+    const ogKey  = String(ogRaw || "").trim();
+    const lvCode = String(lvRaw || "").trim().toUpperCase();
+    const bvCode = normalizeBVCode(bvRaw);  // z.B. "GER", "POL", ...
 
-    const startRaw =
-      (m.Startrecht ?? m.startrecht ?? "").toString().trim().toUpperCase();
+    let label;
 
-    const bvRaw =
-      m.BV_nation ??
-      m.BV_natio ??
-      "";
-
-    // --- Startrecht LV ---
-    if (startRaw === "LV" && lvRaw) {
-      const lvCode = String(lvRaw).trim().toUpperCase(); // z.B. "BA"
-      const label  = LV_STATE_LABEL[lvCode] || lvCode;
-      return { label, capKey: lvCode };
+    if (startRaw === "LV" && lvCode) {
+      label = LV_STATE_LABEL[lvCode] || lvCode;
+    } else if (startRaw === "BV" && bvCode) {
+      label =
+        ISO3_TO_EN[bvCode] ||
+        bvCode ||
+        String(bvRaw || "").trim();
+    } else {
+      label = ogKey;
     }
 
-    // --- Startrecht BV ---
-    if (startRaw === "BV" && bvRaw) {
-      const code = normalizeBVCode(bvRaw);        // z.B. "GER" oder aus "Polen" → "POL"
-      const label =
-        ISO3_TO_EN[code] ||                // GERMANY, POLAND, ...
-        code ||                             // falls nicht gemappt
-        String(bvRaw).trim();               // letzter Fallback
-
-      return { label, capKey: code || String(bvRaw).trim() };
-    }
-
-    // --- Standard / Startrecht OG oder unbekannt ---
-    const og = String(ogRaw || "").trim();
-    if (og) {
-      return { label: og, capKey: og };
-    }
-
-    // Nichts Sinnvolles vorhanden
-    return { label: "", capKey: "" };
+    return {
+      label,
+      ogKey,
+      lvCode,
+      bvCode,
+      startrecht: startRaw
+    };
   }
+
+
+  function buildOgCapCell(ogInfo) {
+    const cell = h("span", { class: "m-ogcap-cell" });
+
+    const { ogKey, lvCode, bvCode, startrecht, label } = ogInfo;
+
+    // 1) Kette je nach Startrecht definieren
+    /** @type {{key:string, overlay:boolean}[]} */
+    let seq = [];
+
+    if (startrecht === "OG") {
+      // OG → LV → BV → None
+      seq = [
+        { key: ogKey,  overlay: false },
+        { key: lvCode, overlay: true  },
+        { key: bvCode, overlay: true  },
+      ];
+    } else if (startrecht === "LV") {
+      // LV → OG → BV → None
+      seq = [
+        { key: lvCode, overlay: false },
+        { key: ogKey,  overlay: true  },
+        { key: bvCode, overlay: true  },
+      ];
+    } else if (startrecht === "BV") {
+      // BV → OG(Overlay) → LV(Overlay) → None
+      seq = [
+        { key: bvCode, overlay: false },
+        { key: ogKey,  overlay: true  },
+        { key: lvCode, overlay: true  },
+      ];
+    } else {
+      // Fallback: wie OG behandeln
+      seq = [
+        { key: ogKey,  overlay: false },
+        { key: lvCode, overlay: true  },
+        { key: bvCode, overlay: true  },
+      ];
+    }
+
+    // Leere Keys rauswerfen (z.B. wenn BV_natio fehlt)
+    seq = seq.filter(entry => entry.key && String(entry.key).trim() !== "");
+
+    let currentIndex = 0;
+    let noneUsed = false;
+
+    // Wenn gar kein Key vorhanden ist, direkt None versuchen
+    if (!seq.length) {
+      const imgNone = h("img", {
+        class: "m-ogcap-icon",
+        src: "svg/Cap-None.svg",
+        alt: "no cap",
+        loading: "lazy",
+        decoding: "async",
+        onerror: (e) => e.currentTarget.remove()
+      });
+      cell.appendChild(imgNone);
+      return cell;
+    }
+
+    const img = h("img", {
+      class: "m-ogcap-icon",
+      src: "", // setzen wir in applyCandidate()
+      alt: label || seq[0].key,
+      loading: "lazy",
+      decoding: "async",
+      onerror: (e) => {
+        // Wenn aktueller Kandidat fehlschlägt → nächsten in der Kette verwenden
+        if (currentIndex + 1 < seq.length) {
+          currentIndex++;
+          applyCandidate();
+        } else if (!noneUsed) {
+          // Alle Caps durch → einmalig None versuchen
+          noneUsed = true;
+          cell.classList.remove("ogcap-overlay");
+          img.src = "svg/Cap-None.svg";
+        } else {
+          // Selbst None schlägt fehl → Icon entfernen
+          img.remove();
+        }
+      }
+    });
+
+    function applyCandidate() {
+      const entry = seq[currentIndex];
+      // Overlay je nach Eintrag
+      if (entry.overlay) {
+        cell.classList.add("ogcap-overlay");
+      } else {
+        cell.classList.remove("ogcap-overlay");
+      }
+      img.src = `svg/Cap-${encodeURIComponent(entry.key)}.svg`;
+    }
+
+    // ersten Kandidaten setzen
+    applyCandidate();
+
+    cell.appendChild(img);
+    return cell;
+  }
+
+
+
+
+
 
 
   function medalForPlace(placeStr){
@@ -1147,6 +1249,10 @@ document.addEventListener("DOMContentLoaded", () => {
     )).sort((a,b) => b - a);
 
     let idx = 0; // start: neuestes Jahr
+
+    // DEBUG: Zähler für Meet-Logs
+    let meetDebugId = 0;
+
     const box   = h("div", { class: "ath-profile-section meets" });
 
     // Kopf mit Jahres-Navigation
@@ -1190,6 +1296,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       items.forEach(m => {
+
+        const debugId = ++meetDebugId;
+
         // Platzierung (Zahl ohne #) + ggf. Medaille
         const placeStr = (m.Mehrkampf_Platz || "").toString().trim();
         const medal    = medalForPlace(placeStr);
@@ -1269,34 +1378,12 @@ document.addEventListener("DOMContentLoaded", () => {
         // Informationen für OG-Text + Cap-SVG basierend auf Startrecht
         const ogInfo = ogInfoFromMeet(m);
         const ogLabel = ogInfo.label;
-        const capKey  = ogInfo.capKey;
 
-        // Cap-SVG-Spalte (mit Fallback auf Cap-None.svg)
-        const ogCapCell = h("span", { class: "m-ogcap-cell" },
-          capKey
-            ? h("img", {
-                class: "m-ogcap-icon",
-                src: `svg/Cap-${encodeURIComponent(capKey)}.svg`,
-                alt: ogLabel || capKey,
-                loading: "lazy",
-                decoding: "async",
-                onerror: (e) => {
-                  const img = e.currentTarget;
-                  // einmaliger Fallback auf Cap-None.svg
-                  if (!img.dataset.fallback) {
-                    img.dataset.fallback = "1";
-                    img.src = "svg/Cap-None.svg";
-                  } else {
-                    img.remove();
-                  }
-                }
-              })
-            : null
-        );
+        // Cap-Zelle (inkl. Fallback-Kette OG → LV → BV → None)
+        const ogCapCell = buildOgCapCell(ogInfo);
 
         // OG-Text-Spalte
         const ogEl = h("span", { class: "m-og" }, ogLabel || "");
-
 
         // row-Container: jetzt 8 Spalten
         const row = h("div", {
@@ -1318,9 +1405,9 @@ document.addEventListener("DOMContentLoaded", () => {
           nameEl,        // 4: Name
           ageEl,         // 5: Alter
           ogCapCell,     // 6: Cap-SVG
-          h("span", { class: "m-og" }, ogLabel || ""), // 7: OG-Text
-          landEl,        // 8: Land+Flagge
-          poolEl         // 9: Bahn
+          ogEl,          // 7
+          landEl,        // 8
+          poolEl         // 9
         );
 
 
@@ -1864,6 +1951,107 @@ document.addEventListener("DOMContentLoaded", () => {
     return wrap;
   }
 
+  function deriveCapKeysForAthlete(a) {
+    // OG des Athleten
+    let ogKey = String(
+      a?.Ortsgruppe ??
+      a?.ortsgruppe ??
+      a?.OG ??
+      a?.og ??
+      ""
+    ).trim();
+
+    // LV-State des Athleten (z.B. "BA")
+    let lvCode = String(
+      a?.LV_state ??
+      a?.lv_state ??
+      ""
+    ).trim().toUpperCase();
+
+    // BV-Nation (z.B. "GER" oder "Polen")
+    let bvRaw = String(
+      a?.BV_natio ??
+      a?.BV_nation ??
+      ""
+    ).trim();
+
+    // Falls am Athleten nichts steht → aus Meets ableiten
+    if (Array.isArray(a?.meets)) {
+      for (const m of a.meets) {
+        if (!ogKey) {
+          const ogM = m.Ortsgruppe ?? m.ortsgruppe ?? m.OG ?? m.og;
+          if (ogM) ogKey = String(ogM).trim();
+        }
+        if (!lvCode) {
+          const lvM = m.LV_state ?? m.lv_state;
+          if (lvM) lvCode = String(lvM).trim().toUpperCase();
+        }
+        if (!bvRaw) {
+          const bvM = m.BV_natio ?? m.BV_nation;
+          if (bvM) bvRaw = String(bvM).trim();
+        }
+        if (ogKey && lvCode && bvRaw) break;
+      }
+    }
+
+    // BV-Code wie bei den Wettkämpfen normalisieren
+    const bvCode = normalizeBVCode(bvRaw);
+
+    return { ogKey, lvCode, bvCode };
+  }
+
+  function applyCapFallbackToImg(img, frontEl, ogKey, lvCode, bvCode) {
+    // Kette für das Profil: OG → LV (Overlay) → BV (Overlay) → None
+    let seq = [
+      { key: ogKey,  overlay: false },
+      { key: lvCode, overlay: true  },
+      { key: bvCode, overlay: true  },
+    ].filter(e => e.key && String(e.key).trim() !== "");
+
+    // Wenn gar kein Key → direkt None versuchen
+    if (!seq.length) {
+      frontEl.classList.remove("cap-overlay");
+      img.src = "svg/Cap-None.svg";
+      return;
+    }
+
+    let index = 0;
+    let noneUsed = false;
+
+    function setOverlay(entry) {
+      if (entry.overlay) {
+        frontEl.classList.add("cap-overlay");
+      } else {
+        frontEl.classList.remove("cap-overlay");
+      }
+    }
+
+    function loadCurrent() {
+      const entry = seq[index];
+      setOverlay(entry);
+      img.src = `svg/Cap-${encodeURIComponent(entry.key)}.svg`;
+    }
+
+    img.addEventListener("error", function onErr() {
+      if (index + 1 < seq.length) {
+        // nächster Kandidat in der Kette
+        index++;
+        loadCurrent();
+      } else if (!noneUsed) {
+        // alle Caps durch → einmalig Cap-None.svg
+        noneUsed = true;
+        frontEl.classList.remove("cap-overlay");
+        img.src = "svg/Cap-None.svg";
+      } else {
+        // selbst None kaputt → Listener entfernen
+        img.removeEventListener("error", onErr);
+      }
+    });
+
+    // Start: immer mit OG (bzw. nächstem vorhandenen) beginnen
+    loadCurrent();
+  }
+
 
 
   // Wrapper nur für das große Profil: Kappe vorne, Foto hinten (dynamisches PNG nach Name)
@@ -1892,7 +2080,16 @@ document.addEventListener("DOMContentLoaded", () => {
     inner.appendChild(back);
     wrap.appendChild(inner);
 
-    // --- Flip-Logik wie bisher ---------------------------------
+    // ► Cap-Keys aus Athleten-/Meetdaten
+    const { ogKey, lvCode, bvCode } = deriveCapKeysForAthlete(a);
+
+    // ► Fallback-Kette auf der VORDERSEITE anwenden
+    const frontImg = front.querySelector("img");
+    if (frontImg) {
+      applyCapFallbackToImg(frontImg, front, ogKey, lvCode, bvCode);
+    }
+
+    // --- Flip-Logik etc. wie gehabt ---
 
     const toggle = () => {
       const locked = wrap.classList.toggle("is-flipped");
@@ -1913,49 +2110,53 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // --- NEU: Intro-Flip beim Öffnen ---------------------------
-
     let introDone = false;
     function runIntroFlip() {
       if (introDone) return;
       introDone = true;
-
-      // optional: Bewegungsreduktion respektieren
       if (window.matchMedia &&
           window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         return;
       }
-
-      // kleine Verzögerung, damit das Element sicher im DOM ist
       requestAnimationFrame(() => {
         setTimeout(() => {
-          toggle();              // Vorderseite -> Rückseite
-          setTimeout(() => {
-            toggle();            // Rückseite -> Vorderseite
-          }, 550);               // Dauer der "Rückflip"-Phase
+          toggle();
+          setTimeout(() => { toggle(); }, 550);
         }, 200);
       });
     }
 
-    // --- Rückseiten-Content (Portrait oder Fallback) -----------
+    // ▼▼▼ HIER: Rückseiten-Fallback neu definieren ▼▼▼
 
     function attachFallbackSvg() {
+      // Rückseite komplett neu aufbauen
       back.innerHTML = "";
-      const fallback = frontCap.cloneNode(true);
-      back.appendChild(fallback);
+
+      // Neues Cap-Element für die Rückseite erzeugen
+      const backCap = renderCapAvatar(a);
+      if (backCap) {
+        back.appendChild(backCap);
+
+        // Genau dieselbe Fallback-Kette auch auf der Rückseite anwenden
+        const backImg = backCap.querySelector("img");
+        if (backImg) {
+          applyCapFallbackToImg(backImg, back, ogKey, lvCode, bvCode);
+        }
+      }
+
       wrap.dataset.hasBack = "1";
       wrap.classList.add("has-back", "fallback-back");
       wrap.classList.remove("no-back");
-      runIntroFlip();           // Intro-Flip auch hier starten
+      runIntroFlip();
     }
 
-    // Kein Name → sofort Fallback-SVG hinten verwenden
+    // Kein Name → direkt SVG hinten verwenden
     if (!name) {
       attachFallbackSvg();
       return wrap;
     }
 
-    // Basisname: alle Leerzeichen entfernen
+    // Portrait-Logik unverändert ...
     const baseName = name.replace(/\s+/g, "");
     const fileName = baseName + ".png";
     const imgPath  = "png/pp/" + fileName;
@@ -1971,19 +2172,20 @@ document.addEventListener("DOMContentLoaded", () => {
       wrap.dataset.hasBack = "1";
       wrap.classList.add("has-back");
       wrap.classList.remove("no-back");
-      runIntroFlip();           // Intro-Flip, sobald Portrait da ist
+      runIntroFlip();
     });
 
     img.addEventListener("error", () => {
       if (img.parentNode === back) {
         back.removeChild(img);
       }
-      // Fallback: OG-Cap auch auf der Rückseite
+      // Fallback: OG/LV/BV-Cap auch auf der Rückseite, mit gleicher Kette
       attachFallbackSvg();
     });
 
     return wrap;
   }
+
 
 
 
