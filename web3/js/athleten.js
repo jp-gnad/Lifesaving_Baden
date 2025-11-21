@@ -1702,7 +1702,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const DISCIPLINES = [
     { key: "50_retten",         label: "50m Retten",                 meetZeit: "50m_Retten_Zeit",         meetPlatz: "50m_Retten_Platz" },
     { key: "100_retten_flosse", label: "100m Retten mit Flossen",    meetZeit: "100m_Retten_Zeit",        meetPlatz: "100m_Retten_Platz" },
-    { key: "100_kombi",         label: "100 Kombi",                   meetZeit: "100m_Kombi_Zeit",         meetPlatz: "100m_Kombi_Platz" },
+    { key: "100_kombi",         label: "100m Kombi",                   meetZeit: "100m_Kombi_Zeit",         meetPlatz: "100m_Kombi_Platz" },
     { key: "100_lifesaver",     label: "100m Lifesaver",              meetZeit: "100m_Lifesaver_Zeit",     meetPlatz: "100m_Lifesaver_Platz" },
     { key: "200_super",         label: "200m Super Lifesaver",        meetZeit: "200m_SuperLifesaver_Zeit",meetPlatz: "200m_SuperLifesaver_Platz" },
     { key: "200_hindernis",     label: "200m Hindernis",              meetZeit: "200m_Hindernis_Zeit",     meetPlatz: "200m_Hindernis_Platz" },
