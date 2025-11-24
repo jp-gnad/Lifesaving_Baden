@@ -307,25 +307,25 @@ html, body {
   height: auto;
   margin-top: 7px;
 }
-/* Äußerer Wrapper: klickbare, runde „Karte“ */
 .cap-flip {
   position: relative;
   display: inline-block;
-  width: 120px;              /* Größe anpassen nach Bedarf */
+  width: 120px;
   height: 120px;
   border-radius: 50%;
-  perspective: 1000px;       /* nötig für 3D-Flip */
+  perspective: 1000px;
   cursor: pointer;
   grid-area: cap;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
 }
 
-
-/* Innerer Bereich, der wirklich rotiert */
 .cap-inner {
   position: relative;
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
   transition: transform 0.6s ease;
 }
 
@@ -339,8 +339,11 @@ html, body {
   position: absolute;
   inset: 0;
   border-radius: 50%;
+  overflow: hidden;
+
   backface-visibility: hidden;
-  overflow: hidden; /* sorgt für runde Form und schneidet Überstände ab */
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 /* Vorderseite (SVG-Kappe) */
@@ -910,6 +913,9 @@ html, body {
   background: transparent;
   border-radius: 0.9rem;
   perspective: 1200px;
+  /* neu: 3D-Kontext sauber setzen */
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
 }
 
 .best-tile .tile-inner,
@@ -919,13 +925,14 @@ html, body {
   height: 100%;
   min-height: 90px;
   transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
   transition: transform 0.4s ease;
+  will-change: transform; /* Tipp für GPU */
 }
 
 .tile-face {
   position: absolute;
   inset: 0;
-  backface-visibility: hidden;
   border-radius: inherit;
   padding: 0.85rem 0.95rem;
   background: #f9fafb;
@@ -935,10 +942,16 @@ html, body {
   justify-content: space-between;
   gap: 0.4rem;
   border-radius: 5px;
+
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0); /* eigener Layer -> weniger Ghosting */
 }
 
+
 .tile-front {
-  z-index: 1;
+  z-index: 2;
+  transform: rotateY(0deg);
 }
 
 .tile-back {
@@ -2195,3 +2208,21 @@ html, body {
 
 
 
+/* Fallback: falls Browser 3D-Transforms nicht kann */
+@supports not (backface-visibility: hidden) {
+  .flip-card-inner {
+    transform: none !important;
+  }
+
+  .flip-card-back {
+    display: none;
+  }
+
+  .flip-card.is-flipped .flip-card-front {
+    display: none;
+  }
+
+  .flip-card.is-flipped .flip-card-back {
+    display: block;
+  }
+}
