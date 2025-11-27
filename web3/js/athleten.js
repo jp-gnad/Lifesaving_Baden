@@ -290,6 +290,87 @@ document.addEventListener("DOMContentLoaded", () => {
     return frag;
   }
 
+    // --- Athletenprofil per Name öffnen (Top-10, Links, etc.) ---
+    function openAthleteProfileByName(rawName) {
+      if (!rawName) return;
+      if (!Array.isArray(AppState.athletes) || !AppState.athletes.length) {
+        console.warn("Top10: AppState.athletes ist noch leer.");
+        return;
+      }
+
+      const name = String(rawName).trim();
+      if (!name) return;
+
+      const targetNorm = normalize(name);
+
+      // 1. exakter Namensvergleich (normalisiert)
+      let hit = AppState.athletes.find(a => normalize(a.name) === targetNorm);
+
+      // 2. Fallback: evtl. Name mit Zusatz in Klammern
+      if (!hit) {
+        const stripped = name.replace(/\s*\(.*?\)\s*$/, "").trim();
+        if (stripped && stripped !== name) {
+          const n2 = normalize(stripped);
+          hit = AppState.athletes.find(a => normalize(a.name) === n2);
+        }
+      }
+
+      if (!hit) {
+        console.warn("Top10: kein Athlet für Namen gefunden:", name);
+        return;
+      }
+
+      // Dein bestehendes Profil-Rendering
+      openProfile(hit);
+
+      // optional: nach oben scrollen
+      const prof = document.getElementById("ath-profile");
+      if (prof) {
+        prof.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
+    // global verfügbar machen (für andere Stellen, falls nötig)
+    window.openAthleteProfileByName = openAthleteProfileByName;
+
+
+    // -------------------- Top10: Profil aus Tabellenzeile öffnen --------------------
+    function openProfileFromTop10Row(tr) {
+      if (!tr) return;
+
+      // 1. bevorzugt: Name aus data-Attribut
+      let name = "";
+      if (tr.dataset && tr.dataset.name) {
+        name = tr.dataset.name.trim();
+      }
+
+      // 2. Fallback: Element suchen, in dem NUR der Name steht
+      if (!name) {
+        const nameEl = tr.querySelector(".ath-top10-name");
+        if (nameEl) {
+          name = nameEl.textContent.trim();
+        }
+      }
+
+      if (!name) return;
+
+      // FALL 1: zentrale Funktion vorhanden → nutzen
+      if (typeof window.openAthleteProfileByName === "function") {
+        window.openAthleteProfileByName(name);
+        return;
+      }
+
+      // FALL 2: Fallback – URL aus dem Namen bauen (wie bisher)
+      const slug = name
+        .normalize("NFD")                // Umlaute trennen
+        .replace(/\p{Diacritic}/gu, "")  // Diakritika entfernen
+        .replace(/[^a-zA-Z0-9]+/g, "-")  // alles Nicht-Alphanumerische → "-"
+        .replace(/^-+|-+$/g, "")         // führende/trailing "-"
+        .toLowerCase();
+
+      window.location.href = `./profil.html#${slug}`;
+    }
+
 
 
 
@@ -3807,51 +3888,79 @@ document.addEventListener("DOMContentLoaded", () => {
       )
     );
 
+    // Info-Hinweis nur für "höchster LSC"
+    let infoNode = null;
+    if (current && typeof current.label === "string") {
+      const labelLower = current.label.toLowerCase();
+      if (labelLower.includes("höchster") && labelLower.includes("lsc")) {
+        infoNode = h(
+          "div",
+          { class: "ath-top10-info" },
+          "Hinweis: In dieser Auswertung werden nur LifesavingScore-Werte ab dem Jahr 2001 berücksichtigt."
+        );
+      }
+    }
+
     const tableWrap = h("div", { class: "ath-top10-table-wrap" },
       renderTop10Table(current)
     );
 
-
     mount.innerHTML = "";
     mount.appendChild(head);
+    if (infoNode) mount.appendChild(infoNode);  // hier wird der Hinweis eingefügt
     mount.appendChild(tableWrap);
   }
 
-  function renderTop10Table(group) {
-    if (!group) return h("div", {}, "Keine Daten.");
 
-    const rows = group.rows || [];
+    function renderTop10Table(group) {
+      if (!group) return h("div", {}, "Keine Daten.");
 
-    const bodyRows = rows.map(cells => {
-      // ANNAHME:
-      // cells[0] = Name
-      // cells[1] = Ortsgruppe
-      // cells[2] = Wert
-      const name = String(cells[0] ?? "").trim();
-      const og   = String(cells[1] ?? "").trim();
-      const value = cells[2] ?? "";
+      const rows = group.rows || [];
 
-      // 1. Spalte: Cap-SVG
-      const capTd = renderTop10CapCell(og);
+      const bodyRows = rows.map(cells => {
+        // ANNAHME:
+        // cells[0] = Name
+        // cells[1] = Ortsgruppe
+        // cells[2] = Wert
+        const name  = String(cells[0] ?? "").trim();
+        const og    = String(cells[1] ?? "").trim();
+        const value = cells[2] ?? "";
 
-      // 2. Spalte: Name + OG (untereinander)
-      const nameOgTd = h("td", { class: "ath-top10-name-cell" },
-        h("div", { class: "ath-top10-name" }, name),
-        og ? h("div", { class: "ath-top10-og" }, og) : null
+        // 1. Spalte: Cap-SVG
+        const capTd = renderTop10CapCell(og);
+
+        // 2. Spalte: Name + OG (untereinander)
+        const nameOgTd = h("td", { class: "ath-top10-name-cell" },
+          h("div", { class: "ath-top10-name" }, name),
+          og ? h("div", { class: "ath-top10-og" }, og) : null
+        );
+
+        // 3. Spalte: Wert / Ergebnis
+        const valueTd = h("td", { class: "ath-top10-value-cell" },
+          String(value ?? "")
+        );
+
+        // ► NEU: Zeile klickbar + Name als data-Attribut
+        return h("tr", {
+          class: "ath-top10-row",
+          role: "button",
+          tabindex: "0",
+          dataset: { name },                 // → tr.dataset.name
+          onclick: (e) => openProfileFromTop10Row(e.currentTarget),
+          onkeydown: (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openProfileFromTop10Row(e.currentTarget);
+            }
+          }
+        }, capTd, nameOgTd, valueTd);
+      });
+
+      return h("table", { class: "ath-top10-table" },
+        h("tbody", {}, ...bodyRows)
       );
+    }
 
-      // 3. Spalte: Wert / Ergebnis
-      const valueTd = h("td", { class: "ath-top10-value-cell" },
-        String(value ?? "")
-      );
-
-      return h("tr", {}, capTd, nameOgTd, valueTd);
-    });
-
-    return h("table", { class: "ath-top10-table" },
-      h("tbody", {}, ...bodyRows)
-    );
-  }
 
 
 

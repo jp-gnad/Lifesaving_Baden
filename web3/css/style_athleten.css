@@ -2285,3 +2285,26 @@ html, body {
   font-size: 0.85rem;
   opacity: 0.8;
 }
+
+.ath-top10-info {
+  font-size: 0.85rem;
+  margin: 0.25rem 0 0.75rem;
+  color: #555;
+}
+
+/* Alle Zeilen der Top-10-Tabelle klickbar machen */
+.ath-top10-table tbody tr {
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+/* Hover-Effekt */
+.ath-top10-table tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* Optional Fokus mit Tastatur */
+.ath-top10-table tbody tr:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.35);
+  outline-offset: 2px;
+}
