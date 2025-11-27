@@ -197,8 +197,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return null;
   }
 
-
-
   // Jahr herausziehen
   function getMeetYear(meet) {
     const dRaw = meet.date || meet.datum || meet.datum_raw;
@@ -335,6 +333,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const MIN_QUERY_LEN = 3;
   const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web3/utilities/test (1).xlsx";
   let AllMeetsByAthleteId = new Map();        // id -> Meet[]
+  const TOP10_SHEET = "Tabelle1";
+
+  const TOP10_GROUPS = [
+    { key: "disziplinen",        label: "Disziplinen",         startCol: 0 },  // A–C
+    { key: "wettkaempfe",        label: "Wettkämpfe",          startCol: 3 },  // D–F
+    { key: "lsc_aktuell",        label: "LSC aktuell",         startCol: 6 },  // G–I
+    { key: "aktive_jahre",       label: "Aktive Jahre",        startCol: 9 },  // J–L
+    { key: "hoechster_lsc",      label: "Höchster LSC",        startCol: 12 }, // M–O
+    { key: "auslandswettkaempfe",label: "Auslandswettkämpfe",  startCol: 15 }  // P–R
+  ];
 
 
   async function ensureXLSX(){
@@ -3654,21 +3662,182 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   // ---------- UI: Suche ----------
-  const AppState = {
-    query: "", suggestions: [], activeIndex: -1, selectedAthleteId: null, poolLen: "50"
+ const AppState = {
+    query: "",
+    suggestions: [],
+    activeIndex: -1,
+    selectedAthleteId: null,
+    poolLen: "50",
+    top10Tables: [],
+    currentTop10Index: 0
   };
 
-  const Refs = { input: null, suggest: null, profileMount: null, searchWrap: null, bestGrid: null, bestBtn50: null, bestBtn25: null };
+  const Top10State = {
+    groups: null, 
+    currentKey: "disziplinen"
+  };
+
+  const Refs = {
+    input: null,
+    suggest: null,
+    profileMount: null,
+    searchWrap: null,
+    bestGrid: null,
+    bestBtn50: null,
+    bestBtn25: null,
+    top10Mount: null
+  };
 
   // ---------- Suche ----------
   function renderApp() {
-    const mount = $("#athleten-container"); if (!mount) return;
+    const mount = $("#athleten-container");
+    if (!mount) return;
+
     mount.innerHTML = "";
     const ui = h("section", { class: "ath-ui", role: "region", "aria-label": "Athletenbereich" });
+
+    // 1. Suche
     ui.appendChild(renderSearch());
-    const profile = h("div", { id: "ath-profile" }); Refs.profileMount = profile; ui.appendChild(profile);
+
+    // 2. Top-10 Bereich (vor jeglichem Profil)
+    const top10 = h("div", { id: "ath-top10", class: "ath-top10" });
+    Refs.top10Mount = top10;
+    ui.appendChild(top10);
+
+    // 3. Profilbereich
+    const profile = h("div", { id: "ath-profile" });
+    Refs.profileMount = profile;
+    ui.appendChild(profile);
+
     mount.appendChild(ui);
   }
+
+    // ---------- Top-10 aus Tabelle1 laden & modellieren ----------
+
+  async function initTop10() {
+    const mount = Refs.top10Mount;
+    if (!mount) return;
+
+    // kleiner Platzhalter
+    mount.innerHTML = '<div class="ath-top10-loading">Top&nbsp;10 werden geladen …</div>';
+
+    try {
+      const rows = await loadWorkbookArray(TOP10_SHEET);  // nutzt deine vorhandene loadWorkbookArray-Funktion
+      Top10State.groups = buildTop10GroupsFromRows(rows);
+      renderTop10();
+    } catch (err) {
+      console.error("Top10 Laden:", err);
+      mount.innerHTML = '<div class="ath-top10-error">Top&nbsp;10 konnten nicht geladen werden.</div>';
+    }
+  }
+
+  function renderTop10() {
+    const mount = Refs.top10Mount;
+    if (!mount) return;
+
+    const groups = Top10State.groups || {};
+    // nur Gruppen, die wirklich Daten haben
+    const available = TOP10_GROUPS.filter(def =>
+      groups[def.key] && groups[def.key].rows.length
+    );
+
+    if (!available.length) {
+      mount.innerHTML = '<div class="ath-top10-empty">Keine Top&nbsp;10 Daten vorhanden.</div>';
+      return;
+    }
+
+    if (!available.some(g => g.key === Top10State.currentKey)) {
+      Top10State.currentKey = available[0].key;
+    }
+
+    const current = groups[Top10State.currentKey];
+
+    const select = h("select", { class: "ath-top10-select" },
+      available.map(def =>
+        h("option", {
+          value: def.key,
+          selected: def.key === Top10State.currentKey
+        }, def.label)
+      )
+    );
+
+    select.addEventListener("change", (e) => {
+      Top10State.currentKey = e.target.value;
+      renderTop10(); // einfach neu zeichnen
+    });
+
+    const head = h("div", { class: "ath-top10-head" },
+      h("h3", {}, "Top 10"),
+      h("label", { class: "ath-top10-label" },
+        "Kategorie: ",
+        select
+      )
+    );
+
+    const tableWrap = h("div", { class: "ath-top10-table-wrap" },
+      renderTop10Table(current)
+    );
+
+    mount.innerHTML = "";
+    mount.appendChild(head);
+    mount.appendChild(tableWrap);
+  }
+
+  function renderTop10Table(group) {
+    if (!group) return h("div", {}, "Keine Daten.");
+
+    const theadRow = h("tr", {},
+      group.header.map(text => h("th", {}, String(text ?? "")))
+    );
+    const thead = h("thead", {}, theadRow);
+
+    const bodyRows = group.rows.map(cells =>
+      h("tr", {},
+        cells.map(val => h("td", {}, String(val ?? "")))
+      )
+    );
+    const tbody = h("tbody", {}, bodyRows);
+
+    return h("table", { class: "ath-top10-table" }, thead, tbody);
+  }
+
+
+  function buildTop10GroupsFromRows(rows) {
+    const groupsByKey = {};
+    if (!Array.isArray(rows) || rows.length === 0) return groupsByKey;
+
+    const headerRow = rows[0] || [];
+
+    TOP10_GROUPS.forEach(def => {
+      const cols = [def.startCol, def.startCol + 1, def.startCol + 2];
+
+      // Überschriften je 3er Block (z.B. "Platz", "Name", "Wert")
+      const header = cols.map(ci => headerRow[ci] ?? "");
+
+      const data = [];
+      // WICHTIG: ab rows[1] → 2. Zeile in Excel = Platz 1
+      for (let r = 1; r < rows.length; r++) {
+        const row = rows[r] || [];
+        const cells = cols.map(ci => row[ci] ?? "");
+        const allEmpty = cells.every(v =>
+          v == null || String(v).trim() === ""
+        );
+        if (allEmpty) continue; // leere Zeilen einfach überspringen
+        data.push(cells);
+      }
+
+      groupsByKey[def.key] = {
+        key: def.key,
+        label: def.label,
+        header,
+        rows: data
+      };
+    });
+
+    return groupsByKey;
+  }
+
+
 
   function renderSearch() {
     const wrap = h("div", { class: "ath-search-wrap" }); Refs.searchWrap = wrap;
@@ -4445,6 +4614,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------- Profil ----------
   function openProfile(a) {
 
+
+     // Top-10 ausblenden, sobald ein Profil geöffnet wurde
+    if (Refs.top10Mount) {
+      Refs.top10Mount.style.display = "none";
+    }
+
     // Meets aus der Map nachladen, falls (noch) nicht vorhanden
     if (!Array.isArray(a.meets) || a.meets.length === 0){
       const list = AllMeetsByAthleteId.get(a.id) || [];
@@ -4570,14 +4745,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- Boot ----------
     document.addEventListener("DOMContentLoaded", async () => {
-    // UI sofort aufbauen (Suchleiste + leeres Profilmount)
+    // UI sofort aufbauen (Suchleiste + Top-10-Mount + Profil-Mount)
     renderApp();
+
+    // Top-10 separat und parallel laden (Fehler werden intern abgefangen)
+    initTop10();
 
     try {
       const rows = await loadWorkbookArray("Tabelle2");
       const light = buildIndicesFromRows(rows);
       AppState.athletes = light;      // nur leichte Objekte für die Suche
-      hideSuggestions();               // Platzhalter entfernen
+      hideSuggestions();              // Platzhalter entfernen
     } catch (err) {
       if (Refs.suggest) {
         Refs.suggest.classList.remove("hidden");
@@ -4585,5 +4763,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   });
+
 
 })();
