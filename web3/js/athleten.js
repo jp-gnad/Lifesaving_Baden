@@ -336,7 +336,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const TOP10_SHEET = "Tabelle1";
 
   const TOP10_GROUPS = [
-    { key: "disziplinen",        label: "Disziplinen",         startCol: 0 },  // A–C
+    { key: "starts",             label: "Starts",               startCol: 0 },  // A–C
     { key: "wettkaempfe",        label: "Wettkämpfe",          startCol: 3 },  // D–F
     { key: "lsc_aktuell",        label: "LSC aktuell",         startCol: 6 },  // G–I
     { key: "aktive_jahre",       label: "Aktive Jahre",        startCol: 9 },  // J–L
@@ -3674,7 +3674,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const Top10State = {
     groups: null, 
-    currentKey: "disziplinen"
+    currentKey: "starts"
   };
 
   const Refs = {
