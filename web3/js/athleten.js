@@ -3778,6 +3778,7 @@ document.addEventListener("DOMContentLoaded", () => {
       renderTop10Table(current)
     );
 
+
     mount.innerHTML = "";
     mount.appendChild(head);
     mount.appendChild(tableWrap);
@@ -3786,20 +3787,47 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderTop10Table(group) {
     if (!group) return h("div", {}, "Keine Daten.");
 
-    const theadRow = h("tr", {},
-      group.header.map(text => h("th", {}, String(text ?? "")))
-    );
-    const thead = h("thead", {}, theadRow);
+    const bodyRows = group.rows.map((cells) => {
+      const name = cells[0] ?? "";
+      const og   = cells[1] ?? "";
+      const val  = cells[2] ?? "";
 
-    const bodyRows = group.rows.map(cells =>
-      h("tr", {},
-        cells.map(val => h("td", {}, String(val ?? "")))
-      )
-    );
+      // ganz linke, leere Spalte
+      const tdEmpty = h(
+        "td",
+        { class: "ath-top10-cell-empty" },
+        ""
+      );
+
+      // Name + Ortsgruppe untereinander
+      const tdPerson = h(
+        "td",
+        { class: "ath-top10-cell-person" },
+        h("div", { class: "ath-top10-name" }, String(name)),
+        h("div", { class: "ath-top10-club" }, String(og))
+      );
+
+      // Wert (3. Spalte aus Excel)
+      const tdValue = h(
+        "td",
+        { class: "ath-top10-value" },
+        String(val)
+      );
+
+      return h("tr", {}, tdEmpty, tdPerson, tdValue);
+    });
+
     const tbody = h("tbody", {}, bodyRows);
 
-    return h("table", { class: "ath-top10-table" }, thead, tbody);
+    // KEIN thead, nur tbody
+    return h(
+      "table",
+      { class: "ath-top10-table" },
+      tbody
+    );
   }
+
+
 
 
   function buildTop10GroupsFromRows(rows) {
@@ -3816,7 +3844,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const data = [];
       // WICHTIG: ab rows[1] → 2. Zeile in Excel = Platz 1
-      for (let r = 1; r < rows.length; r++) {
+      for (let r = 0; r < rows.length; r++) {
         const row = rows[r] || [];
         const cells = cols.map(ci => row[ci] ?? "");
         const allEmpty = cells.every(v =>

@@ -2266,3 +2266,18 @@ html, body {
 .ath-top10-table thead tr {
   background: #f5f5f5;
 }
+
+/* Zelle mit Name + Ortsgruppe */
+.ath-top10-cell-person {
+  line-height: 1.2;
+}
+
+.ath-top10-name {
+  font-weight: 600;
+}
+
+.ath-top10-club {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  margin-top: 0.1rem;
+}
