@@ -3731,6 +3731,39 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // ---------- Cap-SVG für Top-10-Zeile ----------
+
+  function renderTop10CapCell(ortsgruppeRaw) {
+    const ogNow = String(ortsgruppeRaw || "").trim();
+    const td = h("td", { class: "ath-top10-cap-cell" });
+
+    // Wenn keine OG vorhanden ist → Zelle leer lassen
+    if (!ogNow) {
+      return td;
+    }
+
+    const file = capFileFromOrtsgruppe(ogNow);
+
+    const img = h("img", {
+      class: "avatar-img",
+      alt: `Vereinskappe ${formatOrtsgruppe(ogNow)}`,
+      loading: "lazy",
+      decoding: "async",
+      fetchpriority: "low",
+      src: `${FLAG_BASE_URL}/${encodeURIComponent(file)}`
+    });
+
+    img.onerror = () => {
+      img.onerror = null;
+      img.src = `${FLAG_BASE_URL}/${encodeURIComponent("Cap-Baden_light.svg")}`;
+    };
+
+    const wrap = h("div", { class: "ath-avatar sm ath-top10-cap" }, img);
+    td.appendChild(wrap);
+    return td;
+  }
+
+
   function renderTop10() {
     const mount = Refs.top10Mount;
     if (!mount) return;
@@ -3787,45 +3820,39 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderTop10Table(group) {
     if (!group) return h("div", {}, "Keine Daten.");
 
-    const bodyRows = group.rows.map((cells) => {
-      const name = cells[0] ?? "";
-      const og   = cells[1] ?? "";
-      const val  = cells[2] ?? "";
+    const rows = group.rows || [];
 
-      // ganz linke, leere Spalte
-      const tdEmpty = h(
-        "td",
-        { class: "ath-top10-cell-empty" },
-        ""
+    const bodyRows = rows.map(cells => {
+      // ANNAHME:
+      // cells[0] = Name
+      // cells[1] = Ortsgruppe
+      // cells[2] = Wert
+      const name = String(cells[0] ?? "").trim();
+      const og   = String(cells[1] ?? "").trim();
+      const value = cells[2] ?? "";
+
+      // 1. Spalte: Cap-SVG
+      const capTd = renderTop10CapCell(og);
+
+      // 2. Spalte: Name + OG (untereinander)
+      const nameOgTd = h("td", { class: "ath-top10-name-cell" },
+        h("div", { class: "ath-top10-name" }, name),
+        og ? h("div", { class: "ath-top10-og" }, og) : null
       );
 
-      // Name + Ortsgruppe untereinander
-      const tdPerson = h(
-        "td",
-        { class: "ath-top10-cell-person" },
-        h("div", { class: "ath-top10-name" }, String(name)),
-        h("div", { class: "ath-top10-club" }, String(og))
+      // 3. Spalte: Wert / Ergebnis
+      const valueTd = h("td", { class: "ath-top10-value-cell" },
+        String(value ?? "")
       );
 
-      // Wert (3. Spalte aus Excel)
-      const tdValue = h(
-        "td",
-        { class: "ath-top10-value" },
-        String(val)
-      );
-
-      return h("tr", {}, tdEmpty, tdPerson, tdValue);
+      return h("tr", {}, capTd, nameOgTd, valueTd);
     });
 
-    const tbody = h("tbody", {}, bodyRows);
-
-    // KEIN thead, nur tbody
-    return h(
-      "table",
-      { class: "ath-top10-table" },
-      tbody
+    return h("table", { class: "ath-top10-table" },
+      h("tbody", {}, ...bodyRows)
     );
   }
+
 
 
 

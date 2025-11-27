@@ -2272,12 +2272,16 @@ html, body {
   line-height: 1.2;
 }
 
-.ath-top10-name {
+.ath-top10-cap-cell {
+  width: 3rem;
+  text-align: center;
+}
+
+.ath-top10-name-cell .ath-top10-name {
   font-weight: 600;
 }
 
-.ath-top10-club {
-  font-size: 0.8rem;
+.ath-top10-name-cell .ath-top10-og {
+  font-size: 0.85rem;
   opacity: 0.8;
-  margin-top: 0.1rem;
 }
