@@ -426,27 +426,50 @@ document.addEventListener("DOMContentLoaded", () => {
   ];
 
 
-  async function ensureXLSX(){
+  let xlsxScriptPromise = null;
+
+  async function ensureXLSX() {
     if (window.XLSX) return;
-    await new Promise((res, rej) => {
-      const s = document.createElement("script");
-      s.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
-      s.onload = res; s.onerror = rej;
-      document.head.appendChild(s);
-    });
+
+    if (!xlsxScriptPromise) {
+      xlsxScriptPromise = new Promise((res, rej) => {
+        const s = document.createElement("script");
+        s.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+        s.onload = res;
+        s.onerror = rej;
+        document.head.appendChild(s);
+      });
+    }
+
+    await xlsxScriptPromise;
   }
 
-  // ---- Excel lesen (Blatt "Tabelle2") -> 2D-Array ohne Header ----
-  async function loadWorkbookArray(sheetName = "Tabelle2"){
-    await ensureXLSX();
-    const url = encodeURI(EXCEL_URL);               // encodiert Space/Klammern sicher
-    const resp = await fetch(url, { mode: "cors", cache: "no-store" });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const buf  = await resp.arrayBuffer();
-    const wb   = XLSX.read(buf, { type: "array" });
-    const ws   = wb.Sheets[sheetName] || wb.Sheets[wb.SheetNames[0]];
-    return XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: "" });
+  let workbookPromise = null;
+
+  async function getWorkbook() {
+    if (!workbookPromise) {
+      workbookPromise = (async () => {
+        await ensureXLSX();
+
+        const url  = encodeURI(EXCEL_URL);
+        const resp = await fetch(url, { mode: "cors" /*, cache: "no-store" */ });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+        const buf = await resp.arrayBuffer();
+        const wb  = XLSX.read(buf, { type: "array" });
+        return wb;
+      })();
+    }
+    return workbookPromise;
   }
+
+
+// ---- Excel lesen (Blatt "Tabelle2") -> 2D-Array ohne Header ----
+async function loadWorkbookArray(sheetName = "Tabelle2") {
+  const wb = await getWorkbook();
+  const ws = wb.Sheets[sheetName] || wb.Sheets[wb.SheetNames[0]];
+  return XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: "" });
+}
 
   // ---- Spalten (0-basiert) aus 'Tabelle2' ----
   const COLS = {
