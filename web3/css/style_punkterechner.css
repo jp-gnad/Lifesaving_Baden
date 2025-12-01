@@ -1,37 +1,230 @@
+/* -----------------------------------
+   Steuerbereich Punkterechner
+   ----------------------------------- */
 
-/* Seiteninhalt Startseite */
-main#content {
-  margin: 0 auto;
+.pr-controls-wrapper {
+  max-width: 960px;
+  margin: 1.5rem auto 1rem;
+  padding: 1rem 1.25rem;
+  background: #111827;
+  border-radius: 8px;
+  color: #f9fafb;
 }
 
-.hero {
-  position: relative;
-  background: url("../png/hintergrund5.JPG") center/cover no-repeat;  background-position: center 50%;
-  height: 300px;
-  text-align: center;
-  padding-top: 125px;
-  color: white;
-}
-.hero::before{
-  content: "";
-  position: absolute;
-  inset: 0;                  /* über die ganze Fläche */
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.257), rgba(0, 0, 0, 0.825));
-  pointer-events: none;      /* klicks gehen durch */
+.pr-controls-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  align-items: center;
 }
 
-.hero h1 {
-  position: relative;
-  font-size: 2.75em;
+.pr-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 140px;
+}
+
+.pr-control label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.pr-control select {
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #9ca3af;
+  background: #020617;
+  color: inherit;
+}
+
+.pr-info {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+/* -----------------------------------
+   Tabelle
+   ----------------------------------- */
+
+.pr-table-wrapper {
+  max-width: 960px;
+  margin: 0 auto 3rem;
+  padding: 0 0.5rem 2rem;
+}
+
+.pr-loading {
+  font-size: 0.9rem;
+  margin: 1rem 0;
+}
+
+.pr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.pr-table th,
+.pr-table td {
+  border-bottom: 1px solid #4b5563;
+  padding: 0.4rem 0.5rem;
+}
+
+.pr-table thead th {
+  text-align: left;
+  background: #020617;
+  color: #f9fafb;
+  position: sticky;
+  top: 0;
   z-index: 1;
 }
 
-.updates h2 {
-  margin-top: 1.5rem;
+.pr-disc-name {
+  white-space: nowrap;
+}
+
+.pr-time-input {
+  width: 7rem;
+  max-width: 100%;
+  padding: 0.25rem 0.35rem;
+  border-radius: 4px;
+  border: 1px solid #9ca3af;
+  background: #020617;
+  color: #f9fafb;
+}
+
+.pr-rec-time {
+  font-family: "Consolas", "Menlo", "Monaco", monospace;
+}
+
+.pr-summary-row {
+  font-weight: 600;
+  background: #020617;
+  color: rgb(255, 237, 0);
+}
+
+.pr-summary-row td {
+  padding-top: 0.6rem;
+}
+
+/* Hervorhebung Top3 / 4 national */
+.pr-table td.pr-points-de-top3 {
+  color: rgb(227, 6, 19);
+}
+
+.pr-table td.pr-points-de-top4 {
+  color: rgba(227, 6, 21, 0.5);
+}
+
+@media (max-width: 720px) {
+  .pr-controls-wrapper {
+    margin: 1rem 0.5rem;
+  }
+
+  .pr-table-wrapper {
+    padding: 0 0.5rem 2rem;
+    overflow-x: auto;
+  }
+
+  .pr-table {
+    min-width: 520px;
+  }
 }
 
 
-@media (max-width:720px){
-  .hero h1 {font-size: 2.0em; }
-  .hero {height: 200px; padding-top: 80px;}
+/* -----------------------------------
+   Chart Punkteverlauf
+   ----------------------------------- */
+
+.pr-chart-wrapper {
+  max-width: 960px;
+  margin: 0 auto 3rem;
+  padding: 0 0.5rem 2rem;
+}
+
+.pr-chart-wrapper h2 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.pr-chart-hint {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin-bottom: 0.75rem;
+}
+
+.pr-chart-inner {
+  position: relative;
+  height: 500px;
+  border-radius: 8px;
+  border: 1px solid #4b5563;
+  padding: 0.75rem;
+  background: #020617;
+}
+
+#pr-points-chart {
+  width: 100%;
+  height: 100%;
+}
+
+.pr-chart-placeholder {
+  position: absolute;
+  inset: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+@media (max-width: 720px) {
+  .pr-chart-inner {
+    height: 220px;
+  }
+}
+
+
+
+/* -----------------------------------
+   Jahrestabelle unter dem Chart
+   ----------------------------------- */
+
+.pr-year-table-wrapper {
+  max-width: 960px;
+  margin: 0 auto 3rem;
+  padding: 0 0.5rem 3rem;
+}
+
+.pr-year-table-inner {
+  overflow-x: auto;
+}
+
+.pr-year-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.pr-year-table th,
+.pr-year-table td {
+  border-bottom: 1px solid #4b5563;
+  padding: 0.35rem 0.5rem;
+  text-align: right;
+}
+
+.pr-year-table th:first-child,
+.pr-year-table td:first-child {
+  text-align: left;
+}
+
+.pr-year-table thead th {
+  background: #020617;
+  color: #f9fafb;
+}
+
+.pr-year-table tbody tr:nth-child(2n) {
+  background: rgba(15, 23, 42, 0.6);
 }
