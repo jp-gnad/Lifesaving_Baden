@@ -270,6 +270,39 @@ function prFindGermanRecordTime(sheet, mode, ak, gender, discipline) {
   return bestSeconds;
 }
 
+function prGetRule() {
+  const el = document.getElementById("pr-rule");
+  return el ? el.value : "National";
+}
+
+function prUpdateSummaryLabel() {
+  const modeEl = document.getElementById("pr-mode");
+  const ruleEl = document.getElementById("pr-rule");
+  const mode = modeEl ? modeEl.value : "Einzel";
+  const rule = ruleEl ? ruleEl.value : "National";
+  const isTeam = mode === "Mannschaft";
+  const cell = document.querySelector(".pr-summary-row td:first-child");
+  if (!cell) return;
+
+  const ruleLower = rule.toLowerCase();
+
+  if (isTeam) {
+    cell.textContent = `Gesamt (${ruleLower}, alle 4 Disziplinen)`;
+  } else {
+    if (rule === "International") {
+      cell.textContent = `Gesamt (${ruleLower}, beste 4 Disziplinen)`;
+    } else {
+      cell.textContent = `Gesamt (${ruleLower}, beste 3 Disziplinen)`;
+    }
+  }
+
+  const pointsHeader = document.getElementById("pr-points-header");
+  if (pointsHeader) {
+    pointsHeader.textContent = rule === "International" ? "Punkte (WR)" : "Punkte (DE)";
+  }
+}
+
+
 
 // -------------------------
 // State
@@ -370,22 +403,30 @@ document.addEventListener("DOMContentLoaded", () => {
             <option value="männlich">Männlich</option>
           </select>
         </div>
+
+        <div class="pr-control">
+          <label for="pr-rule">Regelwerk</label>
+          <select id="pr-rule">
+            <option value="National">National</option>
+            <option value="International">International</option>
+          </select>
+        </div>
       </div>
       <div id="pr-info" class="pr-info"></div>
     </section>
 
+
     <section class="pr-table-wrapper">
       <div id="pr-loading" class="pr-loading">Punktetabelle wird initialisiert …</div>
-      <table id="discipline-table" class="pr-table" hidden>
-        <thead>
-          <tr>
-            <th>Disziplin</th>
-            <th>Zeit</th>
-            <th>Deutscher Rekord</th>
-            <th>Punkte (DE)</th>
-            <th>Punkte (WR)</th>
-          </tr>
-        </thead>
+        <table id="discipline-table" class="pr-table" hidden>
+          <thead>
+            <tr>
+              <th>Disziplin</th>
+              <th>Zeit</th>
+              <th>Deutscher Rekord</th>
+              <th id="pr-points-header">Punkte (DE)</th>
+            </tr>
+          </thead>
         <tbody></tbody>
         <tfoot>
           <tr class="pr-summary-row">
@@ -491,12 +532,22 @@ function prInitEvents() {
   const modeSel = document.getElementById("pr-mode");
   const ageSel = document.getElementById("pr-age");
   const genderSel = document.getElementById("pr-gender");
+  const ruleSel = document.getElementById("pr-rule");
 
   [modeSel, ageSel, genderSel].forEach(sel => {
     if (!sel) return;
     sel.addEventListener("change", () => prRenderCurrentSelection());
   });
+
+  if (ruleSel) {
+    ruleSel.addEventListener("change", () => {
+      prUpdateSummaryLabel();
+      prUpdateTotalPointsDe();
+      prRebuildChartFromState();
+    });
+  }
 }
+
 
 // aktuelle Auswahl anzeigen
 function prGetDisciplines(mode, ak) {
@@ -605,9 +656,6 @@ function prRenderCurrentSelection() {
       tdPointsDe.className = "pr-points-de";
       tr.appendChild(tdPointsDe);
 
-      const tdPointsIntl = document.createElement("td");
-      tdPointsIntl.className = "pr-points-intl";
-      tr.appendChild(tdPointsIntl);
 
       if (tbody) tbody.appendChild(tr);
 
@@ -625,7 +673,9 @@ function prRenderCurrentSelection() {
 
   table.hidden = false;
   if (loading) loading.style.display = "none";
+  prUpdateSummaryLabel();
   prUpdateTotalPointsDe();
+  prShowChartPlaceholder(true);
 }
 
 // Punkte je Zeile berechnen
@@ -662,6 +712,9 @@ function prUpdateTotalPointsDe() {
   const mode = modeElem ? modeElem.value : "Einzel";
   const isTeam = mode === "Mannschaft";
 
+  const rule = prGetRule();
+  const isIntl = rule === "International";
+
   const entries = rows.map(row => {
     const cell = row.querySelector(".pr-points-de");
     const val = cell ? parseFloat(cell.textContent) : NaN;
@@ -683,12 +736,13 @@ function prUpdateTotalPointsDe() {
 
   let total;
   if (isTeam) {
-    // Mannschaft: alle Disziplinen zählen
+    // Mannschaft: immer alle Disziplinen
     total = vals.reduce((a, b) => a + b, 0);
   } else {
-    // Einzel: Top-3 zählen
+    // Einzel: national = Top3, international = Top4
     const valsSorted = vals.slice().sort((a, b) => b - a);
-    total = valsSorted.slice(0, 3).reduce((a, b) => a + b, 0);
+    const k = isIntl ? 4 : 3;
+    total = valsSorted.slice(0, k).reduce((a, b) => a + b, 0);
   }
 
   totalCell.textContent = total.toFixed(2) + " P";
@@ -700,16 +754,18 @@ function prUpdateTotalPointsDe() {
       if (e.cell && e.val > 0) e.cell.classList.add("pr-points-de-top3");
     });
   } else {
-    // Einzel: Top-3 gelb, 4. etwas heller
+    // Einzel: Top3 bzw. Top4 einfärben
     const entriesSorted = entries.slice().sort((a, b) => b.val - a.val);
-    entriesSorted.slice(0, 3).forEach(e => {
+    const k = isIntl ? 4 : 3;
+    entriesSorted.slice(0, k).forEach(e => {
       if (e.cell && e.val > 0) e.cell.classList.add("pr-points-de-top3");
     });
-    if (entriesSorted.length > 3 && entriesSorted[3].val > 0 && entriesSorted[3].cell) {
+    if (!isIntl && entriesSorted.length > 3 && entriesSorted[3].val > 0 && entriesSorted[3].cell) {
       entriesSorted[3].cell.classList.add("pr-points-de-top4");
     }
   }
 }
+
 
 
 // -------------------------
@@ -788,6 +844,9 @@ function prRebuildChartFromState() {
   const mode = modeElem ? modeElem.value : "Einzel";
   const isTeam = mode === "Mannschaft";
 
+  const rule = prGetRule();
+  const isIntl = rule === "International";
+
   if (!seriesEntries.length || !years || !years.length) {
     chart.data.labels = [];
     chart.data.datasets = [];
@@ -815,6 +874,8 @@ function prRebuildChartFromState() {
 
   // Summenlinie nur, wenn mind. 2 Disziplinen aktiv
   let hasSum = false;
+  let sumLabel = "";
+
   if (seriesEntries.length >= 2) {
     const sumData = [];
 
@@ -825,16 +886,17 @@ function prRebuildChartFromState() {
 
       let sumVal = 0;
       if (isTeam) {
-        // Mannschaft: Summe aller Disziplinen
+        // Mannschaft: alle Disziplinen
         sumVal = values.reduce((a, b) => a + b, 0);
       } else {
-        // Einzel: Summe der Top-3
-        const top3 = values.sort((a, b) => b - a).slice(0, 3);
-        sumVal = top3.reduce((a, b) => a + b, 0);
+        // Einzel: national = Top3, international = Top4
+        const sorted = values.slice().sort((a, b) => b - a);
+        const k = isIntl ? 4 : 3;
+        sumVal = sorted.slice(0, k).reduce((a, b) => a + b, 0);
       }
 
       if (sumVal > 0) {
-        const max = isTeam ? 4200 : 3200;
+        const max = isTeam ? 4200 : (isIntl ? 4200 : 3200);
         const clamped = Math.min(max, sumVal);
         sumData.push(parseFloat(clamped.toFixed(2)));
       } else {
@@ -842,8 +904,12 @@ function prRebuildChartFromState() {
       }
     }
 
+    sumLabel = isTeam
+      ? "Summe (alle 4)"
+      : (isIntl ? "Summe (Top 4)" : "Summe (Top 3)");
+
     datasets.push({
-      label: isTeam ? "Summe (alle 4)" : "Summe (Top 3)",
+      label: sumLabel,
       data: sumData,
       yAxisID: "sum",
       borderWidth: 2,
@@ -860,15 +926,132 @@ function prRebuildChartFromState() {
 
   // rechte Achse konfigurieren
   if (chart.options && chart.options.scales && chart.options.scales.sum) {
-    chart.options.scales.sum.display = hasSum;
-    chart.options.scales.sum.max = isTeam ? 4200 : 3200;
-    chart.options.scales.sum.title.text = isTeam ? "Summe (alle 4)" : "Summe (Top 3)";
+    const sumScale = chart.options.scales.sum;
+    sumScale.display = hasSum;
+    if (isTeam) {
+      sumScale.max = 4200;
+    } else {
+      sumScale.max = isIntl ? 4200 : 3200;
+    }
+    if (sumLabel) {
+      sumScale.title.text = sumLabel;
+    }
   }
 
   chart.update();
   prShowChartPlaceholder(false);
   prRebuildYearTableFromState();
 }
+function prRebuildChartFromState() {
+  const chart = prState.chart;
+  if (!chart) return;
+
+  const seriesEntries = Object.values(prState.chartSeries);
+  const years = prState.chartYears;
+
+  const modeElem = document.getElementById("pr-mode");
+  const mode = modeElem ? modeElem.value : "Einzel";
+  const isTeam = mode === "Mannschaft";
+
+  const rule = prGetRule();
+  const isIntl = rule === "International";
+
+  if (!seriesEntries.length || !years || !years.length) {
+    chart.data.labels = [];
+    chart.data.datasets = [];
+    if (chart.options && chart.options.scales && chart.options.scales.sum) {
+      chart.options.scales.sum.display = false;
+    }
+    chart.update();
+    prShowChartPlaceholder(true);
+    prRebuildYearTableFromState();
+    return;
+  }
+
+  chart.data.labels = years.slice();
+
+  // einzelne Disziplinen auf linker Achse
+  const datasets = seriesEntries.map(s => ({
+    label: s.label,
+    data: s.data,
+    yAxisID: "y",
+    borderWidth: 2,
+    pointRadius: 3,
+    fill: false,
+    cubicInterpolationMode: "monotone"
+  }));
+
+  // Summenlinie nur, wenn mind. 2 Disziplinen aktiv
+  let hasSum = false;
+  let sumLabel = "";
+
+  if (seriesEntries.length >= 2) {
+    const sumData = [];
+
+    for (let i = 0; i < years.length; i++) {
+      const values = seriesEntries
+        .map(s => (typeof s.data[i] === "number" ? s.data[i] : 0))
+        .filter(v => v > 0);
+
+      let sumVal = 0;
+      if (isTeam) {
+        // Mannschaft: alle Disziplinen
+        sumVal = values.reduce((a, b) => a + b, 0);
+      } else {
+        // Einzel: national = Top3, international = Top4
+        const sorted = values.slice().sort((a, b) => b - a);
+        const k = isIntl ? 4 : 3;
+        sumVal = sorted.slice(0, k).reduce((a, b) => a + b, 0);
+      }
+
+      if (sumVal > 0) {
+        const max = isTeam ? 4200 : (isIntl ? 4200 : 3200);
+        const clamped = Math.min(max, sumVal);
+        sumData.push(parseFloat(clamped.toFixed(2)));
+      } else {
+        sumData.push(0);
+      }
+    }
+
+    sumLabel = isTeam
+      ? "Summe (alle 4)"
+      : (isIntl ? "Summe (Top 4)" : "Summe (Top 3)");
+
+    datasets.push({
+      label: sumLabel,
+      data: sumData,
+      yAxisID: "sum",
+      borderWidth: 2,
+      pointRadius: 3,
+      borderDash: [5, 4],
+      fill: false,
+      cubicInterpolationMode: "monotone"
+    });
+
+    hasSum = true;
+  }
+
+  chart.data.datasets = datasets;
+
+  // rechte Achse konfigurieren
+  if (chart.options && chart.options.scales && chart.options.scales.sum) {
+    const sumScale = chart.options.scales.sum;
+    sumScale.display = hasSum;
+    if (isTeam) {
+      sumScale.max = 4200;
+    } else {
+      sumScale.max = isIntl ? 4200 : 3200;
+    }
+    if (sumLabel) {
+      sumScale.title.text = sumLabel;
+    }
+  }
+
+  chart.update();
+  prShowChartPlaceholder(false);
+  prRebuildYearTableFromState();
+}
+
 
 
 
@@ -884,6 +1067,9 @@ function prRebuildYearTableFromState() {
   const modeElem = document.getElementById("pr-mode");
   const mode = modeElem ? modeElem.value : "Einzel";
   const isTeam = mode === "Mannschaft";
+
+  const rule = prGetRule();
+  const isIntl = rule === "International";
 
   if (!years || !years.length || !seriesList.length) {
     const tbody = document.createElement("tbody");
@@ -911,7 +1097,9 @@ function prRebuildYearTableFromState() {
   });
 
   const thSum = document.createElement("th");
-  thSum.textContent = isTeam ? "Summe (alle 4)" : "Summe (Top 3)";
+  thSum.textContent = isTeam
+    ? "Summe (alle 4)"
+    : (isIntl ? "Summe (Top 4)" : "Summe (Top 3)");
   headRow.appendChild(thSum);
 
   thead.appendChild(headRow);
@@ -944,7 +1132,8 @@ function prRebuildYearTableFromState() {
       sum = valuesThisYear.filter(x => x > 0).reduce((a, b) => a + b, 0);
     } else {
       const positives = valuesThisYear.filter(x => x > 0).sort((a, b) => b - a);
-      sum = positives.slice(0, 3).reduce((a, b) => a + b, 0);
+      const k = isIntl ? 4 : 3;
+      sum = positives.slice(0, k).reduce((a, b) => a + b, 0);
     }
 
     const tdSum = document.createElement("td");
@@ -956,6 +1145,7 @@ function prRebuildYearTableFromState() {
 
   table.appendChild(tbody);
 }
+
 
 
 
