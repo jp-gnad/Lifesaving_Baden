@@ -2225,15 +2225,19 @@ html, body {
 
 
 .ath-top10-section {
-  margin-top: 1.5rem;
+  margin-top: 1rem;
 }
 
 .ath-top10-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: .75rem;
   margin-bottom: .75rem;
+}
+
+.ath-top10-label{
+  font-weight: 700;
+  font-size: 1.5rem;
 }
 
 .ath-top10-select-wrap {

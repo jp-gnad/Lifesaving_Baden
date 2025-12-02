@@ -3901,9 +3901,8 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     });
 
     const head = h("div", { class: "ath-top10-head" },
-      h("h3", {}, "Top 10"),
       h("label", { class: "ath-top10-label" },
-        "Kategorie: ",
+        "Top 10:  ",
         select
       )
     );
@@ -3916,35 +3915,55 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         infoNode = h(
           "div",
           { class: "ath-top10-info" },
-          "Hinweis: In dieser Auswertung werden nur LifesavingScore-Werte ab dem Jahr 2001 berücksichtigt."
+          [
+            "Hinweis:",
+            h("br"),
+            "In dieser Auswertung werden nur LifesavingScore-Werte ab dem Jahr 2001 berücksichtigt."
+          ]
         );
       }
       if (labelLower.includes("starts")) {
         infoNode = h(
           "div",
           { class: "ath-top10-info" },
-          "Hinweis: Es werden nur 50m Retten, 100m Retten mit Flossen, 100m Kombi, 100m Lifesaver, 200m Super Lifesaver und 200m Hindernis gezählt."
+          [
+            "Hinweis:",
+            h("br"),
+            "Es werden nur 50m Retten, 100m Retten mit Flossen, 100m Kombi, 100m Lifesaver, 200m Super Lifesaver und 200m Hindernis gezählt."
+          ]
         );
       }
       if (labelLower.includes("wettkämpfe")) {
         infoNode = h(
           "div",
           { class: "ath-top10-info" },
-          "Hinweis: Es werden nur Pool-Einzel Wettkämpfe gezählt."
+          [
+            "Hinweis:",
+            h("br"),
+            "Es werden nur Pool-Einzel Wettkämpfe gezählt."
+          ]
         );
       }
       if (labelLower.includes("lsc") && labelLower.includes("aktuell")) {
         infoNode = h(
           "div",
           { class: "ath-top10-info" },
-          "Hinweis: Es werden nur Sportler berücksichtigt, die in den letzten 2 Jahren an Pool-Einzel Wettkämpfen teilgenommen haben."
+          [
+            "Hinweis:",
+            h("br"),
+            "Es werden nur Sportler berücksichtigt, die in den letzten 2 Jahren an Pool-Einzel Wettkämpfen teilgenommen haben."
+          ]
         );
       }
       if (labelLower.includes("aktive") && labelLower.includes("jahre")) {
         infoNode = h(
           "div",
           { class: "ath-top10-info" },
-          "Hinweis: Es werden nur Jahre gezählt, inden man Pool-Einzel Wettkämpfe geschwommen ist."
+          [
+            "Hinweis:",
+            h("br"),
+            "Es werden nur Jahre gezählt, inden man Pool-Einzel Wettkämpfe geschwommen ist."
+          ]
         );
       }
     }
