@@ -1,37 +1,19 @@
 // punkterechner.js
 
-// -----------------------------------------
-// Debug-Hilfen
-// -----------------------------------------
-
-const PR_DEBUG = true;
-
-function prLog(...args) {
-  if (PR_DEBUG && typeof console !== "undefined") {
-    console.log(...args);
-  }
-}
-
-function prWarn(...args) {
-  if (typeof console !== "undefined") {
-    console.warn(...args);
-  }
-}
-
-// -----------------------------------------
-// Rekorddatei (Einzel) aus eigenem Repo
-// -----------------------------------------
-
+// Neue Rekorddatei im eigenen Repo (für Einzel)
+// - lokal (file://): über raw.githubusercontent.com laden
+// - auf GitHub Pages (https://): relative URL benutzen
 const PR_RECORDS_URL =
   (window.location.protocol === "file:")
     ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web3/utilities/records_kriterien.xlsx"
     : "./utilities/records_kriterien.xlsx";
 
-// State für records_kriterien.xlsx (nur Einzel)
+
+// State für records_kriterien.xlsx  (nur Einzel)
 const prRecords = {
   workbook: null,
   sheetDR: null,
-  sheetName: null,     // "DR", "WR-Open", "WR-Youth"
+  sheetName: null,     // aktuell ausgewähltes Blatt ("DR", "WR-Open", "WR-Youth")
   years: [],           // z.B. [2000, 2001, …, 2025]
   yearRowIndex: {},    // Jahr -> Zeilenindex
   columnIndex: {},     // "discKey|ak|gender" -> Spaltenindex
@@ -39,10 +21,8 @@ const prRecords = {
   latestYear: null
 };
 
-// -----------------------------------------
-// DLRG-Punktetabellen (Mannschaft / alt)
-// -----------------------------------------
 
+// Basis-URL des GitHub-Repos (rohe Dateien)
 const PR_BASE_URL = "https://raw.githubusercontent.com/dennisfabri/DLRG-Punketabellen/main/";
 
 // bekannte Punktetabellen-Dateien je Jahr
@@ -74,13 +54,16 @@ function prGetExtForYear(year) {
   if (Object.prototype.hasOwnProperty.call(PR_FILE_INFO, year)) {
     return PR_FILE_INFO[year];   // "xls", "xlsx" oder null
   }
+  // ältere Jahre (theoretisch) nur als .xls
   if (year <= 2009) return "xls";
+  // neuere Jahre standardmäßig als .xlsx
   return "xlsx";
 }
 
-// -----------------------------------------
+
+// -------------------------
 // Konfiguration Disziplinen
-// -----------------------------------------
+// -------------------------
 
 const PR_DISCIPLINES = {
   Einzel: {
@@ -112,7 +95,7 @@ const PR_DISCIPLINES = {
     ],
     "Offen": [
       { id: "EO_200_HIND",  label: "200m Hindernis-schwimmen",          excelKey: "200m hindernis",          drKey: "200m Hindernis" },
-      { id: "EO_100_LIFE",  label: "100m Retten m. Fl. u. GR. (Lifesaver)", excelKey: "100m lifesaver",      drKey: "100m Lifesaver" },
+      { id: "EO_100_LIFE",  label: "100m Retten m. Fl. u. GR. (Lifesaver)", excelKey: "100m lifesaver",     drKey: "100m Lifesaver" },
       { id: "EO_50_RETT",   label: "50m Retten",                        excelKey: "50m retten",              drKey: "50m Retten" },
       { id: "EO_100_KOMB",  label: "100m komb. Rettungs-übung",         excelKey: "100m komb rettungs",      drKey: "100m Kombi" },
       { id: "EO_100_FLOSS", label: "100m Retten mit Flossen",           excelKey: "100m retten",             drKey: "100m Retten" },
@@ -122,6 +105,7 @@ const PR_DISCIPLINES = {
 
   Mannschaft: {
     "12": [
+      // WICHTIG: "rueckenlage" mit "ue", damit die Normalisierung mit "Rückenlage" matcht
       { id: "M12_4x50_HIND",    label: "4×50m Hindernisstaffel",        excelKey: "4*50m hindernisstaffel" },
       { id: "M12_4x25_RUECK",   label: "4×25m Rückenlage ohne Arme",    excelKey: "4*25m rueckenlage ohne arme" },
       { id: "M12_4x25_GURT",    label: "4×25m Gurtretterstaffel",       excelKey: "4*25m gurtretterstaffel" },
@@ -154,13 +138,13 @@ const PR_DISCIPLINES = {
   }
 };
 
-// "Junioren" wie "17/18" behandeln
-PR_DISCIPLINES.Einzel["Junioren"]      = PR_DISCIPLINES.Einzel["17/18"];
-PR_DISCIPLINES.Mannschaft["Junioren"]  = PR_DISCIPLINES.Mannschaft["17/18"];
+// "Junioren" soll inhaltlich wie "17/18" behandelt werden
+PR_DISCIPLINES.Einzel["Junioren"]     = PR_DISCIPLINES.Einzel["17/18"];
+PR_DISCIPLINES.Mannschaft["Junioren"] = PR_DISCIPLINES.Mannschaft["17/18"];
 
-// -----------------------------------------
+// -------------------------
 // Utility-Funktionen
-// -----------------------------------------
+// -------------------------
 
 function prNormalizeKey(str) {
   return String(str || "")
@@ -225,10 +209,7 @@ function prFindHeaderLeft(sheet, rowIndex, colIndex) {
   return "";
 }
 
-// -----------------------------------------
-// Punkteformeln
-// -----------------------------------------
-
+// Punkte national nach deutscher Rekordzeit
 function prCalcNationalPoints(timeSec, recSec) {
   if (!recSec || !timeSec || !isFinite(timeSec) || !isFinite(recSec)) return 0;
   const ratio = timeSec / recSec;
@@ -242,6 +223,7 @@ function prCalcNationalPoints(timeSec, recSec) {
   return 0;
 }
 
+// Alte Punkteformel (bis einschließlich 2006)
 function prCalcNationalPointsOld(timeSec, recSec) {
   if (!recSec || !timeSec || !isFinite(timeSec) || !isFinite(recSec)) return 0;
   const q = timeSec / recSec;
@@ -261,6 +243,7 @@ function prCalcNationalPointsOld(timeSec, recSec) {
   return pts;
 }
 
+// Wählt je nach Jahr alte oder neue Formel
 function prCalcNationalPointsByYear(timeSec, recSec, year) {
   if (!recSec || !timeSec || !isFinite(timeSec) || !isFinite(recSec)) return 0;
   if (year <= 2006) {
@@ -269,10 +252,8 @@ function prCalcNationalPointsByYear(timeSec, recSec, year) {
   return prCalcNationalPoints(timeSec, recSec);
 }
 
-// -----------------------------------------
-// Rekorde aus DLRG-Punktetabelle (Mannschaft)
-// -----------------------------------------
 
+// Rekordzeit aus einem Sheet suchen (robuster Header-Abgleich) – wird nur noch für Mannschaft genutzt
 function prFindGermanRecordTime(sheet, mode, ak, gender, discipline) {
   if (!sheet || !sheet["!ref"]) return null;
 
@@ -280,28 +261,28 @@ function prFindGermanRecordTime(sheet, mode, ak, gender, discipline) {
   const targetKey = prNormalizeKey(discipline.excelKey || discipline.label);
 
   const genderLower = String(gender || "").toLowerCase();
-  const isTargetFemale = genderLower.startsWith("w");
+  const isTargetFemale = genderLower.startsWith("w"); // "weiblich"
 
   const femaleTokens = ["weiblich", "wbl"];
   const maleTokens   = ["männlich", "maennlich", "männl", "maennl"];
 
-  const targetAkFull   = ("ak " + ak).toLowerCase();
+  const targetAkFull   = ("ak " + ak).toLowerCase();           // "ak 12", "ak 13/14", "ak offen"
   const targetAkSimple = String(ak || "").toLowerCase().replace(/\s+/g, "");
 
   let bestSeconds = null;
   let bestScore   = -1;
 
-  prLog("[PR] prFindGermanRecordTime: Mannschaft, ak=", ak, "gender=", gender, "disc=", discipline.label, "targetKey=", targetKey);
-
-  for (let c = 2; c <= range.e.c; c++) {
+  for (let c = 2; c <= range.e.c; c++) { // ab Spalte C
     const colLetter = XLSX.utils.encode_col(c);
     const discCell  = sheet[`${colLetter}3`];
     const timeCell  = sheet[`${colLetter}4`];
     if (!discCell || !timeCell) continue;
 
+    // Disziplin-Text prüfen
     const discNorm = prNormalizeKey(discCell.v || discCell.w || "");
     if (!discNorm.includes(targetKey)) continue;
 
+    // Header aus Zeile 1 und 2 einsammeln
     const h1 = prFindHeaderLeft(sheet, 0, c);
     const h2 = prFindHeaderLeft(sheet, 1, c);
     const header = (h1 + " " + h2).toLowerCase();
@@ -309,6 +290,7 @@ function prFindGermanRecordTime(sheet, mode, ak, gender, discipline) {
     const hasFemale = femaleTokens.some(t => header.includes(t));
     const hasMale   = maleTokens.some(t => header.includes(t));
 
+    // Spalten, die explizit das jeweils andere Geschlecht tragen, ignorieren
     if (isTargetFemale) {
       if (hasMale && !hasFemale) continue;
     } else {
@@ -317,26 +299,21 @@ function prFindGermanRecordTime(sheet, mode, ak, gender, discipline) {
 
     let score = 0;
 
+    // Geschlecht: stark gewichten, wenn explizit erwähnt
     if (isTargetFemale && hasFemale) score += 6;
     if (!isTargetFemale && hasMale)  score += 6;
 
-    if (header.includes(targetAkFull))   score += 4;
-    if (!header.includes("ak") && header.includes(targetAkSimple)) score += 2;
+    // Altersklasse
+    if (header.includes(targetAkFull))   score += 4;             // z.B. "AK 12"
+    if (!header.includes("ak") && header.includes(targetAkSimple)) score += 2; // z.B. nur "12" / "15/16"
     if (ak === "Offen" && header.includes("offen")) score += 3;
     if (ak === "17/18" && header.includes("17/18")) score += 2;
+
+    // Jugend-Hinweis
     if (header.includes("jugend") && ak !== "Offen") score += 1;
 
     const seconds = prExcelTimeCellToSeconds(timeCell);
     if (seconds == null) continue;
-
-    prLog(
-      "[PR] Mannschaft-Kandidat:",
-      "Spalte=", colLetter,
-      "| discNorm=", discNorm,
-      "| header=", header,
-      "| score=", score,
-      "| seconds=", seconds
-    );
 
     if (score > bestScore) {
       bestScore   = score;
@@ -344,13 +321,8 @@ function prFindGermanRecordTime(sheet, mode, ak, gender, discipline) {
     }
   }
 
-  prLog("[PR] prFindGermanRecordTime: BEST=", bestSeconds, "Score=", bestScore);
   return bestSeconds;
 }
-
-// -----------------------------------------
-// Regelwerk / UI-Texte
-// -----------------------------------------
 
 function prGetRule() {
   const el = document.getElementById("pr-rule");
@@ -384,16 +356,15 @@ function prUpdateSummaryLabel() {
   }
 }
 
+
 function prUpdateDisciplineRecordDisplay() {
-  const rule = prGetRule();
-  const isIntl = rule === "International";
   const cells = document.querySelectorAll(".pr-disc-name");
 
   cells.forEach(cell => {
     const baseLabel = cell.dataset.baseLabel || cell.textContent;
     const rec = cell.dataset.recDisplay || "";
 
-    if (!isIntl && rec) {
+    if (rec) {
       cell.textContent = `${baseLabel} (${rec})`;
     } else {
       cell.textContent = baseLabel;
@@ -401,10 +372,12 @@ function prUpdateDisciplineRecordDisplay() {
   });
 }
 
+
 function prUpdateRuleTexts() {
   const rule = prGetRule();
   const isIntl = rule === "International";
 
+  // --- Chart-Überschrift + Hinweis ---
   const h2Chart = document.querySelector(".pr-chart-wrapper h2");
   const hintChart = document.querySelector(".pr-chart-wrapper .pr-chart-hint");
 
@@ -415,13 +388,14 @@ function prUpdateRuleTexts() {
   if (hintChart) {
     if (isIntl) {
       hintChart.textContent =
-        "Für das internationale Regelwerk können derzeit keine Punkte berechnet werden, da noch keine Weltrekorde hinterlegt sind.";
+        "Die Kurve zeigt die Punkte für die eingegebene Zeit in der aktuell ausgewählten Disziplin in Abhängigkeit von den Weltrekorden (WR) der Jahre 2000 bis heute.";
     } else {
       hintChart.textContent =
-        "Die Kurve zeigt die Punkte für die eingegebene Zeit in der aktuell ausgewählten Disziplin in Abhängigkeit von den deutschen Rekordzeiten der Jahre 2007 bis heute. Angaben können fehlerhaft sein.";
+        "Die Kurve zeigt die Punkte für die eingegebene Zeit in der aktuell ausgewählten Disziplin in Abhängigkeit von den deutschen Rekordzeiten (DR) der Jahre 2007 bis heute.";
     }
   }
 
+  // --- Jahres-Tabelle: Überschrift + Text ---
   const h2Year = document.querySelector(".pr-year-table-wrapper h2");
   const hintYear = document.querySelector(".pr-year-table-wrapper .pr-chart-hint");
 
@@ -432,38 +406,40 @@ function prUpdateRuleTexts() {
   if (hintYear) {
     if (isIntl) {
       hintYear.textContent =
-        "Die Tabelle zeigt die Punkte der gewählten Disziplinen je Jahr sowie die Summe der besten vier Disziplinen (4-Kampf).";
+        "Die Tabelle zeigt die Punkte der gewählten Disziplinen je Jahr auf Basis der internationalen Weltrekorde sowie die Summe der besten vier Disziplinen (4-Kampf).";
     } else {
       hintYear.textContent =
-        "Die Tabelle zeigt die Punkte der gewählten Disziplinen je Jahr sowie die Summe der besten drei Disziplinen (3-Kampf).";
+        "Die Tabelle zeigt die Punkte der gewählten Disziplinen je Jahr auf Basis der deutschen Rekorde sowie die Summe der besten drei Disziplinen (3-Kampf).";
     }
   }
 }
 
-// -----------------------------------------
-// records_kriterien.xlsx laden + indexieren
-// -----------------------------------------
+
+
+// -------------------------
+// DR / WR-Workbook laden
+// -------------------------
 
 async function prEnsureRecordsWorkbook() {
   if (typeof XLSX === "undefined") return;
 
   try {
+    // Workbook einmalig laden
     if (!prRecords.workbook) {
-      prLog("[PR] Lade records_kriterien.xlsx von", PR_RECORDS_URL);
       const resp = await fetch(PR_RECORDS_URL);
       if (!resp.ok) {
-        prWarn("records_kriterien.xlsx konnte nicht geladen werden:", resp.status);
+        console.warn("records_kriterien.xlsx konnte nicht geladen werden:", resp.status);
         return;
       }
       const buf = await resp.arrayBuffer();
       const wb = XLSX.read(buf, { type: "array" });
       prRecords.workbook = wb;
-      prLog("[PR] records_kriterien.xlsx geladen. Sheets:", wb.SheetNames);
     }
 
+    // Bei jedem Aufruf das zum aktuellen Regelwerk/AK passende Blatt wählen
     prSelectRecordsSheet();
   } catch (e) {
-    prWarn("Fehler beim Laden von records_kriterien.xlsx:", e);
+    console.warn("Fehler beim Laden von records_kriterien.xlsx:", e);
   }
 }
 
@@ -476,20 +452,20 @@ function prSelectRecordsSheet() {
 
   let sheetName = "DR";
   if (rule === "International") {
+    // International: Junioren -> WR-Youth, sonst WR-Open
     sheetName = (ak === "Junioren") ? "WR-Youth" : "WR-Open";
   } else {
     sheetName = "DR";
   }
 
-  prLog("[PR] prSelectRecordsSheet: rule=", rule, "ak=", ak, "→ sheetName=", sheetName);
-
+  // Wenn sich das Blatt nicht geändert hat, nichts tun
   if (prRecords.sheetName === sheetName && prRecords.sheetDR) {
     return;
   }
 
   const sheet = prRecords.workbook.Sheets[sheetName];
   if (!sheet) {
-    prWarn(`Arbeitsblatt '${sheetName}' in records_kriterien.xlsx nicht gefunden.`);
+    console.warn(`Arbeitsblatt '${sheetName}' in records_kriterien.xlsx nicht gefunden.`);
     prRecords.sheetDR = null;
     prRecords.sheetName = null;
     prRecords.years = [];
@@ -505,6 +481,8 @@ function prSelectRecordsSheet() {
   prBuildDRIndex(sheetName);
 }
 
+
+
 function prBuildDRIndex(sheetName) {
   const sheet = prRecords.sheetDR;
   if (!sheet || !sheet["!ref"]) return;
@@ -515,7 +493,7 @@ function prBuildDRIndex(sheetName) {
   prRecords.yearRowIndex = {};
   prRecords.columnIndex = {};
 
-  // Jahre aus Spalte A, ab Zeile 5 (r=4)
+  // Jahre aus Spalte A (c=0), ab Zeile 5 (r=4, 0-basiert)
   for (let r = 4; r <= range.e.r; r++) {
     const addr = XLSX.utils.encode_cell({ c: 0, r });
     const cell = sheet[addr];
@@ -530,11 +508,12 @@ function prBuildDRIndex(sheetName) {
   prRecords.earliestYear = prRecords.years[0] || null;
   prRecords.latestYear   = prRecords.years[prRecords.years.length - 1] || null;
 
-  const headerRow = 3; // Zeile 4
+  // Kopfzeile ist immer Zeile 4 (r = 3, 0-basiert)
+  const headerRow = 3;
 
   if (sheetName === "DR") {
-    // DR: "50m Retten - offen - W"
-    for (let c = 1; c <= range.e.c; c++) {
+    // DR: Header "50m Retten - offen - W" etc. -> discKey|ak|gender
+    for (let c = 1; c <= range.e.c; c++) { // ab Spalte B (c=1)
       const addr = XLSX.utils.encode_cell({ c, r: headerRow });
       const cell = sheet[addr];
       if (!cell || cell.v == null) continue;
@@ -542,25 +521,39 @@ function prBuildDRIndex(sheetName) {
       const text = String(cell.v).trim();
       if (!text) continue;
 
-      const parts = text.split("-");
-      if (parts.length < 3) continue;
+      const partsRaw = text.split("-").map(p => p.trim()).filter(Boolean);
 
-      const discName     = parts[0].trim();
-      const akHeader     = parts[1].trim().toLowerCase();
-      const genderHeader = parts[2].trim().toLowerCase();
+      // zu kurze Header ignorieren
+      if (partsRaw.length < 3) {
+        continue;
+      }
+
+      // Header mit mehr als 3 Teilen (z.B. "50m Retten - offen - 17/18 - M")
+      // überspringen, um saubere Zuordnung zu behalten
+      if (partsRaw.length > 3) {
+        continue;
+      }
+
+      const discName     = partsRaw[0];
+      const akHeader     = partsRaw[1].toLowerCase();   // "12", "13/14", "15/16", "17/18", "offen"
+      const genderHeader = partsRaw[2].toLowerCase();   // "w" / "m"
 
       const discKey   = prNormalizeKey(discName);
-      const akKey     = akHeader;
       const genderKey = genderHeader.startsWith("w") ? "w" : "m";
 
-      const key = `${discKey}|${akKey}|${genderKey}`;
+      const key = `${discKey}|${akHeader}|${genderKey}`;
       prRecords.columnIndex[key] = c;
     }
   } else {
-    // WR-Open / WR-Youth
+    // WR-Open / WR-Youth: Kopfzeile z.B.
+    //  A: "WR-Open"
+    //  B: "50m Retten"   (W)
+    //  H: "50m Retten2"  (M)
     const akKey = (sheetName === "WR-Open") ? "offen" : "junioren";
+    const wrOpenNorm  = prNormalizeKey("WR-Open");
+    const wrYouthNorm = prNormalizeKey("WR-Youth");
 
-    for (let c = 1; c <= range.e.c; c++) {
+    for (let c = 1; c <= range.e.c; c++) { // ab Spalte B (c=1)
       const addr = XLSX.utils.encode_cell({ c, r: headerRow });
       const cell = sheet[addr];
       if (!cell || cell.v == null) continue;
@@ -568,17 +561,16 @@ function prBuildDRIndex(sheetName) {
       const raw = String(cell.v).trim();
       if (!raw) continue;
 
-      let headerNorm = prNormalizeKey(raw);
+      const headerNorm = prNormalizeKey(raw);
       if (!headerNorm) continue;
 
-      if (headerNorm === prNormalizeKey("WR-Open") ||
-          headerNorm === prNormalizeKey("WR-Youth")) {
-        continue;
-      }
+      // Erste Spalte "WR-Open"/"WR-Youth" überspringen
+      if (headerNorm === wrOpenNorm || headerNorm === wrYouthNorm) continue;
 
       let discNorm = headerNorm;
       let genderKey = "w";
 
+      // "…2" -> männlich, ohne "2" -> weiblich
       if (/\d$/.test(discNorm)) {
         const lastChar = discNorm.charAt(discNorm.length - 1);
         if (lastChar === "2") {
@@ -591,18 +583,15 @@ function prBuildDRIndex(sheetName) {
       prRecords.columnIndex[key] = c;
     }
   }
-
-  prLog(
-    "[PR] prBuildDRIndex:",
-    "sheet=", sheetName,
-    "years=", prRecords.years,
-    "keysBeispiel=",
-    Object.keys(prRecords.columnIndex).slice(0, 20)
-  );
 }
 
+
+
 function prGetDRKey(ak, gender, discipline) {
-  let akKey = String(ak || "").toLowerCase(); // z.B. "offen", "17/18", "junioren"
+  // AK wie im Header (Offen → "offen", Junioren → "junioren")
+  let akKey = String(ak || "").toLowerCase();
+  if (akKey === "offen") akKey = "offen";
+  if (akKey === "junioren") akKey = "junioren";
 
   const g = String(gender || "").toLowerCase();
   const genderKey = g.startsWith("w") ? "w" : "m";
@@ -614,7 +603,7 @@ function prGetDRKey(ak, gender, discipline) {
   return `${discKey}|${akKey}|${genderKey}`;
 }
 
-// Rekordzeit aus DR/WR, mit Vorjahres-Fallback
+// Rekordzeit (Sekunden) aus DR/WR, ggf. mit Rückgriff auf Vorjahre
 function prGetDRRecordSeconds(year, ak, gender, discipline) {
   const sheet = prRecords.sheetDR;
   if (!sheet || !prRecords.years.length) return null;
@@ -622,22 +611,13 @@ function prGetDRRecordSeconds(year, ak, gender, discipline) {
   const key = prGetDRKey(ak, gender, discipline);
   const col = prRecords.columnIndex[key];
 
-  prLog(
-    "[PR] prGetDRRecordSeconds: year=", year,
-    "ak=", ak,
-    "gender=", gender,
-    "disc=", discipline.label,
-    "→ key=", key,
-    "→ col=", col
-  );
-
   if (col == null) {
-    prWarn("[PR] prGetDRRecordSeconds: keine Spalte für Key", key, "gefunden (sheet=", prRecords.sheetName, ")");
     return null;
   }
 
   const years = prRecords.years.slice().sort((a, b) => a - b);
 
+  // passenden Jahresindex finden (<= gewünschtes Jahr)
   let idx = years.indexOf(year);
   if (idx === -1) {
     for (let i = years.length - 1; i >= 0; i--) {
@@ -646,51 +626,52 @@ function prGetDRRecordSeconds(year, ak, gender, discipline) {
         break;
       }
     }
-    if (idx === -1) {
-      prWarn("[PR] prGetDRRecordSeconds: kein Jahr <= ", year, "gefunden");
-      return null;
-    }
+    if (idx === -1) return null;
   }
 
+  // rückwärts bis zum ersten Jahr mit Eintrag
   for (let i = idx; i >= 0; i--) {
     const y = years[i];
     const r = prRecords.yearRowIndex[y];
     const addr = XLSX.utils.encode_cell({ c: col, r });
     const cell = sheet[addr];
     const sec = prExcelTimeCellToSeconds(cell);
-    if (sec != null) {
-      prLog("[PR] prGetDRRecordSeconds: benutze Jahr=", y, "Zeit=", sec, "Sek");
-      return sec;
-    }
+    if (sec != null) return sec;
   }
 
-  prWarn("[PR] prGetDRRecordSeconds: keine Rekordzeit in Spalte gefunden für Key", key);
   return null;
 }
 
-// -----------------------------------------
-// State für DLRG-Tabellen + Chart
-// -----------------------------------------
+
+
+// -------------------------
+// State
+// -------------------------
 
 const prState = {
   workbook: null,
-  sheets: {},
+  sheets: {},   // {Einzel: Sheet, Mannschaft: Sheet}
   yearTried: null,
   yearEffective: null,
-  yearWorkbooks: {},
+  yearWorkbooks: {}, // Jahr -> Workbook
   chart: null,
   chartRequestId: 0,
-  chartRowRequests: {},
-  chartSeries: {},
-  chartYears: null
+  chartRowRequests: {},  // disciplineId -> letzte Request-ID
+  chartSeries: {},       // disciplineId -> { label, years:[], data:[] }
+  chartYears: null       // gemeinsame X-Achse (Jahre)
 };
 
+
+// genau diese Jahresdatei laden, anhand der bekannten Endung
 async function prFetchWorkbookExact(year) {
+  // wenn wir das Jahr schon (auch als null) kennen → nichts mehr laden
   if (Object.prototype.hasOwnProperty.call(prState.yearWorkbooks, year)) {
     return prState.yearWorkbooks[year];
   }
 
-  const ext = prGetExtForYear(year);
+  const ext = prGetExtForYear(year);   // "xls", "xlsx" oder null
+
+  // Jahr, für das es bewusst keine Datei gibt (z.B. 2017, 2024)
   if (!ext) {
     prState.yearWorkbooks[year] = null;
     return null;
@@ -700,10 +681,9 @@ async function prFetchWorkbookExact(year) {
   const url = PR_BASE_URL + encodeURIComponent(fileName);
 
   try {
-    prLog("[PR] Lade DLRG-Punktetabelle:", url);
     const resp = await fetch(url);
     if (!resp.ok) {
-      prWarn(`Punktetabelle ${year}.${ext} nicht gefunden (HTTP ${resp.status}).`);
+      console.warn(`Punktetabelle ${year}.${ext} nicht gefunden (HTTP ${resp.status}).`);
       prState.yearWorkbooks[year] = null;
       return null;
     }
@@ -712,44 +692,19 @@ async function prFetchWorkbookExact(year) {
     const wb = XLSX.read(buf, { type: "array" });
 
     prState.yearWorkbooks[year] = wb;
-    prLog("[PR] Punktetabelle geladen: Jahr=", year, "Sheets=", wb.SheetNames);
     return wb;
   } catch (e) {
-    prWarn(`Laden Punktetabelle ${year}.${ext} fehlgeschlagen:`, e);
+    console.warn(`Laden Punktetabelle ${year}.${ext} fehlgeschlagen:`, e);
     prState.yearWorkbooks[year] = null;
     return null;
   }
 }
 
-async function prLoadWorkbookForYear() {
-  const currentYear = new Date().getFullYear();
-  prState.yearTried = currentYear;
 
-  const candidates = [currentYear, currentYear - 1];
 
-  for (const year of candidates) {
-    const wb = await prFetchWorkbookExact(year);
-    if (!wb) continue;
-
-    prState.workbook = wb;
-    prState.yearEffective = year;
-    prState.yearWorkbooks[year] = wb;
-    prState.sheets.Einzel = wb.Sheets["Einzel"];
-    prState.sheets.Mannschaft = wb.Sheets["Mannschaft"];
-    prLog("[PR] prLoadWorkbookForYear: Verwende Jahr=", year);
-    return;
-  }
-
-  prWarn("[PR] prLoadWorkbookForYear: Keine Punktetabelle gefunden.");
-}
-
-async function prEnsureYearWorkbook(year) {
-  return prFetchWorkbookExact(year);
-}
-
-// -----------------------------------------
-// DOMContentLoaded – UI aufbauen
-// -----------------------------------------
+// -------------------------
+// Initialisierung
+// -------------------------
 
 document.addEventListener("DOMContentLoaded", () => {
   const main = document.getElementById("content");
@@ -847,7 +802,7 @@ document.addEventListener("DOMContentLoaded", () => {
   `;
 
   prInitChart();
-  prUpdateRuleTexts();
+  prUpdateRuleTexts();   // Überschriften passend zum Regelwerk setzen
 
   const info = document.getElementById("pr-info");
 
@@ -860,9 +815,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
+  // Punktetabellen (Mannschaft) + neue DR/WR-Datei (Einzel) laden
   Promise.all([
-    prLoadWorkbookForYear(),
-    prEnsureRecordsWorkbook()
+    prLoadWorkbookForYear(),   // DLRG-Punktetabellen (für Mannschaft)
+    prEnsureRecordsWorkbook()  // records_kriterien.xlsx (für Einzel)
   ])
     .then(() => {
       if (info) {
@@ -885,32 +841,67 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
-// -----------------------------------------
-// Events
-// -----------------------------------------
 
+// Workbook fürs aktuelle Jahr (oder Jahr-1) laden
+async function prLoadWorkbookForYear() {
+  const currentYear = new Date().getFullYear();
+  prState.yearTried = currentYear;
+
+  const candidates = [currentYear, currentYear - 1];
+
+  for (const year of candidates) {
+    const wb = await prFetchWorkbookExact(year);
+    if (!wb) continue;
+
+    prState.workbook = wb;
+    prState.yearEffective = year;
+    prState.yearWorkbooks[year] = wb;
+    prState.sheets.Einzel = wb.Sheets["Einzel"];
+    prState.sheets.Mannschaft = wb.Sheets["Mannschaft"];
+    return;
+  }
+}
+
+
+// Für beliebiges Jahr das Workbook sicherstellen (ohne Jahres-Fallback)
+async function prEnsureYearWorkbook(year) {
+  return prFetchWorkbookExact(year);   // nutzt Cache + .xlsx/.xls
+}
+
+
+// Event Handler für Selects
 function prInitEvents() {
-  const modeSel   = document.getElementById("pr-mode");
-  const ageSel    = document.getElementById("pr-age");
+  const modeSel = document.getElementById("pr-mode");
+  const ageSel = document.getElementById("pr-age");
   const genderSel = document.getElementById("pr-gender");
-  const ruleSel   = document.getElementById("pr-rule");
+  const ruleSel = document.getElementById("pr-rule");
 
-  [modeSel, ageSel, genderSel].forEach(sel => {
-    if (!sel) return;
-    sel.addEventListener("change", () => prRenderCurrentSelection());
-  });
+  if (modeSel) {
+    modeSel.addEventListener("change", () => prRenderCurrentSelection());
+  }
+  if (genderSel) {
+    genderSel.addEventListener("change", () => prRenderCurrentSelection());
+  }
+  if (ageSel) {
+    ageSel.addEventListener("change", () => {
+      prRenderCurrentSelection();
+    });
+  }
 
   if (ruleSel) {
     ruleSel.addEventListener("change", () => {
       const rule = ruleSel.value;
       const ageSel = document.getElementById("pr-age");
 
+      // --- Dropdown für Altersklassen ---
       if (rule === "International") {
+        // Nur zwei Optionen
         ageSel.innerHTML = `
           <option value="Junioren">Junioren</option>
           <option value="Offen">Offen</option>
         `;
       } else {
+        // Nationale AKs wiederherstellen
         ageSel.innerHTML = `
           <option value="12">AK 12</option>
           <option value="13/14">AK 13/14</option>
@@ -920,56 +911,37 @@ function prInitEvents() {
         `;
       }
 
+      // Texte und Darstellung anpassen
       prUpdateRuleTexts();
       prUpdateSummaryLabel();
-      prUpdateDisciplineRecordDisplay();
 
+      // Tabelle & Chart neu aufbauen (inkl. neuem DR/WR-Sheet)
       prRenderCurrentSelection();
-
-      prState.chartSeries = {};
-      prState.chartYears = null;
-      prState.chartRowRequests = {};
-
-      const table = document.getElementById("discipline-table");
-      const rows = table ? Array.from(table.querySelectorAll("tbody tr")) : [];
-
-      rows.forEach(tr => {
-        prRecalcRowPoints(tr);
-        if (prGetRule() === "National") {
-          const input = tr.querySelector(".pr-time-input");
-          if (input && input.value) {
-            prUpdateChartForRow(tr);
-          }
-        }
-      });
-
-      prUpdateTotalPointsDe();
-      prRebuildChartFromState();
     });
   }
 }
 
-// -----------------------------------------
-// Render Auswahl (Tabelle Disziplinen)
-// -----------------------------------------
 
+
+// aktuelle Auswahl anzeigen
 function prGetDisciplines(mode, ak) {
   const m = PR_DISCIPLINES[mode];
   if (!m) return [];
   return m[ak] || [];
 }
 
-function prRenderCurrentSelection() {
+async function prRenderCurrentSelection() {
   const loading = document.getElementById("pr-loading");
-  const table   = document.getElementById("discipline-table");
+  const table = document.getElementById("discipline-table");
   if (!table) return;
 
-  const tbody    = table.querySelector("tbody");
-  const totalDe  = document.getElementById("pr-total-de");
+  const tbody = table.querySelector("tbody");
+  const totalDe = document.getElementById("pr-total-de");
 
-  if (tbody)   tbody.innerHTML = "";
+  if (tbody) tbody.innerHTML = "";
   if (totalDe) totalDe.textContent = "";
 
+  // Chart-State für neue Auswahl zurücksetzen
   prState.chartSeries = {};
   prState.chartYears = null;
   prState.chartRowRequests = {};
@@ -985,21 +957,21 @@ function prRenderCurrentSelection() {
     yearTable.innerHTML = "";
   }
 
-  const modeElem   = document.getElementById("pr-mode");
-  const ageElem    = document.getElementById("pr-age");
+  const modeElem = document.getElementById("pr-mode");
+  const ageElem = document.getElementById("pr-age");
   const genderElem = document.getElementById("pr-gender");
   if (!modeElem || !ageElem || !genderElem) return;
 
-  const mode   = modeElem.value;
-  const ak     = ageElem.value;
+  const mode = modeElem.value;
+  const ak = ageElem.value;
   const gender = genderElem.value;
 
-  prLog("[PR] prRenderCurrentSelection: mode=", mode, "ak=", ak, "gender=", gender);
-
-  if (mode === "Einzel" && prRecords.workbook) {
-    prSelectRecordsSheet();
+  // DR/WR-Sheet für Einzel sicherstellen
+  if (mode === "Einzel") {
+    await prEnsureRecordsWorkbook();
   }
 
+  // Summary-Label & Texte je nach Regelwerk
   prUpdateSummaryLabel();
   prUpdateRuleTexts();
 
@@ -1007,9 +979,9 @@ function prRenderCurrentSelection() {
 
   if (!list.length) {
     if (tbody) {
-      const row  = document.createElement("tr");
+      const row = document.createElement("tr");
       const cell = document.createElement("td");
-      cell.colSpan = 3;
+      cell.colSpan = 3; // wir haben 3 Spalten
       cell.textContent = "Für diese Kombination sind keine Disziplinen definiert.";
       row.appendChild(cell);
       tbody.appendChild(row);
@@ -1018,69 +990,59 @@ function prRenderCurrentSelection() {
     const sheet = prState.sheets[mode];
 
     list.forEach(disc => {
-      prLog("[PR] Disziplinzeile:", "mode=", mode, "ak=", ak, "gender=", gender, "discId=", disc.id, "label=", disc.label);
-
       const tr = document.createElement("tr");
       tr.dataset.disciplineId = disc.id;
       tr.dataset.pointsDe = "0";
 
+      // Disziplin + (Rekord) in der selben Spalte
       const tdName = document.createElement("td");
       tdName.className = "pr-disc-name";
       tdName.dataset.baseLabel = disc.label;
       tdName.textContent = disc.label;
       tr.appendChild(tdName);
 
+      // Zeit-Input
       const tdInput = document.createElement("td");
-      const input   = document.createElement("input");
-      input.type  = "text";
+      const input = document.createElement("input");
+      input.type = "text";
       input.className = "pr-time-input";
       input.placeholder = "m:ss,cc";
       input.autocomplete = "off";
       tdInput.appendChild(input);
       tr.appendChild(tdInput);
 
+      // Rekordzeit ermitteln:
+      //  - Einzel: aus DR/WR-Tabelle (records_kriterien.xlsx)
+      //  - Mannschaft: wie bisher aus DLRG-Punktetabelle
       let recSeconds = null;
-      let recSource  = "none";
 
       if (mode === "Mannschaft") {
         const sheetM = prState.sheets.Mannschaft;
         if (sheetM && typeof XLSX !== "undefined") {
           recSeconds = prFindGermanRecordTime(sheetM, mode, ak, gender, disc);
-          recSource = "DLRG-Mannschaft";
         }
       } else {
         if (prRecords.latestYear != null) {
           recSeconds = prGetDRRecordSeconds(prRecords.latestYear, ak, gender, disc);
-          recSource = prRecords.sheetName || "records_kriterien";
-        } else {
-          prWarn("[PR] prRenderCurrentSelection: prRecords.latestYear ist null, keine Rekorde für Einzel.");
         }
       }
 
-      prLog(
-        "[PR] Rekord-Ergebnis:",
-        "mode=", mode,
-        "ak=", ak,
-        "gender=", gender,
-        "disc=", disc.label,
-        "recSeconds=", recSeconds,
-        "source=", recSource
-      );
-
       if (recSeconds != null) {
-        tr.dataset.recSeconds   = String(recSeconds);
-        tdName.dataset.recDisplay = prFormatSeconds(recSeconds);
+        tr.dataset.recSeconds = String(recSeconds);
+        tdName.dataset.recDisplay = prFormatSeconds(recSeconds); // wird in Klammern hinter den Namen geschrieben
       } else {
-        tr.dataset.recSeconds   = "";
+        tr.dataset.recSeconds = "";
         tdName.dataset.recDisplay = "";
       }
 
+      // Punkte
       const tdPointsDe = document.createElement("td");
       tdPointsDe.className = "pr-points-de";
       tr.appendChild(tdPointsDe);
 
       if (tbody) tbody.appendChild(tr);
 
+      // Events
       input.addEventListener("input", () => {
         prRecalcRowPoints(tr);
         prUpdateTotalPointsDe();
@@ -1095,28 +1057,20 @@ function prRenderCurrentSelection() {
 
   table.hidden = false;
   if (loading) loading.style.display = "none";
+
   prUpdateDisciplineRecordDisplay();
   prUpdateTotalPointsDe();
 }
 
-// -----------------------------------------
-// Punkte je Zeile + Gesamtpunkte
-// -----------------------------------------
 
+// Punkte je Zeile berechnen (immer: gleiche Formel, nur Rekordquelle DR/WR verschieden)
 function prRecalcRowPoints(tr) {
-  const input      = tr.querySelector(".pr-time-input");
+  const input = tr.querySelector(".pr-time-input");
   const pointsCell = tr.querySelector(".pr-points-de");
   if (!input || !pointsCell) return;
 
-  const rule = prGetRule();
-  if (rule === "International") {
-    pointsCell.textContent = "";
-    tr.dataset.pointsDe = "0";
-    return;
-  }
-
   const recSeconds = parseFloat(tr.dataset.recSeconds || "");
-  const timeSec    = prParseTimeString(input.value);
+  const timeSec = prParseTimeString(input.value);
 
   if (!input.value || !recSeconds || isNaN(timeSec)) {
     pointsCell.textContent = "";
@@ -1129,32 +1083,29 @@ function prRecalcRowPoints(tr) {
   pointsCell.textContent = pts > 0 ? pts.toFixed(2) + " P" : "0,00 P";
 }
 
+
 function prUpdateTotalPointsDe() {
   const table = document.getElementById("discipline-table");
   if (!table) return;
   const tbody = table.querySelector("tbody");
-  const rows  = tbody ? Array.from(tbody.querySelectorAll("tr")) : [];
+  const rows = tbody ? Array.from(tbody.querySelectorAll("tr")) : [];
   const totalCell = document.getElementById("pr-total-de");
   if (!totalCell) return;
 
   const modeElem = document.getElementById("pr-mode");
-  const mode     = modeElem ? modeElem.value : "Einzel";
-  const isTeam   = mode === "Mannschaft";
+  const mode = modeElem ? modeElem.value : "Einzel";
+  const isTeam = mode === "Mannschaft";
 
-  const rule   = prGetRule();
+  const rule = prGetRule();
   const isIntl = rule === "International";
-
-  if (isIntl) {
-    totalCell.textContent = "";
-    return;
-  }
 
   const entries = rows.map(row => {
     const cell = row.querySelector(".pr-points-de");
-    const val  = cell ? parseFloat(cell.textContent) : NaN;
+    const val = cell ? parseFloat(cell.textContent) : NaN;
     return { row, cell, val: isNaN(val) ? 0 : val };
   });
 
+  // Klassen zurücksetzen
   entries.forEach(e => {
     if (e.cell) {
       e.cell.classList.remove("pr-points-de-top3", "pr-points-de-top4");
@@ -1169,8 +1120,10 @@ function prUpdateTotalPointsDe() {
 
   let total;
   if (isTeam) {
+    // Mannschaft: immer alle Disziplinen
     total = vals.reduce((a, b) => a + b, 0);
   } else {
+    // Einzel: national = Top3, international = Top4
     const valsSorted = vals.slice().sort((a, b) => b - a);
     const k = isIntl ? 4 : 3;
     total = valsSorted.slice(0, k).reduce((a, b) => a + b, 0);
@@ -1178,30 +1131,39 @@ function prUpdateTotalPointsDe() {
 
   totalCell.textContent = total.toFixed(2) + " P";
 
+  // Hervorhebungen
   if (isTeam) {
+    // Mannschaft: alle gewerteten Disziplinen einfärben
     entries.forEach(e => {
       if (e.cell && e.val > 0) e.cell.classList.add("pr-points-de-top3");
     });
   } else {
+    // Einzel: Top3 bzw. Top4 einfärben
     const entriesSorted = entries.slice().sort((a, b) => b.val - a.val);
     const k = isIntl ? 4 : 3;
+
     entriesSorted.slice(0, k).forEach(e => {
       if (e.cell && e.val > 0) e.cell.classList.add("pr-points-de-top3");
     });
-    if (!isIntl && entriesSorted.length > 3 && entriesSorted[3].val > 0 && entriesSorted[3].cell) {
-      entriesSorted[3].cell.classList.add("pr-points-de-top4");
+
+    // zusätzliche Markierung für die nächste Disziplin
+    const extraIndex = k;
+    if (entriesSorted.length > extraIndex && entriesSorted[extraIndex].val > 0 && entriesSorted[extraIndex].cell) {
+      entriesSorted[extraIndex].cell.classList.add("pr-points-de-top4");
     }
   }
 }
 
-// -----------------------------------------
+
+
+// -------------------------
 // Chart
-// -----------------------------------------
+// -------------------------
 
 function prInitChart() {
   const canvas = document.getElementById("pr-points-chart");
   if (!canvas || typeof Chart === "undefined") {
-    prWarn("Chart.js nicht verfügbar – Chart wird nicht initialisiert.");
+    console.warn("Chart.js nicht verfügbar – Chart wird nicht initialisiert.");
     return;
   }
 
@@ -1209,7 +1171,7 @@ function prInitChart() {
     type: "line",
     data: {
       labels: [],
-      datasets: []
+      datasets: []   // wird dynamisch aufgebaut
     },
     options: {
       responsive: true,
@@ -1218,19 +1180,19 @@ function prInitChart() {
         x: {
           title: { display: true, text: "Jahr" }
         },
-        y: {
+        y: {                               // Punkte einzelner Disziplinen
           title: { display: true, text: "Punkte" },
           min: 0,
           max: 1100
         },
-        sum: {
+        sum: {                             // Summe (Top 3 / Top 4 / alle 4)
           position: "right",
-          title: { display: true, text: "Summe (Top 3)" },
+          title: { display: true, text: "Summe" },
           min: 0,
           max: 3200,
-          reverse: false,
+          reverse: false,                  // 3200 oben, 0 unten
           grid: { drawOnChartArea: false },
-          display: false
+          display: false                  // wird dynamisch aktiviert
         }
       },
       plugins: {
@@ -1251,11 +1213,13 @@ function prInitChart() {
   });
 }
 
+
 function prShowChartPlaceholder(show) {
   const placeholder = document.getElementById("pr-chart-placeholder");
   if (!placeholder) return;
   placeholder.style.display = show ? "block" : "none";
 }
+
 
 function prRebuildChartFromState() {
   const chart = prState.chart;
@@ -1268,10 +1232,11 @@ function prRebuildChartFromState() {
   const mode = modeElem ? modeElem.value : "Einzel";
   const isTeam = mode === "Mannschaft";
 
-  const rule   = prGetRule();
+  const rule = prGetRule();
   const isIntl = rule === "International";
 
-  if (isIntl || !seriesEntries.length || !years || !years.length) {
+  // keine Daten → Chart leeren
+  if (!seriesEntries.length || !years || !years.length) {
     chart.data.labels = [];
     chart.data.datasets = [];
     if (chart.options && chart.options.scales && chart.options.scales.sum) {
@@ -1297,6 +1262,7 @@ function prRebuildChartFromState() {
 
   let hasSum = false;
   let sumLabel = "";
+  let sumMax = 3200;
 
   if (seriesEntries.length >= 2) {
     const sumData = [];
@@ -1311,12 +1277,12 @@ function prRebuildChartFromState() {
         sumVal = values.reduce((a, b) => a + b, 0);
       } else {
         const sorted = values.slice().sort((a, b) => b - a);
-        const k = 3;
+        const k = isIntl ? 4 : 3;
         sumVal = sorted.slice(0, k).reduce((a, b) => a + b, 0);
       }
 
       if (sumVal > 0) {
-        const max = isTeam ? 4200 : 3200;
+        const max = isTeam ? 4200 : (isIntl ? 4200 : 3200);
         const clamped = Math.min(max, sumVal);
         sumData.push(parseFloat(clamped.toFixed(2)));
       } else {
@@ -1324,7 +1290,11 @@ function prRebuildChartFromState() {
       }
     }
 
-    sumLabel = isTeam ? "Summe (alle 4)" : "Summe (Top 3)";
+    sumLabel = isTeam
+      ? "Summe (alle 4)"
+      : (isIntl ? "Summe (Top 4)" : "Summe (Top 3)");
+
+    sumMax = isTeam ? 4200 : (isIntl ? 4200 : 3200);
 
     datasets.push({
       label: sumLabel,
@@ -1345,7 +1315,7 @@ function prRebuildChartFromState() {
   if (chart.options && chart.options.scales && chart.options.scales.sum) {
     const sumScale = chart.options.scales.sum;
     sumScale.display = hasSum;
-    sumScale.max = isTeam ? 4200 : 3200;
+    sumScale.max = sumMax;
     if (sumLabel) {
       sumScale.title.text = sumLabel;
     }
@@ -1356,9 +1326,7 @@ function prRebuildChartFromState() {
   prRebuildYearTableFromState();
 }
 
-// -----------------------------------------
-// Jahres-Tabelle
-// -----------------------------------------
+
 
 function prRebuildYearTableFromState() {
   const table = document.getElementById("pr-year-table");
@@ -1366,27 +1334,15 @@ function prRebuildYearTableFromState() {
 
   table.innerHTML = "";
 
-  const rule   = prGetRule();
+  const rule = prGetRule();
   const isIntl = rule === "International";
-
-  if (isIntl) {
-    const tbody = document.createElement("tbody");
-    const tr = document.createElement("tr");
-    const td = document.createElement("td");
-    td.textContent = "Im internationalen Modus werden derzeit keine Punkte berechnet.";
-    td.colSpan = 2;
-    tr.appendChild(td);
-    tbody.appendChild(tr);
-    table.appendChild(tbody);
-    return;
-  }
 
   const years = prState.chartYears;
   const seriesList = Object.values(prState.chartSeries);
 
   const modeElem = document.getElementById("pr-mode");
-  const mode     = modeElem ? modeElem.value : "Einzel";
-  const isTeam   = mode === "Mannschaft";
+  const mode = modeElem ? modeElem.value : "Einzel";
+  const isTeam = mode === "Mannschaft";
 
   if (!years || !years.length || !seriesList.length) {
     const tbody = document.createElement("tbody");
@@ -1414,7 +1370,7 @@ function prRebuildYearTableFromState() {
   });
 
   const thSum = document.createElement("th");
-  thSum.textContent = isTeam ? "Summe (alle 4)" : "Summe (Top 3)";
+  thSum.textContent = isTeam ? "Summe (alle 4)" : (isIntl ? "Summe (Top 4)" : "Summe (Top 3)");
   headRow.appendChild(thSum);
 
   thead.appendChild(headRow);
@@ -1447,7 +1403,7 @@ function prRebuildYearTableFromState() {
       sum = valuesThisYear.filter(x => x > 0).reduce((a, b) => a + b, 0);
     } else {
       const positives = valuesThisYear.filter(x => x > 0).sort((a, b) => b - a);
-      const k = 3;
+      const k = isIntl ? 4 : 3;
       sum = positives.slice(0, k).reduce((a, b) => a + b, 0);
     }
 
@@ -1461,18 +1417,23 @@ function prRebuildYearTableFromState() {
   table.appendChild(tbody);
 }
 
-// -----------------------------------------
-// Punkteverlauf über die Jahre
-// -----------------------------------------
 
+
+// -------------------------
+// Punkteverlauf über die Jahre
+// -------------------------
+
+// Einzel: DR/WR-Tabelle (records_kriterien.xlsx)
+// Mannschaft: weiterhin alte Punktetabellen (DLRG-Repo), Jahre ab 2007
 async function prGetPointsOverYears(mode, ak, gender, discipline, timeSec) {
   if (mode === "Mannschaft") {
     return prGetPointsOverYearsTeam(ak, gender, discipline, timeSec);
   }
+  // Einzel
   return prGetPointsOverYearsIndividual(ak, gender, discipline, timeSec);
 }
 
-// Einzel: DR/WR
+// Einzel: Punkte aus DR oder WR + alte Formel bis 2006
 async function prGetPointsOverYearsIndividual(ak, gender, discipline, timeSec) {
   await prEnsureRecordsWorkbook();
   if (!prRecords.sheetDR || !prRecords.years.length) return [];
@@ -1483,8 +1444,6 @@ async function prGetPointsOverYearsIndividual(ak, gender, discipline, timeSec) {
   const result = [];
   let anyPositive = false;
 
-  prLog("[PR] prGetPointsOverYearsIndividual: disc=", discipline.label, "ak=", ak, "gender=", gender);
-
   for (const year of allYears) {
     const recSec = prGetDRRecordSeconds(year, ak, gender, discipline);
     if (recSec == null) {
@@ -1494,15 +1453,11 @@ async function prGetPointsOverYearsIndividual(ak, gender, discipline, timeSec) {
     const pts = prCalcNationalPointsByYear(timeSec, recSec, year);
     if (pts > 0) anyPositive = true;
     result.push({ year, points: pts });
-
-    prLog("[PR] Year-Points Einzel:", "year=", year, "recSec=", recSec, "pts=", pts);
   }
 
-  if (!anyPositive) {
-    prWarn("[PR] prGetPointsOverYearsIndividual: keine positiven Punkte gefunden.");
-    return [];
-  }
+  if (!anyPositive) return [];
 
+  // Jahre vor dem ersten positiven Wert entfernen
   const firstIdx = result.findIndex(d => d.points > 0);
   if (firstIdx > 0) {
     return result.slice(firstIdx);
@@ -1510,7 +1465,7 @@ async function prGetPointsOverYearsIndividual(ak, gender, discipline, timeSec) {
   return result;
 }
 
-// Mannschaft: DLRG Tabellen
+// Mannschaft: wie bisher über DLRG-Punktetabellen, ab 2007
 async function prGetPointsOverYearsTeam(ak, gender, discipline, timeSec) {
   const startYear = 2007;
   const endYear   = new Date().getFullYear();
@@ -1521,8 +1476,6 @@ async function prGetPointsOverYearsTeam(ak, gender, discipline, timeSec) {
   let lastWorkbook     = null;
   let lastRecSec       = null;
   let anyRec           = false;
-
-  prLog("[PR] prGetPointsOverYearsTeam: disc=", discipline.label, "ak=", ak, "gender=", gender);
 
   for (let year = startYear; year <= endYear; year++) {
     let sourceYear = year;
@@ -1557,59 +1510,37 @@ async function prGetPointsOverYearsTeam(ak, gender, discipline, timeSec) {
 
     const pts = prCalcNationalPoints(timeSec, recSec);
     result.push({ year, points: pts });
-
-    prLog("[PR] Year-Points Team:", "year=", year, "sourceYear=", sourceYear, "recSec=", recSec, "pts=", pts);
   }
 
-  if (!anyRec) {
-    prWarn("[PR] prGetPointsOverYearsTeam: kein Rekord gefunden.");
-    return [];
-  }
+  if (!anyRec) return [];
   return result;
 }
 
-// -----------------------------------------
-// Chart aktualisieren für eine Zeile
-// -----------------------------------------
+
+
 
 async function prUpdateChartForRow(tr) {
   const canvas = document.getElementById("pr-points-chart");
   if (!canvas || !prState.chart) return;
 
-  const rule   = prGetRule();
-  const isIntl = rule === "International";
-
-  const disciplineId = tr.dataset.disciplineId || "(none)";
-
-  if (isIntl) {
-    if (disciplineId) {
-      delete prState.chartSeries[disciplineId];
-      delete prState.chartRowRequests[disciplineId];
-      prRebuildChartFromState();
-    }
-    return;
-  }
-
   const input = tr.querySelector(".pr-time-input");
   if (!input) return;
 
-  const modeElem   = document.getElementById("pr-mode");
-  const ageElem    = document.getElementById("pr-age");
+  const modeElem = document.getElementById("pr-mode");
+  const ageElem = document.getElementById("pr-age");
   const genderElem = document.getElementById("pr-gender");
   if (!modeElem || !ageElem || !genderElem) return;
 
-  const mode   = modeElem.value;
-  const ak     = ageElem.value;
+  const mode = modeElem.value;
+  const ak = ageElem.value;
   const gender = genderElem.value;
 
+  const disciplineId = tr.dataset.disciplineId;
   const discList = prGetDisciplines(mode, ak);
   const discipline = discList.find(d => d.id === disciplineId);
   if (!discipline) return;
 
   const timeSec = prParseTimeString(input.value);
-
-  prLog("[PR] prUpdateChartForRow:", "discId=", disciplineId, "discLabel=", discipline.label, "timeSec=", timeSec);
-
   if (!input.value || !isFinite(timeSec) || timeSec <= 0) {
     delete prState.chartSeries[disciplineId];
     prRebuildChartFromState();
@@ -1621,13 +1552,9 @@ async function prUpdateChartForRow(tr) {
 
   const series = await prGetPointsOverYears(mode, ak, gender, discipline, timeSec);
 
-  if (prState.chartRowRequests[disciplineId] !== reqId) {
-    prLog("[PR] prUpdateChartForRow: veraltete Antwort verworfen, discId=", disciplineId);
-    return;
-  }
+  if (prState.chartRowRequests[disciplineId] !== reqId) return;
 
   if (!series.length) {
-    prWarn("[PR] prUpdateChartForRow: keine Serien-Daten für", discipline.label);
     delete prState.chartSeries[disciplineId];
     prRebuildChartFromState();
     return;
@@ -1637,15 +1564,13 @@ async function prUpdateChartForRow(tr) {
   const data = series.map(d => {
     if (!isFinite(d.points)) return null;
     const clamped = Math.max(0, Math.min(1100, d.points));
-    return parseFloat(clamped.toFixed(2));
+    return parseFloat(clamped.toFixed(2)); // 2 Nachkommastellen
   });
 
   prState.chartYears = years;
 
   const label = `${discipline.label} (${ak} ${gender.startsWith("w") ? "w" : "m"})`;
   prState.chartSeries[disciplineId] = { label, years, data };
-
-  prLog("[PR] prUpdateChartForRow: Chart-Serie aktualisiert:", label, "Jahre=", years);
 
   prRebuildChartFromState();
 }
