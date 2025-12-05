@@ -2843,7 +2843,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         const sub = hEl("div", { class:"lsc-suggest-sub" }, "DLRG ", og);
         item.appendChild(hEl("div", { class:"lsc-suggest-text" }, name, sub));
 
-        item.addEventListener("pointerdown", (ev)=>{ ev.preventDefault(); chooseCmp(ax); });
         item.addEventListener("mouseenter", ()=>{ suggest.querySelector(".active")?.classList.remove("active"); item.classList.add("active"); cmpActive = idx; });
 
         suggest.appendChild(item);
