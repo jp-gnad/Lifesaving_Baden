@@ -3401,7 +3401,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
           el("div", { class:"time-suggest-sub" }, "DLRG ", currentOrtsgruppeFromMeets(ax) || ax.ortsgruppe || "")
         );
         item.appendChild(text);
-        item.addEventListener("pointerdown", (ev)=>{ ev.preventDefault(); chooseCmp(ax); });
         item.addEventListener("mouseenter", ()=>{ suggest.querySelector(".active")?.classList.remove("active"); item.classList.add("active"); cmpActive = idx; });
         suggest.appendChild(item);
       });
