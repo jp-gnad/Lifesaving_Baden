@@ -5,7 +5,7 @@
 // - auf GitHub Pages (https://): relative URL benutzen
 const PR_RECORDS_URL =
   (window.location.protocol === "file:")
-    ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web3/utilities/records_kriterien.xlsx"
+    ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx"
     : "./utilities/records_kriterien.xlsx";
 
 

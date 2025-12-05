@@ -1,4 +1,4 @@
-const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web3/utilities/test (1).xlsx";
+const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test (1).xlsx";
 
 // =====================
 // HILFSFUNKTIONEN / KONSTANTEN
@@ -46,7 +46,7 @@ function istAngemeldet(name, jahr) {
 }
 
 async function ladeAnmeldungen(aktuellesJahr) {
-  const res = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web3/utilities/records_kriterien.xlsx");
+  const res = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx");
   const buf = await res.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
 
@@ -97,7 +97,7 @@ function istEntferntImJahr(name, jahr) {
 }
 
 async function ladeSonderregelnEntfernen(aktuellesJahr) {
-  const res = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web3/utilities/records_kriterien.xlsx");
+  const res = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx");
   const buf = await res.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
 
@@ -133,7 +133,7 @@ function findeSonderregelTrainer(name, jahr) {
 }
 
 async function ladeSonderregelnTrainer(aktuellesJahr) {
-  const res = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web3/utilities/records_kriterien.xlsx");
+  const res = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx");
   const buf = await res.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
 
@@ -172,7 +172,7 @@ function findeSonderregelOcean(name, jahr) {
 }
 
 async function ladeSonderregelnOcean(aktuellesJahr) {
-  const res = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web3/utilities/records_kriterien.xlsx");
+  const res = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx");
   const buf = await res.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
 
@@ -221,7 +221,7 @@ function hoechsteFarbe(alt = "", neu = "") {
 // =====================
 
 async function ladePflichtzeiten(aktuellesJahr) {
-  const response = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web3/utilities/records_kriterien.xlsx");
+  const response = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx");
   const arrayBuffer = await response.arrayBuffer();
   const workbook = XLSX.read(arrayBuffer, { type: "array" });
 
@@ -261,7 +261,7 @@ async function ladePflichtzeiten(aktuellesJahr) {
 let PLATZIERUNGS_KRITERIEN = {};
 
 async function ladePlatzierungsKriterien(aktuellesJahr) {
-  const res = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web3/utilities/records_kriterien.xlsx");
+  const res = await fetch("https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx");
   const buf = await res.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
 
@@ -847,7 +847,7 @@ function baueKaderTabelle(result, aktuellesJahr) {
       const icon1 = person.Icon_Time === "green" ? "icon_time_green.svg"
                   : person.Icon_Time === "yellow" ? "icon_time_yellow.svg"
                   : "icon_time_grey.svg";
-      imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web3/svg/${encodeURIComponent(icon1)}`;
+      imgIcon_time.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/${encodeURIComponent(icon1)}`;
       imgIcon_time.style.width = "35px";
       tdIcon_time.appendChild(imgIcon_time);
       tr.appendChild(tdIcon_time);
@@ -860,7 +860,7 @@ function baueKaderTabelle(result, aktuellesJahr) {
       const icon2 = person.Icon_Comp === "green" ? "icon_medal_green.svg"
                   : person.Icon_Comp === "yellow" ? "icon_medal_yellow.svg"
                   : "icon_medal_grey.svg";
-      imgIcon_comp.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web3/svg/${encodeURIComponent(icon2)}`;
+      imgIcon_comp.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/${encodeURIComponent(icon2)}`;
       imgIcon_comp.style.width = "35px";
       tdIcon_comp.appendChild(imgIcon_comp);
       tr.appendChild(tdIcon_comp);
@@ -873,7 +873,7 @@ function baueKaderTabelle(result, aktuellesJahr) {
       const icon3 = person.Icon_Ocean === "green" ? "icon_ocean_green.svg"
                   : person.Icon_Ocean === "yellow" ? "icon_ocean_yellow.svg"
                   : "icon_ocean_grey.svg";
-      imgIcon_ocean.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web3/svg/${encodeURIComponent(icon3)}`;
+      imgIcon_ocean.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/${encodeURIComponent(icon3)}`;
       imgIcon_ocean.style.width = "35px";
       tdIcon_ocean.appendChild(imgIcon_ocean);
       tr.appendChild(tdIcon_ocean);
@@ -886,7 +886,7 @@ function baueKaderTabelle(result, aktuellesJahr) {
       const icon4 = person.Icon_Coach === "green" ? "icon_trainer_green.svg"
                   : person.Icon_Coach === "yellow" ? "icon_trainer_yellow.svg"
                   : "icon_trainer_grey.svg";
-      imgIcon_coach.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web3/svg/${encodeURIComponent(icon4)}`;
+      imgIcon_coach.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/${encodeURIComponent(icon4)}`;
       imgIcon_coach.style.width = "35px";
       tdIcon_coach.appendChild(imgIcon_coach);
       tr.appendChild(tdIcon_coach);
@@ -899,8 +899,8 @@ function baueKaderTabelle(result, aktuellesJahr) {
       const statusIcon = document.createElement("img");
       statusIcon.className = "status-icon";
       statusIcon.src = person.angemeldet
-        ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web3/svg/icon_status_green.svg"
-        : "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web3/svg/icon_status_yellow.svg";
+        ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/icon_status_green.svg"
+        : "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/icon_status_yellow.svg";
       statusIcon.alt = person.angemeldet ? "Status: angemeldet" : "Anmeldung erforderlich";
       statusIcon.style.width = "27.5px";
       statusIcon.setAttribute("tabindex", "0");
@@ -984,7 +984,7 @@ function baueKaderTabelle(result, aktuellesJahr) {
         const item = document.createElement("div");
         item.className = "criteria-detail-item";
         const img = document.createElement("img");
-        img.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web3/svg/${encodeURIComponent(iconFile)}`;
+        img.src = `https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/svg/${encodeURIComponent(iconFile)}`;
         img.alt = labelText;
         img.style.width = "26px";
         const span = document.createElement("span");
