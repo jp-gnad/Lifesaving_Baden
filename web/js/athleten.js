@@ -4006,20 +4006,37 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
           String(value ?? "")
         );
 
-        // ► NEU: Zeile klickbar + Name als data-Attribut
+        // ► Zeile klickbar + Name als data-Attribut + Touch-Hover
         return h("tr", {
           class: "ath-top10-row",
           role: "button",
           tabindex: "0",
           dataset: { name },                 // → tr.dataset.name
+
           onclick: (e) => openProfileFromTop10Row(e.currentTarget),
+
           onkeydown: (e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
               openProfileFromTop10Row(e.currentTarget);
             }
+          },
+
+          // "Hover"-Effekt auch auf Touch:
+          onpointerdown: function () {
+            this.classList.add("active");
+          },
+          onpointerup: function () {
+            this.classList.remove("active");
+          },
+          onpointercancel: function () {
+            this.classList.remove("active");
+          },
+          onpointerleave: function () {
+            this.classList.remove("active");
           }
         }, capTd, nameOgTd, valueTd);
+
       });
 
       return h("table", { class: "ath-top10-table" },
@@ -4962,7 +4979,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     requestAnimationFrame(() => {
       fitProfileName();  // richtet auch das Cap aus
     });
-    
+
     if (Refs.input) {
       Refs.input.value = "";
     }
