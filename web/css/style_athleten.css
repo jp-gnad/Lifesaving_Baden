@@ -2291,6 +2291,12 @@ html, body {
   transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
+.ath-top10-value-cell {
+  text-align: right;
+  white-space: nowrap;
+  width: 5.5rem;           /* bei Bedarf anpassen */
+}
+
 .ath-top10-table tbody tr:hover,
 .ath-top10-table tbody tr:focus-visible,
 .ath-top10-table tbody tr.active {
