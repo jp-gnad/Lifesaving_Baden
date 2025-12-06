@@ -2291,10 +2291,11 @@ html, body {
   transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
-/* Hover-Effekt */
-.ath-top10-table tbody tr:hover {
-  background-color: rgba(0, 0, 0, 0.04);
+.ath-top10-table tbody tr:hover,
+.ath-top10-table tbody tr:focus-visible {
+  background-color: rgba(227, 6, 21, 0.096);
 }
+
 
 /* Optional Fokus mit Tastatur */
 .ath-top10-table tbody tr:focus-visible {
