@@ -4962,6 +4962,14 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     requestAnimationFrame(() => {
       fitProfileName();  // richtet auch das Cap aus
     });
+    
+    if (Refs.input) {
+      Refs.input.value = "";
+    }
+    AppState.query = "";
+    AppState.suggestions = [];
+    AppState.activeIndex = -1;
+    hideSuggestions();
 
   }
 
