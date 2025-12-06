@@ -4130,23 +4130,34 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     }
 
     AppState.suggestions.forEach((a, idx) => {
-      const item = h("div", {
-        class: "ath-suggest-item" + (idx === AppState.activeIndex ? " active" : ""),
-        role: "option",
-        "aria-selected": idx === AppState.activeIndex ? "true" : "false",
-        // WICHTIG: KEIN onpointerdown und KEIN ontouchstart mehr
-        onclick: (ev) => {
-          ev.preventDefault();
-          ev.stopPropagation();
-          openProfile(a);
-        },
-        onmouseenter: () => {
-          if (AppState.activeIndex === idx) return;
-          box.querySelector('.ath-suggest-item.active')?.classList.remove('active');
-          item.classList.add('active');
-          AppState.activeIndex = idx;
-        }
-      });
+  const item = h("div", {
+    class: "ath-suggest-item" + (idx === AppState.activeIndex ? " active" : ""),
+    role: "option",
+    "aria-selected": idx === AppState.activeIndex ? "true" : "false",
+
+    // Klick: Profil öffnen (wie bisher)
+    onclick: (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      openProfile(a);
+    },
+
+    // NEU: Pointer-Enter für Touch + Stift + Maus
+    onpointerenter: () => {
+      if (AppState.activeIndex === idx) return;
+      box.querySelector('.ath-suggest-item.active')?.classList.remove('active');
+      item.classList.add('active');
+      AppState.activeIndex = idx;
+    },
+
+    // Optional: zusätzlich für klassische Maus-Hover (kein Muss, aber schadet nicht)
+    onmouseenter: () => {
+      if (AppState.activeIndex === idx) return;
+      box.querySelector('.ath-suggest-item.active')?.classList.remove('active');
+      item.classList.add('active');
+      AppState.activeIndex = idx;
+    }
+  });
 
 
       // Cap-Avatar (klein)
