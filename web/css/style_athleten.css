@@ -161,13 +161,6 @@ html, body {
   z-index: 40;
 }
 
-/* Portal-Modus – Position kommt über CSS-Variablen aus JS */
-.ath-suggest.portal {
-  position: fixed;
-  left: var(--ath-suggest-x, 0px);
-  top: var(--ath-suggest-y, 0px);
-  width: var(--ath-suggest-w, 100%);
-}
 
 .ath-suggest-empty {
   padding: 0.75rem 1rem;

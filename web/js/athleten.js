@@ -4134,9 +4134,10 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         class: "ath-suggest-item" + (idx === AppState.activeIndex ? " active" : ""),
         role: "option",
         "aria-selected": idx === AppState.activeIndex ? "true" : "false",
-        onpointerdown: (ev) => { ev.preventDefault(); ev.stopPropagation(); openProfile(a); },
-        ontouchstart: (ev) => { ev.preventDefault(); ev.stopPropagation(); openProfile(a); },
-        onclick: (ev) => { ev.preventDefault(); ev.stopPropagation(); openProfile(a); },
+        // nur noch normaler Klick, kein pointerdown / touchstart
+        onclick: () => {
+          openProfile(a);
+        },
         onmouseenter: () => {
           if (AppState.activeIndex === idx) return;
           box.querySelector('.ath-suggest-item.active')?.classList.remove('active');
