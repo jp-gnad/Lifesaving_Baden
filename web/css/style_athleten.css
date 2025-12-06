@@ -2295,6 +2295,7 @@ html, body {
 .ath-top10-table tbody tr:focus-visible,
 .ath-top10-table tbody tr.active {
   background-color: rgba(227, 6, 21, 0.096);
+  font-size: 1.0rem;
 }
 
 
