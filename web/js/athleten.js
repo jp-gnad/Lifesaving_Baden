@@ -4134,8 +4134,10 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         class: "ath-suggest-item" + (idx === AppState.activeIndex ? " active" : ""),
         role: "option",
         "aria-selected": idx === AppState.activeIndex ? "true" : "false",
-        // nur noch normaler Klick, kein pointerdown / touchstart
-        onclick: () => {
+        // WICHTIG: KEIN onpointerdown und KEIN ontouchstart mehr
+        onclick: (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
           openProfile(a);
         },
         onmouseenter: () => {
@@ -4145,6 +4147,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
           AppState.activeIndex = idx;
         }
       });
+
 
       // Cap-Avatar (klein)
       item.appendChild(renderCapAvatar(a, "sm", "ath-suggest-avatar"));
