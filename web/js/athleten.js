@@ -471,36 +471,35 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
   return XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: "" });
 }
 
-  // ---- Spalten (0-basiert) aus 'Tabelle2' ----
   const COLS = {
-    gender: 0,              // A: m|w
+    gender: 0,              // A:
     name: 1,                // B
-    lsc: 2,                 // C: "766,95"
-    z_100l: 3,              // D: 100m_Lifesaver_Zeit
-    z_50r: 4,               // E: 50m_Retten_Zeit
-    z_200s: 5,              // F: 200m_SuperLifesaver_Zeit
-    z_100k: 6,              // G: 100m_Kombi_Zeit
-    z_100r: 7,              // H: 100m_Retten_Zeit
-    z_200h: 8,              // I: 200m_Hindernis_Zeit
-    excelDate: 9,           // J: Excel-Seriennummer
-    meet_name: 10,          // K
-    yy2: 11,                // L: Jahrgang (zweistellig, z.B. 02, 99)
-    ortsgruppe: 12,         // M
-    LV_state: 13,           // N LV
-    p_mehrkampf: 14,        // O: Mehrkampf_Platz
-    p_100l: 15,             // P
-    p_50r: 16,              // Q
-    p_200s: 17,             // R
-    p_100k: 18,             // S
-    p_100r: 19,             // T
-    p_200h: 20,             // U
-    pool: 21,               // V: "25"|"50"
-    regelwerk: 22,          // W: "National"|"international"
-    land: 23,               // X: "GER" (nur für Deutschland) sonst ausgeschrieben
-    startrecht: 24,         // Y: "OG"|"LV"|"BV"
-    wertung: 25,            // Z: "Mehrkampf"|"Einzelkampf"|"Einzel-/Mehrkampf"
-    vorlaeufe: 26,           // AA: 1|2
-    BV_natio: 27,           // AB GER
+    lsc: 2,                 // C:
+    z_100l: 3,              // D:
+    z_50r: 4,               // E:
+    z_200s: 5,              // F:
+    z_100k: 6,              // G:
+    z_100r: 7,              // H:
+    z_200h: 8,              // I:
+    excelDate: 9,           // J:
+    meet_name: 10,          // K:
+    yy2: 11,                // L:
+    ortsgruppe: 12,         // M:
+    LV_state: 13,           // N:
+    p_mehrkampf: 14,        // O:
+    p_100l: 15,             // P:
+    p_50r: 16,              // Q:
+    p_200s: 17,             // R:
+    p_100k: 18,             // S:
+    p_100r: 19,             // T:
+    p_200h: 20,             // U:
+    pool: 21,               // V:
+    regelwerk: 22,          // W:
+    land: 23,               // X:
+    startrecht: 24,         // Y:
+    wertung: 25,            // Z:
+    vorlaeufe: 26,          // AA:
+    BV_natio: 27,           // AB:
   };
 
   // ---- Hilfen: Datum & Normalisierungen ----
