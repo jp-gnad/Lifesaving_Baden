@@ -2342,11 +2342,15 @@ html, body {
   box-shadow: none !important;
   width: auto !important;
   min-width: 0;
+  color: rgb(227, 6, 19) !important;
+  -webkit-text-fill-color: rgb(227, 6, 19) !important; /* iOS/Safari */
 }
 
 .ath-top10-header-select-wrap .ath-top10-select option {
   padding: 0.35rem 0.6rem;
   text-align: left;
+  color: #000 !important;
+  -webkit-text-fill-color: #000 !important;
 }
 
 .ath-top10-header-select-wrap::after {
