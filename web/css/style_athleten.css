@@ -2284,24 +2284,26 @@ html, body {
   color: #555;
 }
 
-/* Alle Zeilen der Top-10-Tabelle klickbar machen */
-.ath-top10-table tbody tr {
-  cursor: pointer;
-  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
-}
 
 .ath-top10-value-cell {
   text-align: right;
   white-space: nowrap;
 }
+.ath-top10-table-body tbody tr {
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
 
-.ath-top10-table tbody tr:hover,
-.ath-top10-table tbody tr:focus-visible,
-.ath-top10-table tbody tr.active {
+.ath-top10-table-body tbody tr:hover,
+.ath-top10-table-body tbody tr:focus-visible,
+.ath-top10-table-body tbody tr.active {
   background-color: rgba(227, 6, 21, 0.096);
   font-size: 1.0rem;
 }
 
+.ath-top10-table-head tbody tr {
+  cursor: default;
+}
 
 /* Optional Fokus mit Tastatur */
 .ath-top10-table tbody tr:focus-visible {
@@ -2405,3 +2407,71 @@ html, body {
 .ath-top10-header-select-wrap .ath-top10-select option {
   padding: 0.35rem 0.6rem;
 }
+
+
+/* Standard: eine Zeile */
+.ath-top10-header-nameog .ath-top10-h-og {
+  display: inline;
+  margin-left: 0.25rem; /* Abstand nach dem "/" */
+}
+
+/* < 720px: zweite Zeile */
+@media (max-width: 719px) {
+  .ath-top10-header-nameog .ath-top10-h-og {
+    display: block;
+    margin-left: 0;
+  }
+}
+
+/* Kombi-Container */
+.ath-top10-table-combo {
+  width: 100%;
+}
+
+/* Beide Tabellen wie eine */
+.ath-top10-table-head {
+  margin-top: 30px;              /* das war vorher an .ath-top10-table */
+}
+
+.ath-top10-table-body {
+  margin-top: 0;                 /* direkt unter Header */
+}
+
+/* Kopf optisch abgrenzen */
+.ath-top10-table-head th {
+  background: #f5f5f5;
+  font-weight: 700;
+  border-bottom: 3px solid currentColor;
+}
+
+/* Body: obere Linie weg, damit es nicht doppelt wirkt */
+.ath-top10-table-body td {
+  border-top: 0;
+}
+
+/* --- ENTKOPPELTE BREITEN --- */
+
+/* Header: rechte Spalte (Dropdown) bewusst breiter */
+.ath-top10-table-head th.ath-top10-header-select {
+  width: 14rem;                  /* gewünschte Breite */
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Header linksbündig erzwingen */
+.ath-top10-table-head th.ath-top10-header-nameog {
+  text-align: left !important;
+}
+
+/* Body: Wert-Spalte bewusst schmal */
+.ath-top10-table-body td.ath-top10-value-cell {
+  width: 5.5rem;                 /* schmaler als Header */
+  text-align: center;            /* oder right/center wie gewünscht */
+  white-space: nowrap;
+}
+
+/* Cap-Spalte im Body fix */
+.ath-top10-table-body td.ath-top10-cap-cell {
+  width: 3rem;
+}
+

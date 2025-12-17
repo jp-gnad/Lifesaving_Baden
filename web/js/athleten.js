@@ -3978,26 +3978,21 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     const rows = group.rows || [];
 
-    // Header-Rechts: falls Node übergeben -> in Wrapper packen,
-    // sonst Text "Wert" anzeigen
-    const headerRight =
-      headerRightNode
-        ? h("div", { class: "ath-top10-header-select-wrap" }, headerRightNode)
-        : "Wert";
-
-    const header = h("thead", {},
-      h("tr", { class: "ath-top10-header-row" },
-        h("th", {
-          class: "ath-top10-header-cell ath-top10-header-nameog",
-          colspan: "2"
-        }, "Name / Ortsgruppe"),
-
-        h("th", { class: "ath-top10-header-cell ath-top10-header-select" },
-          headerRight
+    // HEADER (2 Spalten, entkoppelt!)
+    const headTable = h("table", { class: "ath-top10-table ath-top10-table-head" },
+      h("tbody", {},
+        h("tr", { class: "ath-top10-header-row" },
+          h("th", { class: "ath-top10-header-cell ath-top10-header-nameog" },
+            "Name / Ortsgruppe"
+          ),
+          h("th", { class: "ath-top10-header-cell ath-top10-header-select" },
+            h("div", { class: "ath-top10-header-select-wrap" }, headerRightNode || "Wert")
+          )
         )
       )
     );
 
+    // BODY (3 Spalten, wie bisher)
     const bodyRows = rows.map(cells => {
       const name  = String(cells[0] ?? "").trim();
       const og    = String(cells[1] ?? "").trim();
@@ -4010,9 +4005,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         og ? h("div", { class: "ath-top10-og" }, og) : null
       );
 
-      const valueTd = h("td", { class: "ath-top10-value-cell" },
-        String(value ?? "")
-      );
+      const valueTd = h("td", { class: "ath-top10-value-cell" }, String(value ?? ""));
 
       return h("tr", {
         class: "ath-top10-row",
@@ -4033,11 +4026,14 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       }, capTd, nameOgTd, valueTd);
     });
 
-    return h("table", { class: "ath-top10-table" },
-      header,
+    const bodyTable = h("table", { class: "ath-top10-table ath-top10-table-body" },
       h("tbody", {}, ...bodyRows)
     );
+
+    // Container: beide Tabellen wirken wie eine
+    return h("div", { class: "ath-top10-table-combo" }, headTable, bodyTable);
   }
+
 
 
 
