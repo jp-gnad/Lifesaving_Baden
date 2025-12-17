@@ -3868,7 +3868,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     if (!mount) return;
 
     const groups = Top10State.groups || {};
-    // nur Gruppen, die wirklich Daten haben
     const available = TOP10_GROUPS.filter(def =>
       groups[def.key] && groups[def.key].rows.length
     );
@@ -3884,7 +3883,8 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     const current = groups[Top10State.currentKey];
 
-    const select = h("select", { class: "ath-top10-select" },
+    // Select erstellen
+    const select = h("select", { class: "ath-top10-select", "aria-label": "Top-10-Auswahl" },
       available.map(def =>
         h("option", {
           value: def.key,
@@ -3893,19 +3893,15 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       )
     );
 
-    select.addEventListener("change", (e) => {
-      Top10State.currentKey = e.target.value;
-      renderTop10(); // einfach neu zeichnen
-    });
-
     const head = h("div", { class: "ath-top10-head" },
-      h("label", { class: "ath-top10-label" },
-        "Top 10:  ",
-        select
-      )
+      h("div", { class: "ath-top10-label" }, "Top-10")
     );
 
-    // Info-Hinweis nur für "höchster LSC"
+    select.addEventListener("change", (e) => {
+      Top10State.currentKey = e.target.value;
+      renderTop10();
+    });
+
     let infoNode = null;
     if (current && typeof current.label === "string") {
       const labelLower = current.label.toLowerCase();
@@ -3967,81 +3963,81 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     }
 
     const tableWrap = h("div", { class: "ath-top10-table-wrap" },
-      renderTop10Table(current)
+      renderTop10Table(current, select) // <-- select direkt in den Tabellen-Header
     );
 
     mount.innerHTML = "";
     mount.appendChild(head);
-    if (infoNode) mount.appendChild(infoNode);  // hier wird der Hinweis eingefügt
     mount.appendChild(tableWrap);
+    if (infoNode) mount.appendChild(infoNode);
   }
 
 
-    function renderTop10Table(group) {
-      if (!group) return h("div", {}, "Keine Daten.");
+  function renderTop10Table(group, headerRightNode) {
+    if (!group) return h("div", {}, "Keine Daten.");
 
-      const rows = group.rows || [];
+    const rows = group.rows || [];
 
-      const bodyRows = rows.map(cells => {
-        // ANNAHME:
-        // cells[0] = Name
-        // cells[1] = Ortsgruppe
-        // cells[2] = Wert
-        const name  = String(cells[0] ?? "").trim();
-        const og    = String(cells[1] ?? "").trim();
-        const value = cells[2] ?? "";
+    // Header-Rechts: falls Node übergeben -> in Wrapper packen,
+    // sonst Text "Wert" anzeigen
+    const headerRight =
+      headerRightNode
+        ? h("div", { class: "ath-top10-header-select-wrap" }, headerRightNode)
+        : "Wert";
 
-        // 1. Spalte: Cap-SVG
-        const capTd = renderTop10CapCell(og);
+    const header = h("thead", {},
+      h("tr", { class: "ath-top10-header-row" },
+        h("th", {
+          class: "ath-top10-header-cell ath-top10-header-nameog",
+          colspan: "2"
+        }, "Name / Ortsgruppe"),
 
-        // 2. Spalte: Name + OG (untereinander)
-        const nameOgTd = h("td", { class: "ath-top10-name-cell" },
-          h("div", { class: "ath-top10-name" }, name),
-          og ? h("div", { class: "ath-top10-og" }, og) : null
-        );
+        h("th", { class: "ath-top10-header-cell ath-top10-header-select" },
+          headerRight
+        )
+      )
+    );
 
-        // 3. Spalte: Wert / Ergebnis
-        const valueTd = h("td", { class: "ath-top10-value-cell" },
-          String(value ?? "")
-        );
+    const bodyRows = rows.map(cells => {
+      const name  = String(cells[0] ?? "").trim();
+      const og    = String(cells[1] ?? "").trim();
+      const value = cells[2] ?? "";
 
-        // ► Zeile klickbar + Name als data-Attribut + Touch-Hover
-        return h("tr", {
-          class: "ath-top10-row",
-          role: "button",
-          tabindex: "0",
-          dataset: { name },                 // → tr.dataset.name
+      const capTd = renderTop10CapCell(og);
 
-          onclick: (e) => openProfileFromTop10Row(e.currentTarget),
-
-          onkeydown: (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              openProfileFromTop10Row(e.currentTarget);
-            }
-          },
-
-          // "Hover"-Effekt auch auf Touch:
-          onpointerdown: function () {
-            this.classList.add("active");
-          },
-          onpointerup: function () {
-            this.classList.remove("active");
-          },
-          onpointercancel: function () {
-            this.classList.remove("active");
-          },
-          onpointerleave: function () {
-            this.classList.remove("active");
-          }
-        }, capTd, nameOgTd, valueTd);
-
-      });
-
-      return h("table", { class: "ath-top10-table" },
-        h("tbody", {}, ...bodyRows)
+      const nameOgTd = h("td", { class: "ath-top10-name-cell" },
+        h("div", { class: "ath-top10-name" }, name),
+        og ? h("div", { class: "ath-top10-og" }, og) : null
       );
-    }
+
+      const valueTd = h("td", { class: "ath-top10-value-cell" },
+        String(value ?? "")
+      );
+
+      return h("tr", {
+        class: "ath-top10-row",
+        role: "button",
+        tabindex: "0",
+        dataset: { name },
+        onclick: (e) => openProfileFromTop10Row(e.currentTarget),
+        onkeydown: (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openProfileFromTop10Row(e.currentTarget);
+          }
+        },
+        onpointerdown: function () { this.classList.add("active"); },
+        onpointerup: function () { this.classList.remove("active"); },
+        onpointercancel: function () { this.classList.remove("active"); },
+        onpointerleave: function () { this.classList.remove("active"); }
+      }, capTd, nameOgTd, valueTd);
+    });
+
+    return h("table", { class: "ath-top10-table" },
+      header,
+      h("tbody", {}, ...bodyRows)
+    );
+  }
 
 
 

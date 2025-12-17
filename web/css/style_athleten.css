@@ -2223,9 +2223,8 @@ html, body {
 
 .ath-top10-head {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  margin-bottom: .75rem;
 }
 
 .ath-top10-label{
@@ -2247,17 +2246,17 @@ html, body {
   width: 100%;
   border-collapse: collapse;
   font-size: .9rem;
+  margin-top: 30px;
 }
 
 .ath-top10-table th,
 .ath-top10-table td {
   padding: .35rem .5rem;
   border-bottom: 1px solid #ddd;
-  text-align: left;
 }
 
 .ath-top10-table thead tr {
-  background: #f5f5f5;
+  background: #f5f5f5; 
 }
 
 /* Zelle mit Name + Ortsgruppe */
@@ -2281,7 +2280,7 @@ html, body {
 
 .ath-top10-info {
   font-size: 0.85rem;
-  margin: 0.25rem 0 0.75rem;
+  margin-top: 15px;
   color: #555;
 }
 
@@ -2292,9 +2291,9 @@ html, body {
 }
 
 .ath-top10-value-cell {
-  text-align: right;
+  text-align: center;
   white-space: nowrap;
-  width: 5.5rem;           /* bei Bedarf anpassen */
+  width: 5.5rem; 
 }
 
 .ath-top10-table tbody tr:hover,
@@ -2309,4 +2308,101 @@ html, body {
 .ath-top10-table tbody tr:focus-visible {
   outline: 2px solid rgba(0, 0, 0, 0.35);
   outline-offset: 2px;
+}
+
+/* Header-Zeile */
+.ath-top10-table thead tr {
+  background: #f5f5f5;
+}
+
+.ath-top10-table thead th.ath-top10-header-cell {
+  font-weight: 700;
+  border-bottom: 3px solid currentColor;
+  padding: 0.5rem 0.75rem;
+  vertical-align: middle;
+}
+
+.ath-top10-table thead th.ath-top10-header-nameog {
+  text-align: left;
+}
+
+.ath-top10-table thead th.ath-top10-header-select {
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Wrapper, damit das Select "wie Header-Inhalt" wirkt */
+.ath-top10-header-select-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+}
+
+/* Select optisch integrieren (keine Box-in-Box Optik) */
+.ath-top10-header-select-wrap .ath-top10-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  border: 0;
+  background-color: transparent;
+
+  font: inherit;          /* übernimmt Header-Font */
+  font-weight: 700;
+
+  padding: 0 1.25rem 0 0; /* Platz für Pfeil rechts */
+  margin: 0;
+  line-height: 1.1;
+
+  cursor: pointer;
+}
+
+/* Custom Pfeil */
+.ath-top10-header-select-wrap::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  width: 0.9rem;
+  height: 0.9rem;
+  pointer-events: none;
+  opacity: 0.85;
+
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 0.9rem 0.9rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+}
+
+/* Fokus sichtbar, aber sauber */
+.ath-top10-header-select-wrap .ath-top10-select:focus-visible {
+  outline: 2px solid rgba(0,0,0,0.35);
+  outline-offset: 2px;
+}
+
+
+/* 1) Fokus-Umrandung beim Klicken entfernen (Browser-Outline/Shadow) */
+.ath-top10-header-select-wrap .ath-top10-select:focus,
+.ath-top10-header-select-wrap .ath-top10-select:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* (optional) auch der Wrapper selbst, falls dort Fokus landet */
+.ath-top10-header-select-wrap:focus,
+.ath-top10-header-select-wrap:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 2) Padding im Dropdown (geschlossen) */
+.ath-top10-header-select-wrap .ath-top10-select {
+  padding: 0.25rem 1.6rem 0.25rem 0.6rem; /* rechts Platz für Pfeil */
+  line-height: 1.2;
+}
+
+/* optional: damit die Options im geöffneten Menü mehr "Luft" haben
+   (funktioniert je nach Browser unterschiedlich) */
+.ath-top10-header-select-wrap .ath-top10-select option {
+  padding: 0.35rem 0.6rem;
 }
