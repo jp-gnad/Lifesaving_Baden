@@ -2291,9 +2291,8 @@ html, body {
 }
 
 .ath-top10-value-cell {
-  text-align: center;
+  text-align: right;
   white-space: nowrap;
-  width: 5.5rem; 
 }
 
 .ath-top10-table tbody tr:hover,
@@ -2327,7 +2326,7 @@ html, body {
 }
 
 .ath-top10-table thead th.ath-top10-header-select {
-  text-align: center;
+  text-align: right;
   white-space: nowrap;
 }
 
