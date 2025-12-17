@@ -2215,8 +2215,6 @@ html, body {
     display: block;
   }
 }
-
-
 .ath-top10-section {
   margin-top: 1rem;
 }
@@ -2227,41 +2225,55 @@ html, body {
   align-items: center;
 }
 
-.ath-top10-label{
+.ath-top10-label {
   font-weight: 700;
   font-size: 1.5rem;
-}
-
-.ath-top10-select-wrap {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
 }
 
 .ath-top10-table-wrap {
   overflow-x: auto;
 }
 
+.ath-top10-table-combo {
+  width: 100%;
+}
+
 .ath-top10-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: .9rem;
-  margin-top: 30px;
+  font-size: 0.9rem;
+  margin-top: 0;
 }
 
 .ath-top10-table th,
 .ath-top10-table td {
-  padding: .35rem .5rem;
+  padding: 0.35rem 0.5rem;
   border-bottom: 1px solid #ddd;
 }
 
-.ath-top10-table thead tr {
-  background: #f5f5f5; 
+.ath-top10-table-head {
+  margin-top: 30px;
 }
 
-/* Zelle mit Name + Ortsgruppe */
-.ath-top10-cell-person {
-  line-height: 1.2;
+.ath-top10-table-head th {
+  background: #f5f5f5;
+}
+
+.ath-top10-table-head th.ath-top10-header-nameog {
+  text-align: left !important;
+}
+
+.ath-top10-table-head th.ath-top10-header-select {
+  width: 14rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ath-top10-header-cell {
+  font-weight: 700;
+  border-bottom: 3px solid currentColor;
+  padding: 0.5rem 0.75rem;
+  vertical-align: middle;
 }
 
 .ath-top10-cap-cell {
@@ -2278,17 +2290,12 @@ html, body {
   opacity: 0.8;
 }
 
-.ath-top10-info {
-  font-size: 0.85rem;
-  margin-top: 15px;
-  color: #555;
-}
-
-
-.ath-top10-value-cell {
-  text-align: right;
+.ath-top10-table-body td.ath-top10-value-cell {
+  width: 5.5rem;
+  text-align: center;
   white-space: nowrap;
 }
+
 .ath-top10-table-body tbody tr {
   cursor: pointer;
   transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
@@ -2298,41 +2305,18 @@ html, body {
 .ath-top10-table-body tbody tr:focus-visible,
 .ath-top10-table-body tbody tr.active {
   background-color: rgba(227, 6, 21, 0.096);
-  font-size: 1.0rem;
+  font-size: 1rem;
+}
+
+.ath-top10-table-body tbody tr:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.35);
+  outline-offset: 2px;
 }
 
 .ath-top10-table-head tbody tr {
   cursor: default;
 }
 
-/* Optional Fokus mit Tastatur */
-.ath-top10-table tbody tr:focus-visible {
-  outline: 2px solid rgba(0, 0, 0, 0.35);
-  outline-offset: 2px;
-}
-
-/* Header-Zeile */
-.ath-top10-table thead tr {
-  background: #f5f5f5;
-}
-
-.ath-top10-table thead th.ath-top10-header-cell {
-  font-weight: 700;
-  border-bottom: 3px solid currentColor;
-  padding: 0.5rem 0.75rem;
-  vertical-align: middle;
-}
-
-.ath-top10-table thead th.ath-top10-header-nameog {
-  text-align: left;
-}
-
-.ath-top10-table thead th.ath-top10-header-select {
-  text-align: right;
-  white-space: nowrap;
-}
-
-/* Wrapper, damit das Select "wie Header-Inhalt" wirkt */
 .ath-top10-header-select-wrap {
   display: inline-flex;
   align-items: center;
@@ -2340,26 +2324,31 @@ html, body {
   position: relative;
 }
 
-/* Select optisch integrieren (keine Box-in-Box Optik) */
 .ath-top10-header-select-wrap .ath-top10-select {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-
   border: 0;
   background-color: transparent;
-
-  font: inherit;          /* übernimmt Header-Font */
+  font: inherit;
   font-weight: 700;
-
-  padding: 0 1.25rem 0 0; /* Platz für Pfeil rechts */
+  padding: 0.25rem 1.6rem 0.25rem 0.6rem;
   margin: 0;
-  line-height: 1.1;
-
+  line-height: 1.2;
   cursor: pointer;
+  text-align: right;
+  text-align-last: right;
+  outline: none !important;
+  box-shadow: none !important;
+  width: auto !important;
+  min-width: 0;
 }
 
-/* Custom Pfeil */
+.ath-top10-header-select-wrap .ath-top10-select option {
+  padding: 0.35rem 0.6rem;
+  text-align: left;
+}
+
 .ath-top10-header-select-wrap::after {
   content: "";
   position: absolute;
@@ -2368,110 +2357,14 @@ html, body {
   height: 0.9rem;
   pointer-events: none;
   opacity: 0.85;
-
   background-repeat: no-repeat;
   background-position: center;
   background-size: 0.9rem 0.9rem;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
 }
 
-/* Fokus sichtbar, aber sauber */
-.ath-top10-header-select-wrap .ath-top10-select:focus-visible {
-  outline: 2px solid rgba(0,0,0,0.35);
-  outline-offset: 2px;
+.ath-top10-info {
+  font-size: 0.85rem;
+  margin-top: 15px;
+  color: #555;
 }
-
-
-/* 1) Fokus-Umrandung beim Klicken entfernen (Browser-Outline/Shadow) */
-.ath-top10-header-select-wrap .ath-top10-select:focus,
-.ath-top10-header-select-wrap .ath-top10-select:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* (optional) auch der Wrapper selbst, falls dort Fokus landet */
-.ath-top10-header-select-wrap:focus,
-.ath-top10-header-select-wrap:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* 2) Padding im Dropdown (geschlossen) */
-.ath-top10-header-select-wrap .ath-top10-select {
-  padding: 0.25rem 1.6rem 0.25rem 0.6rem; /* rechts Platz für Pfeil */
-  line-height: 1.2;
-}
-
-/* optional: damit die Options im geöffneten Menü mehr "Luft" haben
-   (funktioniert je nach Browser unterschiedlich) */
-.ath-top10-header-select-wrap .ath-top10-select option {
-  padding: 0.35rem 0.6rem;
-}
-
-
-/* Standard: eine Zeile */
-.ath-top10-header-nameog .ath-top10-h-og {
-  display: inline;
-  margin-left: 0.25rem; /* Abstand nach dem "/" */
-}
-
-/* < 720px: zweite Zeile */
-@media (max-width: 719px) {
-  .ath-top10-header-nameog .ath-top10-h-og {
-    display: block;
-    margin-left: 0;
-  }
-}
-
-/* Kombi-Container */
-.ath-top10-table-combo {
-  width: 100%;
-}
-
-/* Beide Tabellen wie eine */
-.ath-top10-table-head {
-  margin-top: 30px;              /* das war vorher an .ath-top10-table */
-}
-
-.ath-top10-table-body {
-  margin-top: 0;                 /* direkt unter Header */
-}
-
-/* Kopf optisch abgrenzen */
-.ath-top10-table-head th {
-  background: #f5f5f5;
-  font-weight: 700;
-  border-bottom: 3px solid currentColor;
-}
-
-/* Body: obere Linie weg, damit es nicht doppelt wirkt */
-.ath-top10-table-body td {
-  border-top: 0;
-}
-
-/* --- ENTKOPPELTE BREITEN --- */
-
-/* Header: rechte Spalte (Dropdown) bewusst breiter */
-.ath-top10-table-head th.ath-top10-header-select {
-  width: 14rem;                  /* gewünschte Breite */
-  text-align: right;
-  white-space: nowrap;
-}
-
-/* Header linksbündig erzwingen */
-.ath-top10-table-head th.ath-top10-header-nameog {
-  text-align: left !important;
-}
-
-/* Body: Wert-Spalte bewusst schmal */
-.ath-top10-table-body td.ath-top10-value-cell {
-  width: 5.5rem;                 /* schmaler als Header */
-  text-align: center;            /* oder right/center wie gewünscht */
-  white-space: nowrap;
-}
-
-/* Cap-Spalte im Body fix */
-.ath-top10-table-body td.ath-top10-cap-cell {
-  width: 3rem;
-}
-
