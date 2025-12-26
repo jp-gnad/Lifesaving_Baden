@@ -359,7 +359,37 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("resize", fitProfileName);
   }
 
-  const FLAG_BASE_URL = "./svg"; 
+  const FLAG_BASE_URL = "./svg";
+  const CAP_FALLBACK_FILE = "Cap-Baden_light.svg";
+  const CAP_FALLBACK_URL  = `${FLAG_BASE_URL}/${encodeURIComponent(CAP_FALLBACK_FILE)}`;
+
+  const CapProbe = new Map();
+
+  function probeCapFileExists(capFile){
+    if (!capFile) return Promise.resolve(false);
+    if (CapProbe.has(capFile)) return CapProbe.get(capFile);
+
+    const url = `${FLAG_BASE_URL}/${encodeURIComponent(capFile)}`;
+    const p = new Promise((resolve) => {
+      const img = new Image();
+      img.onload  = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = url;
+    });
+
+    CapProbe.set(capFile, p);
+    return p;
+  }
+
+  function setCapWithCache(imgEl, capFile){
+    imgEl.src = CAP_FALLBACK_URL;
+
+    probeCapFileExists(capFile).then((ok) => {
+      if (!ok) return;
+      imgEl.src = `${FLAG_BASE_URL}/${encodeURIComponent(capFile)}`;
+    });
+  }
+
   const MIN_QUERY_LEN = 3;
   const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test (1).xlsx";
   const TOP10_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/top10.json";
@@ -1869,17 +1899,16 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       alt: `Vereinskappe ${formatOrtsgruppe(ogNow)}`,
       loading: size === "xl" ? "eager" : "lazy",
       decoding: "async",
-      fetchpriority: size === "xl" ? "high" : "low",
-      src: `${FLAG_BASE_URL}/${encodeURIComponent(file)}`,
-      onerror: () => {
-        img.onerror = null;
-        img.src = `${FLAG_BASE_URL}/${encodeURIComponent("Cap-Baden_light.svg")}`;
-      }
+      fetchpriority: size === "xl" ? "high" : "low"
     });
+
+    // NEU: sofort Fallback, Custom nur bei Erfolg (mit Cache)
+    setCapWithCache(img, file);
 
     wrap.appendChild(img);
     return wrap;
   }
+
 
   function deriveCapKeysForAthlete(a) {
     let ogKey = String(
@@ -2301,15 +2330,13 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
         const capImg = h("img", {
           class: "og-cap-img",
-          src: capUrl,
           alt: `Cap ${ogName}`,
           loading: "lazy",
-          decoding: "async",
-          onerror: () => {
-            capImg.onerror = null;
-            capImg.src = `${FLAG_BASE_URL}/${encodeURIComponent("Cap-Baden_light.svg")}`;
-          }
+          decoding: "async"
         });
+
+        setCapWithCache(capImg, capFile);
+
 
         const row = h(
           "div",
@@ -3540,14 +3567,10 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       alt: `Vereinskappe ${formatOrtsgruppe(ogNow)}`,
       loading: "lazy",
       decoding: "async",
-      fetchpriority: "low",
-      src: `${FLAG_BASE_URL}/${encodeURIComponent(file)}`
+      fetchpriority: "low"
     });
 
-    img.onerror = () => {
-      img.onerror = null;
-      img.src = `${FLAG_BASE_URL}/${encodeURIComponent("Cap-Baden_light.svg")}`;
-    };
+    setCapWithCache(img, file);
 
     const wrap = h("div", { class: "ath-avatar sm ath-top10-cap" }, img);
     td.appendChild(wrap);
