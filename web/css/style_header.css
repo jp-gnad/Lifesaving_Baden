@@ -1,17 +1,19 @@
-@font-face{
-  font-family:"DLRG";
-  src:url("fonts/LT_50141_regular.woff") format("woff");
-  font-weight:400;
-  font-style:normal;
-  font-display:swap;
+@font-face {
+  font-family: "DLRG";
+  src: url("../fonts/LT_50141_regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
-@font-face{
-  font-family:"DLRG";
-  src:url("fonts/LT_50140_heavy.woff") format("woff");
-  font-weight:800;
-  font-style:normal;
-  font-display:swap;
+
+@font-face {
+  font-family: "DLRG";
+  src: url("../fonts/LT_50140_heavy.woff") format("woff");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
 }
+
 
 
 :root{
