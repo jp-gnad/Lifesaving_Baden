@@ -1,6 +1,4 @@
-// ----------------------------------------------------------
-// Oberer Teil: Hero + Mount-Container für die Athleten-GUI
-// ----------------------------------------------------------
+
 document.addEventListener("DOMContentLoaded", () => {
   const main = document.getElementById("content");
   if (!main) return;
@@ -17,11 +15,8 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-// ----------------------------------------------------------
-// athleten.js
-// ----------------------------------------------------------
+
 (function () {
-  // ---------- Mini-Helfer ----------
   const $ = (s, r = document) => r.querySelector(s);
   const h = (tag, props = {}, ...children) => {
     const el = document.createElement(tag);
@@ -37,18 +32,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     return el;
   };
-  const hDiv = h; // Kurzform
+  const hDiv = h;
 
   function renderAthleteName(name) {
     const full = (name || "").toString().trim();
     const idx = full.indexOf(" ");
     if (idx === -1) {
-      // Kein Leerzeichen → einfach komplett ausgeben
       return [full];
     }
 
-    const first = full.slice(0, idx);      // vor dem ersten Leerzeichen
-    const rest  = full.slice(idx + 1);     // nach dem ersten Leerzeichen
+    const first = full.slice(0, idx);   
+    const rest  = full.slice(idx + 1); 
 
     return [
       h("span", { class: "name-first" }, first),
@@ -67,33 +61,25 @@ document.addEventListener("DOMContentLoaded", () => {
     const rest = h2.querySelector(".name-rest");
     const vw   = window.innerWidth;
 
-    // vorherige Overrides zurücksetzen
     h2.style.fontSize   = "";
     h2.style.whiteSpace = "";
     if (rest) rest.style.fontSize = "";
 
-    // --------------------------------------------------
-    // 1) Desktop: > 720px → kompletter Name in 1 Zeile
-    // --------------------------------------------------
     if (vw > 720) {
-      // sicherstellen, dass er nicht umbrechen darf
       h2.style.whiteSpace = "nowrap";
 
-      // Ausgangsgröße der Überschrift
       const computed = getComputedStyle(h2);
       let sizePx     = parseFloat(computed.fontSize) || 24;
 
-      // 1.4em in Pixel umrechnen (Basis: <html>)
       const rootComputed = getComputedStyle(document.documentElement);
       const rootPx       = parseFloat(rootComputed.fontSize) || 16;
-      const minPx        = rootPx * 1.4;  // 1.4em
+      const minPx        = rootPx * 1.4;  
 
-      const step = 0.5; // in 0.5px-Schritten verkleinern
+      const step = 0.5; 
 
       while (sizePx > minPx) {
         h2.style.fontSize = sizePx + "px";
 
-        // passt der Text ohne Überlauf in den Block?
         if (h2.scrollWidth <= h2.clientWidth + 0.5) {
           break;
         }
@@ -104,35 +90,25 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // --------------------------------------------------
-    // 2) Mittelbereich: 720–1000px → normales Verhalten
-    // --------------------------------------------------
     if (vw > 720) {
-      // keine spezielle Skalierung nötig,
-      // Cap aber trotzdem zum Namen ausrichten
       alignCapToName();
       return;
     }
 
-    // --------------------------------------------------
-    // 3) Mobil: ≤ 720px → nur .name-rest dynamisch skalieren
-    // --------------------------------------------------
     if (!rest) {
       alignCapToName();
       return;
     }
 
-    // aktuelle Schriftgröße des zweiten Teils
     const computedRest = getComputedStyle(rest);
     let maxSizePx = parseFloat(computedRest.fontSize) || 20;
-    const minSizePx = maxSizePx * 0.7;  // nicht kleiner als 70% der Ausgangsgröße
+    const minSizePx = maxSizePx * 0.7;  
     let size = maxSizePx;
     const step = 0.5;
 
     while (size > minSizePx) {
       rest.style.fontSize = size + "px";
 
-      // passt .name-rest in eine Zeile?
       const needWidth = rest.scrollWidth;
       const avail     = h2.clientWidth;
 
@@ -145,8 +121,6 @@ document.addEventListener("DOMContentLoaded", () => {
     alignCapToName();
   }
 
-  // Basispfad zu deinen histories-Icons (anpassen falls nötig)
-  // Basispfad zu deinen Historie-Icons
   const HISTORIE_ICON_BASE = "png/historie";
 
   const HISTORIE_TOOLTIP = {
@@ -157,7 +131,6 @@ document.addEventListener("DOMContentLoaded", () => {
     WG: "World Games",
   };
 
-  // ordnet ein Meet einer Historie-Kategorie zu
   function classifyHistorie(meet) {
     const raw = (meet.meet_name || meet.name || "");
     if (!raw) return null;
@@ -169,27 +142,22 @@ document.addEventListener("DOMContentLoaded", () => {
       return re.test(raw);
     };
 
-    // World Games zuerst prüfen (optional, aber lesbar)
     if (hasWord("wg") || name.includes("world-games")) {
       return "WG";
     }
 
-    // WM: "WM" als eigenes Wort oder "Weltmeisterschaft"
     if (hasWord("wm") || name.includes("weltmeisterschaft")) {
       return "WM";
     }
 
-    // EM: "EM" als eigenes Wort oder "Europameisterschaft"
     if (hasWord("em") || name.includes("europameisterschaft")) {
       return "EM";
     }
 
-    // JRP: "JRP" als eigenes Wort
     if (hasWord("jrp")) {
       return "JRP";
     }
 
-    // DP: "DP" als eigenes Wort oder "Deutsche Meisterschaft"
     if (hasWord("dp") || name.includes("deutsche meisterschaft")) {
       return "DP";
     }
@@ -197,7 +165,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return null;
   }
 
-  // Jahr herausziehen
   function getMeetYear(meet) {
     const dRaw = meet.date || meet.datum || meet.datum_raw;
 
@@ -243,7 +210,6 @@ document.addEventListener("DOMContentLoaded", () => {
         else if (name.includes("national")) kind = "national";
         key = `${year}-${kind}`;
       } else {
-        // DP / JRP / WG -> pro Jahr genau ein Eintrag
         key = String(year);
       }
 
@@ -289,8 +255,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!any) return null;
     return frag;
   }
-
-    // --- Athletenprofil per Name öffnen (Top-10, Links, etc.) ---
     function openAthleteProfileByName(rawName) {
       if (!rawName) return;
       if (!Array.isArray(AppState.athletes) || !AppState.athletes.length) {
@@ -303,10 +267,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const targetNorm = normalize(name);
 
-      // 1. exakter Namensvergleich (normalisiert)
       let hit = AppState.athletes.find(a => normalize(a.name) === targetNorm);
 
-      // 2. Fallback: evtl. Name mit Zusatz in Klammern
       if (!hit) {
         const stripped = name.replace(/\s*\(.*?\)\s*$/, "").trim();
         if (stripped && stripped !== name) {
@@ -320,31 +282,25 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // Dein bestehendes Profil-Rendering
       openProfile(hit);
 
-      // optional: nach oben scrollen
       const prof = document.getElementById("ath-profile");
       if (prof) {
         prof.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
 
-    // global verfügbar machen (für andere Stellen, falls nötig)
     window.openAthleteProfileByName = openAthleteProfileByName;
 
 
-    // -------------------- Top10: Profil aus Tabellenzeile öffnen --------------------
     function openProfileFromTop10Row(tr) {
       if (!tr) return;
 
-      // 1. bevorzugt: Name aus data-Attribut
       let name = "";
       if (tr.dataset && tr.dataset.name) {
         name = tr.dataset.name.trim();
       }
 
-      // 2. Fallback: Element suchen, in dem NUR der Name steht
       if (!name) {
         const nameEl = tr.querySelector(".ath-top10-name");
         if (nameEl) {
@@ -354,18 +310,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!name) return;
 
-      // FALL 1: zentrale Funktion vorhanden → nutzen
       if (typeof window.openAthleteProfileByName === "function") {
         window.openAthleteProfileByName(name);
         return;
       }
 
-      // FALL 2: Fallback – URL aus dem Namen bauen (wie bisher)
       const slug = name
-        .normalize("NFD")                // Umlaute trennen
-        .replace(/\p{Diacritic}/gu, "")  // Diakritika entfernen
-        .replace(/[^a-zA-Z0-9]+/g, "-")  // alles Nicht-Alphanumerische → "-"
-        .replace(/^-+|-+$/g, "")         // führende/trailing "-"
+        .normalize("NFD")                
+        .replace(/\p{Diacritic}/gu, "")  
+        .replace(/[^a-zA-Z0-9]+/g, "-") 
+        .replace(/^-+|-+$/g, "")
         .toLowerCase();
 
       window.location.href = `./profil.html#${slug}`;
@@ -382,17 +336,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const h2  = head.querySelector(".ath-profile-title h2");
     if (!cap || !h2) return;
 
-    // Offset zurücksetzen
     cap.style.setProperty("--cap-offset-y", "0px");
 
-    // Bounding-Boxes holen
     const capRect  = cap.getBoundingClientRect();
     const nameRect = h2.getBoundingClientRect();
 
     const capCenter  = capRect.top  + capRect.height  / 2;
     const nameCenter = nameRect.top + nameRect.height / 2;
 
-    const delta = nameCenter - capCenter; // wie weit Cap nach unten/oben muss
+    const delta = nameCenter - capCenter;
 
     cap.style.setProperty("--cap-offset-y", `${delta}px`);
   }
@@ -407,22 +359,20 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("resize", fitProfileName);
   }
 
-
-
-  // ---------- Konstanten / Pfade ----------
-  const FLAG_BASE_URL = "./svg"; // dein SVG-Ordner
+  const FLAG_BASE_URL = "./svg"; 
   const MIN_QUERY_LEN = 3;
   const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test (1).xlsx";
-  let AllMeetsByAthleteId = new Map();        // id -> Meet[]
-  const TOP10_SHEET = "Tabelle1";
+  const TOP10_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/top10.json";
+
+  let AllMeetsByAthleteId = new Map();
 
   const TOP10_GROUPS = [
-    { key: "starts",             label: "Starts",               startCol: 0 },  // A–C
-    { key: "wettkaempfe",        label: "Wettkämpfe",          startCol: 3 },  // D–F
-    { key: "lsc_aktuell",        label: "LSC aktuell",         startCol: 6 },  // G–I
-    { key: "aktive_jahre",       label: "Aktive Jahre",        startCol: 9 },  // J–L
-    { key: "hoechster_lsc",      label: "Höchster LSC",        startCol: 12 }, // M–O
-    { key: "auslandswettkaempfe",label: "Auslandswettkämpfe",  startCol: 15 }  // P–R
+    { key: "starts",             label: "Starts",               startCol: 0 },
+    { key: "wettkaempfe",        label: "Wettkämpfe",          startCol: 3 },
+    { key: "lsc_aktuell",        label: "LSC aktuell",         startCol: 6 },
+    { key: "aktive_jahre",       label: "Aktive Jahre",        startCol: 9 },
+    { key: "hoechster_lsc",      label: "Höchster LSC",        startCol: 12 },
+    { key: "auslandswettkaempfe",label: "Auslandswettkämpfe",  startCol: 15 }
   ];
 
 
@@ -464,7 +414,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
-// ---- Excel lesen (Blatt "Tabelle2") -> 2D-Array ohne Header ----
 async function loadWorkbookArray(sheetName = "Tabelle2") {
   const wb = await getWorkbook();
   const ws = wb.Sheets[sheetName] || wb.Sheets[wb.SheetNames[0]];
@@ -502,11 +451,9 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     BV_natio: 27,           // AB:
   };
 
-  // ---- Hilfen: Datum & Normalisierungen ----
   function excelSerialToISO(n){
     const num = Number(n);
     if (!Number.isFinite(num)) return "";
-    // Excel (1900-Date-System); 1899-12-30 ist "0"
     const base = new Date(Date.UTC(1899, 11, 30));
     const d = new Date(base.getTime() + num * 86400000);
     return d.toISOString().slice(0,10);
@@ -521,7 +468,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     const t = String(x||"").trim();
     if (!t) return "";
     if (t.toUpperCase() === "GER") return "Deutschland";
-    return t; // andere Länder sind ausgeschrieben laut Vorgabe
+    return t;
   }
   function normalizePool(v){
     return (String(v).trim() === "25" || String(v).trim() === "50") ? String(v).trim() : "";
@@ -535,7 +482,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return Number.isFinite(n) ? String(n) : String(v||"").trim();
   }
   function parseTwoDigitYearWithMeetYear(twoDigit, meetISO){
-    // Regel: starte bei 1900+yy; addiere +100 solange (meetYear - year) > 100
     const yy = Number(twoDigit);
     const meetYear = Number((meetISO||"").slice(0,4));
     if (!Number.isFinite(yy) || !Number.isFinite(meetYear)) return null;
@@ -549,7 +495,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return `ath_${base}_${birthYear||"x"}_${g}`;
   }
 
-  // ---- Row -> Minimal-Athlet ----
   function mapRowToAthleteMinimal(row){
     const name   = String(row[COLS.name]||"").trim();
     const gender = String(row[COLS.gender]||"").trim();
@@ -567,7 +512,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     };
   }
 
-  // ---- Row -> Meet (GUI-kompatibel) ----
   function mapRowToMeet(row){
     const iso  = excelSerialToISO(row[COLS.excelDate]);
     const meet = {
@@ -576,10 +520,8 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       pool: normalizePool(row[COLS.pool]),
       Ortsgruppe: String(row[COLS.ortsgruppe]||"").trim(),
 
-      // NEU: LV-State aus Spalte N
       LV_state: String(row[COLS.LV_state] ?? "").trim(),
 
-      // NEU: BV-Nation aus Spalte AB
       BV_natio: String(row[COLS.BV_natio] ?? "").trim(),
 
       Regelwerk: normalizeRegelwerk(row[COLS.regelwerk]),
@@ -587,7 +529,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       Startrecht: normalizeStartrecht(row[COLS.startrecht]),
       Wertung: String(row[COLS.wertung]||"").trim(),
       Vorläufe: String(row[COLS.vorlaeufe] ?? "").trim(),
-      LSC: String(row[COLS.lsc] ?? "").toString().trim(),            // "766,95"
+      LSC: String(row[COLS.lsc] ?? "").toString().trim(),
       Mehrkampf_Platz: toNumOrBlank(row[COLS.p_mehrkampf]),
       "50m_Retten_Zeit": String(row[COLS.z_50r] ?? "").trim(),
       "50m_Retten_Platz": toNumOrBlank(row[COLS.p_50r]),
@@ -607,8 +549,8 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
 
   function buildIndicesFromRows(rows){
-    const minimalById = new Map();   // id -> minimaler Athlet
-    const meetsById   = new Map();   // id -> Meet[]
+    const minimalById = new Map();  
+    const meetsById   = new Map(); 
 
     for (let i=0; i<rows.length; i++){
       const row = rows[i];
@@ -627,7 +569,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       meetsById.get(aMin.id).push(meet);
     }
 
-    // ★★★ NEU: ortsgruppe der Minimal-Objekte = OG des letzten (neuesten) Wettkampfs
     for (const [id, min] of minimalById.entries()){
       const list = meetsById.get(id) || [];
       let latest = null;
@@ -645,18 +586,13 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       minimalById.set(id, { ...min, ortsgruppe: lastOG });
     }
 
-    // global setzen (für Profile etc.)
     AllMeetsByAthleteId = meetsById;
 
-    // leichte Liste für Suggestions
     const athletesLight = Array.from(minimalById.values());
     athletesLight.sort((l,r) => l.name.localeCompare(r.name, "de"));
     return athletesLight;
   }
 
-
-
-  // Zählt Starts je Startrecht (OG/BZ/LV/BV)
   function countStartrechte(a){
     const c = { OG:0, BZ:0, LV:0, BV:0 };
     if (!Array.isArray(a?.meets)) return c;
@@ -669,14 +605,11 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
   function dismissKeyboard(){
     try{
-      // 1) Fokus vom Suchfeld nehmen
       Refs.input?.blur();
 
-      // 2) ggf. aktives Element blurren
       const ae = document.activeElement;
       if (ae && typeof ae.blur === "function") ae.blur();
 
-      // 3) iOS-Spezialfall: kurz auf unsichtbares Input focussen, dann blur
       let trap = document.getElementById("kb-blur-trap");
       if (!trap){
         trap = document.createElement("input");
@@ -697,9 +630,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
   }
 
 
-  // Baut Zeit-Punkte für eine Disziplin (alle Läufe mit gültiger Zeit; DQ wird ignoriert)
-  // Baut ALLE Läufe für eine Disziplin, optional gefiltert nach Bahn(en).
-  // opts.lanes: Set oder Array mit "25"/"50" (Default: beide)
   function buildTimeSeriesForDiscipline(a, discKey, opts = {}) {
     const dMeta = DISCIPLINES.find(d => d.key === discKey);
     if (!dMeta) return [];
@@ -732,7 +662,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         const sec  = parseTimeToSec(raw);
         if (!Number.isFinite(lauf) || !Number.isFinite(sec)) continue;
 
-        // Bahn ermitteln (Run → Meet) und filtern
         const pool = String(r?.pool || m?.pool || "").trim();
         if (!lanesWanted.has(pool)) continue;
 
@@ -740,7 +669,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         const age = Math.round(ageYears * 100) / 100;
         const meetName = String(m.meet_name || m.meet || "").replace(/\s+-\s+.*$/, "").trim();
 
-        // Rundenlabel nur „Vorlauf“/„Finale“ anzeigen
         const rl = roundLabelFromLauf(lauf, laufMax);
         const showRound = (rl === "Vorlauf" || rl === "Finale") ? rl : "";
 
@@ -751,20 +679,16 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
           meet_name: meetName,
           lauf,
           lauf_max: laufMax,
-          round: showRound,   // ← nur Vorlauf/Finale, sonst ""
-          pool                  // "25" | "50" (für spätere Nutzung falls nötig)
+          round: showRound,
+          pool 
         });
       }
     }
 
-    // Datum ↑, dann Lauf ↑ → vertikale Verbindung am gleichen x
     rows.sort((a,b) => (new Date(a.date) - new Date(b.date)) || (a.lauf - b.lauf));
     return rows;
   }
 
-  // ---------- Disziplin-Verteilung (Donut) ----------
-
-  // Zählt Starts je Disziplin über alle Meets (DQ zählt als Start)
   function countStartsPerDisciplineAll(a){
     const meets = Array.isArray(a?.meets) ? a.meets : [];
     const out = {};
@@ -785,13 +709,11 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
   function renderDisciplinePieCard(a){
     const counts = countStartsPerDisciplineAll(a);
 
-    // Gewünschte feste Reihenfolge = Reihenfolge in DISCIPLINES
-    // (50 Retten → 100 Retten m. Flossen → 100 Kombi → 100 Lifesaver → 200 Super → 200 Hindernis)
     const ordered = DISCIPLINES.map(d => ({
       key: d.key,
       label: d.label,
       count: Number(counts[d.key] || 0)
-    })).filter(x => x.count > 0); // nur vorhandene anzeigen (Reihenfolge bleibt gleich)
+    })).filter(x => x.count > 0);
 
     const total = ordered.reduce((s,x)=>s + x.count, 0);
 
@@ -811,14 +733,12 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       return card;
     }
 
-    // Prozente runden (0 NK) – Reihenfolge bleibt wie oben
     ordered.forEach(it => { it.pct = Math.round((it.count/total)*100); });
 
     const wrap = document.createElement("div");
     wrap.className = "pie-wrap";
     card.appendChild(wrap);
 
-    // --- SVG Donut ---
     const W = 360, H = 360, cx = W/2, cy = H/2;
     const R  = 140, r = 80;
     const svgNS = "http://www.w3.org/2000/svg";
@@ -837,7 +757,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       return `M ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1} L ${x2} ${y2} A ${r} ${r} 0 ${large} 0 ${x3} ${y3} Z`;
     }
 
-    // DLRG-nahe Farbzuteilung passend zur festen Reihenfolge
     const CLASS_MAP = {
       "50_retten":         "pie-c-200h",   
       "100_retten_flosse": "pie-c-100k", 
@@ -861,7 +780,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       angle += sweep;
     });
 
-    // Center-Label
     const center = document.createElementNS(svgNS, "g");
     center.setAttribute("class", "pie-center");
     const t1 = document.createElementNS(svgNS, "text");
@@ -875,7 +793,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     center.append(t1,t2);
     svg.appendChild(center);
 
-    // Legende – gleiche feste Reihenfolge
     const legend = document.createElement("div");
     legend.className = "pie-legend";
     ordered.forEach(it => {
@@ -908,7 +825,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return pool === "25" ? "25m" : (pool === "50" ? "50m" : "—");
   }
 
-  // Key für "gleiches Event": meet_name + date (beides normalisiert)
   function meetKey(m){
     const name = String(m?.meet_name || "").trim().toLowerCase();
     const date = String(m?.date || "").trim();
@@ -917,18 +833,15 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
   function nonEmpty(v){ return v != null && String(v).trim() !== ""; }
     
-  // nimmt ein Array von Meets und gibt zusammengefasste Meets zurück
   function mergeDuplicateMeets(meets){
     const list = Array.isArray(meets) ? meets.slice() : [];
     const groups = new Map();
 
-    // 1) Gruppieren nach (meet_name + date)
     list.forEach((m, idx) => {
       if (!m || !m.meet_name) return;
       const k = meetKey(m);
       if (!groups.has(k)) groups.set(k, []);
 
-      // Laufnummer robust aus Vorläufe ziehen (1,2,3,...) – Fallback: Reihenfolge
       const raw = (m.Vorläufe ?? m._lauf ?? "").toString().trim();
       const parsed = parseInt(raw, 10);
       const runNo = Number.isFinite(parsed) && parsed > 0
@@ -937,27 +850,22 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
       groups.get(k).push({
         ...m,
-        _lauf: runNo,           // ← echte Laufnummer
-        _lauf_raw: raw,         // optional für Debug
-        _srcIndex: idx          // Fallback-Stabilität
+        _lauf: runNo,
+        _lauf_raw: raw,
+        _srcIndex: idx
       });
     });
 
     const merged = [];
 
-    // 2) Jede Gruppe zusammenfassen
     for (const runs0 of groups.values()){
-      // nach echter Laufnummer sortieren; bei Gleichstand: Quellreihenfolge
       const runs = runs0.sort((a, b) => (a._lauf - b._lauf) || (a._srcIndex - b._srcIndex));
 
-      // höchster Lauf = Finale (oder letztes vorhandenes)
       const highest = runs[runs.length - 1];
       const out = { ...highest };
       out._runs = runs.map(r => ({ ...r }));
-      // Maximal vorhandene Laufnummer (nicht bloß Anzahl)
       out._lauf_max = runs.reduce((m, r) => Math.max(m, Number(r._lauf)||0), 0) || runs.length;
 
-      // Felder der Disziplinen: Wert vom höchsten verfügbaren Lauf, sonst nächstniedriger
       const ALL_TIME_FIELDS = MEET_DISC_TIME_FIELDS.slice();
       const PLACE_FIELDS = MEET_DISC_TIME_FIELDS.map(f => f.replace(/_Zeit$/i, "_Platz"));
 
@@ -972,7 +880,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       ALL_TIME_FIELDS.forEach(f => { out[f] = pickFromHighest(f); });
       PLACE_FIELDS.forEach(f => { out[f] = pickFromHighest(f); });
 
-      // Meta immer vom höchsten Lauf
       out.Mehrkampf_Platz = pickFromHighest("Mehrkampf_Platz");
       out.LSC             = pickFromHighest("LSC");
       out.Wertung         = highest.Wertung || out.Wertung || "";
@@ -1062,12 +969,10 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       return "";
     }
 
-    // Wenn schon ISO3 (z.B. GER)
     if (/^[A-Z]{3}$/.test(s)) {
       return s;
     }
 
-    // Versuch: aus deutschem Landesnamen ISO3 machen
     const iso = iso3FromLand(s);
     if (iso && iso !== "—") {
       return iso;
@@ -1078,14 +983,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
   }
 
 
-  /**
-   * Entscheidet basierend auf Startrecht, was in OG-Spalte und welches Cap-SVG
-   * verwendet wird.
-   *
-   * Rückgabe: { label, capKey }
-   * - label  → Text in der Ortsgruppen-Spalte
-   * - capKey → Dateiname in svg/Cap-{capKey}.svg
-   */
   function ogInfoFromMeet(m) {
     const ogRaw    = m.Ortsgruppe ?? m.ortsgruppe ?? "";
     const lvRaw    = m.LV_state  ?? m.lv_state  ?? "";
@@ -1094,7 +991,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     const ogKey  = String(ogRaw || "").trim();
     const lvCode = String(lvRaw || "").trim().toUpperCase();
-    const bvCode = normalizeBVCode(bvRaw);  // z.B. "GER", "POL", ...
+    const bvCode = normalizeBVCode(bvRaw);
 
     let label;
 
@@ -1124,33 +1021,28 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     const { ogKey, lvCode, bvCode, startrecht, label } = ogInfo;
 
-    // 1) Kette je nach Startrecht definieren
     /** @type {{key:string, overlay:boolean}[]} */
     let seq = [];
 
     if (startrecht === "OG") {
-      // OG → LV → BV → None
       seq = [
         { key: ogKey,  overlay: false },
         { key: lvCode, overlay: true  },
         { key: bvCode, overlay: true  },
       ];
     } else if (startrecht === "LV") {
-      // LV → OG → BV → None
       seq = [
         { key: lvCode, overlay: false },
         { key: ogKey,  overlay: true  },
         { key: bvCode, overlay: true  },
       ];
     } else if (startrecht === "BV") {
-      // BV → OG(Overlay) → LV(Overlay) → None
       seq = [
         { key: bvCode, overlay: false },
         { key: ogKey,  overlay: true  },
         { key: lvCode, overlay: true  },
       ];
     } else {
-      // Fallback: wie OG behandeln
       seq = [
         { key: ogKey,  overlay: false },
         { key: lvCode, overlay: true  },
@@ -1158,13 +1050,11 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       ];
     }
 
-    // Leere Keys rauswerfen (z.B. wenn BV_natio fehlt)
     seq = seq.filter(entry => entry.key && String(entry.key).trim() !== "");
 
     let currentIndex = 0;
     let noneUsed = false;
 
-    // Wenn gar kein Key vorhanden ist, direkt None versuchen
     if (!seq.length) {
       const imgNone = h("img", {
         class: "m-ogcap-icon",
@@ -1180,22 +1070,19 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     const img = h("img", {
       class: "m-ogcap-icon",
-      src: "", // setzen wir in applyCandidate()
+      src: "", 
       alt: label || seq[0].key,
       loading: "lazy",
       decoding: "async",
       onerror: (e) => {
-        // Wenn aktueller Kandidat fehlschlägt → nächsten in der Kette verwenden
         if (currentIndex + 1 < seq.length) {
           currentIndex++;
           applyCandidate();
         } else if (!noneUsed) {
-          // Alle Caps durch → einmalig None versuchen
           noneUsed = true;
           cell.classList.remove("ogcap-overlay");
           img.src = "svg/Cap-None.svg";
         } else {
-          // Selbst None schlägt fehl → Icon entfernen
           img.remove();
         }
       }
@@ -1203,7 +1090,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     function applyCandidate() {
       const entry = seq[currentIndex];
-      // Overlay je nach Eintrag
       if (entry.overlay) {
         cell.classList.add("ogcap-overlay");
       } else {
@@ -1211,8 +1097,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       }
       img.src = `svg/Cap-${encodeURIComponent(entry.key)}.svg`;
     }
-
-    // ersten Kandidaten setzen
     applyCandidate();
 
     cell.appendChild(img);
@@ -1243,7 +1127,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     if (mx === 3) return ln === 1 ? "Vorlauf" : (ln === 2 ? "Halbfinale" : (ln === 3 ? "Finale" : null));
     if (mx === 4) return ln === 1 ? "Vorlauf" : (ln === 2 ? "Viertelfinale" : (ln === 3 ? "Halbfinale" : (ln === 4 ? "Finale" : null)));
 
-    // generischer Fallback für >4
     if (ln === mx) return "Finale";
     if (ln === mx - 1) return "Halbfinale";
     if (ln === mx - 2) return "Viertelfinale";
@@ -1274,8 +1157,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     const wrap = h("div", { class: "ath-tabs-wrap" }, tabs, panels);
 
-    // Initial: Panel "bests" aktiv + Unterline korrekt positionieren,
-    // nachdem wrap im DOM ist (verhindert 0px-Messungen).
     requestAnimationFrame(() => {
       panels.querySelectorAll(".ath-tab-panel").forEach(p =>
         p.classList.toggle("active", p.dataset.key === "bests")
@@ -1330,7 +1211,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       onChange?.(key);
     }
 
-    // initiale Position nach Layout
     requestAnimationFrame(() => activeBtn && positionUnderline(activeBtn));
     window.addEventListener("resize", () => {
       const cur = list.querySelector(".ath-tab.active");
@@ -1340,7 +1220,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return bar;
   }
 
-  // sehr einfache Wettkampf-Liste (du kannst später erweitern)
   function renderMeetsSection(a){
     const allMeets = Array.isArray(a.meets) ? a.meets.slice() : [];
     const jahrgang = Number(a?.jahrgang);
@@ -1352,27 +1231,22 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       return emptyBox;
     }
 
-    // verfügbare Jahre (neueste zuerst)
     const years = Array.from(new Set(
       allMeets
         .map(m => (new Date(m.date)).getFullYear())
         .filter(y => Number.isFinite(y))
     )).sort((a,b) => b - a);
 
-    let idx = 0; // start: neuestes Jahr
+    let idx = 0; 
 
-    // DEBUG: Zähler für Meet-Logs
     let meetDebugId = 0;
 
     const box   = h("div", { class: "ath-profile-section meets" });
 
-    // Kopf mit Jahres-Navigation
     const title = h("h3", {}, "");
     const head  = h("div", { class: "ath-info-header meets-head" },
-      // links: älteres Jahr (Vergangenheit)
       h("button", { class: "nav-btn", type: "button", onclick: () => changeYear(+1) }, "‹"),
       title,
-      // rechts: neueres Jahr (Zukunft)
       h("button", { class: "nav-btn", type: "button", onclick: () => changeYear(-1) }, "›")
     );
 
@@ -1395,7 +1269,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     function paint(year){
       title.textContent = year;
 
-      // Meets dieses Jahres, neueste zuerst
       const items = allMeets
         .filter(m => (new Date(m.date)).getFullYear() === year)
         .sort((l, r) => new Date(r.date) - new Date(l.date));
@@ -1410,12 +1283,11 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
         const debugId = ++meetDebugId;
 
-        // Platzierung (Zahl ohne #) + ggf. Medaille
         const placeStr = (m.Mehrkampf_Platz || "").toString().trim();
         const medal    = medalForPlace(placeStr);
 
         const placeEl = h("span", { class: "m-place" },
-          placeStr || "",   // ← leer statt "—"
+          placeStr || "",
           medal ? h("img", {
             class: "m-medal",
             src: `${FLAG_BASE_URL}/${medal.file}`,
@@ -1426,11 +1298,8 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
           }) : null
         );
 
-
-        // Bahn
         const poolEl = h("span", { class: "m-pool" }, poolLabel(m.pool));
 
-        // Land: Flagge + ISO3
         const landName = (m.Land || "").toString().trim();
         const iso3 = iso3FromLand(landName);
         const landEl = h("span", { class: "m-country" },
@@ -1445,17 +1314,14 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
           h("span", { class: "m-iso" }, ` ${iso3}`)
         );
 
-        // Datum
         const dateEl = buildDateEl(m.date);
 
-        // Name (wie bisher, ggf. gekürzt)
         const meetRawName  = (m.meet_name || "").toString().trim();
         const meetShortName = (meetRawName || "—").replace(/\s+-\s+.*$/, "");
         const nameEl = h("span", { class: "m-name" },
           h("span", { class: "m-name-main" }, meetShortName)
         );
 
-        // Zelle für das Event-Icon (mit Fallback auf DLRG.png)
         const eventIconCell = h("span", { class: "m-event-cell" },
           meetRawName
             ? h("img", {
@@ -1466,12 +1332,10 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
                 decoding: "async",
                 onerror: (e) => {
                   const img = e.currentTarget;
-                  // einmaliger Fallback auf DLRG.png
                   if (!img.dataset.fallback) {
                     img.dataset.fallback = "1";
                     img.src = "png/events/DLRG.png";
                   } else {
-                    // falls auch DLRG.png nicht gefunden wird → Zelle bleibt leer
                     img.remove();
                   }
                 }
@@ -1481,22 +1345,16 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
 
 
-        // Alter-Spalte
         const ageLabel = ageLabelAtMeet(m.date);
         const ageEl = h("span", { class: "m-age" }, ageLabel || "");
 
-        // OG-Spalte
-        // Informationen für OG-Text + Cap-SVG basierend auf Startrecht
         const ogInfo = ogInfoFromMeet(m);
         const ogLabel = ogInfo.label;
 
-        // Cap-Zelle (inkl. Fallback-Kette OG → LV → BV → None)
         const ogCapCell = buildOgCapCell(ogInfo);
 
-        // OG-Text-Spalte
         const ogEl = h("span", { class: "m-og" }, ogLabel || "");
 
-        // row-Container: jetzt 8 Spalten
         const row = h("div", {
           class: "meet-row",
           role: "button",
@@ -1510,15 +1368,15 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
           },
           onclick: toggle
         },
-          dateEl,        // 1: Datum
-          placeEl,       // 2: Platz
-          eventIconCell, // 3: Wettkampf-Icon (PNG)
-          nameEl,        // 4: Name
-          ageEl,         // 5: Alter
-          ogCapCell,     // 6: Cap-SVG
-          ogEl,          // 7
-          landEl,        // 8
-          poolEl         // 9
+          dateEl,
+          placeEl,
+          eventIconCell,
+          nameEl,
+          ageEl,
+          ogCapCell,
+          ogEl,
+          landEl,
+          poolEl
         );
 
 
@@ -1527,7 +1385,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         const details = h("div", {
           class: "meet-details",
           "aria-hidden": "true",
-          style: "height:0"    // Startzustand für Animation
+          style: "height:0"
         }, ...buildResultRows(m));
 
 
@@ -1542,9 +1400,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
         function expand(el){
           el.setAttribute("aria-hidden", "false");
-          // von 0 → Zielhöhe
           el.style.height = el.scrollHeight + "px";
-          // nach Ende: auf auto setzen, damit Inhalte mitwachsen
           el.addEventListener("transitionend", () => {
             if (row.classList.contains("open")) el.style.height = "auto";
           }, { once: true });
@@ -1552,7 +1408,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
         function collapse(el){
           el.setAttribute("aria-hidden", "true");
-          // von aktueller Höhe (auto → erst messen) → 0
           if (el.style.height === "" || el.style.height === "auto"){
             el.style.height = el.scrollHeight + "px";
           }
@@ -1565,7 +1420,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     function ageLabelAtMeet(dateStr){
       if (!Number.isFinite(jahrgang)) return "";
-      const v = ageAt(dateStr, jahrgang); // deine vorhandene Funktion
+      const v = ageAt(dateStr, jahrgang);
       if (!Number.isFinite(v)) return "";
       const years = Math.floor(v + 1e-6);
       return years + " J.";
@@ -1575,7 +1430,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     function buildDateEl(dateStr){
       const d = new Date(dateStr);
       if (isNaN(d)) {
-        // Fallback auf bestehende Kurzform
         return h("span", { class: "m-date" }, fmtDateShort(dateStr));
       }
       const day   = d.getDate();
@@ -1630,10 +1484,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       return (raw || "").toString().trim();
     }
 
-
-
-
-    // Disziplin-Schlüssel (wie in deinen Meet-Objekten)
     function buildResultRows(m){
       const F = [
         { base:"50m_Retten",            label:"50m Retten" },
@@ -1644,7 +1494,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         { base:"200m_Hindernis",        label:"200m Hindernis" },
       ];
 
-      // Läufe holen (aufsteigend nach _lauf)
       const runs = Array.isArray(m._runs) && m._runs.length
         ? [...m._runs].sort((a,b) => (a._lauf || 1) - (b._lauf || 1))
         : [ m ];
@@ -1661,16 +1510,14 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
           const hasAny = (t && String(t).trim() !== "") || (p && String(p).trim() !== "");
           if (!hasAny) continue;
 
-          // --- NEU: Medaille nur bei Einzel-Wertungen ---
           const wRaw = String(run.Wertung ?? m.Wertung ?? "").toLowerCase();
-          // "einzelkampf", "einzel-/mehrkampf", "einzel / mehrkampf" → alles trifft
           const isEinzel = wRaw.replace(/[\s\-]+/g, "").includes("einzel");
 
           const placeStr = (p || "").toString().trim();
           const medal = isEinzel ? medalForPlace(placeStr) : null;
 
           const placeEl = h("span", { class: "pl" },
-            placeStr || "",   // ← leer statt "—"
+            placeStr || "",
             medal ? h("img", {
               class: "res-medal",
               src: `${FLAG_BASE_URL}/${medal.file}`,
@@ -1704,9 +1551,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
   }
 
-
-
-  // Summiert Starts & DQ je Bahn aus ax.stats und berechnet die Wahrscheinlichkeit
   function computeLaneDQProb(ax){
     const out = { "25": { starts: 0, dq: 0 }, "50": { starts: 0, dq: 0 } };
     const stats = (ax && ax.stats) || {};
@@ -1721,15 +1565,13 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       }
     }
 
-    const pct = (dq, starts) => (starts > 0 ? Math.round((dq/starts)*1000)/10 : 0); // 1 Nachkommastelle
+    const pct = (dq, starts) => (starts > 0 ? Math.round((dq/starts)*1000)/10 : 0);
     return {
       "25": { ...out["25"], pct: pct(out["25"].dq, out["25"].starts) },
       "50": { ...out["50"], pct: pct(out["50"].dq, out["50"].starts) }
     };
   }
 
-
-  // — Startrechte: LV/BV → Badges neben den Chips —
   function hasStartrecht(a, code){
     const meets = Array.isArray(a?.meets) ? a.meets : [];
     for (const m of meets){
@@ -1740,8 +1582,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return false;
   }
 
-
-  // Summe aller geschwommenen Wettkampf-Meter (inkl. DQ, solange _Zeit nicht leer ist)
   function sumWettkampfMeter(a){
     const meets = Array.isArray(a.meets) ? a.meets : [];
     let total = 0;
@@ -1781,9 +1621,9 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       const img = h("img", {
         class: "sr-icon",
         src: `${FLAG_BASE_URL}/${encodeURIComponent(ic.file)}`,
-        alt: ic.label,                 // Screenreader-Text
-        title: ic.label,               // Tooltip beim Hover
-        "data-startrecht": ic.key,     // optional für Debug/Styling
+        alt: ic.label,
+        title: ic.label,
+        "data-startrecht": ic.key,
         loading: "lazy",
         decoding: "async",
         onerror: (e) => e.currentTarget.remove()
@@ -1793,7 +1633,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return wrap;
   }
 
-  // Hilfszähler für Regelwerk
   function countRegelwerk(meets){
     let intl = 0, nat = 0;
     (meets || []).forEach(m => {
@@ -1807,9 +1646,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return { intl, nat, pctIntl, pctNat, total };
   }
 
-
-
-  // ---------- Mapping Disziplinen <-> Meet-Felder ----------
   const DISCIPLINES = [
     { key: "50_retten",         label: "50m Retten",                 meetZeit: "50m_Retten_Zeit",         meetPlatz: "50m_Retten_Platz" },
     { key: "100_retten_flosse", label: "100m Retten mit Flossen",    meetZeit: "100m_Retten_Zeit",        meetPlatz: "100m_Retten_Platz" },
@@ -1819,12 +1655,11 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     { key: "200_hindernis",     label: "200m Hindernis",              meetZeit: "200m_Hindernis_Zeit",     meetPlatz: "200m_Hindernis_Platz" },
   ];
 
-  // "0:34,25" | "34,25" | "1:02.13" -> Sekunden (float); "DQ" -> NaN
   function parseTimeToSec(raw) {
     if (raw == null) return NaN;
     const s = String(raw).trim();
     if (/^dq$/i.test(s)) return NaN;
-    const norm = s.replace(",", "."); // deutsche Kommas zulassen
+    const norm = s.replace(",", ".");
     const parts = norm.split(":");
     if (parts.length === 1) {
       const sec = parseFloat(parts[0]);
@@ -1838,7 +1673,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return NaN;
   }
 
-  // Durchschnittszeit (nur gültige Zeiten, keine DQ) pro Disziplin + Lane
   function avgTimeForDiscipline(athlete, lane, disc) {
     const meets = Array.isArray(athlete.meets) ? athlete.meets : [];
     let sum = 0, cnt = 0;
@@ -1852,9 +1686,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return cnt > 0 ? (sum / cnt) : NaN;
   }
 
-
-
-  // ---------- Utils ----------
   const REF_YEAR = new Date().getFullYear();
   const normalize = (s) =>
     (s || "").toString().toLowerCase().normalize("NFKD").replace(/\p{Diacritic}/gu, "").replace(/\s+/g, " ").trim();
@@ -1891,7 +1722,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return d.toLocaleDateString("de-DE");
   }
 
-  // ---------- Daten-Ableitungen aus meets ----------
   function getOrtsgruppe(a) {
     return a.aktuelleOrtsgruppe || a.AktuelleOrtsgruppe || a.ortsgruppe || "";
   }
@@ -1909,14 +1739,14 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
   function computeOverallLSC(meets) {
     const list = Array.isArray(meets) ? [...meets] : [];
-    list.sort((a,b) => new Date(b.date) - new Date(a.date)); // neueste zuerst
+    list.sort((a,b) => new Date(b.date) - new Date(a.date));
     for (const m of list) {
       if (m && m.LSC != null && m.LSC !== "") {
         const x = parseFloat(String(m.LSC).replace(",", "."));
-        if (Number.isFinite(x)) return x;          // erster (neuester) gültiger LSC
+        if (Number.isFinite(x)) return x;
       }
     }
-    return null; // keiner vorhanden
+    return null;
   }
 
 
@@ -1941,18 +1771,15 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     };
 
     for (const meet of meets) {
-      // lane vom Top-Level (Läufe haben i. d. R. gleiche Bahn)
       const lane = meet?.pool === "25" ? "25" : (meet?.pool === "50" ? "50" : null);
 
-      // Hilfsfunktion: über alle Läufe iterieren (oder 1 Fake-Lauf aus dem Meet selbst)
       const runs = Array.isArray(meet._runs) && meet._runs.length
         ? meet._runs
         : [ meet ];
 
-      // --- Starts / DQ / PBs je Lauf ---
       for (const run of runs) {
         for (const d of DISCIPLINES) {
-          const z = run[d.meetZeit];                // Zeit-String bzw. "DQ"
+          const z = run[d.meetZeit];
           const tSec = parseTimeToSec(z);
           const isDQ = z != null && /^dq$/i.test(String(z).trim());
           const hasStart = isDQ || Number.isFinite(tSec);
@@ -1969,8 +1796,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         }
       }
 
-      // --- Medaillen: Einzel je Lauf, Mehrkampf nur höchster Lauf ---
-      // 1) Einzel je Lauf (wenn die jeweilige Lauf-Wertung "Einzel" enthält)
       for (const run of runs) {
         const wRaw = (run.Wertung || "").toLowerCase();
         const w = wRaw.replace(/[\s\-]+/g, "");
@@ -1980,7 +1805,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         for (const d of DISCIPLINES) addMedal(run[d.meetPlatz]);
       }
 
-      // 2) Mehrkampf: nur Lauf mit maximalem _lauf (Final > Vorlauf)
       const maxRun = runs.reduce((acc, r) => (acc == null || (r._lauf || 0) > (acc._lauf || 0)) ? r : acc, null);
       if (maxRun && nonEmpty(maxRun.Mehrkampf_Platz)) addMedal(maxRun.Mehrkampf_Platz);
     }
@@ -1996,8 +1820,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
   }
 
 
-
-  // ---------- AK / OG / Geschlecht ----------
   function ageFromJahrgang(jahrgang, refYear = REF_YEAR) {
     const age = refYear - Number(jahrgang);
     return isNaN(age) ? null : age;
@@ -2025,13 +1847,10 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return { short: isW ? "w" : "m", full: isW ? "weiblich" : "männlich", cls: isW ? "w" : "m" };
   }
 
-  // ---------- Caps & Flags ----------
-  // OG-Name -> Cap-Dateiname
   function capFileFromOrtsgruppe(rawOG) {
     const og = String(rawOG || "").trim();
     if (!og) return "Cap-Baden_light.svg";
 
-    // Sonderfall: Slash im Namen, Datei ohne Slash
     if (og === "Nieder-Olm/Wörrstadt") {
       return "Cap-Nieder-OlmWörrstadt.svg";
     }
@@ -2063,7 +1882,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
   }
 
   function deriveCapKeysForAthlete(a) {
-    // OG des Athleten
     let ogKey = String(
       a?.Ortsgruppe ??
       a?.ortsgruppe ??
@@ -2072,21 +1890,18 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       ""
     ).trim();
 
-    // LV-State des Athleten (z.B. "BA")
     let lvCode = String(
       a?.LV_state ??
       a?.lv_state ??
       ""
     ).trim().toUpperCase();
 
-    // BV-Nation (z.B. "GER" oder "Polen")
     let bvRaw = String(
       a?.BV_natio ??
       a?.BV_nation ??
       ""
     ).trim();
 
-    // Falls am Athleten nichts steht → aus Meets ableiten
     if (Array.isArray(a?.meets)) {
       for (const m of a.meets) {
         if (!ogKey) {
@@ -2105,21 +1920,18 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       }
     }
 
-    // BV-Code wie bei den Wettkämpfen normalisieren
     const bvCode = normalizeBVCode(bvRaw);
 
     return { ogKey, lvCode, bvCode };
   }
 
   function applyCapFallbackToImg(img, frontEl, ogKey, lvCode, bvCode) {
-    // Kette für das Profil: OG → LV (Overlay) → BV (Overlay) → None
     let seq = [
       { key: ogKey,  overlay: false },
       { key: lvCode, overlay: true  },
       { key: bvCode, overlay: true  },
     ].filter(e => e.key && String(e.key).trim() !== "");
 
-    // Wenn gar kein Key → direkt None versuchen
     if (!seq.length) {
       frontEl.classList.remove("cap-overlay");
       img.src = "svg/Cap-None.svg";
@@ -2145,28 +1957,20 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     img.addEventListener("error", function onErr() {
       if (index + 1 < seq.length) {
-        // nächster Kandidat in der Kette
         index++;
         loadCurrent();
       } else if (!noneUsed) {
-        // alle Caps durch → einmalig Cap-None.svg
         noneUsed = true;
         frontEl.classList.remove("cap-overlay");
         img.src = "svg/Cap-None.svg";
       } else {
-        // selbst None kaputt → Listener entfernen
         img.removeEventListener("error", onErr);
       }
     });
 
-    // Start: immer mit OG (bzw. nächstem vorhandenen) beginnen
     loadCurrent();
   }
 
-
-
-  // Wrapper nur für das große Profil: Kappe vorne, Foto hinten (dynamisches PNG nach Name)
-  // Fallback: wenn kein Bild gefunden → vorne verwendetes SVG auch hinten anzeigen
   function renderCapAvatarProfile(a) {
     const frontCap = renderCapAvatar(a);
     if (!frontCap) return null;
@@ -2191,16 +1995,12 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     inner.appendChild(back);
     wrap.appendChild(inner);
 
-    // ► Cap-Keys aus Athleten-/Meetdaten
     const { ogKey, lvCode, bvCode } = deriveCapKeysForAthlete(a);
 
-    // ► Fallback-Kette auf der VORDERSEITE anwenden
     const frontImg = front.querySelector("img");
     if (frontImg) {
       applyCapFallbackToImg(frontImg, front, ogKey, lvCode, bvCode);
     }
-
-    // --- Flip-Logik etc. wie gehabt ---
 
     const toggle = () => {
       const locked = wrap.classList.toggle("is-flipped");
@@ -2237,18 +2037,13 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       });
     }
 
-    // ▼▼▼ HIER: Rückseiten-Fallback neu definieren ▼▼▼
-
     function attachFallbackSvg() {
-      // Rückseite komplett neu aufbauen
       back.innerHTML = "";
 
-      // Neues Cap-Element für die Rückseite erzeugen
       const backCap = renderCapAvatar(a);
       if (backCap) {
         back.appendChild(backCap);
 
-        // Genau dieselbe Fallback-Kette auch auf der Rückseite anwenden
         const backImg = backCap.querySelector("img");
         if (backImg) {
           applyCapFallbackToImg(backImg, back, ogKey, lvCode, bvCode);
@@ -2261,13 +2056,11 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       runIntroFlip();
     }
 
-    // Kein Name → direkt SVG hinten verwenden
     if (!name) {
       attachFallbackSvg();
       return wrap;
     }
 
-    // Portrait-Logik unverändert ...
     const baseName = name.replace(/\s+/g, "");
     const fileName = baseName + ".png";
     const imgPath  = "png/pp/" + fileName;
@@ -2290,7 +2083,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       if (img.parentNode === back) {
         back.removeChild(img);
       }
-      // Fallback: OG/LV/BV-Cap auch auf der Rückseite, mit gleicher Kette
       attachFallbackSvg();
     });
 
@@ -2299,22 +2091,12 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
 
 
-
-
-
-
-
-
-
-
   const SUPPORTED_FLAGS_DE = new Set([
     "Spanien","Australien","Deutschland","Belgien","Italien","Frankreich",
     "Schweiz","Polen","Japan","Dänemark","Ägypten","Niederlande","Großbritannien"
   ]);
 
-  // REPLACE your old renderCountryFlagsSectionSVG with this:
   function renderCountryFlagsInline(a){
-    // Quelle: aus deriveFromMeets() — fallback auf a.countriesDE
     const names = (typeof countriesFromAthlete === "function"
       ? countriesFromAthlete(a)
       : (Array.isArray(a.countriesDE) ? a.countriesDE : []))
@@ -2339,7 +2121,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
   }
 
 
-  // ---------- Aktivitätsstatus ----------
   function activityStatusFromLast(lastISO){
     if (!lastISO) return { key: "inactive", label: "Inaktiv" };
     const last = new Date(lastISO);
@@ -2351,7 +2132,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return { key: "inactive", label: "Inaktiv" };
   }
 
-  // ---------- Meet-Infos ----------
   function computeMeetInfo(a){
     const meets = Array.isArray(a.meets) ? a.meets : [];
     const total = meets.length;
@@ -2360,13 +2140,11 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     let first = null, last = null, firstName = null;
     const years = new Set();
 
-    // NEU: Regelwerk-Zähler
     let cNat = 0, cIntl = 0;
 
     for (const m of meets){
       if (m.pool === "50") c50++; else if (m.pool === "25") c25++;
 
-      // Regelwerk zählen
       const reg = String(m.Regelwerk || "").toLowerCase().trim();
       if (reg.startsWith("int")) cIntl++;
       else if (reg.startsWith("nat")) cNat++;
@@ -2391,17 +2169,13 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       last:  last  ? last.toISOString().slice(0,10)  : null,
       firstName,
       activeYears: years.size,
-      // NEU:
       cNat, cIntl, pctIntl
     };
   }
 
-
-
-  // Disziplin-Feldnamen in den meet-Objekten
   const MEET_DISC_TIME_FIELDS = [
     "50m_Retten_Zeit",
-    "100m_Retten_Zeit",           // = 100m Retten mit Flossen
+    "100m_Retten_Zeit",
     "100m_Kombi_Zeit",
     "100m_Lifesaver_Zeit",
     "200m_SuperLifesaver_Zeit",
@@ -2409,11 +2183,9 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
   ];
 
   function hasStartVal(v){
-    // Start zählt, wenn nicht leer: Zeiten oder "DQ" zählen, "" nicht
     return v != null && String(v).trim() !== "";
   }
 
-  // Summe aller Starts über alle Meets/Disziplinen (egal welches Startrecht)
   function totalStartsFromMeets(a){
     const meets = Array.isArray(a.meets) ? a.meets : [];
     let total = 0;
@@ -2428,8 +2200,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return total;
   }
 
-
-  // Starts pro Startrecht (OG/BZ/LV/BV)
   function computeStartsPerStartrecht(a){
     const meets = Array.isArray(a.meets) ? a.meets : [];
     const out = { OG:0, BZ:0, LV:0, BV:0 };
@@ -2449,17 +2219,12 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
   }
 
 
-
-  // Aktuelle Ortsgruppe = erste NATIONAL-Veranstaltung im jüngsten Jahr.
-  // Fallback (Sonderregel): wenn im jüngsten Jahr keine "National"-Events,
-  // dann die ERSTE Veranstaltung dieses Jahres (egal welches Regelwerk).
   function currentOrtsgruppeFromMeets(a){
     const meets = Array.isArray(a?.meets)
       ? a.meets.filter(m => m && m.date && m.Ortsgruppe)
       : [];
     if (meets.length === 0) return a?.ortsgruppe || "";
 
-    // robustes Parsing + Hilfsfelder
     const rows = meets.map(m => {
       const d = new Date(m.date);
       if (isNaN(d)) return null;
@@ -2468,25 +2233,21 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         ...m,
         _d: d,
         _y: d.getFullYear(),
-        _isNational: rw.startsWith("national") // "National", "national", etc.
+        _isNational: rw.startsWith("national")
       };
     }).filter(Boolean);
 
     if (rows.length === 0) return a?.ortsgruppe || "";
 
-    // jüngstes Jahr bestimmen
     const latestYear = rows.reduce((y, r) => (r._y > y ? r._y : y), rows[0]._y);
 
-    // alle Meets des jüngsten Jahres (aufsteigend nach Datum)
     const inYear = rows
       .filter(r => r._y === latestYear)
       .sort((x, y) => x._d - y._d);
 
-    // 1) Falls es National-Events gibt: den ERSTEN im Jahr
     const nationals = inYear.filter(r => r._isNational);
     if (nationals.length > 0) return nationals[0].Ortsgruppe || a?.ortsgruppe || "";
 
-    // 2) Sonst: den LETZTEN Wettkampf des Jahres (z.B. international)
     const lastMeet = inYear[inYear.length - 1];
     return lastMeet?.Ortsgruppe || a?.ortsgruppe || "";
   }
@@ -2513,17 +2274,14 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     const currentLabel = curr || "—";
     const hasOthers = others.length > 0;
 
-    // äußerer Wrapper wie ein normales KV
     const kv = h(
       "span",
       { class: "kv kv-og", "data-key": "Ortsgruppe" },
       h("span", { class: "k" }, "Ortsgruppe:")
     );
 
-    // Wert-Zeile (aktuelle OG + ggf. Toggle + weitere OGs darunter)
     const v = h("span", { class: "v og-v" });
 
-    // erste Zeile: aktuelle OG (ohne Cap)
     const mainRow = h(
       "span",
       { class: "og-main-row" },
@@ -2532,7 +2290,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     v.appendChild(mainRow);
 
     if (hasOthers) {
-      // Box für die weiteren OGs (wird UNTER der aktuellen OG angezeigt)
       const moreBox = h("div", { class: "og-more" });
 
       others.forEach((og) => {
@@ -2564,7 +2321,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         moreBox.appendChild(row);
       });
 
-      // Toggle-Button
       const btn = h(
         "button",
         {
@@ -2582,7 +2338,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
       mainRow.appendChild(btn);
 
-      // WICHTIG: moreBox gehört in v, nicht in kv
       v.appendChild(moreBox);
     }
 
@@ -2590,21 +2345,16 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return kv;
   }
 
-
-
-  // Alle Ortsgruppen eines Athleten aus Profil + Meets einsammeln
   function collectOrtsgruppenForAthlete(ax) {
     const set = new Set();
 
-    // aktuelle OG wie bisher (currentOrtsgruppeFromMeets nutzt m.Ortsgruppe)
     const curr = currentOrtsgruppeFromMeets(ax) || ax.ortsgruppe || "";
     if (curr) set.add(String(curr).trim());
 
-    // aus allen Meets OGs einsammeln
     const meets = Array.isArray(ax.meets) ? ax.meets : [];
     for (const m of meets) {
       const raw =
-        m.Ortsgruppe ??        // <— wichtig: großes O
+        m.Ortsgruppe ?? 
         m.ortsgruppe ??
         m.og ??
         m.OG ??
@@ -2618,17 +2368,12 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     const all = Array.from(set);
 
-    // aktuelle OG bleibt oben, Rest sortiert
     const others = all
       .filter((og) => og !== curr)
       .sort((a, b) => a.localeCompare(b, "de-DE"));
     return { curr, others };
   }
 
-
-
-
-  // ---------- DQ-Summe (über stats beider Bahnen) ----------
   function sumAllDQ(obj){
     const s50 = (obj.stats && obj.stats["50"]) || {};
     const s25 = (obj.stats && obj.stats["25"]) || {};
@@ -2640,7 +2385,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return total;
   }
 
-  // ---- LSC-Chart: Utils ----
   function parseLSC(v){
     if (v == null) return NaN;
     const s = String(v).trim().replace(",", ".");
@@ -2648,11 +2392,10 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return Number.isFinite(n) ? n : NaN;
   }
 
-  // 1. Juli des Jahrgangs als Geburtsdatum
   function assumedBirthDate(jahrgang){
     const y = Number(jahrgang);
     if (!Number.isFinite(y)) return null;
-    return new Date(y, 6, 1); // Monat 0-basiert → 6 = Juli
+    return new Date(y, 6, 1);
   }
 
   function ageAt(dateStr, jahrgang){
@@ -2664,8 +2407,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return (d - birth) / msPerYear;
   }
 
-  // Aus gemergten Meets (ax.meets) LSC-Punkte bauen:
-  // pro Datum genau 1 Wert: höchster Vorläufe → bei Gleichstand höherer LSC
   function buildLSCSeries(a){
     const meets = Array.isArray(a.meets) ? a.meets : [];
     const byDate = new Map();
@@ -2690,7 +2431,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       .filter(p => Number.isFinite(p.age));
   }
 
-  // kleines SVG-Helper (Namespace!)
   function s(tag, attrs = {}, ...children){
     const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
     for (const [k,v] of Object.entries(attrs || {})){
@@ -2704,8 +2444,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return el;
   }
 
-
-  // Einheitliche Tick-Logik für Altersachse
   function yearTicksForWidth(xMin, xMax, widthPx){
     const span = xMax - xMin;
     let step = 1;
@@ -2713,12 +2451,11 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       step = 5;
     }
     let start = Math.ceil(xMin / step) * step;
-    if (start > xMax) start = Math.floor(xMin); // Fallback
+    if (start > xMax) start = Math.floor(xMin);
 
     const ticks = [];
     for (let v = start; v <= Math.floor(xMax + 1e-9); v += step) ticks.push(v);
 
-    // Sicherheitsnetz, falls Rundung leer ergibt
     if (!ticks.length) {
       ticks.push(Math.floor(xMin), Math.ceil(xMax));
     }
@@ -2726,9 +2463,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
   }
 
 
-  // ---- LSC-Chart Renderer mit X-Achsen-Label & Vergleichssuche (1 Vergleich max., ersetzt alte Auswahl) ----
   function renderLSCChart(a){
-    // kleine Helfer
     const sLocal = (tag, attrs = {}, ...children) => {
       const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
       for (const [k,v] of Object.entries(attrs)) if (v != null) el.setAttribute(k, String(v));
@@ -2746,8 +2481,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       return el;
     };
 
-    // Daten der Hauptperson
-    const basePts = buildLSCSeries(a); // [{age,lsc,date,meet_name}]
+    const basePts = buildLSCSeries(a);
     const card = hEl("div", { class:"ath-lsc-card" },
       hEl("div", { class:"lsc-head" }, hEl("h4", {}, "LSC Verlauf"))
     );
@@ -2756,7 +2490,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       return card;
     }
 
-    // Viewport + SVG + Tooltip
     const vp  = hEl("div", { class:"lsc-viewport" });
     const svg = sLocal("svg", { class:"lsc-svg", role:"img", "aria-label":"LSC Verlauf" });
     vp.appendChild(svg);
@@ -2768,7 +2501,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     );
     card.appendChild(tip);
 
-    // Legende
     const legend = hEl("div", { class:"lsc-legend" },
       hEl("span", { class:"lsc-key lsc-key--base" },
         hEl("span", { class:"lsc-key-dot blue" }),
@@ -2777,7 +2509,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     );
     card.appendChild(legend);
 
-    // Vergleichs-Suche (max. 1 Person – neue Auswahl ersetzt alte)
     let cmpAth  = null;
     let cmpPts  = null;
 
@@ -2806,7 +2537,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       if (q.length < MIN_QUERY_LEN){ cmpResults = []; cmpActive = -1; paintCmpSuggest(); return; }
 
       const nq = normalizeLocal(q);
-      const pool = (AppState?.athletes || []).filter(x => x?.id !== a?.id); // sich selbst ausblenden
+      const pool = (AppState?.athletes || []).filter(x => x?.id !== a?.id);
       const list = pool.map(ax => ({ ax, nName: normalizeLocal(ax.name) }))
         .filter(x => x.nName.includes(nq))
         .sort((l,r) => {
@@ -2852,14 +2583,12 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     function hideCmpSuggest(){ suggest.classList.add("hidden"); }
 
     function chooseCmp(ax){
-      // Athlet mit Meets anreichern und Meetings mergen
       const full = withHydratedMeets(ax);
       const merged = mergeDuplicateMeets(full.meets);
 
       cmpAth = { ...full, meets: merged };
       cmpPts = buildLSCSeries(cmpAth);
 
-      // Legende aktualisieren
       legend.querySelector(".lsc-key--cmp")?.remove();
       legend.appendChild(
         hEl("span", { class:"lsc-key lsc-key--cmp" },
@@ -2893,7 +2622,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       paint();
     });
 
-    // Domains
     const yMin = 0, yMax = 1000;
     let xMin, xMax;
     const updateXDomain = () => {
@@ -2912,36 +2640,29 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
           const rect = vp.getBoundingClientRect();
           const W = Math.max(320, Math.floor(rect.width));
 
-          // feste Mindesthöhen je nach Bildschirmbreite
           let H;
           if (window.innerWidth <= 480) {
-            H = 450;        // sehr schmal (Handy hochkant)
+            H = 450;
           } else if (window.innerWidth <= 720) {
-            H = 500;        // Handy quer / kleines Tablet
+            H = 500;
           } else {
-            H = 560;        // Desktop / großes Tablet
+            H = 560;
           }
 
-          // Container selbst auch entsprechend hoch ziehen
           vp.style.minHeight = H + "px";
 
           svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
           svg.setAttribute("width", W);
           svg.setAttribute("height", H);
 
-          // SVG leeren
           while (svg.firstChild) svg.removeChild(svg.firstChild);
 
           const m  = { l: 8, r: 8, t: 10, b: 48 };
           const cw = W - m.l - m.r;
           const ch = H - m.t - m.b;
 
-          // --- nichtlineare Y-Skala 0..1000 ---
-          // 0..400  -> 0..0.25  (zusammengeschoben)
-          // 400..800-> 0.25..0.75
-          // 800..1000->0.75..1  (Top-Bereich ohne Extra-Grid/Label)
           function normLSC(v){
-            const val = Math.max(0, Math.min(1000, Number(v) || 0)); // clamp 0..1000
+            const val = Math.max(0, Math.min(1000, Number(v) || 0));
             if (val <= 400){
               const frac = val / 400;
               return frac * 0.25;
@@ -2955,16 +2676,14 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
           }
 
           const fy = (v) => {
-            const u = normLSC(v);          // 0..1 (unten -> oben)
-            return m.t + ch - u * ch;      // in Pixel umrechnen
+            const u = normLSC(v);
+            return m.t + ch - u * ch;
           };
 
           const fx = (v) => m.l + ((v - xMin) / (xMax - xMin)) * cw;
 
-          // --- Gitter ---
           const grid = sLocal("g", { class: "lsc-grid" });
 
-          // Basislinie bei 0
           const y0 = fy(0);
           grid.appendChild(
             sLocal("line", {
@@ -2976,7 +2695,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
             })
           );
 
-          // horizontale Linien bei 400 / 600 / 800
           [400, 600, 800].forEach(v => {
             const yy = fy(v);
             grid.appendChild(
@@ -2992,7 +2710,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
           svg.appendChild(grid);
 
-          // --- Y-Achsen-Labels: 0, 400, 600, 800 ---
           const yAxis = sLocal("g", { class: "lsc-yaxis" });
           const labelOffset = 6;
 
@@ -3009,7 +2726,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
           svg.appendChild(yAxis);
 
-          // --- X-Achse wie bisher ---
           const xAxis = sLocal("g", { class: "lsc-xaxis" });
           const tickLen = 8;
 
@@ -3022,7 +2738,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
           for (let v = startTick; v <= Math.floor(xMax); v += xStep) {
             const xx = fx(v);
-            // Tick an der Basislinie
             grid.appendChild(
               sLocal("line", {
                 x1: xx,
@@ -3032,7 +2747,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
                 class: "xtick"
               })
             );
-            // Label
             xAxis.appendChild(
               sLocal("text", {
                 x: xx,
@@ -3042,7 +2756,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
             );
           }
 
-          // X-Achsenbeschriftung
           xAxis.appendChild(
             sLocal("text", {
               x: m.l + cw / 2,
@@ -3053,7 +2766,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
           svg.appendChild(xAxis);
 
-          // --- Gradients (blau + grün) ---
           const defs = sLocal("defs");
           const gradBlueId  = `lsc-grad-b-${Math.random().toString(36).slice(2)}`;
           const gradGreenId = `lsc-grad-g-${Math.random().toString(36).slice(2)}`;
@@ -3067,7 +2779,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
           defs.appendChild(mkGrad(gradGreenId, "rgb(5,105,180)"));
           svg.appendChild(defs);
 
-          // --- Serien zeichnen ---
           const drawSeries = (pts, colorClass, withArea=false, fillId=null) => {
             if (!pts || !pts.length) return;
 
@@ -3148,7 +2859,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
           }
           drawSeries(basePts, "blue", true, gradBlueId);
 
-          // Tooltip-Positionierung wie gehabt
           function positionTipNearCircle(circle){
             const pt = svg.createSVGPoint();
             pt.x = +circle.getAttribute("cx");
@@ -3176,14 +2886,12 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
             tip.style.top  = `${T}px`;
           }
 
-          // Tooltip bei Resize am aktiven Punkt neu ausrichten
           if (activeIdx != null){
             const sel = `.lsc-dots.${activeSeries} .lsc-dot[data-idx="${activeIdx}"]`;
             const active = svg.querySelector(sel);
             if (active) positionTipNearCircle(active);
           }
 
-          // Klick außerhalb schließt Tooltip
           if (!card._lscOutsideHandlerAttached){
             card.addEventListener("pointerdown", (e) => {
               if (!svg.contains(e.target)){
@@ -3207,7 +2915,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
   }
 
   function renderTimeChart(a){
-    // kleine DOM-Helper
     const sLocal = (tag, attrs = {}, ...children) => {
       const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
       Object.entries(attrs||{}).forEach(([k,v]) => v!=null && el.setAttribute(k,String(v)));
@@ -3225,20 +2932,15 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       return node;
     };
 
-    // ▶︎ NEU: Card-Container anlegen, bevor wir head/vp/tooltip anhängen
     const card = el("div", { class:"ath-time-card" });
 
-    // Disziplin-Vorauswahl: erste mit Daten, sonst erste in Liste
     const firstWithData = DISCIPLINES.find(d => buildTimeSeriesForDiscipline(a, d.key).length > 0);
     let discKey = (firstWithData || DISCIPLINES[0]).key;
 
-    // Bahn-Filter (Default: beide aktiv)
     const lanes = new Set(["25","50"]);
 
-    // Serien (werden durch recomputeSeries() gesetzt)
     let basePts = [], cmpAth = null, cmpPts = null;
 
-    // Segment-Buttons für 50/25 m
     const btn50 = el("button", {
       class: "seg-btn active", type: "button", "aria-pressed": "true",
       onclick: () => toggleLane("50", btn50)
@@ -3251,14 +2953,13 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     const laneSeg = el("div", { class: "seg time-lanes" }, btn50, btn25);
 
-    // Disziplin-Select
     const sel = el("select", { class:"time-disc" });
     DISCIPLINES.forEach(d => {
       sel.appendChild(el("option", { value:d.key, selected: d.key===discKey }, d.label));
     });
     sel.addEventListener("change", () => {
       discKey = sel.value;
-      recomputeSeries();   // ← jetzt über Helper (nutzt lanes)
+      recomputeSeries();
       paint();
     });
 
@@ -3278,7 +2979,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     function toggleLane(code, btn){
       const isOn = lanes.has(code);
-      if (isOn && lanes.size === 1) return;   // mindestens eine Bahn muss aktiv bleiben
+      if (isOn && lanes.size === 1) return;
       if (isOn) lanes.delete(code); else lanes.add(code);
       setBtnState(btn, lanes.has(code));
       recomputeSeries();
@@ -3296,24 +2997,19 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       }
     }
 
-
-
-    // Y-Achsen-Start (Sekunden) je Disziplin
     function getYAxisBaseSec(dKey){
       const dm = DISCIPLINES.find(d => d.key === dKey);
       const name = (dm?.label || dKey).toLowerCase();
 
-      if (name.includes("50m retten"))          return 20;   // 0:20
-      if (name.includes("100m retten"))         return 30;   // 0:30
-      if (name.includes("100m kombi"))          return 30;   // 0:30
-      if (name.includes("100m lifesaver"))      return 30;   // 0:30
-      if (name.includes("200m hindernis"))      return 90;   // 1:30
-      if (name.includes("200m superlifesaver")) return 120;  // 2:00
+      if (name.includes("50m retten"))          return 20;
+      if (name.includes("100m retten"))         return 30;
+      if (name.includes("100m kombi"))          return 30;
+      if (name.includes("100m lifesaver"))      return 30;
+      if (name.includes("200m hindernis"))      return 90;
+      if (name.includes("200m superlifesaver")) return 120;
       return 0;
     }
 
-    // ---- Y-Achsen-Spezifikation je Disziplin (Sekunden) ----
-    // Keys: siehe DISCIPLINES (50_retten, 100_retten_flosse, 100_kombi, 100_lifesaver, 200_super, 200_hindernis)
     const Y_SPEC = {
       "50_retten":         { base:  25, step: 5 },
       "100_retten_flosse": { base:  40, step: 10 },
@@ -3330,24 +3026,19 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       return (Y_SPEC[dKey]?.step ?? 30);
     }
 
-    // Aufrunden auf nächstes Vielfaches der Schrittweite
     const ceilToStep = (sec, step) => Math.ceil(sec / step) * step;
 
-
-    // Viewport + SVG
     const vp  = el("div", { class:"time-viewport" });
     const svg = sLocal("svg", { class:"time-svg", role:"img", "aria-label":"Zeit-Verlauf" });
     vp.appendChild(svg);
     card.appendChild(vp);
 
-    // Tooltip
     const tip = el("div", { class:"time-tooltip", "aria-hidden":"true" },
       el("div", { class:"tt-l1" }),
       el("div", { class:"tt-l2" })
     );
     card.appendChild(tip);
 
-    // Legende
     const legend = el("div", { class:"time-legend" },
       el("span", { class:"time-key time-key--base" },
         el("span", { class:"time-key-dot blue"}), el("span", { class:"time-key-label" }, a?.name || "Athlet A")
@@ -3355,7 +3046,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     );
     card.appendChild(legend);
 
-    // Vergleichs-Suche (1 Vergleich; ersetzt bestehende)
     const cmpWrap  = el("div", { class:"time-compare-wrap" });
     const cmpInput = el("input", { class:"time-input", type:"search", placeholder:"Athlet zum Vergleich suchen …", autocomplete:"off", role:"searchbox" });
     const clearBtn = el("button", { class:"time-clear hidden", type:"button" }, "Entfernen");
@@ -3447,7 +3137,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       paint();
     });
 
-    // Domain & Paint
     const mmss = (sec) => {
       if (!Number.isFinite(sec)) return "—";
       const m = Math.floor(sec/60);
@@ -3461,7 +3150,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     const updateDomains = () => {
       const all = (cmpPts && cmpPts.length) ? basePts.concat(cmpPts) : basePts;
 
-      // X wie gehabt
       if (!all.length){ xMin = 0; xMax = 1; }
       else {
         xMin = Math.floor(Math.min(...all.map(p => p.age)));
@@ -3469,13 +3157,12 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         if (xMax === xMin) xMax = xMin + 1;
       }
 
-      // Y nach Disziplin
       const base = getYAxisBaseSecSpec(discKey);
       const step = getYAxisStepSec(discKey);
       const maxData = all.length ? Math.max(...all.map(p => p.sec)) : base + step * 3;
 
       yMin = base;
-      const wanted = Math.max(maxData, base + step * 2); // etwas Luft
+      const wanted = Math.max(maxData, base + step * 2);
       yMax = ceilToStep(wanted, step);
       if (yMax <= yMin) yMax = yMin + step;
     };
@@ -3486,14 +3173,13 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       const rect = vp.getBoundingClientRect();
       const W = Math.max(320, Math.floor(rect.width));
 
-      // feste Mindesthöhen je nach Bildschirmbreite
       let H;
       if (window.innerWidth <= 480) {
-        H = 450;          // Handy sehr schmal
+        H = 450;
       } else if (window.innerWidth <= 720) {
-        H = 500;          // Handy quer / kleines Tablet
+        H = 500;
       } else {
-        H = 560;          // Desktop / großes Tablet
+        H = 560;
       }
 
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
@@ -3508,7 +3194,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       const fx = v => m.l + ((v - xMin) / (xMax - xMin)) * cw;
       const fy = v => m.t + ch - ((v - yMin) / (yMax - yMin)) * ch;
 
-      // Grid
       const grid  = s("g", { class: "time-grid" });
       const yAxis = s("g", { class: "time-yaxis" });
 
@@ -3522,7 +3207,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         first = false;
       }
 
-      // --- X-Achse: dynamischer Schritt (1 oder 5 Jahre) ---
       const spanYears = xMax - xMin;
       let xStep = 1;
       if ((W < 720 && spanYears > 15) || (W >= 720 && spanYears > 30)) {
@@ -3535,7 +3219,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
       for (let v = startTick; v <= Math.floor(xMax); v += xStep) {
         const xx = fx(v);
-        // kleine Tick-Markierung an der Basislinie
         grid.appendChild(s("line", { x1: xx, y1: m.t + ch, x2: xx, y2: m.t + ch + tickLen, class: "xtick" }));
         xAxis.appendChild(s("text", { x: xx, y: m.t + ch + tickLen + 6, "text-anchor": "middle" }, String(v)));
       }
@@ -3547,9 +3230,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       svg.appendChild(xAxis);
       svg.appendChild(yAxis);
 
-
-
-      // Gradients
       const defs = s("defs");
       const gidB = `time-grad-b-${Math.random().toString(36).slice(2)}`;
       const gidG = `time-grad-g-${Math.random().toString(36).slice(2)}`;
@@ -3563,7 +3243,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       defs.appendChild(mkGrad(gidG, "rgb(5,105,180)"));
       svg.appendChild(defs);
 
-      // Draw series
       const drawSeries = (pts, colorClass, withArea=false, fillId=null) => {
         if (!pts || !pts.length) return;
         const pathD = pts.map((p,i)=> `${i?"L":"M"}${fx(p.age)} ${fy(p.sec)}`).join(" ");
@@ -3639,14 +3318,12 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         tip.style.top  = `${T}px`;
       }
 
-      // Reposition tooltip on resize
       if (activeIdx != null){
         const sel = `.time-dots.${activeSeries} .time-dot[data-idx="${activeIdx}"]`;
         const active = svg.querySelector(sel);
         if (active) positionTip(active);
       }
 
-      // Click outside hides tooltip
       if (!card._timeOutsideHandlerAttached){
         card.addEventListener("pointerdown", (e)=>{
           if (!svg.contains(e.target)){
@@ -3660,12 +3337,11 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         card._timeOutsideHandlerAttached = true;
       }
 
-      // Empty state
       if (!basePts.length && !(cmpPts && cmpPts.length)){
         const empty = el("div", { class:"best-empty" },
           "Keine Zeiten für ", (DISCIPLINES.find(d=>d.key===discKey)?.label || "diese Disziplin"), "."
         );
-        svg.appendChild(s("g")); // nur damit SVG existiert
+        svg.appendChild(s("g"));
         if (!card.querySelector(".best-empty")) card.appendChild(empty);
       } else {
         card.querySelector(".best-empty")?.remove();
@@ -3679,11 +3355,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return card;
   }
 
-
-
-
-
-  /* baut die Serie [{age,lsc,date,meet_name}] aus (gemergten) meets */
   function buildLSCSeries(a){
     const jahrgang = Number(a?.jahrgang);
     if (!Number.isFinite(jahrgang)) return [];
@@ -3719,11 +3390,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return rows;
   }
 
-
-
-
-  /* Nimmt zusammengefasste Meets und liefert Punkte
-    [{age:Number, lsc:Number, date:"YYYY-MM-DD", meet_name:String}]  */
   function buildLSCSeries(a){
     const jahrgang = Number(a?.jahrgang);
     if (!Number.isFinite(jahrgang)) return [];
@@ -3737,7 +3403,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       const d = new Date(dateISO);
       if (isNaN(d)) continue;
 
-      // LSC aus höchstem Lauf wählen (falls _runs vorhanden)
       const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
       let best = { lauf: -1, lsc: NaN };
       for (const r of runs){
@@ -3761,9 +3426,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
   }
 
 
-
-
-  // ---------- UI: Suche ----------
  const AppState = {
     query: "",
     suggestions: [],
@@ -3790,7 +3452,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     top10Mount: null
   };
 
-  // ---------- Suche ----------
   function renderApp() {
     const mount = $("#athleten-container");
     if (!mount) return;
@@ -3798,15 +3459,12 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     mount.innerHTML = "";
     const ui = h("section", { class: "ath-ui", role: "region", "aria-label": "Athletenbereich" });
 
-    // 1. Suche
     ui.appendChild(renderSearch());
 
-    // 2. Top-10 Bereich (vor jeglichem Profil)
     const top10 = h("div", { id: "ath-top10", class: "ath-top10" });
     Refs.top10Mount = top10;
     ui.appendChild(top10);
 
-    // 3. Profilbereich
     const profile = h("div", { id: "ath-profile" });
     Refs.profileMount = profile;
     ui.appendChild(profile);
@@ -3814,15 +3472,51 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     mount.appendChild(ui);
   }
 
-    // ---------- Top-10 aus Tabelle1 laden & modellieren ----------
+  async function loadTop10Json() {
+    const resp = await fetch(encodeURI(TOP10_URL), { mode: "cors" });
+    if (!resp.ok) throw new Error(`Top10 HTTP ${resp.status}`);
+    const data = await resp.json();
+    return data;
+  }
+
+  function buildTop10GroupsFromJson(top10) {
+    const out = {};
+    const g = top10?.groups || {};
+
+    const map = {
+      starts: "disciplines",
+      wettkaempfe: "competitions",
+      lsc_aktuell: "lscRecent2y",
+      aktive_jahre: "activeYears",
+      hoechster_lsc: "lscAlltimeHigh",
+      auslandswettkaempfe: "foreignStarts"
+    };
+
+    for (const def of TOP10_GROUPS) {
+      const jsonKey = map[def.key];
+      const arr = Array.isArray(g[jsonKey]) ? g[jsonKey] : [];
+
+      out[def.key] = {
+        key: def.key,
+        label: def.label,
+        header: ["", "", def.label],
+        rows: arr
+          .slice()
+          .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
+          .map(it => [it.name ?? "", it.og ?? "", it.value ?? ""])
+      };
+    }
+    return out;
+  }
+
 
   async function initTop10() {
     const mount = Refs.top10Mount;
     if (!mount) return;
 
     try {
-      const rows = await loadWorkbookArray(TOP10_SHEET);  // nutzt deine vorhandene loadWorkbookArray-Funktion
-      Top10State.groups = buildTop10GroupsFromRows(rows);
+      const top10 = await loadTop10Json();
+      Top10State.groups = buildTop10GroupsFromJson(top10);
       renderTop10();
     } catch (err) {
       console.error("Top10 Laden:", err);
@@ -3830,13 +3524,11 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     }
   }
 
-  // ---------- Cap-SVG für Top-10-Zeile ----------
 
   function renderTop10CapCell(ortsgruppeRaw) {
     const ogNow = String(ortsgruppeRaw || "").trim();
     const td = h("td", { class: "ath-top10-cap-cell" });
 
-    // Wenn keine OG vorhanden ist → Zelle leer lassen
     if (!ogNow) {
       return td;
     }
@@ -3883,7 +3575,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     const current = groups[Top10State.currentKey];
 
-    // Select erstellen
     const select = h("select", { class: "ath-top10-select", "aria-label": "Top-10-Auswahl" },
       available.map(def =>
         h("option", {
@@ -3963,7 +3654,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     }
 
     const tableWrap = h("div", { class: "ath-top10-table-wrap" },
-      renderTop10Table(current, select) // <-- select direkt in den Tabellen-Header
+      renderTop10Table(current, select)
     );
 
     mount.innerHTML = "";
@@ -3978,7 +3669,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     const rows = group.rows || [];
 
-    // HEADER (2 Spalten, entkoppelt!)
     const headTable = h("table", { class: "ath-top10-table ath-top10-table-head" },
       h("tbody", {},
         h("tr", { class: "ath-top10-header-row" },
@@ -3992,7 +3682,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       )
     );
 
-    // BODY (3 Spalten, wie bisher)
     const bodyRows = rows.map(cells => {
       const name  = String(cells[0] ?? "").trim();
       const og    = String(cells[1] ?? "").trim();
@@ -4030,51 +3719,8 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       h("tbody", {}, ...bodyRows)
     );
 
-    // Container: beide Tabellen wirken wie eine
     return h("div", { class: "ath-top10-table-combo" }, headTable, bodyTable);
   }
-
-
-
-
-
-
-
-  function buildTop10GroupsFromRows(rows) {
-    const groupsByKey = {};
-    if (!Array.isArray(rows) || rows.length === 0) return groupsByKey;
-
-    const headerRow = rows[0] || [];
-
-    TOP10_GROUPS.forEach(def => {
-      const cols = [def.startCol, def.startCol + 1, def.startCol + 2];
-
-      // Überschriften je 3er Block (z.B. "Platz", "Name", "Wert")
-      const header = cols.map(ci => headerRow[ci] ?? "");
-
-      const data = [];
-      // WICHTIG: ab rows[1] → 2. Zeile in Excel = Platz 1
-      for (let r = 0; r < rows.length; r++) {
-        const row = rows[r] || [];
-        const cells = cols.map(ci => row[ci] ?? "");
-        const allEmpty = cells.every(v =>
-          v == null || String(v).trim() === ""
-        );
-        if (allEmpty) continue; // leere Zeilen einfach überspringen
-        data.push(cells);
-      }
-
-      groupsByKey[def.key] = {
-        key: def.key,
-        label: def.label,
-        header,
-        rows: data
-      };
-    });
-
-    return groupsByKey;
-  }
-
 
 
   function renderSearch() {
@@ -4143,14 +3789,12 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     role: "option",
     "aria-selected": idx === AppState.activeIndex ? "true" : "false",
 
-    // Klick: Profil öffnen (wie bisher)
     onclick: (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
       openProfile(a);
     },
 
-    // NEU: Pointer-Enter für Touch + Stift + Maus
     onpointerenter: () => {
       if (AppState.activeIndex === idx) return;
       box.querySelector('.ath-suggest-item.active')?.classList.remove('active');
@@ -4158,7 +3802,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       AppState.activeIndex = idx;
     },
 
-    // Optional: zusätzlich für klassische Maus-Hover (kein Muss, aber schadet nicht)
     onmouseenter: () => {
       if (AppState.activeIndex === idx) return;
       box.querySelector('.ath-suggest-item.active')?.classList.remove('active');
@@ -4167,15 +3810,11 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     }
   });
 
-
-      // Cap-Avatar (klein)
       item.appendChild(renderCapAvatar(a, "sm", "ath-suggest-avatar"));
 
-      // Name + Jahrgang
       const nameEl = h("div", { class: "ath-suggest-name" });
       nameEl.innerHTML = `${highlight(a.name, q)} <span class="ath-year">(${a.jahrgang})</span>`;
 
-      // ★ aktuelle OG aus Meets
       const ogNow = currentOrtsgruppeFromMeets(a) || a.ortsgruppe || "";
       const sub = h("div", { class: "ath-suggest-sub" }, formatOrtsgruppe(ogNow));
 
@@ -4186,15 +3825,11 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     });
 
     box.classList.remove("hidden");
-    // NEU: nach dem Anzeigen sofort korrekt an den Anker „ankleben“
     Refs.placeSuggest && Refs.placeSuggest();
 
-    // (optional, aber robust auf iOS wegen Layout-Latenz)
     requestAnimationFrame(() => { Refs.placeSuggest && Refs.placeSuggest(); });
   }
 
-
-  // ---------- Bestzeiten-Section ----------
   function renderBahnSwitch(athlete) {
     const wrap = h("div", { class: "ath-bests-switch", role: "group", "aria-label": "Bahnlänge" });
     const b50 = h("button", { class: "seg-btn" + (AppState.poolLen === "50" ? " active" : ""), type: "button",
@@ -4224,7 +3859,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     Refs.bestGrid.innerHTML = "";
 
-    // Hilfsfunktion: finde den Wettkampf, bei dem die PB geschwommen wurde
     function findPbMeetNameForDisc(d, bestSec) {
       if (!Number.isFinite(bestSec)) return "";
 
@@ -4234,7 +3868,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       for (const m of meets) {
         if (!m) continue;
 
-        // Bahn prüfen wie in deriveFromMeets()
         const mLane = (m.pool === "25" ? "25" : (m.pool === "50" ? "50" : null));
         if (mLane !== lane) continue;
 
@@ -4245,10 +3878,8 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
           const sec = parseTimeToSec(raw);
           if (!Number.isFinite(sec)) continue;
 
-          // exakt gleiche Zeit wie PB?
           if (Math.abs(sec - bestSec) > 1e-9) continue;
 
-          // → HIER: NICHT kürzen, sondern Originalname aus Excel verwenden
           const rawName = String(m.meet_name || m.meet || "").trim();
           const nm      = rawName;
 
@@ -4284,7 +3915,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     }
 
     showList.forEach(d => {
-      const sec    = times[d.key];                     // PB (kann undefined sein)
+      const sec    = times[d.key]; 
       const st     = statsMap[d.key] || {};
       const starts = Number(st.starts || 0);
       const dq     = Number(st.dq || 0);
@@ -4293,7 +3924,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       const frontValue = hasTime ? formatSeconds(sec) : (dq > 0 ? "DQ" : "—");
       const aria = hasTime ? `Bestzeit ${formatSeconds(sec)}` : (dq > 0 ? "DQ" : "keine Zeit");
 
-      // Wettkampfname aus meets anhand der PB-Zeit bestimmen
       const compName = hasTime ? findPbMeetNameForDisc(d, sec) : "";
 
       const tile = h("article", {
@@ -4358,33 +3988,26 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     function fitBestLabels() {
       const labels = document.querySelectorAll('.best-label');
-      const MAX = 0.8;   // rem
-      const MIN = 0.55;  // rem (oder was du als Untergrenze möchtest)
+      const MAX = 0.8;   
+      const MIN = 0.55; 
 
       labels.forEach(label => {
-        // Start immer bei Maximalgröße
         let size = MAX;
         label.style.fontSize = MAX + 'rem';
         label.style.whiteSpace = 'nowrap';
 
-        // Solange der Text breiter ist als das Label, Schrittweise verkleinern
         while (label.scrollWidth > label.clientWidth && size > MIN) {
-          size -= 0.02; // Schrittweite
+          size -= 0.02; 
           label.style.fontSize = size.toFixed(2) + 'rem';
         }
       });
     }
 
-    // Beim Laden und bei Fenstergröße ändern ausführen
     window.addEventListener('load', fitBestLabels);
     window.addEventListener('resize', fitBestLabels);
 
   }
 
-
-
-
-  // ---------- Medaillen ----------
   function renderMedalStats(a) {
     const m = (a && a.medals) || {};
     const g = Number(m.gold || 0), s = Number(m.silver || 0), b = Number(m.bronze || 0);
@@ -4403,7 +4026,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     );
   }
 
-  // ---------- Überblick ----------
   function renderOverviewSection(a){
     const header = h("div", { class: "ath-info-header" }, h("h3", {}, ""));
     const grid = h("div", { class: "ath-info-grid" });
@@ -4425,7 +4047,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     grid.appendChild(renderBahnverteilungTile(a));
     grid.appendChild(renderRegelwerkTile(a));
     grid.appendChild(infoTileYearsFlip(meets.activeYears, meets.first, meets.firstName));
-    grid.appendChild(infoTileMetersFlip("Wettkampfmeter", totalMeters, meets.total)); // ← NEU
+    grid.appendChild(infoTileMetersFlip("Wettkampfmeter", totalMeters, meets.total));
 
     return h("div", { class: "ath-profile-section info" }, header, grid, chartCard, pieCard);
 
@@ -4460,7 +4082,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     }
 
     function renderBahnverteilungTile(a){
-      const m = computeMeetInfo(a); // liefert u.a. m.pct50, m.c50, m.c25
+      const m = computeMeetInfo(a); 
 
       const tile  = h("div", {
         class: "info-tile flip dist",
@@ -4472,7 +4094,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
       const inner = h("div", { class: "tile-inner" });
 
-      // FRONT: Balken + Legende (wie vorher)
       const front = h("div", { class: "tile-face tile-front" },
         h("div", { class: "info-label" }, "Bahnverteilung"),
         (() => {
@@ -4486,11 +4107,10 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         )
       );
 
-      // BACK: Anzahl Wettkämpfe 25m/50m (nur Zeilen > 0)
       const rows = [];
       if (m.c25 > 0) rows.push(statRow("25m Bahn", m.c25));
       if (m.c50 > 0) rows.push(statRow("50m Bahn", m.c50));
-      if (rows.length === 0) rows.push(statRow("—", "—")); // falls (noch) keine Daten
+      if (rows.length === 0) rows.push(statRow("—", "—")); 
 
       const back = h("div", { class: "tile-face tile-back" },
         h("div", { class: "info-label" }, "Wettkämpfe auf"),
@@ -4501,7 +4121,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       inner.appendChild(back);
       tile.appendChild(inner);
 
-      // Klick = Lock/Unlock (Hover-Flip macht dein CSS)
       const toggleLock = () => {
         const locked = tile.classList.toggle("is-flipped");
         tile.setAttribute("aria-pressed", locked ? "true" : "false");
@@ -4528,7 +4147,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
 
     function infoTileWettkaempfeFlip(a, meets){
-      const counts = countStartrechte(a);              // {OG,BZ,LV,BV}
+      const counts = countStartrechte(a); 
       const rows = Object.entries(counts).filter(([,v]) => v > 0);
 
       const tile = h("div", {
@@ -4541,13 +4160,11 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
       const inner = h("div", { class: "tile-inner" });
 
-      // Vorderseite (wie gehabt)
       const front = h("div", { class: "tile-face tile-front" },
         h("div", { class: "info-label" }, "Wettkämpfe"),
         h("div", { class: "info-value" }, fmtInt(meets.total))
       );
 
-      // Rückseite: NUR Liste (keine Überschrift)
       const back = h("div", { class: "tile-face tile-back" },
         rows.length
           ? h("div", { class: "tile-stats" },
@@ -4565,7 +4182,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       inner.appendChild(back);
       tile.appendChild(inner);
 
-      // Flip-Verhalten: Desktop hover, Klick toggelt Lock (auch mobil)
       const toggleLock = () => {
         const locked = tile.classList.toggle("is-flipped");
         tile.setAttribute("aria-pressed", locked ? "true" : "false");
@@ -4595,13 +4211,11 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
       const inner = h("div", { class: "tile-inner" });
 
-      // FRONT – wie normale Info-Kachel
       const front = h("div", { class: "tile-face tile-front" },
         h("div", { class: "info-label" }, "Total Starts"),
         h("div", { class: "info-value" }, fmtInt(total))
       );
 
-      // BACK – nur Startrechte mit >0 anzeigen
       const list = [];
       const labelMap = { OG: "Ortsgrppe", BZ: "Bezirk", LV: "Landesverband", BV: "Bundesverband" };
       (["OG","BZ","LV","BV"]).forEach(k => {
@@ -4640,7 +4254,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
       const inner = h("div", { class: "tile-inner" });
 
-      // FRONT (Progress + Legende)
       const front = h("div", { class: "tile-face tile-front" },
         h("div", { class: "info-label" }, "Regelwerk"),
         (() => {
@@ -4656,11 +4269,10 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         )
       );
 
-      // BACK (Zähler National/International – nur zeigen, was > 0 ist)
       const backStats = [];
       if (c.nat > 0)  backStats.push(statRow("National",      c.nat));
       if (c.intl > 0) backStats.push(statRow("International", c.intl));
-      if (backStats.length === 0) backStats.push(statRow("—", "—")); // falls keine Daten
+      if (backStats.length === 0) backStats.push(statRow("—", "—"));
 
       const back = h("div", { class: "tile-face tile-back" },
         h("div", { class: "info-label" }, "Regelwerk"),
@@ -4671,8 +4283,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       inner.appendChild(back);
       tile.appendChild(inner);
 
-      // Hover-Flip macht dein CSS.
-      // Klick = Lock/Unlock (wie bei den anderen)
       const toggleLock = () => {
         const locked = tile.classList.toggle("is-flipped");
         tile.setAttribute("aria-pressed", locked ? "true" : "false");
@@ -4713,13 +4323,11 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
       const inner = h("div", { class: "tile-inner" });
 
-      // Vorderseite
       const front = h("div", { class: "tile-face tile-front" },
         h("div", { class: "info-label" }, "Aktive Jahre"),
         h("div", { class: "info-value" }, fmtInt(activeYears))
       );
 
-      // Rückseite: Datum + darunter der Name
       const back = h("div", { class: "tile-face tile-back" },
         h("div", { class: "info-label" }, "Erster Wettkampf"),
         h("div", { class: "info-value" }, fmtDate(firstISO)),
@@ -4746,13 +4354,11 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       });
       const inner = h("div", { class: "tile-inner" });
 
-      // Vorderseite
       const front = h("div", { class: "tile-face tile-front" },
-        h("div", { class: "info-label" }, label),                 // "Wettkampfmeter"
-        h("div", { class: "info-value" }, fmtMeters(totalMeters)) // Gesamtmeter
+        h("div", { class: "info-label" }, label),
+        h("div", { class: "info-value" }, fmtMeters(totalMeters)) 
       );
 
-      // Rückseite: NUR Titel "⌀ Meter / Wettkampf" + Wert
       const back = h("div", { class: "tile-face tile-back" },
         h("div", { class: "info-label" }, "⌀ Meter / Wettkampf"),
         h("div", { class: "info-value" }, avg != null ? fmtMeters(avg) : "—")
@@ -4761,7 +4367,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       inner.append(front, back);
       tile.appendChild(inner);
 
-      // Hover dreht (per CSS), Klick lockt/unlockt
       const toggle = () => {
         const locked = tile.classList.toggle("is-flipped");
         tile.setAttribute("aria-pressed", locked ? "true" : "false");
@@ -4787,20 +4392,17 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
       const inner = h("div", { class: "tile-inner" });
 
-      // Vorderseite (gesamt)
       const front = h("div", { class: "tile-face tile-front" },
         h("div", { class: "info-label" }, "DQ / Strafen"),
         h("div", { class: "info-value" }, fmtInt(totalDQ))
       );
 
-      // Rückseite (Wahrscheinlichkeit je Bahn – nur Zeilen mit Starts anzeigen)
       const rows = [];
       if (dqLane["25"].starts > 0){
         rows.push(
           h("div", { class: "dq-row" },
             h("span", { class: "lane" },  "25m"),
             h("span", { class: "pct"  },  `${dqLane["25"].pct.toLocaleString("de-DE",{ minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`),
-            // geändert: nur DQ in Klammern
             h("span", { class: "meta" },  `(${dqLane["25"].dq})`)
           )
         );
@@ -4810,7 +4412,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
           h("div", { class: "dq-row" },
             h("span", { class: "lane" },  "50m"),
             h("span", { class: "pct"  },  `${dqLane["50"].pct.toLocaleString("de-DE",{ minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`),
-            // geändert: nur DQ in Klammern
             h("span", { class: "meta" },  `(${dqLane["50"].dq})`)
           )
         );
@@ -4843,28 +4444,20 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     }
   }
 
-  // ---------- Profil ----------
   function openProfile(a) {
-
-
-     // Top-10 ausblenden, sobald ein Profil geöffnet wurde
     if (Refs.top10Mount) {
       Refs.top10Mount.style.display = "none";
     }
 
-    // Meets aus der Map nachladen, falls (noch) nicht vorhanden
     if (!Array.isArray(a.meets) || a.meets.length === 0){
       const list = AllMeetsByAthleteId.get(a.id) || [];
       a = { ...a, meets: list };
     }
 
-    // NEU: zuerst meets mergen
     const mergedMeets = mergeDuplicateMeets(a.meets);
 
-    // Aus (gemergten) meets alles ableiten …
     const derived = deriveFromMeets({ ...a, meets: mergedMeets });
 
-    // ax enthält nur gemergte Meets
     const ax = { ...a, ...derived, meets: mergedMeets };
 
     AppState.poolLen = (ax && ax.poolLen) ? String(ax.poolLen) : (AppState.poolLen || "50");
@@ -4885,23 +4478,18 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         h("span", { class: "v" }, v)
       );
 
-    // aktuelle OG aus Meets berechnen (mit Fallback auf evtl. altes Feld)
     const currOG = currentOrtsgruppeFromMeets(ax) || ax.ortsgruppe || "";
 
 
-    // Tabs + Panels (Bestzeiten, Überblick, etc.)
     const tabsWrap = renderAthTabsAndPanels(ax);
 
-    // ---- Kopfbereich des Profils (bleibt visuell gleich) ----
     const header = h("div", { class: "ath-profile-head" },
 
-      // Cap lädt intern bereits die aktuelle OG
       renderCapAvatarProfile(ax),
 
       h("div", { class: "ath-profile-title" },
         h("h2", {}, ...renderAthleteName(ax.name)),
 
-        // Chips-Zeile: Gender + AK + Aktivitätsstatus
         (() => {
           const gt    = genderTag(ax.geschlecht);
           const ak    = akLabelFromJahrgang(ax.jahrgang);
@@ -4911,7 +4499,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
           const age   = ageFromJahrgang(ax.jahrgang);
           const band  = (age != null && age <= 18) ? "youth" : "open";
 
-          const srIcons = renderStartrechtIcons(ax); // kann null sein
+          const srIcons = renderStartrechtIcons(ax);
 
           return h("div", { class: "gender-row" },
             h("span", {
@@ -4935,7 +4523,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
             srIcons
           );
         })(),
-        // Meta: OG + Jahrgang + Länderpins + historie
         h("div", { class: "ath-profile-meta" },
           renderOrtsgruppeMeta(ax),
           KV("Jahrgang", String(ax.jahrgang)),
@@ -4944,11 +4531,9 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         ),
       ),
 
-      // Medaillenkarte rechts
       renderMedalStats(ax)
     );
 
-    // Hinweis-Block unten
     const disclaimer = h("div", { class: "ath-profile-section muted" },
       h("p", {}, "Die Datenbank erfasst nur Einzel-Pool-Wettkämpfe von Badischen Schwimmerinnen und Schwimmern im Rettungssport."),
       h("p", {}, "Staffeln und Freigewässer sind nicht enthalten."),
@@ -4956,8 +4541,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       h("p", {}, "Sollten Fehler oder neue Ergebnisse gefunden werden, wenden sie sich bitte an jan-philipp.gnad@dlrg.org")
     );
 
-    // NEU: kein umschließender Card-Container (.ath-profile) mehr,
-    // alles wird direkt in das Mount-Element geschrieben.
     mount.innerHTML = "";
     mount.append(
       header,
@@ -4965,10 +4548,9 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       disclaimer
     );
 
-    // Name & Cap nach dem Einfügen anpassen
     installNameFitHandlerOnce();
     requestAnimationFrame(() => {
-      fitProfileName();  // richtet auch das Cap aus
+      fitProfileName();
     });
 
     if (Refs.input) {
@@ -4981,21 +4563,18 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
   }
 
-
-
   // ---------- Boot ----------
-    document.addEventListener("DOMContentLoaded", async () => {
-    // UI sofort aufbauen (Suchleiste + Top-10-Mount + Profil-Mount)
+  document.addEventListener("DOMContentLoaded", async () => {
     renderApp();
 
-    // Top-10 separat und parallel laden (Fehler werden intern abgefangen)
-    initTop10();
+    await initTop10();
+    await new Promise(requestAnimationFrame); // 1 Frame zum Rendern
 
     try {
       const rows = await loadWorkbookArray("Tabelle2");
       const light = buildIndicesFromRows(rows);
-      AppState.athletes = light;      // nur leichte Objekte für die Suche
-      hideSuggestions();              // Platzhalter entfernen
+      AppState.athletes = light;
+      hideSuggestions();
     } catch (err) {
       if (Refs.suggest) {
         Refs.suggest.classList.remove("hidden");
@@ -5003,6 +4582,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       }
     }
   });
+
 
 
 })();

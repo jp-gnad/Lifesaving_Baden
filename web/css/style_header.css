@@ -131,7 +131,7 @@ body{
   background: none;            /* überschreibt evtl. frühere Regeln */
   color: var(--black);              /* oder: var(--fg) */
   text-decoration: underline;
-  text-underline-offset: 1.41em;
+  text-underline-offset: 1.45em;
   text-decoration-thickness: 4px;
   text-decoration-skip-ink: auto;
 }
