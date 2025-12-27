@@ -184,7 +184,7 @@ main#content {
 @media (max-width: 720px) {
   .hero h1 { font-size: 2.0em; }
   .hero { height: 200px; padding-top: 80px; }
-  .home-links .container { padding: 0 6px; }
+  .home-links .container { padding: 0 12px; }
 }
 @media (max-width: 520px) {
   .home-cards { grid-template-columns: 1fr; }
