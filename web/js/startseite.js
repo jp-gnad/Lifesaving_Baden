@@ -8,13 +8,18 @@ document.addEventListener("DOMContentLoaded", () => {
     </section>
 
     <section class="intro">
-      <div class="container">
-        <h2>Willkommen beim Lifesaving Team Baden</h2>
-        <p>
-          Lifesaving verbindet Rettungsschwimmen, Sport und Sicherheit im Wasser.
-          Auf dieser Seite findest du zentrale Einstiege zu Kursen, Engagement, Lehrgängen
-          sowie Möglichkeiten, den Rettungssport zu unterstützen.
+      <div class="intro">
+      <h2>Willkommen beim Lifesaving Team Baden</h2>
+      <p>
+          Willkommen auf der inoffiziellen Internetseite des Lifesaving Team Badens.
+          Hier findest du nützliche Informationen rund um den Rettungssport in Baden.
         </p>
+
+        <ul class="intro-list">
+          <li>Auf deinem Athletenprofil hast du immer deine Bestzeiten im Blick und kannst den Verlauf deiner Zeiten beobachten und mit anderen vergleichen.</li>
+          <li>Erstelle Bestenlisten oder errechne dir die besten Chancen auf einen Sieg im Punkterechner.</li>
+          <li>Behalte immer den Überblick über deinen Kaderstatus oder prüfe, wie weit du von den Kadernormen entfernt bist.</li>
+        </ul>
       </div>
     </section>
 

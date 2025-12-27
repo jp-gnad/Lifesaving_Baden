@@ -2,7 +2,7 @@ main#content {
   margin: 0 auto;
 }
 
-.container {
+.container, .intro{
   max-width: 1100px;
   margin: 0 auto;
   padding: 0 16px;
@@ -26,22 +26,51 @@ main#content {
 }
 .hero h1 {
   position: relative;
-  font-size: 2.75em;
   z-index: 1;
+  font-size: 2.75em;
 }
 
 .intro {
   padding: 2rem 0 1.25rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 16px;
 }
 .intro h2 {
   text-align: center;
   margin: 0 0 1rem;
+  margin-top: 2.5rem;
+  margin-bottom: 2rem;
+  color: rgb(227, 6, 19);
+  font-size: 2rem;
 }
-.intro p {
+.intro p{
+  text-align: center;
+  hyphens: auto;
+  line-height: 1.65;
+  font-size: 1.25rem;
+  color: #575756;
+  margin-bottom: 2.5rem;
+}
+
+.intro-list{
+  list-style: disc;
+  padding-left: 1.2em;
   margin: 0;
+  display: none;
+}
+
+.intro-list li{
   text-align: justify;
   hyphens: auto;
   line-height: 1.65;
+  font-size: 1.25rem;
+  color: #575756;
+  margin-bottom: 1rem;
+}
+
+.intro-list li::marker{
+  color: rgb(227,6,19);
 }
 
 .home-links {
@@ -67,6 +96,7 @@ main#content {
   color: inherit;
   background: #eee;
   aspect-ratio: 4.5 / 5;
+  margin-top: 2rem;
 }
 .home-card__img {
   width: 100%;
@@ -193,4 +223,10 @@ main#content {
   .home-card__img,
   .home-card__overlay,
   .home-card__box--more { transition: none; }
+}
+
+@media (min-width: 721px){
+  .intro-list{
+    display: block;
+  }
 }
