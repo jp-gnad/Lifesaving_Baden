@@ -15,7 +15,7 @@ main#content {
   height: 300px;
   text-align: center;
   padding-top: 125px;
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
 }
 .hero::before {
   content: "";
@@ -80,7 +80,7 @@ main#content {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0) 45%, rgba(0,0,0,0.45) 100%);
+  background: linear-gradient(to bottom, rgba(0,0,0,0) 45%, rgba(0, 0, 0, 0.497) 100%);
   pointer-events: none;
 }
 .home-card__overlay {
@@ -99,7 +99,7 @@ main#content {
   justify-self: start;
   display: inline-block;
   background: #000;
-  color: #ffde00;
+  color: rgb(255, 237, 0);
   font-weight: 700;
   padding: 10px 14px;
   font-size: 1.15rem;
@@ -148,7 +148,7 @@ main#content {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0);
+  background: rgba(0, 0, 0, 0.158);
   pointer-events: none;
   z-index: 1;
   transition: background 420ms ease;

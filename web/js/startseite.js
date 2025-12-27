@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <div class="home-card__kicker">DLRG Punkterechner</div>
 
               <div class="home-card__box home-card__box--main">
-                national und Internationale Punkte
+                national und internationale Punkte
               </div>
 
               <div class="home-card__box home-card__box--more">
