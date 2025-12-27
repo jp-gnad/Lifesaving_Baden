@@ -1,11 +1,15 @@
 main#content {
   max-width: 900px;
   margin: 0 auto;
+  margin-top: 3rem;
   padding: 1.25rem;
+  color: #575756;
+  background-color: #EBEBEB;
+  line-height: 1.6;
 }
 
-.imprint h1 { margin: 0 0 0.5rem 0; }
+.imprint h1 { color: rgb(227, 6, 19); margin: 0 0 0.5rem 0; }
 .imprint section { margin: 1rem 0; }
-.imprint h2 { font-size: 1.15rem; margin: 0.75rem 0 0.35rem; }
-.placeholder { color: #666; font-style: italic; }
-.asof { color: #555; margin-top: 1rem; font-size: 0.95rem; }
+.imprint h2 { font-size: 1.15rem; margin: 2.75rem 0 0.35rem; color: rgb(227, 6, 19); }
+.placeholder { color: #575756; font-style: normal; }
+.asof { color: #57575693; margin-top: 3rem; font-size: 0.95rem; }
