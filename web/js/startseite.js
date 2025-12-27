@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     <section class="intro">
       <div class="container">
-        <h2>Willkommen beim Lifesaving Baden</h2>
+        <h2>Willkommen beim Lifesaving Team Baden</h2>
         <p>
           Lifesaving verbindet Rettungsschwimmen, Sport und Sicherheit im Wasser.
           Auf dieser Seite findest du zentrale Einstiege zu Kursen, Engagement, Lehrgängen
@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="home-cards">
 
           <a class="home-card" href="./athleten.html">
-            <img class="home-card__img" src="./png/hintergrund4.jpg" alt="" loading="lazy" decoding="async">
+            <img class="home-card__img" src="./png/hintergrund4.JPG" alt="" loading="lazy" decoding="async">
 
             <div class="home-card__overlay">
               <div class="home-card__kicker">Dein Athletenprofil</div>
@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           <a class="home-card" href="./punkterechner.html"
             aria-label="Punkterechner">
-            <img class="home-card__img" src="./png/hintergrund5.jpg" alt=""
+            <img class="home-card__img" src="./png/hintergrund5.JPG" alt=""
                 loading="lazy" decoding="async">
 
             <div class="home-card__overlay">
