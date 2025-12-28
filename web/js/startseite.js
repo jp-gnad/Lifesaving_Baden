@@ -23,7 +23,7 @@ const WIDE_SLIDES = [
     cta: { label: "Mehr Infos!", href: "./info.html" }
   },
   {
-    title: "Dopingprävention im Leistungssport",
+    title: "Dopingprävention",
     text: "Auch in der DLRG wird Leistungssport betrieben und obwohl die Rettungssportler ihren Sport als Amateure ausüben, unterliegen sie den Anti-Doping-Regeln der NADA (Nationale Antidoping Agentur) und der WADA (Welt Antidoping Agentur).",
     img: "./png/karussel/bild4.jpg",
     cta: { label: "Mehr Infos!", href: "https://www.dlrg.de/mitmachen/rettungssport/kader/dopingpraevention/" }
