@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </a>
 
         <!-- NEU: Elch rechts neben der Brand -->
-        <img class="brand-mascot" src="./png/elch.png" alt="" aria-hidden="true">
+        <img class="brand-mascot" src="./png/icons/elch.png" alt="" aria-hidden="true">
       </div>
     </div>
 
