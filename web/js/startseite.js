@@ -8,25 +8,25 @@ const WIDE_SLIDES = [
     title: "Kalender",
     text: "Aktueller Jahresplan vom Landeskader Baden",
     img: "./png/karussel/bild3.jpg",
-    cta: { label: "Mehr Infos!", href: "https://example.com/anmeldung" }
+    cta: { label: "Mehr Infos!", href: "./kalender.html" }
   },
   {
     title: "Nominierungen",
     text: "Aktuelle Nominierungslisten für den Bodensee Pokal und Deutschland Pokal",
     img: "./png/karussel/bild2.jpg",
-    cta: { label: "Mehr Infos!", href: "https://example.com/anmeldung" }
+    cta: { label: "Mehr Infos!", href: "./nominierung.html" }
   },
   {
     title: "Infoschreiben",
     text: "Aktuelles Jahres Infoschreiben vom Landeskader Baden",
     img: "./png/karussel/bild5.JPG",
-    cta: { label: "Mehr Infos!", href: "https://example.com/anmeldung" }
+    cta: { label: "Mehr Infos!", href: "./info.html" }
   },
   {
     title: "Dopingprävention im Leistungssport",
     text: "Auch in der DLRG wird Leistungssport betrieben und obwohl die Rettungssportler ihren Sport als Amateure ausüben, unterliegen sie den Anti-Doping-Regeln der NADA (Nationale Antidoping Agentur) und der WADA (Welt Antidoping Agentur).",
     img: "./png/karussel/bild4.jpg",
-    cta: { label: "Mehr Infos!", href: "https://example.com/anmeldung" }
+    cta: { label: "Mehr Infos!", href: "https://www.dlrg.de/mitmachen/rettungssport/kader/dopingpraevention/" }
   },
 ];
 
@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <div class="wide-carousel__content">
                 <h2>${s.title}</h2>
                 <p>${s.text}</p>
-                ${s.cta ? `<a class="wide-carousel__cta" href="${s.cta.href}" target="_blank" rel="noopener noreferrer">${s.cta.label}</a>` : ``}
+                ${s.cta ? `<a class="wide-carousel__cta" href="${s.cta.href}">${s.cta.label}</a>` : ``}
               </div>
             </article>
           `
