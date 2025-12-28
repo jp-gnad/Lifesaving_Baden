@@ -19,7 +19,7 @@ const WIDE_SLIDES = [
   {
     title: "Infoschreiben",
     text: "Aktuelles Jahres Infoschreiben vom Landeskader Baden",
-    img: "./png/karussel/bild5.jpg",
+    img: "./png/karussel/bild5.JPG",
     cta: { label: "Mehr Infos!", href: "https://example.com/anmeldung" }
   },
   {
