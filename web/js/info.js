@@ -40,20 +40,33 @@ async function loadInfoschreiben() {
     branch: "main",
     dirCandidates: ["Infoschreiben", "web/Infoschreiben"],
     cacheKey: "lsb_infoschreiben_cache_v1",
-    cacheTtlMs: 0 // immer frisch
+    cacheTtlMs: 10 * 60 * 1000 // 10 Minuten
   };
 
+  // 1) Cache verwenden, wenn vorhanden
   const cached = readCache(cfg.cacheKey, cfg.cacheTtlMs);
   if (cached?.docs?.length) {
     renderLists(cached.docs, elCurrent, elArchive);
-    fetchLatestAndUpdate(cfg, elCurrent, elArchive).catch(() => {});
     return;
   }
 
-  const docs = await fetchDocsFromGitHub(cfg);
-  writeCache(cfg.cacheKey, { docs });
-  renderLists(docs, elCurrent, elArchive);
+  // 2) Sonst live laden
+  try {
+    const docs = await fetchDocsFromGitHub(cfg);
+    writeCache(cfg.cacheKey, { docs });
+    renderLists(docs, elCurrent, elArchive);
+  } catch (err) {
+    // Falls API blockt, aber ein alter Cache existiert: den trotzdem anzeigen
+    const stale = readCache(cfg.cacheKey, Number.MAX_SAFE_INTEGER);
+    if (stale?.docs?.length) {
+      renderLists(stale.docs, elCurrent, elArchive);
+      return;
+    }
+    renderError("Die Infoschreiben konnten nicht geladen werden (GitHub API).");
+    throw err;
+  }
 }
+
 
 async function fetchLatestAndUpdate(cfg, elCurrent, elArchive) {
   const docs = await fetchDocsFromGitHub(cfg);
