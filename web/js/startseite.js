@@ -107,10 +107,10 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           </a>
 
-          <a class="home-card" href="./kaderstatus.html" aria-label="Kaderstatus">
+          <a class="home-card" href="./landeskader.html" aria-label="Landeskader">
             <img class="home-card__img" src="./png/hintergrund2.jpg" alt="" loading="lazy" decoding="async">
             <div class="home-card__overlay">
-              <div class="home-card__kicker">Kaderstatus</div>
+              <div class="home-card__kicker">Landeskader</div>
               <div class="home-card__box home-card__box--main">Der Landeskader auf einen Blick</div>
               <div class="home-card__box home-card__box--more">
                 Liste aktueller Landeskaderathleten, Kriterien und Prüfung deines Status.

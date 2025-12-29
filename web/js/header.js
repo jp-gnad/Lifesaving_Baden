@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <ul id="primary-menu" class="nav">
           <li><a href="punkterechner.html">Punkterechner</a></li>
           <li><a href="rekorde.html">Rekorde</a></li>
-          <li><a href="kaderstatus.html">Kaderstatus</a></li>
+          <li><a href="landeskader.html">Kader</a></li>
           <li><a href="athleten.html">Athleten</a></li>
         </ul>
       </nav>
