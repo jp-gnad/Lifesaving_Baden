@@ -8,24 +8,19 @@ document.addEventListener("DOMContentLoaded", () => {
     </section>
 
     <section class="info-wrap" aria-label="Infoschreiben Übersicht">
-
       <section class="info-section" aria-labelledby="info-current-title">
-        <h2 id="info-current-title">Aktuelles Infoschreiben:</h2>
-
-        <div id="info-current-preview" class="info-preview">
-          <p class="info-status">Lade Vorschau…</p>
+        <h2 id="info-current-title">Aktuelle Infoschreiben</h2>
+        <div id="info-current" class="info-links">
+          <p class="info-status">Lade Infoschreiben…</p>
         </div>
-
-        <div id="info-current-pdf" class="info-pdfline"></div>
       </section>
 
       <section class="info-section" aria-labelledby="info-archive-title">
-        <h2 id="info-archive-title">Frühere Infoschreiben:</h2>
+        <h2 id="info-archive-title">Frühere Infoschreiben</h2>
         <div id="info-archive" class="info-links">
-          <p class="info-status">Lade Liste…</p>
+          <p class="info-status">—</p>
         </div>
       </section>
-
     </section>
   `;
 
@@ -35,38 +30,36 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function loadInfoschreiben() {
-  const elPreview = document.getElementById("info-current-preview");
-  const elPdfLine = document.getElementById("info-current-pdf");
+  const elCurrent = document.getElementById("info-current");
   const elArchive = document.getElementById("info-archive");
-  if (!elPreview || !elPdfLine || !elArchive) return;
+  if (!elCurrent || !elArchive) return;
 
   const cfg = {
     owner: "jp-gnad",
     repo: "Lifesaving_Baden",
     branch: "main",
-    dirCandidates: ["Infoschreiben", "web/Infoschreiben"]
+    dirCandidates: ["Infoschreiben", "web/Infoschreiben"],
+    cacheKey: "lsb_infoschreiben_cache_v1",
+    cacheTtlMs: 0 // immer frisch
   };
 
-  const docs = await fetchDocsFromGitHub(cfg);
-
-  if (!docs.length) {
-    elPreview.innerHTML = `<p class="info-status">Keine Infoschreiben gefunden.</p>`;
-    elPdfLine.innerHTML = "";
-    elArchive.innerHTML = `<p class="info-status">—</p>`;
+  // Cache ist effektiv aus (ttl=0) – bleibt aber kompatibel, falls du später wieder aktivieren willst.
+  const cached = readCache(cfg.cacheKey, cfg.cacheTtlMs);
+  if (cached?.docs?.length) {
+    renderLists(cached.docs, elCurrent, elArchive);
+    fetchLatestAndUpdate(cfg, elCurrent, elArchive).catch(() => {});
     return;
   }
 
-  const years = docs.map(d => d.year).filter(y => Number.isFinite(y));
-  const latestYear = years.length ? Math.max(...years) : null;
+  const docs = await fetchDocsFromGitHub(cfg);
+  writeCache(cfg.cacheKey, { docs });
+  renderLists(docs, elCurrent, elArchive);
+}
 
-  const current = latestYear ? docs.find(d => d.year === latestYear) : docs[0];
-  const archive = latestYear ? docs.filter(d => d.year !== latestYear) : docs.slice(1);
-
-  // 1) Aktuelles: HTML/Preview aus PDF rendern
-  await renderCurrent(current, elPreview, elPdfLine);
-
-  // 2) Frühere: nur Links
-  renderArchive(archive, elArchive);
+async function fetchLatestAndUpdate(cfg, elCurrent, elArchive) {
+  const docs = await fetchDocsFromGitHub(cfg);
+  writeCache(cfg.cacheKey, { docs });
+  renderLists(docs, elCurrent, elArchive);
 }
 
 async function fetchDocsFromGitHub(cfg) {
@@ -96,11 +89,11 @@ async function fetchDocsFromGitHub(cfg) {
   if (!items) throw new Error("GitHub-Ordner nicht gefunden oder nicht erreichbar.");
 
   const pdfItems = items
-    .filter(it => it && it.type === "file" && typeof it.name === "string")
-    .filter(it => it.name.toLowerCase().endsWith(".pdf"));
+    .filter((it) => it && it.type === "file" && typeof it.name === "string")
+    .filter((it) => it.name.toLowerCase().endsWith(".pdf"));
 
   const docs = pdfItems
-    .map(it => {
+    .map((it) => {
       const year = extractYear(it.name);
       return {
         name: it.name,
@@ -119,95 +112,36 @@ async function fetchDocsFromGitHub(cfg) {
   return docs;
 }
 
-/* ---------------- Rendering ---------------- */
-
-async function renderCurrent(doc, elPreview, elPdfLine) {
-  const pdfText = `${doc.label} (PDF Link)`;
-  elPdfLine.innerHTML = `<a class="info-link" href="${doc.url}">${escapeHtml(pdfText)}</a>`;
-
-  // PDF.js vorhanden?
-  if (window.pdfjsLib && typeof window.pdfjsLib.getDocument === "function") {
-    // Worker-URL setzen (CDNJS v2.16.105)
-    try {
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
-    } catch {
-      // falls nicht möglich: PDF.js nutzt ggf. Fake-Worker, ist ok
-    }
-
-    elPreview.innerHTML = `<p class="info-status">Erstelle HTML-Ansicht aus PDF…</p>`;
-
-    try {
-      await renderPdfAsCanvases(doc.url, elPreview);
-      return;
-    } catch (e) {
-      // Fallback unten (iframe)
-    }
-  }
-
-  // Fallback: eingebettete PDF (falls PDF.js fehlt oder Rendering scheitert)
-  elPreview.innerHTML = `
-    <p class="info-status">Vorschau konnte nicht gerendert werden – PDF wird eingebettet.</p>
-    <iframe class="info-pdf-iframe" src="${doc.url}" title="${escapeHtml(doc.label)}"></iframe>
-  `;
-}
-
-function renderArchive(docs, elArchive) {
-  if (!docs.length) {
+function renderLists(docs, elCurrent, elArchive) {
+  if (!Array.isArray(docs) || docs.length === 0) {
+    elCurrent.innerHTML = `<p class="info-status">Keine Infoschreiben gefunden.</p>`;
     elArchive.innerHTML = `<p class="info-status">—</p>`;
     return;
   }
 
-  elArchive.innerHTML = docs
-    .map(d => `<a class="info-link" href="${d.url}">${escapeHtml(d.label)}</a>`)
-    .join("");
+  const years = docs.map((d) => d.year).filter((y) => Number.isFinite(y));
+  const latestYear = years.length ? Math.max(...years) : null;
+
+  const current = latestYear ? docs.filter((d) => d.year === latestYear) : docs.slice(0, 1);
+  const archive = latestYear ? docs.filter((d) => d.year !== latestYear) : docs.slice(1);
+
+  elCurrent.innerHTML = current.map(renderLinkLine).join("");
+  elArchive.innerHTML = archive.length ? archive.map(renderLinkLine).join("") : `<p class="info-status">—</p>`;
 }
 
-/* ---------------- PDF.js Canvas Rendering ---------------- */
+function renderLinkLine(doc) {
+  const safeLabel = escapeHtml(doc.label);
+  const href = String(doc.url || "#");
 
-async function renderPdfAsCanvases(pdfUrl, mount) {
-  // leeren + Container
-  mount.innerHTML = "";
-  const wrap = document.createElement("div");
-  wrap.className = "pdf-pages";
-  mount.appendChild(wrap);
-
-  const loadingTask = window.pdfjsLib.getDocument({ url: pdfUrl });
-  const pdf = await loadingTask.promise;
-
-  // Zielbreite (lesbar, aber responsiv)
-  const maxWidth = 980;
-  const containerWidth = Math.min(mount.clientWidth || maxWidth, maxWidth);
-
-  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-    const page = await pdf.getPage(pageNum);
-
-    const baseVp = page.getViewport({ scale: 1 });
-    const scale = containerWidth / baseVp.width;
-    const vp = page.getViewport({ scale });
-
-    const canvas = document.createElement("canvas");
-    canvas.className = "pdf-canvas";
-
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.floor(vp.width * dpr);
-    canvas.height = Math.floor(vp.height * dpr);
-    canvas.style.width = `${Math.floor(vp.width)}px`;
-    canvas.style.height = `${Math.floor(vp.height)}px`;
-
-    const ctx = canvas.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-    wrap.appendChild(canvas);
-
-    await page.render({
-      canvasContext: ctx,
-      viewport: vp
-    }).promise;
-  }
+  return `<a class="info-link" href="${href}">${safeLabel}</a>`;
 }
 
-/* ---------------- Helpers ---------------- */
+function renderError(message) {
+  const elCurrent = document.getElementById("info-current");
+  const elArchive = document.getElementById("info-archive");
+  if (elCurrent) elCurrent.innerHTML = `<p class="info-status info-error">${escapeHtml(message)}</p>`;
+  if (elArchive) elArchive.innerHTML = `<p class="info-status">—</p>`;
+}
 
 function extractYear(filename) {
   const m = String(filename).match(/\b(19\d{2}|20\d{2})\b/);
@@ -217,6 +151,7 @@ function extractYear(filename) {
 }
 
 function buildLabel(filename, year) {
+  // wie im Screenshot: "Infoschreiben 2025"
   if (Number.isFinite(year)) return `Infoschreiben ${year}`;
   return String(filename).replace(/\.pdf$/i, "");
 }
@@ -231,18 +166,30 @@ function buildRelativeUrlFromWebInfo(dirPath, fileName) {
     return `./${sub}/${enc}`;
   }
 
-  // PDFs in /Infoschreiben -> ../Infoschreiben/<file>
+  // PDFs in /Infoschreiben (Repo-Root) -> ../Infoschreiben/<file>
   return `../${dirPath}/${enc}`;
 }
 
-function renderError(message) {
-  const elPreview = document.getElementById("info-current-preview");
-  const elPdfLine = document.getElementById("info-current-pdf");
-  const elArchive = document.getElementById("info-archive");
+/* Cache helpers (TTL=0 => faktisch aus) */
+function readCache(key, ttlMs) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (!obj || typeof obj !== "object") return null;
+    if (!obj.ts || Date.now() - obj.ts > ttlMs) return null;
+    return obj.data || null;
+  } catch {
+    return null;
+  }
+}
 
-  if (elPreview) elPreview.innerHTML = `<p class="info-status info-error">${escapeHtml(message)}</p>`;
-  if (elPdfLine) elPdfLine.innerHTML = "";
-  if (elArchive) elArchive.innerHTML = `<p class="info-status">—</p>`;
+function writeCache(key, data) {
+  try {
+    localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+  } catch {
+    // ignore
+  }
 }
 
 function escapeHtml(s) {

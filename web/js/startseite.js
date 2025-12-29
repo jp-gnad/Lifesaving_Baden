@@ -28,6 +28,12 @@ const WIDE_SLIDES = [
     img: "./png/karussel/bild4.jpg",
     cta: { label: "Mehr Infos!", href: "https://www.dlrg.de/mitmachen/rettungssport/kader/dopingpraevention/" }
   },
+  {
+    title: "Lifesaving World Championships",
+    text: "Die LWC finden 2026 vom 25. Nov bis 13. Dec in Port Elizabeth / Südafrika statt. Du hast Interesse aber keine Ahnung wie das Abläuft? Frag bei uns nach! Wir versuchen zusammen als Baden etwas zu organisieren.",
+    img: "./png/karussel/bild6.jpg",
+    cta: { label: "Mehr Infos!", href: "https://lifesaving2026.com/" }
+  },
 ];
 
 
