@@ -1,23 +1,25 @@
-
-/* Seiteninhalt Startseite */
+/* Seiteninhalt Info */
 main#content {
   margin: 0 auto;
 }
 
+/* HERO */
 .hero {
   position: relative;
-  background: url("../png/hintergrund3.jpg") center/cover no-repeat;  background-position: center 25%;
+  background: url("../png/hintergrund3.jpg") center/cover no-repeat;
+  background-position: center 25%;
   height: 300px;
   text-align: center;
   padding-top: 125px;
   color: white;
 }
-.hero::before{
+
+.hero::before {
   content: "";
   position: absolute;
-  inset: 0;                  /* über die ganze Fläche */
+  inset: 0;
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.257), rgba(0, 0, 0, 0.825));
-  pointer-events: none;      /* klicks gehen durch */
+  pointer-events: none;
 }
 
 .hero h1 {
@@ -26,12 +28,96 @@ main#content {
   z-index: 1;
 }
 
-.updates h2 {
+/* CONTENT WRAP */
+.info-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 2.5rem;
+}
+
+.info-section {
   margin-top: 1.5rem;
 }
 
+.info-section h2 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
 
-@media (max-width:720px){
-  .hero h1 {font-size: 2.0em; }
-  .hero {height: 200px; padding-top: 80px;}
+/* LIST */
+.info-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.info-item {
+  margin: 0;
+}
+
+/* Link-Karte */
+.info-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  font-size: 1.0rem;
+  line-height: 1.35;
+
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.03);
+
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+.info-link:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.20);
+  transform: translateY(-1px);
+}
+
+.info-link:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.45);
+  outline-offset: 2px;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Status */
+.info-status {
+  font-size: 0.98rem;
+  opacity: 0.85;
+  padding: 0.5rem 0;
+}
+
+.info-error {
+  opacity: 1;
+}
+
+/* Responsive */
+@media (max-width: 720px) {
+  .hero h1 {
+    font-size: 2.0em;
+  }
+
+  .hero {
+    height: 200px;
+    padding-top: 80px;
+  }
+
+  .info-wrap {
+    padding: 1.1rem 0.9rem 2.0rem;
+  }
+
+  .info-section h2 {
+    font-size: 1.2rem;
+  }
+
+  .info-link {
+    padding: 0.85rem 0.9rem;
+    border-radius: 12px;
+  }
 }
