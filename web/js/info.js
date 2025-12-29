@@ -43,7 +43,6 @@ async function loadInfoschreiben() {
     cacheTtlMs: 0 // immer frisch
   };
 
-  // Cache ist effektiv aus (ttl=0) – bleibt aber kompatibel, falls du später wieder aktivieren willst.
   const cached = readCache(cfg.cacheKey, cfg.cacheTtlMs);
   if (cached?.docs?.length) {
     renderLists(cached.docs, elCurrent, elArchive);
@@ -122,17 +121,47 @@ function renderLists(docs, elCurrent, elArchive) {
   const years = docs.map((d) => d.year).filter((y) => Number.isFinite(y));
   const latestYear = years.length ? Math.max(...years) : null;
 
+  // "Aktuell" = neuestes Jahr (falls mehrere PDFs im selben Jahr existieren: mehrere Boxen)
   const current = latestYear ? docs.filter((d) => d.year === latestYear) : docs.slice(0, 1);
   const archive = latestYear ? docs.filter((d) => d.year !== latestYear) : docs.slice(1);
 
-  elCurrent.innerHTML = current.map(renderLinkLine).join("");
+  // >>> HIER: aktuelle als Bildbox(en)
+  elCurrent.innerHTML = current.map(renderCurrentCard).join("");
+
+  // frühere bleiben Textlinks
   elArchive.innerHTML = archive.length ? archive.map(renderLinkLine).join("") : `<p class="info-status">—</p>`;
 }
+
+function renderCurrentCard(doc) {
+  const href = String(doc.url || "#");
+  const year = Number.isFinite(doc.year) ? String(doc.year) : "";
+  const aria = year ? `Infobrief ${year} öffnen` : "Infobrief öffnen";
+
+  return `
+    <a class="info-brief" href="${href}" aria-label="${aria}">
+      <img
+        class="info-brief__img"
+        src="./png/icons/brief.png"
+        alt="Infoschreiben öffnen"
+        loading="lazy"
+        decoding="async"
+      />
+      <div class="info-brief__overlay" aria-hidden="true">
+        <div class="info-brief__t1">Infobrief ${escapeHtml(year)}</div>
+        <div class="info-brief__t2">Rettungssport</div>
+        <div class="info-brief__spacer"></div>
+        <div class="info-brief__t3">Landeskader Baden</div>
+      </div>
+    </a>
+  `;
+}
+
+
+
 
 function renderLinkLine(doc) {
   const safeLabel = escapeHtml(doc.label);
   const href = String(doc.url || "#");
-
   return `<a class="info-link" href="${href}">${safeLabel}</a>`;
 }
 
@@ -151,22 +180,17 @@ function extractYear(filename) {
 }
 
 function buildLabel(filename, year) {
-  // wie im Screenshot: "Infoschreiben 2025"
   if (Number.isFinite(year)) return `Infoschreiben ${year}`;
   return String(filename).replace(/\.pdf$/i, "");
 }
 
 function buildRelativeUrlFromWebInfo(dirPath, fileName) {
-  // info.html liegt in /web/
   const enc = encodeURIComponent(fileName).replace(/%2F/g, "/");
 
-  // PDFs in /web/Infoschreiben -> ./Infoschreiben/<file>
   if (dirPath.startsWith("web/")) {
-    const sub = dirPath.slice(4); // "web/" entfernen
+    const sub = dirPath.slice(4);
     return `./${sub}/${enc}`;
   }
-
-  // PDFs in /Infoschreiben (Repo-Root) -> ../Infoschreiben/<file>
   return `../${dirPath}/${enc}`;
 }
 
@@ -200,3 +224,4 @@ function escapeHtml(s) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
+renderCurrentCard
