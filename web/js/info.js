@@ -46,10 +46,11 @@ async function loadInfoschreiben() {
     owner: "jp-gnad",
     repo: "Lifesaving_Baden",
     branch: "main",
-    dirCandidates: ["Infoschreiben", "web/Infoschreiben"], // probiert beide automatisch
+    dirCandidates: ["Infoschreiben", "web/Infoschreiben"],
     cacheKey: "lsb_infoschreiben_cache_v1",
-    cacheTtlMs: 6 * 60 * 60 * 1000 // 6 Stunden
+    cacheTtlMs: 0
   };
+
 
   // 1) Cache versuchen
   const cached = readCache(cfg.cacheKey, cfg.cacheTtlMs);
