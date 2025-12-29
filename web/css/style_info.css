@@ -119,12 +119,12 @@ main#content {
   left: 0;
   top: 24px;
 
-  width: 80%;
+  width: 75%;
   background: #e30615;
-  border-radius: 0px 44px 44px 0;
-  padding-top: 5px;
-  padding-left: 6px;
-  padding-bottom: 5px;
+  border-radius: 0px 20px 20px 0;
+  padding-top: 6px;
+  padding-left: 8px;
+  padding-bottom: 6px;
 
   border: none;
   pointer-events: none;
