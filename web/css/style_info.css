@@ -1,4 +1,4 @@
-/* Seiteninhalt Info */
+/* Seiteninhalt */
 main#content {
   margin: 0 auto;
 }
@@ -28,7 +28,7 @@ main#content {
   z-index: 1;
 }
 
-/* CONTENT WRAP */
+/* Bereich unter Hero */
 .info-wrap {
   max-width: 1100px;
   margin: 0 auto;
@@ -36,88 +36,76 @@ main#content {
 }
 
 .info-section {
-  margin-top: 1.5rem;
+  margin-top: 1.75rem;
 }
 
 .info-section h2 {
-  margin: 0 0 0.75rem 0;
-  font-size: 1.35rem;
+  margin: 0 0 0.9rem 0;
+  font-size: 2.0rem;
   font-weight: 700;
 }
 
-/* LIST */
-.info-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  gap: 0.75rem;
+/* Schlichte Linkliste */
+.info-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
 }
 
-.info-item {
-  margin: 0;
-}
-
-/* Link-Karte */
 .info-link {
-  display: block;
-  text-decoration: none;
-  color: inherit;
-  font-size: 1.0rem;
-  line-height: 1.35;
-
-  padding: 0.9rem 1rem;
-  border-radius: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  background: rgba(0, 0, 0, 0.03);
-
-  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+  font-size: 1.05rem;
+  text-decoration: underline;
+  width: fit-content;
 }
 
-.info-link:hover {
-  background: rgba(0, 0, 0, 0.05);
-  border-color: rgba(0, 0, 0, 0.20);
-  transform: translateY(-1px);
+/* Zeile für PDF-Link unter der Vorschau */
+.info-pdfline {
+  margin-top: 1rem;
 }
 
-.info-link:focus-visible {
-  outline: 2px solid rgba(0, 0, 0, 0.45);
-  outline-offset: 2px;
-  background: rgba(0, 0, 0, 0.05);
+/* Vorschau-Container */
+.info-preview {
+  margin-top: 0.25rem;
 }
 
-/* Status */
 .info-status {
-  font-size: 0.98rem;
+  margin: 0;
   opacity: 0.85;
-  padding: 0.5rem 0;
 }
 
 .info-error {
   opacity: 1;
 }
 
+/* PDF Seiten (Canvas) */
+.pdf-pages {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pdf-canvas {
+  display: block;
+  max-width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+  background: white;
+}
+
+/* Fallback iframe */
+.info-pdf-iframe {
+  width: 100%;
+  height: 70vh;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+}
+
 /* Responsive */
 @media (max-width: 720px) {
-  .hero h1 {
-    font-size: 2.0em;
-  }
+  .hero h1 { font-size: 2.0em; }
+  .hero { height: 200px; padding-top: 80px; }
 
-  .hero {
-    height: 200px;
-    padding-top: 80px;
-  }
-
-  .info-wrap {
-    padding: 1.1rem 0.9rem 2.0rem;
-  }
-
-  .info-section h2 {
-    font-size: 1.2rem;
-  }
-
-  .info-link {
-    padding: 0.85rem 0.9rem;
-    border-radius: 12px;
-  }
+  .info-wrap { padding: 1.1rem 0.9rem 2.0rem; }
+  .info-section h2 { font-size: 1.6rem; }
+  .info-link { font-size: 1.0rem; }
 }
