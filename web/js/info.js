@@ -151,7 +151,7 @@ function renderCurrentCard(doc) {
   const aria = year ? `Infobrief ${year} öffnen` : "Infobrief öffnen";
 
   return `
-    <a class="info-brief" href="${href}" aria-label="${aria}">
+    <a class="info-brief" href="${href}" target="_blank" rel="noopener noreferrer" aria-label="${aria}">
       <img
         class="info-brief__img"
         src="./png/icons/brief.png"
@@ -175,8 +175,9 @@ function renderCurrentCard(doc) {
 function renderLinkLine(doc) {
   const safeLabel = escapeHtml(doc.label);
   const href = String(doc.url || "#");
-  return `<a class="info-link" href="${href}">${safeLabel}</a>`;
+  return `<a class="info-link" href="${href}" target="_blank" rel="noopener noreferrer">${safeLabel}</a>`;
 }
+
 
 function renderError(message) {
   const elCurrent = document.getElementById("info-current");
