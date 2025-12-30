@@ -33,7 +33,6 @@ document.addEventListener("DOMContentLoaded", () => {
     <section class="kader-hero" aria-label="Landeskader Baden">
       <div class="kader-hero__inner">
         <h1>Landeskader Baden</h1>
-        <p>Übersicht, Kriterien und aktuelle Informationen.</p>
       </div>
     </section>
 

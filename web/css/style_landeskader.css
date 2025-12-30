@@ -20,6 +20,7 @@ main#content{
   background: url("../png/hintergrund2.jpg") center/cover no-repeat;
   background-position: center 25%;
   overflow: hidden;
+  padding-top: 125px;
 }
 
 .kader-hero::before{
@@ -47,13 +48,6 @@ main#content{
   margin: 0 0 10px;
   font-size: clamp(2.0rem, 3.6vw, 3.2rem);
   font-weight: 800;
-}
-
-.kader-hero__inner p{
-  margin: 0;
-  font-size: clamp(1.0rem, 1.4vw, 1.3rem);
-  line-height: 1.6;
-  opacity: 0.95;
 }
 
 /* Aktuelles */
