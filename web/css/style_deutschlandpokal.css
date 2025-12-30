@@ -391,11 +391,14 @@ main#content {
 
   .info-brief__overlay {
     top: 16px;
-    width: 78%;
     border-radius: 0px 16px 16px 0;
   }
 
-  .info-brief__t1 { font-size: 1.55rem; margin-bottom: 6px; }
-  .info-brief__t2 { font-size: 1.15rem; }
-  .info-brief__t3 { font-size: 1.05rem; }
+  .info-brief__spacer {
+    height: 12px;
+  }
+
+  .info-brief__t1 { font-size: 1.25rem; margin-bottom: 6px; }
+  .info-brief__t2 { font-size: 0.8rem; }
+  .info-brief__t3 { font-size: 1rem; }
 }
