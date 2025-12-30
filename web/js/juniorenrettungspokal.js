@@ -10,7 +10,7 @@ function dpBadgeUrlFromSlideImg(slideImgPath) {
 const DP_FOLDER = "./png/JRP-Team/";
 const DP_MIN_YEAR = 2000;
 const DP_MAX_YEAR = new Date().getFullYear() + 1;
-const DP_EXTS = [".jpg", ".JPG", ".jpeg", ".JPEG", ".png", ".PNG", ".webp", ".WEBP"];
+const DP_EXTS = [".jpg"];
 
 const DP_SLIDE_SETTINGS = {
   "2024": {

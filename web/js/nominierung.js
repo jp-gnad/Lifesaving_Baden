@@ -139,7 +139,7 @@ async function startYearRotator(imgEl) {
   const maxYear = toInt(imgEl.dataset.maxYear, new Date().getFullYear());
   const interval = toInt(imgEl.dataset.interval, 10000);
 
-  const exts = [".jpg", ".JPG", ".jpeg", ".JPEG", ".png", ".PNG", ".webp", ".WEBP"];
+  const exts = [".jpg"];
 
   // 1) verfügbare URLs in absteigender Reihenfolge sammeln
   const urls = [];
