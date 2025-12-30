@@ -73,7 +73,7 @@ const DP_SLIDE_SETTINGS = {
     text: "LV-Gesamtwertung: 3. Platz",
     cta: {
       label: "Mehr Infos!",
-      href: "https://www.facebook.com/photo/?fbid=283788841660256&set=pb.100066777226581.-2207520000&locale=de_DE",
+      href: "https://www.facebook.com/photo/?fbid=283788744993599&set=pb.100066777226581.-2207520000&locale=de_DE",
     },
     bgPos: "center 35%",
   },
