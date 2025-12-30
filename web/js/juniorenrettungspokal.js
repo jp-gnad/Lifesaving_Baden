@@ -13,8 +13,16 @@ const DP_MAX_YEAR = new Date().getFullYear() + 1;
 const DP_EXTS = [".jpg"];
 
 const DP_SLIDE_SETTINGS = {
+  "2025": {
+    text: "ausgefallen - FILCOW Cup",
+    cta: {
+      label: "Mehr Infos!",
+      href: "https://www.liveheats.com/events/389513",
+    },
+    bgPos: "center 60%",
+  },
   "2024": {
-    text: "LV-Gesamtwertung: 9. Platz",
+    text: "ausgefallen - offene LMS Freigewässer Sachsen-Anhalt",
     cta: {
       label: "Mehr Infos!",
       href: "https://baden.dlrg.de/newsdetails/offene-landesmeisterschaften-im-freigewaesser-118339-n/",
