@@ -10,8 +10,8 @@ main#content {
 /* HERO */
 .hero {
   position: relative;
-  background: url("../png/karussel/bild5.JPG") center/cover no-repeat;
-  background-position: center 65%;
+  background: url("../png/hintergrund6.JPG") center/cover no-repeat;
+  background-position: center 25%;
   height: 300px;
   text-align: center;
   padding-top: 125px;
@@ -119,7 +119,7 @@ main#content {
   left: 0;
   top: 24px;
 
-  width: 75%;
+  width: 78%;
   background: #e30615;
   border-radius: 0px 20px 20px 0;
   padding-top: 6px;
@@ -139,7 +139,7 @@ main#content {
 }
 
 .info-brief__t1 {
-  font-size: 2.2rem;
+  font-size: 1.5rem;
   line-height: 1.05;
   margin-bottom: 10px;
 }
