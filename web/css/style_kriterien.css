@@ -1,0 +1,174 @@
+/* =========================
+   Info-Seite – Layout & Hero
+   ========================= */
+
+/* Seiteninhalt */
+main#content {
+  margin: 0 auto;
+}
+
+/* HERO */
+.hero {
+  position: relative;
+  background: url("../png/karussel/bild5.JPG") center/cover no-repeat;
+  background-position: center 65%;
+  height: 300px;
+  text-align: center;
+  padding-top: 125px;
+  color: white;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.257), rgba(0, 0, 0, 0.825));
+  pointer-events: none;
+}
+
+.hero h1 {
+  position: relative;
+  font-size: 2.75em;
+  z-index: 1;
+}
+
+/* Bereich unter Hero */
+.info-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 2.5rem;
+}
+
+.info-section {
+  margin-top: 2.0rem;
+}
+
+.info-section h2 {
+  margin: 0 0 0.9rem 0;
+  font-size: 2.25rem;
+  font-weight: 700;
+}
+
+/* =========================
+   Listen / Links
+   ========================= */
+
+.info-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  align-items: flex-start;
+}
+
+.info-link {
+  font-size: 1.05rem;
+  text-decoration: none;
+  width: fit-content;
+  color: rgb(227, 6, 19);
+}
+
+.info-status {
+  margin: 0;
+  opacity: 0.85;
+}
+
+.info-error {
+  opacity: 1;
+}
+
+/* =========================
+   Aktuelles Infoschreiben (alt: Icon-only)
+   ========================= */
+
+.info-card--icononly {
+  display: inline-block;
+  width: fit-content;
+  align-self: flex-start;
+  flex: 0 0 auto;
+  padding: 0;
+  margin: 0;
+}
+
+.info-card-icon--big {
+  width: 320px;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+/* =========================
+   Aktuelles Infoschreiben (Brief + Overlay)
+   ========================= */
+
+.info-brief {
+  position: relative;
+  display: inline-block;
+  width: fit-content;
+  align-self: flex-start;
+  text-decoration: none;
+}
+
+.info-brief__img {
+  width: 340px;
+  height: auto;
+  display: block;
+}
+
+.info-brief__overlay {
+  position: absolute;
+  left: 0;
+  top: 24px;
+
+  width: 75%;
+  background: #e30615;
+  border-radius: 0px 20px 20px 0;
+  padding-top: 6px;
+  padding-left: 8px;
+  padding-bottom: 6px;
+
+  border: none;
+  pointer-events: none;
+}
+
+.info-brief__t1,
+.info-brief__t2,
+.info-brief__t3 {
+  color: rgb(255, 237, 0);
+  font-weight: 800;
+  margin: 0;
+}
+
+.info-brief__t1 {
+  font-size: 2.2rem;
+  line-height: 1.05;
+  margin-bottom: 10px;
+}
+
+.info-brief__t2 {
+  font-size: 1.5rem;
+  line-height: 1.1;
+}
+
+.info-brief__spacer {
+  height: 4px;
+}
+
+.info-brief__t3 {
+  font-size: 1.3rem;
+  line-height: 1.12;
+}
+
+/* =========================
+   Responsive
+   ========================= */
+
+@media (max-width: 720px) {
+  .hero h1 { font-size: 2.0em; }
+  .hero { height: 200px; padding-top: 80px; }
+
+  .info-wrap { padding: 1.1rem 0.9rem 2.0rem; }
+  .info-section h2 { font-size: 1.6rem; }
+  .info-link { font-size: 1.0rem; }
+
+  .info-card-icon--big { width: 190px; }
+}
