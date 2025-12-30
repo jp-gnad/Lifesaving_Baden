@@ -123,6 +123,15 @@ const DP_SLIDE_SETTINGS = {
   },
 };
 
+// ===== Deutschlandpokal PDF Auto-Finder =====
+const DP_PDF_BASE = "../nominierungsrichtlinien/";
+const DP_PDF_MIN_YEAR = 2000;
+const DP_PDF_MAX_YEAR = new Date().getFullYear() + 1;
+
+const DP_PDF_NAME_PATTERNS = [
+  (y) => `Deutschlandpokal - ${y}.pdf`,
+];
+
 
 /* =========================
    PAGE
@@ -164,6 +173,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   renderCarousel(main, slides);
   initWideCarousel();
+  renderDeutschlandpokalGuidelinesCard();
 });
 
 /* =========================
@@ -218,7 +228,15 @@ function renderCarousel(main, slides) {
               return `
                 <article
                   class="wide-carousel__slide ${i === 0 ? "wide-carousel__slide--center" : ""}"
-                  style="background-image:url('${s.img}'); background-position:${s.bgPos || "center center"}; background-size:cover; background-repeat:no-repeat;"
+                  style="
+                    background-image:url('${s.img}');
+                    background-position:${s.bgPos || "center center"};
+                    background-size:cover;
+                    background-repeat:no-repeat;
+                    --dp-justify:${justify};
+                    --dp-text-align:${s.textAlign};
+                    ${contentBottomVar ? `--dp-content-bottom:${contentBottomVar};` : ""}
+                  "
                   role="group" aria-roledescription="Folie"
                   aria-label="${i + 1} von ${slides.length}"
                 >
@@ -274,9 +292,6 @@ function renderCarousel(main, slides) {
   document.querySelectorAll(".wide-carousel__badge").forEach(img => {
     img.addEventListener("error", () => img.remove());
   });
-
-  renderDpGuidelinesCard(slides);
-
 }
 
 function escapeHtml(str) {
@@ -469,3 +484,79 @@ function probeByImage(url, timeoutMs) {
     img.src = url;
   });
 }
+
+async function renderDeutschlandpokalGuidelinesCard() {
+  const mount = document.getElementById("dp-guidelines");
+  if (!mount) return;
+
+  mount.innerHTML = `<p class="info-status">Lade…</p>`;
+
+  const found = await findLatestDeutschlandpokalPdf();
+  if (!found) {
+    mount.innerHTML = `<p class="info-status info-error">Keine Deutschlandpokal-PDF gefunden.</p>`;
+    return;
+  }
+
+  const { year, href } = found;
+
+  mount.innerHTML = renderBriefCard({
+    href,
+    aria: `Deutschlandpokal Nominierungsrichtlinien ${year} öffnen`,
+    t1: "Deutschlandpokal",
+    t2: `Nominierungsrichtlinien ${year}`,
+    t3: "Landesverband Baden",
+  });
+
+  // optional: Platzhalter für die zweite Box
+  const listMount = document.getElementById("dp-list");
+  if (listMount) listMount.innerHTML = `<p class="info-status">—</p>`;
+}
+
+async function findLatestDeutschlandpokalPdf() {
+  for (let y = DP_PDF_MAX_YEAR; y >= DP_PDF_MIN_YEAR; y--) {
+    for (const makeName of DP_PDF_NAME_PATTERNS) {
+      const fileName = makeName(y);
+      const href = DP_PDF_BASE + encodeURIComponent(fileName);
+      if (await pdfUrlExists(href)) return { year: y, href };
+    }
+  }
+  return null;
+}
+
+// Wichtig: eigener Name, damit es NICHT mit deiner Bild-urlExists() kollidiert
+async function pdfUrlExists(url) {
+  // 1) HEAD (wenn erlaubt)
+  try {
+    const r = await fetch(url, { method: "HEAD", cache: "no-store" });
+    if (r.ok) return true;
+  } catch {}
+
+  // 2) Fallback: kleiner Range-GET
+  try {
+    const r = await fetch(url, {
+      method: "GET",
+      headers: { Range: "bytes=0-0" },
+      cache: "no-store",
+    });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
+
+function renderBriefCard({ href, aria, t1, t2, t3 }) {
+  return `
+    <a class="info-brief" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(aria)}">
+      <img class="info-brief__img" src="./png/icons/brief.png" alt="" loading="lazy" decoding="async" />
+      <div class="info-brief__overlay" aria-hidden="true">
+        <div class="info-brief__t1">${escapeHtml(t1)}</div>
+        <div class="info-brief__t2">${escapeHtml(t2)}</div>
+        <div class="info-brief__spacer"></div>
+        <div class="info-brief__t3">${escapeHtml(t3)}</div>
+      </div>
+    </a>
+  `;
+}
+
+
+
