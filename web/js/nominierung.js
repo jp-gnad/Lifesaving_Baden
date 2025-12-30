@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
       },
     },
     {
-      href: "#juniorenrettungspokal",
+      href: "./juniorenrettungspokal.html",
       kicker: "Junioren Rettungspokal (JRP)",
       main: "Nominierungsrichtlinien & Liste",
       more: "Du möchtest einemal teil der Badischen Auswahlmannschaft für den Junioren Rettungspokal sein? Versuche die Kriterien zu erfüllen und dich in der Liste hoch zu schwimmen!",

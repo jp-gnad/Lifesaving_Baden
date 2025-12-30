@@ -12,7 +12,7 @@ const WIDE_SLIDES = [
   },
   {
     title: "Nominierungen",
-    text: "Aktuelle Nominierungslisten für den Bodensee Pokal und Deutschland Pokal",
+    text: "Aktuelle Nominierungslisten und Kriterien für den Deutschlandpokal, Bodensee Pokal und Junioren Rettungspokal",
     img: "./png/karussel/bild2.jpg",
     cta: { label: "Mehr Infos!", href: "./nominierung.html" }
   },
