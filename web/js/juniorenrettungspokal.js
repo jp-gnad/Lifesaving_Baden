@@ -61,6 +61,14 @@ const DP_SLIDE_SETTINGS = {
     },
     bgPos: "center 55%",
   },
+  "2017": {
+    text: "LV-Gesamtwertung: 13. Platz",
+    cta: {
+      label: "Mehr Infos!",
+      href: "https://emsbueren.dlrg.de/mitmachen/rettungssport/wettkaempfe-und-ergebnisse/wettkampfergebnisse-nach-jahren-details/junioren-rettungspokal-2017-teil-2-gold-282-n/",
+    },
+    bgPos: "center 45%",
+  },
   "2015": {
     text: "LV-Gesamtwertung: 7. Platz",
     cta: {
