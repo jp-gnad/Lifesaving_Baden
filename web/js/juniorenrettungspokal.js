@@ -17,39 +17,39 @@ const DP_SLIDE_SETTINGS = {
     text: "LV-Gesamtwertung: 9. Platz",
     cta: {
       label: "Mehr Infos!",
-      href: "https://www.dlrg.de/mitmachen/rettungssport/nationale-und-internationale-wettkaempfe/deutschlandpokal-2024/",
+      href: "https://baden.dlrg.de/newsdetails/offene-landesmeisterschaften-im-freigewaesser-118339-n/",
     },
     bgPos: "center 45%",
   },
   "2023": {
-    text: "LV-Gesamtwertung: 9. Platz",
+    text: "LV-Gesamtwertung: 11. Platz",
     cta: {
       label: "Mehr Infos!",
-      href: "https://www.dlrg.de/mitmachen/rettungssport/nationale-und-internationale-wettkaempfe/internationaler-deutschlandpokal-2023/",
+      href: "https://baden.dlrg-jugend.de/wir/news/detailansicht/team-baden-kann-mehr-als-nur-baden-107339-n/",
     },
     bgPos: "center 45%",
   },
   "2022": {
-    text: "LV-Gesamtwertung: 5. Platz",
+    text: "LV-Gesamtwertung: 7. Platz",
     cta: {
       label: "Mehr Infos!",
-      href: "https://www.dlrg.de/mitmachen/rettungssport/nationale-und-internationale-wettkaempfe/deutschlandpokal-2022/ergebnisse-einzel/#:~:text=Ergebnisse%20Einzel%20%2D%20Deutschlandpokal%202022%20%7C%20DLRG%20e.V.",
+      href: "https://ba.dlrg.de/newsdetails/junioren-rettungspokal-2022-95316-n/",
     },
     bgPos: "center 50%",
   },
   "2019": {
-    text: "LV-Gesamtwertung: 5. Platz",
+    text: "LV-Gesamtwertung: 12. Platz",
     cta: {
       label: "Mehr Infos!",
-      href: "https://baden.dlrg-jugend.de/wir/news/detailansicht/internationaler-deutschlandpokal-2019-312-n/",
+      href: "https://baden.dlrg-jugend.de/wir/news/detailansicht/junioren-rettungspokal-291-n/",
     },
     bgPos: "center 45%",
   },
   "2018": {
-    text: "LV-Gesamtwertung: 7. Platz",
+    text: "LV-Gesamtwertung: 13. Platz",
     cta: {
       label: "Mehr Infos!",
-      href: "https://baden.dlrg-jugend.de/wir/news/detailansicht/deutschlandpokal-2017-234-n/",
+      href: "https://sachsen-anhalt.dlrg.de/rettungssport/juniorenrettungspokal/jrp-2018/",
     },
     bgPos: "center 55%",
   },
@@ -57,7 +57,7 @@ const DP_SLIDE_SETTINGS = {
     text: "LV-Gesamtwertung: 7. Platz",
     cta: {
       label: "Mehr Infos!",
-      href: "https://www.durlacher.de/start/neuigkeiten-archiv/artikel/2011/dezember/15/schwimmer-der-dlrg-durlach-auch-international-erfolgreich",
+      href: "https://malsch.dlrg.de/fileadmin/groups/1070080/Informer/Informer_2015-07-08.-09.pdf",
     },
     bgPos: "center 30%",
   },
@@ -65,15 +65,23 @@ const DP_SLIDE_SETTINGS = {
     text: "LV-Gesamtwertung: 7. Platz",
     cta: {
       label: "Mehr Infos!",
-      href: "https://www.durlacher.de/start/neuigkeiten-archiv/artikel/2011/dezember/15/schwimmer-der-dlrg-durlach-auch-international-erfolgreich",
+      href: "https://baden.dlrg-jugend.de/wir/news/detailansicht/junioren-rettungspokal-2013-18-n/",
     },
     bgPos: "center 30%",
   },
   "2011": {
-    text: "LV-Gesamtwertung: 7. Platz",
+    text: "LV-Gesamtwertung: 3. Platz",
     cta: {
       label: "Mehr Infos!",
-      href: "https://www.durlacher.de/start/neuigkeiten-archiv/artikel/2011/dezember/15/schwimmer-der-dlrg-durlach-auch-international-erfolgreich",
+      href: "https://www.facebook.com/photo/?fbid=283788841660256&set=pb.100066777226581.-2207520000&locale=de_DE",
+    },
+    bgPos: "center 35%",
+  },
+  "2010": {
+    text: "LV-Gesamtwertung: 11. Platz",
+    cta: {
+      label: "Mehr Infos!",
+      href: "https://www.facebook.com/photo/?fbid=283788841660256&set=pb.100066777226581.-2207520000&locale=de_DE",
     },
     bgPos: "center 60%",
   },
