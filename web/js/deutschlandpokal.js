@@ -4,116 +4,86 @@ function dpBadgeUrlFromSlideImg(slideImgPath) {
   const m = String(slideImgPath).match(/(\d{4})/);
   if (!m) return null;
   const year = m[1];
-  const file = `DP - ${year}.png`;                 // exakt dein Name mit Leerzeichen
-  return DP_BADGE_FOLDER + encodeURIComponent(file); // macht "DP%20-%202025.png"
+  return DP_BADGE_FOLDER + encodeURIComponent(`DP - ${year}.png`);
 }
 
-
-
-/* =========================
-   AUTO-SLIDES aus /png/DP-Team/
-   - Bilder heißen: 2025.jpg, 2024.png, ...
-   - Neue Datei in den Ordner legen => automatisch im Karussell
-   ========================= */
-
-/** Ordner + Suchbereich */
 const DP_FOLDER = "./png/DP-Team/";
 const DP_MIN_YEAR = 2000;
 const DP_MAX_YEAR = new Date().getFullYear() + 1;
-
-/** Dateiendungen, die akzeptiert werden */
 const DP_EXTS = [".jpg", ".JPG", ".jpeg", ".JPEG", ".png", ".PNG", ".webp", ".WEBP"];
-
-/* =========================
-   PRO-JAHR-KONFIG (separater Abschnitt)
-   Hier trägst du optional pro Jahr ein:
-   - text (Unterzeile)
-   - cta (Button: label + href)
-   - bgPos (background-position)
-   - h (fixe Karussell-Höhe für dieses Jahr in px; sonst automatisch)
-   - textPos ("bottom" | "center" | "top")
-   - textAlign ("center" | "left" | "right")
-   - contentBottom (optional: extra bottom-offset nur für dieses Jahr; z.B. "10px" oder "2vh")
-   ========================= */
 
 const DP_SLIDE_SETTINGS = {
   "2025": {
     text: "LV-Gesamtwertung: 8. Platz",
-    cta: { 
-      label: "Mehr Infos!", 
-      href: "https://baden.dlrg.de/mitmachen/rettungssport/news-detail/drei-badische-rekorde-in-warendorf-134005-n/" 
+    cta: {
+      label: "Mehr Infos!",
+      href: "https://baden.dlrg.de/mitmachen/rettungssport/news-detail/drei-badische-rekorde-in-warendorf-134005-n/",
     },
     bgPos: "center 25%",
   },
   "2024": {
     text: "LV-Gesamtwertung: 9. Platz",
-    cta: { 
-      label: "Mehr Infos!", 
-      href: "https://www.dlrg.de/mitmachen/rettungssport/nationale-und-internationale-wettkaempfe/deutschlandpokal-2024/" 
+    cta: {
+      label: "Mehr Infos!",
+      href: "https://www.dlrg.de/mitmachen/rettungssport/nationale-und-internationale-wettkaempfe/deutschlandpokal-2024/",
     },
     bgPos: "center 40%",
   },
   "2023": {
     text: "LV-Gesamtwertung: 9. Platz",
-    cta: { 
-      label: "Mehr Infos!", 
-      href: "https://www.dlrg.de/mitmachen/rettungssport/nationale-und-internationale-wettkaempfe/internationaler-deutschlandpokal-2023/" 
+    cta: {
+      label: "Mehr Infos!",
+      href: "https://www.dlrg.de/mitmachen/rettungssport/nationale-und-internationale-wettkaempfe/internationaler-deutschlandpokal-2023/",
     },
     bgPos: "center 65%",
   },
   "2022": {
     text: "LV-Gesamtwertung: 5. Platz",
-    cta: { 
-      label: "Mehr Infos!", 
-      href: "https://www.dlrg.de/mitmachen/rettungssport/nationale-und-internationale-wettkaempfe/deutschlandpokal-2022/ergebnisse-einzel/#:~:text=Ergebnisse%20Einzel%20%2D%20Deutschlandpokal%202022%20%7C%20DLRG%20e.V." 
+    cta: {
+      label: "Mehr Infos!",
+      href: "https://www.dlrg.de/mitmachen/rettungssport/nationale-und-internationale-wettkaempfe/deutschlandpokal-2022/ergebnisse-einzel/#:~:text=Ergebnisse%20Einzel%20%2D%20Deutschlandpokal%202022%20%7C%20DLRG%20e.V.",
     },
     bgPos: "center 25%",
   },
   "2019": {
     text: "LV-Gesamtwertung: 5. Platz",
-    cta: { 
-      label: "Mehr Infos!", 
-      href: "https://baden.dlrg-jugend.de/wir/news/detailansicht/internationaler-deutschlandpokal-2019-312-n/" 
+    cta: {
+      label: "Mehr Infos!",
+      href: "https://baden.dlrg-jugend.de/wir/news/detailansicht/internationaler-deutschlandpokal-2019-312-n/",
     },
     bgPos: "center 35%",
   },
   "2017": {
     text: "LV-Gesamtwertung: 7. Platz",
-    cta: { 
-      label: "Mehr Infos!", 
-      href: "https://baden.dlrg-jugend.de/wir/news/detailansicht/deutschlandpokal-2017-234-n/" 
+    cta: {
+      label: "Mehr Infos!",
+      href: "https://baden.dlrg-jugend.de/wir/news/detailansicht/deutschlandpokal-2017-234-n/",
     },
     bgPos: "center 50%",
   },
   "2016": {
     text: "LV-Gesamtwertung: 4. Platz",
-    cta: { 
-      label: "Mehr Infos!", 
-      href: "https://baden.dlrg-jugend.de/wir/news/detailansicht/erfolgreicher-deutschlandpokal-2016-199-n/" 
+    cta: {
+      label: "Mehr Infos!",
+      href: "https://baden.dlrg-jugend.de/wir/news/detailansicht/erfolgreicher-deutschlandpokal-2016-199-n/",
     },
     bgPos: "center 15%",
   },
   "2015": {
     text: "LV-Gesamtwertung: 8. Platz",
-    cta: { 
-      label: "Mehr Infos!", 
-      href: "https://www.youtube.com/watch?v=AwgeM_VwPOs" 
-    },
+    cta: { label: "Mehr Infos!", href: "https://www.youtube.com/watch?v=AwgeM_VwPOs" },
     bgPos: "center 30%",
   },
   "2014": {
     text: "LV-Gesamtwertung: 8. Platz",
-    cta: { 
-      label: "Mehr Infos!", 
-      href: "https://www.badische-zeitung.de/verena-weis-knackt-rekord" 
-    },
+    cta: { label: "Mehr Infos!", href: "https://www.badische-zeitung.de/verena-weis-knackt-rekord" },
     bgPos: "center 10%",
   },
   "2011": {
     text: "LV-Gesamtwertung: 7. Platz",
-    cta: { 
-      label: "Mehr Infos!", 
-      href: "https://www.durlacher.de/start/neuigkeiten-archiv/artikel/2011/dezember/15/schwimmer-der-dlrg-durlach-auch-international-erfolgreich" 
+    cta: {
+      label: "Mehr Infos!",
+      href: "https://www.durlacher.de/start/neuigkeiten-archiv/artikel/2011/dezember/15/schwimmer-der-dlrg-durlach-auch-international-erfolgreich",
     },
     bgPos: "center 30%",
   },
@@ -123,25 +93,10 @@ const DP_SLIDE_SETTINGS = {
   },
 };
 
-// ===== Deutschlandpokal PDF Auto-Finder =====
-const DP_PDF_BASE = "../nominierungsrichtlinien/";
-const DP_PDF_MIN_YEAR = 2000;
-const DP_PDF_MAX_YEAR = new Date().getFullYear() + 1;
-
-const DP_PDF_NAME_PATTERNS = [
-  (y) => `Deutschlandpokal - ${y}.pdf`,
-];
-
-
-/* =========================
-   PAGE
-   ========================= */
-
 document.addEventListener("DOMContentLoaded", async () => {
   const main = document.getElementById("content");
   if (!main) return;
 
-  // Platzhalter (optional)
   main.innerHTML = `
     <section class="wide-carousel" aria-label="Deutschlandpokal Rückblick">
       <div class="wide-carousel__viewport" data-wide-carousel tabindex="0">
@@ -171,35 +126,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  renderCarousel(main, slides);
+  renderPage(main, slides);
   initWideCarousel();
-  renderDeutschlandpokalGuidelinesCard();
+  loadLatestDpPdfAndRenderCard();
 });
-
-/* =========================
-   Slides bauen (automatisch aus Jahren)
-   ========================= */
 
 async function buildDpSlides() {
   const slides = [];
-
   for (let year = DP_MAX_YEAR; year >= DP_MIN_YEAR; year--) {
     const imgUrl = await firstExistingUrl(DP_FOLDER, year, DP_EXTS);
     if (!imgUrl) continue;
 
     const key = String(year);
     const cfg = DP_SLIDE_SETTINGS[key] || {};
-
-    const title = cfg.title ?? `Deutschlandpokal ${year}`;
-    const text = cfg.text ?? "";
-    const cta = cfg.cta ?? null;
-
     slides.push({
       year,
-      title,
-      text,
+      title: cfg.title ?? `Deutschlandpokal ${year}`,
+      text: cfg.text ?? "",
       img: imgUrl,
-      cta,
+      cta: cfg.cta ?? null,
       bgPos: cfg.bgPos ?? "center center",
       h: cfg.h ?? null,
       textPos: cfg.textPos ?? "bottom",
@@ -207,11 +152,10 @@ async function buildDpSlides() {
       contentBottom: cfg.contentBottom ?? null,
     });
   }
-
   return slides;
 }
 
-function renderCarousel(main, slides) {
+function renderPage(main, slides) {
   main.innerHTML = `
     <section class="wide-carousel" aria-label="Deutschlandpokal Rückblick">
       <div class="wide-carousel__viewport" data-wide-carousel tabindex="0">
@@ -219,10 +163,7 @@ function renderCarousel(main, slides) {
           ${slides
             .map((s, i) => {
               const justify =
-                s.textPos === "top" ? "flex-start" :
-                s.textPos === "center" ? "center" :
-                "flex-end";
-
+                s.textPos === "top" ? "flex-start" : s.textPos === "center" ? "center" : "flex-end";
               const contentBottomVar = s.contentBottom ? String(s.contentBottom) : "";
 
               return `
@@ -234,10 +175,12 @@ function renderCarousel(main, slides) {
                     background-size:cover;
                     background-repeat:no-repeat;
                     --dp-justify:${justify};
-                    --dp-text-align:${s.textAlign};
+                    --dp-text-align:${s.textAlign || "center"};
                     ${contentBottomVar ? `--dp-content-bottom:${contentBottomVar};` : ""}
                   "
-                  role="group" aria-roledescription="Folie"
+                  ${s.h ? `data-h="${s.h}"` : ""}
+                  role="group"
+                  aria-roledescription="Folie"
                   aria-label="${i + 1} von ${slides.length}"
                 >
                   ${
@@ -245,7 +188,6 @@ function renderCarousel(main, slides) {
                       ? `<img class="wide-carousel__badge" src="${dpBadgeUrlFromSlideImg(s.img)}" alt="" loading="lazy" decoding="async">`
                       : ``
                   }
-
                   <div class="wide-carousel__content">
                     <h2>${escapeHtml(s.title)}</h2>
                     ${s.text ? `<p>${escapeHtml(s.text)}</p>` : ``}
@@ -253,7 +195,6 @@ function renderCarousel(main, slides) {
                   </div>
                 </article>
               `;
-
             })
             .join("")}
         </div>
@@ -276,76 +217,22 @@ function renderCarousel(main, slides) {
       <section class="info-section" aria-labelledby="dp-guidelines-title">
         <h2 id="dp-guidelines-title">Aktuelle Nominierungsrichtlinien</h2>
         <div id="dp-guidelines" class="info-links">
-          <p class="info-status">—</p>
+          <p class="info-status">Lade Nominierungsrichtlinien…</p>
         </div>
       </section>
 
       <section class="info-section" aria-labelledby="dp-list-title">
         <h2 id="dp-list-title">Aktuelle Nominierungsliste</h2>
         <div id="dp-list" class="info-links">
-          <p class="info-status">—</p>
         </div>
       </section>
     </section>
   `;
 
-  document.querySelectorAll(".wide-carousel__badge").forEach(img => {
+  document.querySelectorAll(".wide-carousel__badge").forEach((img) => {
     img.addEventListener("error", () => img.remove());
   });
 }
-
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function renderDpGuidelinesCard(slides) {
-  const mount = document.getElementById("dp-guidelines");
-  if (!mount) return;
-
-  const years = (slides || []).map(s => Number(s.year)).filter(Number.isFinite);
-  const latestYear = years.length ? Math.max(...years) : new Date().getFullYear();
-
-  // Ziel-Link: anpassen, falls du eine spezifische Untersektion hast
-  const href = "./nominierung.html#deutschlandpokal";
-
-  mount.innerHTML = renderBriefCard({
-    href,
-    aria: `Nominierungsrichtlinien ${latestYear} öffnen`,
-    t1: `Nominierung ${latestYear}`,
-    t2: "Deutschlandpokal",
-    t3: "Landeskader Baden",
-  });
-}
-
-function renderBriefCard({ href, aria, t1, t2, t3 }) {
-  return `
-    <a class="info-brief" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(aria)}">
-      <img
-        class="info-brief__img"
-        src="./png/icons/brief.png"
-        alt=""
-        loading="lazy"
-        decoding="async"
-      />
-      <div class="info-brief__overlay" aria-hidden="true">
-        <div class="info-brief__t1">${escapeHtml(t1)}</div>
-        <div class="info-brief__t2">${escapeHtml(t2)}</div>
-        <div class="info-brief__spacer"></div>
-        <div class="info-brief__t3">${escapeHtml(t3)}</div>
-      </div>
-    </a>
-  `;
-}
-
-
-/* =========================
-   Carousel-Logik (wie zuvor, mit pro-slide Höhe)
-   ========================= */
 
 function initWideCarousel() {
   const root = document.querySelector("[data-wide-carousel]");
@@ -380,14 +267,12 @@ function initWideCarousel() {
     const active = slides[index];
     if (!active) return;
 
-    // 1) Pro-Slide fixe Höhe, falls gesetzt
     const fixedH = parseFloat(active.dataset.h);
     if (Number.isFinite(fixedH)) {
       root.style.height = `${fixedH}px`;
       return;
     }
 
-    // 2) Sonst: dynamisch aus Content
     const content = active.querySelector(".wide-carousel__content");
     if (!content) return;
 
@@ -411,12 +296,26 @@ function initWideCarousel() {
     update();
   };
 
-  prevBtn?.addEventListener("click", () => { goTo(index - 1); startAuto(); });
-  nextBtn?.addEventListener("click", () => { goTo(index + 1); startAuto(); });
+  prevBtn?.addEventListener("click", () => {
+    goTo(index - 1);
+    startAuto();
+  });
+
+  nextBtn?.addEventListener("click", () => {
+    goTo(index + 1);
+    startAuto();
+  });
 
   root.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowLeft") { e.preventDefault(); goTo(index - 1); startAuto(); }
-    if (e.key === "ArrowRight") { e.preventDefault(); goTo(index + 1); startAuto(); }
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      goTo(index - 1);
+      startAuto();
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      goTo(index + 1);
+      startAuto();
+    }
   });
 
   let resizeTimer;
@@ -433,10 +332,6 @@ function initWideCarousel() {
   startAuto();
   update();
 }
-
-/* =========================
-   Datei-Existenz prüfen (Jahr + Endungen)
-   ========================= */
 
 async function firstExistingUrl(folder, year, exts) {
   for (const ext of exts) {
@@ -485,78 +380,133 @@ function probeByImage(url, timeoutMs) {
   });
 }
 
-async function renderDeutschlandpokalGuidelinesCard() {
+async function loadLatestDpPdfAndRenderCard() {
   const mount = document.getElementById("dp-guidelines");
   if (!mount) return;
 
-  mount.innerHTML = `<p class="info-status">Lade…</p>`;
+  const cfg = {
+    owner: "jp-gnad",
+    repo: "Lifesaving_Baden",
+    branch: "main",
+    dirCandidates: ["nominierungsrichtlinien", "web/nominierungsrichtlinien"],
+    cacheKey: "lsb_dp_latest_pdf_v2",
+    cacheTtlMs: 10 * 60 * 1000,
+  };
 
-  const found = await findLatestDeutschlandpokalPdf();
-  if (!found) {
-    mount.innerHTML = `<p class="info-status info-error">Keine Deutschlandpokal-PDF gefunden.</p>`;
+  const cached = readCache(cfg.cacheKey, cfg.cacheTtlMs);
+  if (cached?.year && cached?.fileName) {
+    mount.innerHTML = renderDpPdfBriefCard(cached.year, cached.fileName);
     return;
   }
 
-  const { year, href } = found;
-
-  mount.innerHTML = renderBriefCard({
-    href,
-    aria: `Deutschlandpokal Nominierungsrichtlinien ${year} öffnen`,
-    t1: "Deutschlandpokal",
-    t2: `Nominierungsrichtlinien ${year}`,
-    t3: "Landesverband Baden",
-  });
-
-  // optional: Platzhalter für die zweite Box
-  const listMount = document.getElementById("dp-list");
-  if (listMount) listMount.innerHTML = `<p class="info-status">—</p>`;
-}
-
-async function findLatestDeutschlandpokalPdf() {
-  for (let y = DP_PDF_MAX_YEAR; y >= DP_PDF_MIN_YEAR; y--) {
-    for (const makeName of DP_PDF_NAME_PATTERNS) {
-      const fileName = makeName(y);
-      const href = DP_PDF_BASE + encodeURIComponent(fileName);
-      if (await pdfUrlExists(href)) return { year: y, href };
+  try {
+    const found = await fetchLatestDpPdfFromGitHub(cfg);
+    writeCache(cfg.cacheKey, found);
+    mount.innerHTML = renderDpPdfBriefCard(found.year, found.fileName);
+  } catch (e) {
+    const stale = readCache(cfg.cacheKey, Number.MAX_SAFE_INTEGER);
+    if (stale?.year && stale?.fileName) {
+      mount.innerHTML = renderDpPdfBriefCard(stale.year, stale.fileName);
+      return;
     }
+    mount.innerHTML = `<p class="info-status info-error">Nominierungsrichtlinien konnten nicht geladen werden.</p>`;
   }
-  return null;
 }
 
-// Wichtig: eigener Name, damit es NICHT mit deiner Bild-urlExists() kollidiert
-async function pdfUrlExists(url) {
-  // 1) HEAD (wenn erlaubt)
-  try {
-    const r = await fetch(url, { method: "HEAD", cache: "no-store" });
-    if (r.ok) return true;
-  } catch {}
+async function fetchLatestDpPdfFromGitHub(cfg) {
+  let items = null;
 
-  // 2) Fallback: kleiner Range-GET
-  try {
-    const r = await fetch(url, {
-      method: "GET",
-      headers: { Range: "bytes=0-0" },
+  for (const dirPath of cfg.dirCandidates) {
+    const apiUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${encodeURIComponent(
+      dirPath
+    )}?ref=${encodeURIComponent(cfg.branch)}`;
+
+    const res = await fetchWithTimeout(apiUrl, 9000, {
+      headers: { Accept: "application/vnd.github+json" },
       cache: "no-store",
     });
-    return r.ok;
-  } catch {
-    return false;
+
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        items = data;
+        break;
+      }
+    } else {
+      const remaining = res.headers.get("X-RateLimit-Remaining");
+      if (res.status === 403 && remaining === "0") throw new Error("rate_limit");
+    }
+  }
+
+  if (!items) throw new Error("no_dir");
+
+  const re = /^deutschlandpokal\s*(?:-|–)?\s*(19\d{2}|20\d{2})\.pdf$/i;
+
+  let best = null;
+  for (const it of items) {
+    if (!it || it.type !== "file" || typeof it.name !== "string") continue;
+    const m = it.name.match(re);
+    if (!m) continue;
+    const year = parseInt(m[1], 10);
+    if (!Number.isFinite(year)) continue;
+    if (!best || year > best.year) best = { year, fileName: it.name };
+  }
+
+  if (!best) throw new Error("no_match");
+  return best;
+}
+
+async function fetchWithTimeout(url, ms, options) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(url, { ...options, signal: ctrl.signal });
+  } finally {
+    clearTimeout(t);
   }
 }
 
-function renderBriefCard({ href, aria, t1, t2, t3 }) {
+function renderDpPdfBriefCard(year, fileName) {
+  const href = `../nominierungsrichtlinien/${encodeURIComponent(fileName)}`;
+
   return `
-    <a class="info-brief" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(aria)}">
+    <a class="info-brief" href="${href}" target="_blank" rel="noopener noreferrer"
+       aria-label="Deutschlandpokal Nominierungsrichtlinien ${escapeHtml(year)} öffnen">
       <img class="info-brief__img" src="./png/icons/brief.png" alt="" loading="lazy" decoding="async" />
       <div class="info-brief__overlay" aria-hidden="true">
-        <div class="info-brief__t1">${escapeHtml(t1)}</div>
-        <div class="info-brief__t2">${escapeHtml(t2)}</div>
+        <div class="info-brief__t1">Deutschlandpokal</div>
+        <div class="info-brief__t2">Nominierungsrichtlinien ${escapeHtml(year)}</div>
         <div class="info-brief__spacer"></div>
-        <div class="info-brief__t3">${escapeHtml(t3)}</div>
+        <div class="info-brief__t3">Landesverband Baden</div>
       </div>
     </a>
   `;
 }
 
+function readCache(key, ttlMs) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (!obj || typeof obj !== "object") return null;
+    if (!obj.ts || Date.now() - obj.ts > ttlMs) return null;
+    return obj.data || null;
+  } catch {
+    return null;
+  }
+}
 
+function writeCache(key, data) {
+  try {
+    localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+  } catch {}
+}
 
+function escapeHtml(s) {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}

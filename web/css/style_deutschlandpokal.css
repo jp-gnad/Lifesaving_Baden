@@ -337,7 +337,7 @@ main#content {
   left: 0;
   top: 24px;
 
-  width: 75%;
+  width: 80%;
   background: #e30615;
   border-radius: 0px 20px 20px 0;
   padding: 6px 0 6px 8px;
@@ -355,18 +355,18 @@ main#content {
 }
 
 .info-brief__t1 {
-  font-size: 2.2rem;
+  font-size: 1.8rem;
   line-height: 1.05;
   margin-bottom: 10px;
 }
 
 .info-brief__t2 {
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   line-height: 1.1;
 }
 
 .info-brief__spacer {
-  height: 4px;
+  height: 16px;
 }
 
 .info-brief__t3 {
