@@ -1153,7 +1153,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const button = document.getElementById("pw-submit");
   const error  = document.getElementById("pw-error");
 
-  const aktuellesJahr = 2025;  // ggf. später dynamisch machen
+const aktuellesJahr = new Date().getFullYear(); // am 01.01.2026 => 2026
 
   function checkPassword() {
     if (input.value === "Badenkader") {
