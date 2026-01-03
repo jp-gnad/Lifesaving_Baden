@@ -44,6 +44,7 @@ const CONFIG = {
   PAGE_SIZE: 10, // Anzahl Zeilen pro Tabelle/Seite
 
   NOMINIERTEN_ANZAHL: 6,
+  NACHRUECKER_ANZAHL: 2, // z.B. 5 Nachrücker
   KAMPF: 4, // 3 oder 4
 
   // optional (leer lassen = kein Filter)
@@ -613,14 +614,23 @@ function renderCompactTableSlice(list, gender) {
 }
 
 function renderAthleteRow(a, gender) {
-  // Top-N (nur aktive)
-  const isTop = !a.absage && a.rankActive !== null && a.rankActive < CONFIG.NOMINIERTEN_ANZAHL;
+  const r = a.rankActive;
+
+  const isNominiert =
+    !a.absage && r !== null && r < CONFIG.NOMINIERTEN_ANZAHL;
+
+  const isNachruecker =
+    !a.absage && r !== null &&
+    r >= CONFIG.NOMINIERTEN_ANZAHL &&
+    r < (CONFIG.NOMINIERTEN_ANZAHL + (CONFIG.NACHRUECKER_ANZAHL || 0));
 
   const rowClass =
     "athlete-row " +
-    (isTop ? "top " : "") +
+    (isNominiert ? "nominiert " : "") +
+    (isNachruecker ? "nachruecker " : "") +
     (a.absage ? "absage-row " : "") +
     (gender === "w" ? "w-row" : "m-row");
+
 
   const totalText = a.absage ? "Abgesagt" : `${fmtNumDE(a.total)} P`;
 
@@ -634,8 +644,10 @@ function renderAthleteRow(a, gender) {
         <tbody>
           ${details.map(d => `
             <tr class="detail-row ${d.counted ? "counted" : "noncount"}">
-              <td class="d-dis">${escapeHtml(d.label)}</td>
-              <td class="d-time">${escapeHtml(d.time)}</td>
+              <td class="d-main">
+                <div class="d-dis">${escapeHtml(d.label)}</div>
+                <div class="d-time">${escapeHtml(d.time)}</div>
+              </td>
               <td class="d-meet">${escapeHtml(d.meet)}</td>
               <td class="d-pts">${fmtNumDE(d.points)}</td>
             </tr>

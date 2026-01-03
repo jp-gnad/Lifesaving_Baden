@@ -1,7 +1,3 @@
-/* =========================
-   Grundlayout
-   ========================= */
-
 main#content {
   margin: 0 auto;
 }
@@ -11,10 +7,6 @@ main#content {
   margin: 0 auto;
   padding: 0 16px;
 }
-
-/* =========================
-   Intro
-   ========================= */
 
 .intro {
   padding: 2rem 0 1.25rem;
@@ -27,33 +19,22 @@ main#content {
   font-size: 2rem;
 }
 
-/* =========================
-   Wide Carousel
-   (ohne Dots, mit Pfeilen)
-   ========================= */
-
 .wide-carousel {
   width: 100%;
   margin: 0;
 }
 
 .wide-carousel__viewport {
-  /* Höhensteuerung (wird via JS dynamisch angepasst) */
   --wide-min-h: 500px;
   --wide-max-h: 560px;
-
-  /* Abstand nach unten für Content (wirkt „eher unten“) */
   --content-bottom: clamp(18px, 5vh, 70px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-
   position: relative;
   width: 100%;
   overflow: hidden;
-
   height: var(--wide-min-h);
   min-height: var(--wide-min-h);
   max-height: var(--wide-max-h);
-
   transition: height 520ms ease;
 }
 
@@ -71,14 +52,11 @@ main#content {
   height: 100%;
   position: relative;
   color: #ffffffd8;
-
-  /* Content nach unten */
   display: flex;
   flex-direction: column;
   justify-content: var(--dp-justify, flex-end);
 }
 
-/* dunkles Overlay */
 .wide-carousel__slide::before {
   content: "";
   position: absolute;
@@ -97,19 +75,15 @@ main#content {
   max-width: 980px;
   width: 100%;
   margin: 0 auto;
-
-  /* zentriert, „eher unten“ über padding-bottom */
   text-align: var(--dp-text-align, center);
   padding: clamp(26px, 5vw, 64px);
   padding-bottom: calc(clamp(26px, 5vw, 64px) + var(--content-bottom) + var(--safe-bottom));
-
   box-sizing: border-box;
   position: relative;
   z-index: 1;
   overflow: hidden;
 }
 
-/* Abstand Title ↔ Text reduziert */
 .wide-carousel__content h2 {
   margin: 0 0 0.25rem 0;
   font-size: clamp(1.8rem, 3.4vw, 3rem);
@@ -126,17 +100,13 @@ main#content {
 .wide-carousel__cta {
   display: inline-block;
   margin-top: clamp(14px, 2.2vw, 22px);
-
   padding: clamp(8px, 1.4vw, 12px) clamp(12px, 2.1vw, 18px);
   border-radius: 8px;
-
   background: rgb(255, 237, 0);
   color: #000;
   font-weight: 700;
-
   font-size: clamp(0.9rem, 2.2vw, 1.05rem);
   line-height: 1;
-
   text-decoration: none;
   transition: transform 220ms ease, filter 220ms ease;
 }
@@ -150,28 +120,20 @@ main#content {
   outline-offset: 3px;
 }
 
-/* =========================
-   Pfeile (transparent)
-   ========================= */
-
 .wide-carousel__arrow {
   position: absolute;
   top: 0;
   bottom: 0;
-
   width: min(90px, 14vw);
   border: 0;
   padding: 0;
   background: transparent;
-
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-
   z-index: 5;
   color: rgba(255, 255, 255, 0.85);
-
   opacity: 0.55;
   transition: opacity 180ms ease, transform 180ms ease;
 }
@@ -203,9 +165,16 @@ main#content {
   transform: scale(0.98);
 }
 
-/* =========================
-   Responsive
-   ========================= */
+.wide-carousel__badge {
+  position: absolute;
+  top: clamp(10px, 2.2vw, 18px);
+  right: clamp(10px, 2.2vw, 18px);
+  width: clamp(54px, 9vw, 110px);
+  height: auto;
+  z-index: 2;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
+}
 
 @media (max-width: 720px) {
   .wide-carousel__viewport {
@@ -220,23 +189,23 @@ main#content {
     margin-bottom: 0rem;
   }
 
-  .wide-carousel__content h2{
+  .wide-carousel__content h2 {
     margin-bottom: 0.15rem;
   }
 
-  .wide-carousel__content p{
+  .wide-carousel__content p {
     margin-bottom: 0.45rem;
     line-height: 1.45;
   }
 
-  .wide-carousel__cta{
+  .wide-carousel__cta {
     margin-top: 0.5rem;
   }
-}
 
-/* =========================
-   Reduced Motion
-   ========================= */
+  .wide-carousel__badge {
+    width: clamp(44px, 14vw, 90px);
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .wide-carousel__slides {
@@ -253,34 +222,6 @@ main#content {
   }
 }
 
-
-.wide-carousel__slide{
-  position: relative; /* falls noch nicht gesetzt */
-}
-
-.wide-carousel__badge{
-  position: absolute;
-  top: clamp(10px, 2.2vw, 18px);
-  right: clamp(10px, 2.2vw, 18px);
-  width: clamp(54px, 9vw, 110px);
-  height: auto;
-  z-index: 2;
-  pointer-events: none;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
-}
-
-@media (max-width: 720px){
-  .wide-carousel__badge{
-    width: clamp(44px, 14vw, 90px);
-  }
-}
-
-
-/* =========================
-   Nominierungen / Info-Layout (wie Infoschreiben)
-   ========================= */
-
-/* Bereich unter Hero / unter dem Karussell */
 .info-wrap {
   max-width: 1100px;
   margin: 0 auto;
@@ -297,7 +238,6 @@ main#content {
   font-weight: 700;
 }
 
-/* Links / Mount */
 .info-links {
   display: flex;
   flex-direction: column;
@@ -313,10 +253,6 @@ main#content {
 .info-error {
   opacity: 1;
 }
-
-/* =========================
-   Brief-Kachel (Icon + Overlay)
-   ========================= */
 
 .info-brief {
   position: relative;
@@ -336,12 +272,10 @@ main#content {
   position: absolute;
   left: 0;
   top: 24px;
-
   width: 80%;
   background: #e30615;
   border-radius: 0px 20px 20px 0;
   padding: 6px 0 6px 8px;
-
   border: none;
   pointer-events: none;
 }
@@ -374,20 +308,22 @@ main#content {
   line-height: 1.12;
 }
 
-/* Optional: leichter Hover, ohne "Springen" */
 .info-brief:hover .info-brief__img {
   filter: brightness(0.97);
 }
 
-/* =========================
-   Responsive
-   ========================= */
-
 @media (max-width: 720px) {
-  .info-wrap { padding: 1.1rem 0.9rem 2.0rem; }
-  .info-section h2 { font-size: 1.6rem; }
+  .info-wrap {
+    padding: 1.1rem 0.9rem 2.0rem;
+  }
 
-  .info-brief__img { width: 240px; }
+  .info-section h2 {
+    font-size: 1.6rem;
+  }
+
+  .info-brief__img {
+    width: 240px;
+  }
 
   .info-brief__overlay {
     top: 16px;
@@ -398,20 +334,31 @@ main#content {
     height: 12px;
   }
 
-  .info-brief__t1 { font-size: 1.25rem; margin-bottom: 6px; }
-  .info-brief__t2 { font-size: 0.8rem; }
-  .info-brief__t3 { font-size: 1rem; }
+  .info-brief__t1 {
+    font-size: 1.25rem;
+    margin-bottom: 6px;
+  }
+
+  .info-brief__t2 {
+    font-size: 0.8rem;
+  }
+
+  .info-brief__t3 {
+    font-size: 1rem;
+  }
 }
 
-
-/* =========================
-   Nominierungsliste Tabellen (JS-Rendermarkup)
-   ========================= */
-
 .nom-grid {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 18px;
+  align-items: start;
+}
+
+@media (min-width: 980px) {
+  .nom-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .nom-panel h3 {
@@ -419,7 +366,8 @@ main#content {
 }
 
 .nom-table-wrap {
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
   border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
@@ -486,7 +434,6 @@ tr.top.m-row td {
   background: rgb(191, 226, 253);
 }
 
-/* Absagen */
 .absage-cell {
   color: rgb(227, 6, 19);
   font-weight: 700;
@@ -496,7 +443,6 @@ tr.absage-row td {
   background: rgb(254, 218, 220);
 }
 
-/* Pagination */
 .nom-pager {
   display: flex;
   gap: 10px;
@@ -513,15 +459,6 @@ tr.absage-row td {
   opacity: 0.5;
   cursor: not-allowed;
 }
-
-
-
-
-/* =========================
-   Kompakte Nominierungsliste (3 Spalten) + aufklappbare Details
-   ========================= */
-
-.nom-table-wrap { overflow: auto; }
 
 .nom-compact-table {
   width: 100%;
@@ -541,48 +478,123 @@ tr.absage-row td {
   border-bottom: 1px solid rgba(0,0,0,.12);
 }
 
-.col-empty { width: 16px; }
-.col-total { white-space: nowrap; text-align: right; font-weight: 700; }
+.col-empty {
+  width: 16px;
+}
 
-.person-name { font-weight: 700; }
-.person-og { margin-top: 2px; font-size: 12px; opacity: .9; }
+.col-total {
+  white-space: nowrap;
+  text-align: right;
+  font-weight: 700;
+}
 
-tr.athlete-row { cursor: pointer; }
-tr.athlete-row:hover td { background: rgba(0,0,0,.03); }
+.person-name {
+  font-weight: 700;
+}
 
-/* Top-N Hervorhebung (wie bisher) */
-tr.top.w-row td { background: rgb(255, 196, 222); }
-tr.top.m-row td { background: rgb(191, 226, 253); }
+.person-og {
+  margin-top: 2px;
+  font-size: 12px;
+  opacity: 0.9;
+}
 
-/* Absagen */
-.absage-cell { color: rgb(227, 6, 19); font-weight: 700; }
-tr.absage-row td { background: rgb(254, 218, 220); }
+tr.athlete-row {
+  cursor: pointer;
+}
 
-/* Details Row */
+tr.athlete-row:hover td {
+  background: rgba(0,0,0,.03);
+}
+
+.col-cap {
+  width: 48px;
+}
+
+td.col-cap {
+  padding-left: 12px;
+}
+
+.og-cap {
+  width: 34px;
+  height: 34px;
+  display: block;
+  margin: 0 auto;
+}
+
+:root {
+  --mark-width: 6px;
+
+  --mark-red: #e30615;
+  --mark-blue: #0b5ed7;
+  --mark-yellow: #FFC107;
+
+  --bg-red: rgba(227, 6, 21, 0.08);
+  --bg-blue: rgba(11, 94, 215, 0.08);
+  --bg-yellow: rgba(255, 193, 7, 0.1);
+}
+
+tr.athlete-row.nominiert.w-row td.col-cap {
+  border-left: var(--mark-width) solid var(--mark-red);
+}
+tr.athlete-row.nominiert.m-row td.col-cap {
+  border-left: var(--mark-width) solid var(--mark-blue);
+}
+
+tr.athlete-row.nominiert.w-row td {
+  background: var(--bg-red);
+}
+tr.athlete-row.nominiert.m-row td {
+  background: var(--bg-blue);
+}
+
+tr.athlete-row.nachruecker td.col-cap {
+  border-left: var(--mark-width) solid var(--mark-yellow);
+}
+
+tr.athlete-row.nachruecker td {
+  background: var(--bg-yellow);
+}
+
 tr.athlete-details td {
-  padding: 6px 6px;
-  border-bottom: 1px solid rgba(0,0,0,.12);
+  padding: 0 !important;
+  background: white !important;
+  border: none !important;
+}
+
+tr.athlete-row.nominiert + tr.athlete-details td,
+tr.athlete-row.nachruecker + tr.athlete-details td {
+  background: white !important;
 }
 
 .nom-details-table {
-  width: 100%;
+  width: calc(100% - 24px);
+  margin: 0 12px;
   border-collapse: collapse;
   table-layout: fixed;
 }
 
 .nom-details-table td {
-  padding: 8px 10px;
-  border: none;                /* keine Striche zwischen den “Zellen” */
+  padding: 10px 14px !important;
+  border: none !important;
   white-space: nowrap;
+  background: transparent !important;
+  vertical-align: top;
 }
 
-.d-time { width: 90px; text-align: left; }
-.d-dis { width: 220px; }
-.d-meet { width: auto; }
-.d-pts { width: 90px; text-align: right; font-weight: 700; }
+.nom-details-table td.d-meet{
+  vertical-align: baseline;
+}
 
+@media (max-width: 720px) {
+  .nom-details-table td.d-meet{
+    vertical-align: bottom;
+  }
+}
 
-/* Nicht im 3/4-Kampf gezählt => heller */
+.nom-details-table td.d-pts{
+  vertical-align: baseline;
+}
+
 .detail-row.noncount td {
   color: rgba(0,0,0,.45);
   font-weight: 400;
@@ -598,16 +610,36 @@ tr.athlete-details td {
   color: rgba(0,0,0,.6);
 }
 
-/* Pager (falls noch nicht vorhanden) */
-.nom-pager {
+.nom-details-table{
+  table-layout: fixed;
+}
+
+.d-main{
+  width: 220px;
   display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-content: flex-end;
+  flex-direction: column;
+}
+
+.d-dis{
+  font-weight: 700;
+  line-height: 1.15;
   margin-top: 10px;
 }
-.nom-pager button { padding: 6px 10px; }
-.nom-pager button[disabled] { opacity: .5; cursor: not-allowed; }
 
-.col-cap { width: 48px; }
-.og-cap  { width: 34px; height: 34px; display: block; margin: 0 auto; }
+.d-time{
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.15;
+}
+
+.d-meet{
+  margin-top: 2px;
+  font-size: 12px;
+  color: rgba(0,0,0,.65);
+}
+
+.d-pts{
+  width: 110px;
+  text-align: right;
+  font-weight: 700;
+}
