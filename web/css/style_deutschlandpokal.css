@@ -402,3 +402,128 @@ main#content {
   .info-brief__t2 { font-size: 0.8rem; }
   .info-brief__t3 { font-size: 1rem; }
 }
+
+
+/* =========================
+   Nominierungsliste Tabellen (JS-Rendermarkup)
+   ========================= */
+
+.nom-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.nom-panel h3 {
+  margin: 0 0 10px 0;
+}
+
+.nom-table-wrap {
+  overflow: auto;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.nom-table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 1400px;
+  font-family: Arial, sans-serif;
+}
+
+.nom-table th,
+.nom-table td {
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  padding: 6px 8px;
+  white-space: nowrap;
+}
+
+.nom-head-1 th {
+  font-weight: 700;
+}
+
+.nom-head-2 th {
+  border-bottom: 2px solid rgb(227, 6, 19);
+}
+
+.nom-head-2 .wr {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.name {
+  font-weight: 700;
+}
+
+.ak,
+.og {
+  font-size: 12px;
+}
+
+.total {
+  font-weight: 700;
+  text-align: right;
+}
+
+.pts {
+  text-align: right;
+  font-size: 12px;
+}
+
+.detail {
+  font-size: 10px;
+  text-align: right;
+}
+
+td.top-pts {
+  font-weight: 700;
+}
+
+tr.top.w-row td {
+  background: rgb(255, 196, 222);
+}
+
+tr.top.m-row td {
+  background: rgb(191, 226, 253);
+}
+
+/* Absagen */
+.absage-cell {
+  color: rgb(227, 6, 19);
+  font-weight: 700;
+}
+
+tr.absage-row td {
+  background: rgb(254, 218, 220);
+}
+
+/* Pagination */
+.nom-pager {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.nom-pager button {
+  padding: 6px 10px;
+}
+
+.nom-pager button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* kompensiert das 1.25rem Padding der .info-wrap */
+#dp-list {
+  margin-left: -6rem;
+  margin-right: -6rem;
+}
+
+@media (max-width: 720px) {
+  /* kompensiert das 0.9rem Padding aus deiner Mobile-Regel */
+  #dp-list {
+    margin-left: -1rem;
+    margin-right: -1rem;
+  }
+}

@@ -1,3 +1,746 @@
+// =====================
+// Nominierungsliste aus Excel (Ranking wie Screenshot)
+// =====================
+
+const EXCEL_URL =
+  "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test%20(1).xlsx";
+const EXCEL_SHEET = "Tabelle2";
+
+const COLS = {
+  gender: 0, // A
+  name: 1, // B
+  zeit_100_lifesaver: 3, // D
+  zeit_50_retten: 4, // E
+  zeit_200_superlifesaver: 5, // F
+  zeit_100_kombi: 6, // G
+  zeit_100_retten_flossen: 7, // H
+  zeit_200_hindernis: 8, // I
+  excelDatum: 9, // J
+  meet_name: 10, // K
+  yy2: 11, // L
+  ortsgruppe: 12, // M
+  landesverband: 13, // N
+  poollaenge: 21, // V
+  regelwerk: 25, // Z
+};
+
+const now = new Date();
+const y = now.getFullYear();
+const m = now.getMonth() + 1; // 1..12
+
+// Saisonjahr: Nov/Dez zählt schon zur Saison des nächsten Jahres
+const SEASON_YEAR = (m >= 11) ? (y + 1) : y;
+
+const CONFIG_DATES = {
+  DATE_FROM: `${SEASON_YEAR - 1}-11-01`,
+  DATE_TO: `${SEASON_YEAR}-10-31`,
+  LAST_COMP_FROM: `${SEASON_YEAR}-01-01`,
+};
+
+let NOM_DATA = { w: [], m: [] };
+let NOM_PAGE = { w: 1, m: 1 };
+let NOM_MOUNT = null;
+let NOM_PAGER_WIRED = false;
+
+
+
+// ---------------------
+// Konfiguration
+// ---------------------
+const CONFIG = {
+  PAGE_SIZE: 10, // Anzahl Zeilen pro Tabelle/Seite
+
+  NOMINIERTEN_ANZAHL: 6,
+  KAMPF: 4, // 3 oder 4
+
+  // optional (leer lassen = kein Filter)
+  LANDESVERBAND: "BA", // z.B. "BA"
+  OMS_ALLOWED: false,
+  POOL: "", // "25" / "50" / ""
+  REGELWERK: "", // z.B. "Mehrkampf" / "" (je nach Excel-Inhalt)
+
+  // Referenzjahr für Alter/AK (typisch Quali-Jahr)
+  REF_YEAR: 2025,
+
+  DATE_FROM: CONFIG_DATES.DATE_FROM,
+  DATE_TO: CONFIG_DATES.DATE_TO,
+  LAST_COMP_FROM: CONFIG_DATES.LAST_COMP_FROM,
+
+
+  AGE_MIN: 16,
+  AGE_MAX: 50,
+
+  DP_3KAMPF_RULE: true,
+
+  ABSAGEN: [
+    "Daniel Bittighofer",
+    "Roland Konietzny",
+    "Regina Blonski",
+  ],
+
+
+};
+
+// ---------------------
+// Weltrekorde (Open) – wie von dir gegeben
+// Reihenfolge: 50 Retten, 100 Retten, 100 Kombi, 100 Lifesaver, 200 Super, 200 Hindernis
+// ---------------------
+const WR_OPEN = {
+  w: {
+    retten50: { text: "0:31,48", sec: timeToSeconds("0:31,48") },
+    retten100: { text: "0:49,30", sec: timeToSeconds("0:49,30") },
+    kombi100: { text: "1:03,69", sec: timeToSeconds("1:03,69") },
+    lifesaver100: { text: "0:54,20", sec: timeToSeconds("0:54,20") },
+    super200: { text: "2:16,07", sec: timeToSeconds("2:16,07") },
+    hindernis200: { text: "2:01,88", sec: timeToSeconds("2:01,88") },
+  },
+  m: {
+    retten50: { text: "0:27,20", sec: timeToSeconds("0:27,20") },
+    retten100: { text: "0:43,29", sec: timeToSeconds("0:43,29") },
+    kombi100: { text: "0:57,44", sec: timeToSeconds("0:57,44") },
+    lifesaver100: { text: "0:47,68", sec: timeToSeconds("0:47,68") },
+    super200: { text: "2:02,98", sec: timeToSeconds("2:02,98") },
+    hindernis200: { text: "1:51,73", sec: timeToSeconds("1:51,73") },
+  },
+};
+
+// Anzeige-Reihenfolge wie im Screenshot:
+const DISCIPLINES = [
+  {
+    key: "lifesaver100",
+    label: "100m Lifersver",
+    wrKey: "lifesaver100",
+    col: COLS.zeit_100_lifesaver,
+  },
+  { key: "retten50", label: "50m Retten", wrKey: "retten50", col: COLS.zeit_50_retten },
+  {
+    key: "super200",
+    label: "200m Super-Lifesaver",
+    wrKey: "super200",
+    col: COLS.zeit_200_superlifesaver,
+  },
+  { key: "kombi100", label: "100m Kombi", wrKey: "kombi100", col: COLS.zeit_100_kombi },
+  {
+    key: "retten100",
+    label: "100m Retten",
+    wrKey: "retten100",
+    col: COLS.zeit_100_retten_flossen, // Achtung: laut deiner Spaltenliste "100m Retten mit Flossen" in H
+  },
+  {
+    key: "hindernis200",
+    label: "200m Hindernis",
+    wrKey: "hindernis200",
+    col: COLS.zeit_200_hindernis,
+  },
+];
+
+// ---------------------
+// Public: Laden + Rendern
+// ---------------------
+async function loadNominierungslisteFromExcel() {
+  const mount = document.getElementById("dp-list");
+  if (!mount) return;
+
+  mount.innerHTML = `<p class="info-status">Lade Nominierungsliste…</p>`;
+
+  await ensureXlsxLoaded();
+
+  const res = await fetch(EXCEL_URL, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Excel konnte nicht geladen werden (${res.status})`);
+  const buf = await res.arrayBuffer();
+
+  const wb = window.XLSX.read(buf, { type: "array", cellDates: true });
+  const ws = wb.Sheets[EXCEL_SHEET];
+  if (!ws) throw new Error(`Arbeitsblatt "${EXCEL_SHEET}" nicht gefunden`);
+
+  const rows = window.XLSX.utils.sheet_to_json(ws, {
+    header: 1,
+    raw: true,
+    defval: "",
+    blankrows: false,
+  });
+
+    const athletes = buildAthletes(rows);
+
+    const females = athletes.filter((a) => a.gender === "w");
+    const males = athletes.filter((a) => a.gender === "m");
+
+    const femalesActive = females.filter(x => !x.absage).sort((a,b) => b.total - a.total);
+    const femalesAbs = females.filter(x => x.absage).sort((a,b) => b.total - a.total);
+    const malesActive = males.filter(x => !x.absage).sort((a,b) => b.total - a.total);
+    const malesAbs = males.filter(x => x.absage).sort((a,b) => b.total - a.total);
+
+    const femalesSorted = femalesActive.concat(femalesAbs);
+    const malesSorted = malesActive.concat(malesAbs);
+
+    // Rangnummern (nur für Nicht-Absagen) einmalig vergeben -> Top-N bleibt korrekt über alle Seiten
+    assignActiveRanks(femalesSorted);
+    assignActiveRanks(malesSorted);
+
+    // Daten + State speichern
+    NOM_DATA.w = femalesSorted;
+    NOM_DATA.m = malesSorted;
+    NOM_PAGE.w = 1;
+    NOM_PAGE.m = 1;
+
+    NOM_MOUNT = mount;
+
+    renderNomTables();
+
+    // Pager-Handler einmalig via Event-Delegation
+    if (!NOM_PAGER_WIRED) {
+      NOM_PAGER_WIRED = true;
+      mount.addEventListener("click", (ev) => {
+        const btn = ev.target.closest("button[data-gender][data-action]");
+        if (!btn) return;
+
+        const g = btn.dataset.gender; // "w" oder "m"
+        const action = btn.dataset.action; // "prev" / "next"
+        const maxPage = getMaxPage(NOM_DATA[g], CONFIG.PAGE_SIZE);
+
+        if (action === "prev") NOM_PAGE[g] = Math.max(1, NOM_PAGE[g] - 1);
+        if (action === "next") NOM_PAGE[g] = Math.min(maxPage, NOM_PAGE[g] + 1);
+
+        renderNomTables();
+      });
+    }
+
+
+  mount.innerHTML = `
+    <div class="nom-grid">
+      <section class="nom-panel">
+        <h3>Weiblich</h3>
+        ${renderRankingTable(femalesSorted, "w")}
+      </section>
+
+      <section class="nom-panel">
+        <h3>Männlich</h3>
+        ${renderRankingTable(malesSorted, "m")}
+      </section>
+    </div>
+  `;
+}
+
+// ---------------------
+// Kernlogik: pro Person beste Zeiten sammeln, Punkte rechnen, Top3/Top4
+// ---------------------
+function buildAthletes(rows) {
+  if (!rows || !rows.length) return [];
+
+  // ggf. Headerzeile skippen (heuristisch)
+  const r0 = rows[0] || [];
+  const maybeHeader = String(r0[COLS.gender] ?? "").toLowerCase();
+  const startIdx =
+    maybeHeader.includes("gender") || maybeHeader.includes("geschlecht") ? 1 : 0;
+
+  const byKey = new Map();
+
+  for (let i = startIdx; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r) continue;
+
+    const gender = normalizeGender(r[COLS.gender]);
+    if (gender !== "m" && gender !== "w") continue;
+
+    const nameRaw = String(r[COLS.name] ?? "").trim();
+    if (!nameRaw) continue;
+
+    const yy2 = fmtYY2(r[COLS.yy2]); // "00" etc.
+    const birthYear = birthYearFromYY2(yy2, CONFIG.REF_YEAR);
+    const age = CONFIG.REF_YEAR - birthYear;
+
+    if (Number.isFinite(CONFIG.AGE_MIN) && age < CONFIG.AGE_MIN) continue;
+    if (Number.isFinite(CONFIG.AGE_MAX) && age > CONFIG.AGE_MAX) continue;
+
+    const key = `${nameRaw}__${yy2}__${gender}`;
+
+    // Filter (optional)
+    if (CONFIG.LANDESVERBAND) {
+      const lv = String(r[COLS.landesverband] ?? "").trim();
+      if (lv !== CONFIG.LANDESVERBAND) continue;
+    }
+
+    if (!CONFIG.OMS_ALLOWED) {
+      const meet = String(r[COLS.meet_name] ?? "");
+      if (meet.startsWith("OMS")) continue;
+    }
+
+    if (CONFIG.POOL) {
+      const pool = String(r[COLS.poollaenge] ?? "").trim();
+      if (pool !== CONFIG.POOL) continue;
+    }
+
+    if (CONFIG.REGELWERK) {
+      const rw = String(r[COLS.regelwerk] ?? "").trim();
+      if (rw !== CONFIG.REGELWERK) continue;
+    }
+
+    const ortsgruppe = String(r[COLS.ortsgruppe] ?? "").trim();
+    const meetName = String(r[COLS.meet_name] ?? "").trim();
+    const bestDate = parseExcelDate(r[COLS.excelDatum]);
+
+    let a = byKey.get(key);
+    if (!a) {
+      const birthYear = birthYearFromYY2(yy2, CONFIG.REF_YEAR);
+      const age = CONFIG.REF_YEAR - birthYear;
+      const ak = determineAKFromAge(age);
+
+      a = {
+        gender,
+        name: `${nameRaw}${yy2 ? ` (${yy2})` : ""}`,
+        ak: `${ak} - ${age}`,
+        og: "",           
+        ogDate: null,
+        ogRowIndex: -1,
+        yy2,
+        birthYear,
+        age,
+        best: {}, // disKey -> {sec, timeText, meetName}
+        points: {}, // disKey -> number
+        total: 0,
+        topFlags: {}, // disKey -> true wenn in Top3/Top4
+        lastCompOk: false,
+        baseName: nameRaw,
+        absage: false,
+      };
+      byKey.set(key, a);
+    }
+
+    const rowDate = parseExcelDate(r[COLS.excelDatum]);
+
+    // Ortsgruppe: immer die des letzten Eintrags (neueste Zeile nach Datum; bei Gleichstand spätere Sheet-Zeile)
+    const ogCandidate = String(r[COLS.ortsgruppe] ?? "").trim();
+    if (ogCandidate) {
+      const newerByDate =
+        rowDate && (!a.ogDate || rowDate.getTime() > a.ogDate.getTime());
+
+      const sameDateButLaterRow =
+        rowDate && a.ogDate && rowDate.getTime() === a.ogDate.getTime() && i > a.ogRowIndex;
+
+      const noDateFallback =
+        !rowDate && !a.ogDate && i > a.ogRowIndex;
+
+      if (newerByDate || sameDateButLaterRow || noDateFallback) {
+        a.og = ogCandidate;
+        if (rowDate) a.ogDate = rowDate;
+        a.ogRowIndex = i;
+      }
+    }
+
+
+    if (Array.isArray(CONFIG.ABSAGEN) && CONFIG.ABSAGEN.length) {
+      const display = `${nameRaw}${yy2 ? ` (${yy2})` : ""}`;
+      a.absage = CONFIG.ABSAGEN.includes(nameRaw) || CONFIG.ABSAGEN.includes(display);
+    }
+
+
+    // lastComp-Check (unabhängig vom Qualizeitraum)
+    if (CONFIG.LAST_COMP_FROM && rowDate) {
+      const fromLC = new Date(CONFIG.LAST_COMP_FROM + "T00:00:00");
+      const toLC = CONFIG.DATE_TO ? new Date(CONFIG.DATE_TO + "T23:59:59") : null;
+
+      const inLastCompWindow = rowDate >= fromLC && (!toLC || rowDate <= toLC);
+      if (inLastCompWindow) {
+        if (!CONFIG.DP_3KAMPF_RULE) {
+          a.lastCompOk = true;
+        } else {
+          const cnt = countValidDisciplinesInRow(r);
+          if (cnt >= 3) a.lastCompOk = true;
+        }
+      }
+    }
+
+    // Qualizeitraum nur für Bestzeiten
+    let inQualiWindow = true;
+    if (CONFIG.DATE_FROM || CONFIG.DATE_TO) {
+      if (!rowDate) {
+        inQualiWindow = false; // kein Datum => nicht für Bestzeiten
+      } else {
+        if (CONFIG.DATE_FROM) {
+          const fromQ = new Date(CONFIG.DATE_FROM + "T00:00:00");
+          if (rowDate < fromQ) inQualiWindow = false;
+        }
+        if (CONFIG.DATE_TO) {
+          const toQ = new Date(CONFIG.DATE_TO + "T23:59:59");
+          if (rowDate > toQ) inQualiWindow = false;
+        }
+      }
+    }
+
+    if (!inQualiWindow) continue; // wichtig: lastComp wurde oben ggf. schon gesetzt
+
+
+
+
+    // pro Disziplin beste Zeit suchen
+    for (const dis of DISCIPLINES) {
+      const rawVal = r[dis.col];
+
+      const t = normalizeTimeCell(rawVal);
+      if (!t) continue;
+      if (String(t).toUpperCase().includes("DQ")) continue;
+
+      const sec = timeToSeconds(String(t));
+      if (!Number.isFinite(sec) || sec <= 0) continue;
+
+      const current = a.best[dis.key];
+      if (!current || sec < current.sec) {
+        a.best[dis.key] = {
+          sec,
+          timeText: String(t).trim(),
+          meetName: meetName,
+          date: bestDate,
+        };
+      }
+    }
+  }
+
+  // Punkte + Top3/Top4 + total
+  const out = [];
+
+  for (const a of byKey.values()) {
+    if (CONFIG.LAST_COMP_FROM && !a.lastCompOk) continue;
+    // Punkte je Disziplin
+    const wr = WR_OPEN[a.gender];
+    let nonZeroCount = 0;
+
+    for (const dis of DISCIPLINES) {
+      const best = a.best[dis.key];
+      if (!best) {
+        a.points[dis.key] = 0;
+        continue;
+      }
+
+      const wrSec = wr[dis.wrKey]?.sec ?? 0;
+      if (!wrSec) {
+        a.points[dis.key] = 0;
+        continue;
+      }
+
+      const ratio = best.sec / wrSec;
+      const pts = calcPointsFromRatio(ratio);
+      const pts2 = round2(pts);
+
+      a.points[dis.key] = pts2;
+      if (pts2 > 0) nonZeroCount++;
+    }
+
+    // mind. 3 Disziplinen
+    if (nonZeroCount < 3) continue;
+
+    // Top3/Top4 ermitteln
+    const ptsArr = DISCIPLINES.map((d) => ({ key: d.key, v: a.points[d.key] || 0 }));
+    ptsArr.sort((x, y) => y.v - x.v);
+
+    const topCount = CONFIG.KAMPF === 4 ? 4 : 3;
+    a.total = round2(ptsArr.slice(0, topCount).reduce((s, x) => s + x.v, 0));
+
+    a.topFlags = {};
+    for (let i = 0; i < topCount; i++) {
+      if (ptsArr[i] && ptsArr[i].v > 0) a.topFlags[ptsArr[i].key] = true;
+    }
+
+    out.push(a);
+  }
+
+  return out;
+}
+
+// ---------------------
+// Render
+// ---------------------
+function renderRankingTablePaged(fullList, gender, page, pageSize) {
+  if (!fullList.length) return `<p class="info-status">Keine Einträge.</p>`;
+
+  const start = (page - 1) * pageSize;
+  const slice = fullList.slice(start, start + pageSize);
+
+  return renderRankingTableSlice(slice, gender);
+}
+
+function renderRankingTableSlice(list, gender) {
+  if (!list.length) return `<p class="info-status">Keine Einträge.</p>`;
+
+  const wrRow = DISCIPLINES.map((d) => WR_OPEN[gender][d.wrKey]?.text ?? "");
+
+  return `
+    <div class="nom-table-wrap">
+      <table class="nom-table">
+        <thead>
+          <tr class="nom-head-1">
+            <th rowspan="2">Name</th>
+            <th rowspan="2">AK</th>
+            <th rowspan="2">OG</th>
+            <th rowspan="2">${CONFIG.KAMPF} - Kampf</th>
+            ${DISCIPLINES.map((d) => `<th colspan="2">${escapeHtml(d.label)}</th>`).join("")}
+          </tr>
+          <tr class="nom-head-2">
+            ${wrRow.map((t) => `<th colspan="2" class="wr">${escapeHtml(t)}</th>`).join("")}
+          </tr>
+        </thead>
+        <tbody>
+          ${(() => {
+            let activeRank = -1;
+
+            return list
+              .map((a) => {
+                if (!a.absage) activeRank++;
+                  const isTop = !a.absage && a.rankActive !== null && a.rankActive < CONFIG.NOMINIERTEN_ANZAHL;
+
+                const rowClass =
+                  (isTop ? "top " : "") +
+                  (a.absage ? "absage-row " : "") +
+                  (gender === "w" ? "w-row" : "m-row");
+
+                return `
+                  <tr class="${rowClass}">
+                    <td class="name">${escapeHtml(a.name)}</td>
+                    <td class="ak">${escapeHtml(a.ak)}</td>
+                    <td class="og">${escapeHtml(a.og)}</td>
+                    <td class="total ${a.absage ? "absage-cell" : ""}">
+                      ${a.absage ? "Abgesagt" : fmtNumDE(a.total)}
+                    </td>
+
+                    ${DISCIPLINES.map((d) => {
+                      const pts = a.points[d.key] || 0;
+                      const best = a.best[d.key];
+                      const ptsClass = a.topFlags[d.key] ? "pts top-pts" : "pts";
+                      const detail = best ? `${best.meetName} | ${best.timeText}` : "";
+
+                      return `
+                        <td class="${ptsClass}">${pts ? fmtNumDE(pts) : "0"}</td>
+                        <td class="detail">${escapeHtml(detail)}</td>
+                      `;
+                    }).join("")}
+                  </tr>
+                `;
+              })
+              .join("");
+          })()}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ---------------------
+// Helfer
+// ---------------------
+function countValidDisciplinesInRow(r) {
+  let c = 0;
+  for (const dis of DISCIPLINES) {
+    const t = normalizeTimeCell(r[dis.col]);
+    if (!t) continue;
+    if (String(t).toUpperCase().includes("DQ")) continue;
+    const sec = timeToSeconds(String(t));
+    if (Number.isFinite(sec) && sec > 0) c++;
+  }
+  return c;
+}
+
+function assignActiveRanks(list) {
+  let r = -1;
+  for (const a of list) {
+    if (!a.absage) {
+      r++;
+      a.rankActive = r;       // 0-basiert unter aktiven
+    } else {
+      a.rankActive = null;    // Absagen haben keinen aktiven Rang
+    }
+  }
+}
+
+function getMaxPage(list, pageSize) {
+  const n = Array.isArray(list) ? list.length : 0;
+  return Math.max(1, Math.ceil(n / pageSize));
+}
+
+function renderNomTables() {
+  if (!NOM_MOUNT) return;
+
+  const wMax = getMaxPage(NOM_DATA.w, CONFIG.PAGE_SIZE);
+  const mMax = getMaxPage(NOM_DATA.m, CONFIG.PAGE_SIZE);
+
+  // Clamp, falls Daten kleiner wurden
+  NOM_PAGE.w = Math.min(NOM_PAGE.w, wMax);
+  NOM_PAGE.m = Math.min(NOM_PAGE.m, mMax);
+
+  NOM_MOUNT.innerHTML = `
+    <div class="nom-grid">
+      <section class="nom-panel">
+        <h3>Weiblich</h3>
+        ${renderRankingTablePaged(NOM_DATA.w, "w", NOM_PAGE.w, CONFIG.PAGE_SIZE)}
+        ${renderPager("w", NOM_PAGE.w, wMax)}
+      </section>
+
+      <section class="nom-panel">
+        <h3>Männlich</h3>
+        ${renderRankingTablePaged(NOM_DATA.m, "m", NOM_PAGE.m, CONFIG.PAGE_SIZE)}
+        ${renderPager("m", NOM_PAGE.m, mMax)}
+      </section>
+    </div>
+  `;
+}
+
+function renderPager(gender, page, maxPage) {
+  const prevDisabled = page <= 1 ? "disabled" : "";
+  const nextDisabled = page >= maxPage ? "disabled" : "";
+
+  return `
+    <div class="nom-pager" aria-label="Pagination ${gender}">
+      <button type="button" data-gender="${gender}" data-action="prev" ${prevDisabled}>Zurück</button>
+      <span>Seite ${page} / ${maxPage}</span>
+      <button type="button" data-gender="${gender}" data-action="next" ${nextDisabled}>Weiter</button>
+    </div>
+  `;
+}
+
+
+function normalizeGender(v) {
+  const s = String(v ?? "").trim().toLowerCase();
+  if (s === "m" || s === "male" || s === "mann" || s === "männlich") return "m";
+  if (s === "w" || s === "f" || s === "female" || s === "frau" || s === "weiblich") return "w";
+  return "";
+}
+
+function fmtYY2(v) {
+  const s = String(v ?? "").trim();
+  if (!s) return "";
+  const n = Number(s);
+  if (!Number.isFinite(n)) return "";
+  const yy = ((Math.trunc(n) % 100) + 100) % 100;
+  return String(yy).padStart(2, "0");
+}
+
+// Jahrhundert-Logik wie in deinem VBA: 00..99 + Referenzjahr
+function birthYearFromYY2(yy2, refYear) {
+  const yy = Number(yy2);
+  if (!Number.isFinite(yy)) return refYear; // fallback
+  let y = 2000 + yy;
+  if (y > refYear) y -= 100; // Jahrhunderwechsel
+  return y;
+}
+
+function determineAKFromAge(age) {
+  if (age <= 10) return "10";
+  if (age <= 12) return "12";
+  if (age <= 14) return "13/14";
+  if (age <= 16) return "15/16";
+  if (age <= 18) return "17/18";
+  return "Offen";
+}
+
+function normalizeTimeCell(v) {
+  if (v === null || v === undefined) return "";
+  // Excel-Zeit als Zahl (Tagesanteil)
+  if (typeof v === "number" && v > 0 && v < 1) {
+    const sec = v * 24 * 3600;
+    // zurück als String m:ss,cc (nur für Anzeige; für Bestzeit nutzen wir sec direkt unten)
+    // hier geben wir lieber sec nicht als string zurück -> wir nutzen timeToSeconds auf string,
+    // daher: formatieren:
+    const m = Math.floor(sec / 60);
+    const s = sec - m * 60;
+    const sTxt = s.toFixed(2).replace(".", ",").padStart(5, "0"); // "05,23"
+    return `${m}:${sTxt}`;
+  }
+  return String(v).trim();
+}
+
+function timeToSeconds(text) {
+  const t = String(text ?? "").trim();
+  if (!t) return NaN;
+
+  // "m:ss,cc" oder "ss,cc"
+  const parts = t.split(":");
+  if (parts.length === 1) {
+    const s = Number(parts[0].replace(",", "."));
+    return Number.isFinite(s) ? s : NaN;
+  }
+  if (parts.length === 2) {
+    const m = Number(parts[0]);
+    const s = Number(parts[1].replace(",", "."));
+    if (!Number.isFinite(m) || !Number.isFinite(s)) return NaN;
+    return m * 60 + s;
+  }
+  // selten: "h:mm:ss" -> nicht erwartet, aber abfangen
+  return NaN;
+}
+
+function calcPointsFromRatio(ratio) {
+  if (!Number.isFinite(ratio) || ratio <= 0) return 0;
+  if (ratio >= 5) return 0;
+  if (ratio >= 2) return 2000 / 3 - (400 / 3) * ratio;
+  return 467 * ratio * ratio - 2001 * ratio + 2534;
+}
+
+function round2(x) {
+  return Math.round(x * 100) / 100;
+}
+
+function fmtNumDE(x) {
+  return Number(x).toFixed(2).replace(".", ",");
+}
+
+function parseExcelDate(v) {
+  if (!v) return null;
+
+  if (v instanceof Date && !Number.isNaN(v.getTime())) return v;
+
+  // Excel-Seriennummer
+  const n = Number(v);
+  if (Number.isFinite(n) && n > 20000 && n < 60000) {
+    const ms = Math.round((n - 25569) * 86400 * 1000);
+    const d = new Date(ms);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  // deutsches Format: dd.mm.yyyy oder d.m.yyyy
+  const s = String(v).trim();
+  const m = /^(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})$/.exec(s);
+  if (m) {
+    const dd = Number(m[1]);
+    const mm = Number(m[2]);
+    let yy = Number(m[3]);
+    if (yy < 100) yy += 2000; // falls mal 2-stellig
+    const d = new Date(yy, mm - 1, dd);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  // Fallback (ISO o.ä.)
+  const d2 = new Date(s);
+  return Number.isNaN(d2.getTime()) ? null : d2;
+}
+
+
+function escapeHtml(s) {
+  return String(s ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+// SheetJS Loader
+async function ensureXlsxLoaded() {
+  if (window.XLSX) return;
+  const CDN = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+  await loadScript(CDN);
+  if (!window.XLSX) throw new Error("XLSX (SheetJS) konnte nicht initialisiert werden");
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src;
+    s.async = true;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error(`Script konnte nicht geladen werden: ${src}`));
+    document.head.appendChild(s);
+  });
+}
+
+
 const DP_BADGE_FOLDER = "./png/events/";
 
 function dpBadgeUrlFromSlideImg(slideImgPath) {
@@ -129,6 +872,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderPage(main, slides);
   initWideCarousel();
   loadLatestDpPdfAndRenderCard();
+  loadNominierungslisteFromExcel().catch(console.error);
 });
 
 async function buildDpSlides() {
@@ -222,8 +966,8 @@ function renderPage(main, slides) {
       </section>
 
       <section class="info-section" aria-labelledby="dp-list-title">
-        <h2 id="dp-list-title">Aktuelle Nominierungsliste</h2>
-        <div id="dp-list" class="info-links">
+        <h2>Aktuelle Nominierungsliste</h2>
+        <div id="dp-list"></div>
         </div>
       </section>
     </section>
