@@ -502,7 +502,7 @@ tr.athlete-row {
   cursor: pointer;
 }
 
-tr.athlete-row:hover td {
+tr.athlete-row:not(.nominiert):not(.nachruecker):not(.absage-row):hover td{
   background: rgba(0,0,0,.03);
 }
 
@@ -531,6 +531,10 @@ td.col-cap {
   --bg-red: rgba(227, 6, 21, 0.08);
   --bg-blue: rgba(11, 94, 215, 0.08);
   --bg-yellow: rgba(255, 193, 7, 0.1);
+
+  --bg-red-hover: rgba(227, 6, 21, 0.14);
+  --bg-blue-hover: rgba(11, 94, 215, 0.14);
+  --bg-yellow-hover: rgba(255, 193, 7, 0.16);
 }
 
 tr.athlete-row.nominiert.w-row td.col-cap {
@@ -539,6 +543,9 @@ tr.athlete-row.nominiert.w-row td.col-cap {
 tr.athlete-row.nominiert.m-row td.col-cap {
   border-left: var(--mark-width) solid var(--mark-blue);
 }
+tr.athlete-row.nachruecker td.col-cap {
+  border-left: var(--mark-width) solid var(--mark-yellow);
+}
 
 tr.athlete-row.nominiert.w-row td {
   background: var(--bg-red);
@@ -546,13 +553,18 @@ tr.athlete-row.nominiert.w-row td {
 tr.athlete-row.nominiert.m-row td {
   background: var(--bg-blue);
 }
-
-tr.athlete-row.nachruecker td.col-cap {
-  border-left: var(--mark-width) solid var(--mark-yellow);
-}
-
 tr.athlete-row.nachruecker td {
   background: var(--bg-yellow);
+}
+
+tr.athlete-row.nominiert.w-row:hover td{
+  background: var(--bg-red-hover) !important;
+}
+tr.athlete-row.nominiert.m-row:hover td{
+  background: var(--bg-blue-hover) !important;
+}
+tr.athlete-row.nachruecker:hover td{
+  background: var(--bg-yellow-hover) !important;
 }
 
 tr.athlete-details td {
@@ -642,4 +654,28 @@ tr.athlete-row.nachruecker + tr.athlete-details td {
   width: 110px;
   text-align: right;
   font-weight: 700;
+}
+
+tr.athlete-row td{
+  transition: background-color 120ms ease;
+}
+
+.nom-compact-table thead th{
+  background: #373737;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 10px 10px;
+
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: 3px solid rgba(0,0,0,.25) !important;
+}
+
+.nom-compact-table thead th.col-total{
+  text-align: right;
+}
+
+.nom-compact-table thead th.col-cap{
+  width: 48px;
 }

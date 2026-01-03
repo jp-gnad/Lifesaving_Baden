@@ -601,7 +601,7 @@ function renderCompactTableSlice(list, gender) {
         <thead>
           <tr>
             <th class="col-empty"></th>
-            <th class="col-person">Name</th>
+            <th class="col-person">Name / Gliederung</th>
             <th class="col-total">${escapeHtml(titleKampf)}</th>
           </tr>
         </thead>
