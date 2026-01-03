@@ -25,7 +25,7 @@ const COLS = {
 };
 
 const now = new Date();
-const y = now.getFullYear();
+const y = 2025
 const m = now.getMonth() + 1; // 1..12
 
 // Saisonjahr: Nov/Dez zählt schon zur Saison des nächsten Jahres
@@ -36,13 +36,6 @@ const CONFIG_DATES = {
   DATE_TO: `${SEASON_YEAR}-10-31`,
   LAST_COMP_FROM: `${SEASON_YEAR}-01-01`,
 };
-
-let NOM_DATA = { w: [], m: [] };
-let NOM_PAGE = { w: 1, m: 1 };
-let NOM_MOUNT = null;
-let NOM_PAGER_WIRED = false;
-
-
 
 // ---------------------
 // Konfiguration
@@ -67,7 +60,7 @@ const CONFIG = {
   LAST_COMP_FROM: CONFIG_DATES.LAST_COMP_FROM,
 
 
-  AGE_MIN: 16,
+  AGE_MIN: 15,
   AGE_MAX: 50,
 
   DP_3KAMPF_RULE: true,
@@ -446,86 +439,305 @@ function buildAthletes(rows) {
   return out;
 }
 
-// ---------------------
-// Render
-// ---------------------
-function renderRankingTablePaged(fullList, gender, page, pageSize) {
+// =====================
+// UI / Render: kompakte Tabelle + aufklappbare Disziplin-Details
+// =====================
+
+let NOM_DATA = { w: [], m: [] };
+let NOM_PAGE = { w: 1, m: 1 };
+let NOM_MOUNT = null;
+let NOM_UI_WIRED = false;
+
+async function loadNominierungslisteFromExcel() {
+  const mount = document.getElementById("dp-list");
+  if (!mount) return;
+
+  NOM_MOUNT = mount;
+  mount.innerHTML = `<p class="info-status">Lade Nominierungsliste…</p>`;
+
+  await ensureXlsxLoaded();
+
+  const res = await fetch(EXCEL_URL, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Excel konnte nicht geladen werden (${res.status})`);
+  const buf = await res.arrayBuffer();
+
+  const wb = window.XLSX.read(buf, { type: "array", cellDates: true });
+  const ws = wb.Sheets[EXCEL_SHEET];
+  if (!ws) throw new Error(`Arbeitsblatt "${EXCEL_SHEET}" nicht gefunden`);
+
+  const rows = window.XLSX.utils.sheet_to_json(ws, {
+    header: 1,
+    raw: true,
+    defval: "",
+    blankrows: false,
+  });
+
+  const athletes = buildAthletes(rows);
+
+  const females = athletes.filter((a) => a.gender === "w");
+  const males = athletes.filter((a) => a.gender === "m");
+
+  // Absagen ans Ende, jeweils Punkte DESC
+  const femalesSorted = sortWithAbsagenLast(females);
+  const malesSorted = sortWithAbsagenLast(males);
+
+  // Rangnummern für Top-N nur über aktive (nicht-Absagen)
+  assignActiveRanks(femalesSorted);
+  assignActiveRanks(malesSorted);
+
+  NOM_DATA.w = femalesSorted;
+  NOM_DATA.m = malesSorted;
+  NOM_PAGE.w = 1;
+  NOM_PAGE.m = 1;
+
+  renderNomTablesCompact();
+
+  // Ein Listener für Pager + Row-Toggle (stabil bei re-render)
+  if (!NOM_UI_WIRED) {
+    NOM_UI_WIRED = true;
+
+    // Wichtig: error bubbelt nicht -> capture=true
+    document.addEventListener(
+      "error",
+      (ev) => {
+        const el = ev.target;
+        if (!(el instanceof HTMLImageElement)) return;
+        if (!el.classList.contains("og-cap")) return;
+
+        // verhindert Endlosschleife, falls auch Fallback fehlt
+        if (el.dataset.fallbackDone === "1") return;
+
+        el.dataset.fallbackDone = "1";
+        el.src = CAP_FALLBACK_SRC;
+      },
+      true
+    );
+
+
+    mount.addEventListener("click", (ev) => {
+      // Pagination Buttons
+      const btn = ev.target.closest("button[data-gender][data-action]");
+      if (btn) {
+        const g = btn.dataset.gender;         // "w" / "m"
+        const action = btn.dataset.action;     // "prev" / "next"
+        const maxPage = getMaxPage(NOM_DATA[g], CONFIG.PAGE_SIZE);
+
+        if (action === "prev") NOM_PAGE[g] = Math.max(1, NOM_PAGE[g] - 1);
+        if (action === "next") NOM_PAGE[g] = Math.min(maxPage, NOM_PAGE[g] + 1);
+
+        renderNomTablesCompact();
+        return;
+      }
+
+      // Row Toggle
+      const row = ev.target.closest("tr.athlete-row");
+      if (!row) return;
+
+      const details = row.nextElementSibling;
+      if (!details || !details.classList.contains("athlete-details")) return;
+
+      const isHidden = details.hasAttribute("hidden");
+      if (isHidden) {
+        details.removeAttribute("hidden");
+        row.setAttribute("aria-expanded", "true");
+      } else {
+        details.setAttribute("hidden", "");
+        row.setAttribute("aria-expanded", "false");
+      }
+    });
+  }
+}
+
+function sortWithAbsagenLast(list) {
+  const active = list.filter(x => !x.absage).sort((a, b) => b.total - a.total);
+  const abs = list.filter(x => x.absage).sort((a, b) => b.total - a.total);
+  return active.concat(abs);
+}
+
+function renderNomTablesCompact() {
+  if (!NOM_MOUNT) return;
+
+  const wMax = getMaxPage(NOM_DATA.w, CONFIG.PAGE_SIZE);
+  const mMax = getMaxPage(NOM_DATA.m, CONFIG.PAGE_SIZE);
+
+  NOM_PAGE.w = Math.min(NOM_PAGE.w, wMax);
+  NOM_PAGE.m = Math.min(NOM_PAGE.m, mMax);
+
+  NOM_MOUNT.innerHTML = `
+    <div class="nom-grid">
+      <section class="nom-panel">
+        <h3>Weiblich</h3>
+        ${renderCompactTablePaged(NOM_DATA.w, "w", NOM_PAGE.w, CONFIG.PAGE_SIZE)}
+        ${renderPager("w", NOM_PAGE.w, wMax)}
+      </section>
+
+      <section class="nom-panel">
+        <h3>Männlich</h3>
+        ${renderCompactTablePaged(NOM_DATA.m, "m", NOM_PAGE.m, CONFIG.PAGE_SIZE)}
+        ${renderPager("m", NOM_PAGE.m, mMax)}
+      </section>
+    </div>
+  `;
+}
+
+function renderCompactTablePaged(fullList, gender, page, pageSize) {
   if (!fullList.length) return `<p class="info-status">Keine Einträge.</p>`;
 
   const start = (page - 1) * pageSize;
   const slice = fullList.slice(start, start + pageSize);
 
-  return renderRankingTableSlice(slice, gender);
+  return renderCompactTableSlice(slice, gender);
 }
 
-function renderRankingTableSlice(list, gender) {
+function renderCompactTableSlice(list, gender) {
   if (!list.length) return `<p class="info-status">Keine Einträge.</p>`;
 
-  const wrRow = DISCIPLINES.map((d) => WR_OPEN[gender][d.wrKey]?.text ?? "");
+  const titleKampf = `${CONFIG.KAMPF}-Kampf`;
 
   return `
     <div class="nom-table-wrap">
-      <table class="nom-table">
+      <table class="nom-compact-table" role="table">
         <thead>
-          <tr class="nom-head-1">
-            <th rowspan="2">Name</th>
-            <th rowspan="2">AK</th>
-            <th rowspan="2">OG</th>
-            <th rowspan="2">${CONFIG.KAMPF} - Kampf</th>
-            ${DISCIPLINES.map((d) => `<th colspan="2">${escapeHtml(d.label)}</th>`).join("")}
-          </tr>
-          <tr class="nom-head-2">
-            ${wrRow.map((t) => `<th colspan="2" class="wr">${escapeHtml(t)}</th>`).join("")}
+          <tr>
+            <th class="col-empty"></th>
+            <th class="col-person">Name</th>
+            <th class="col-total">${escapeHtml(titleKampf)}</th>
           </tr>
         </thead>
         <tbody>
-          ${(() => {
-            let activeRank = -1;
-
-            return list
-              .map((a) => {
-                if (!a.absage) activeRank++;
-                  const isTop = !a.absage && a.rankActive !== null && a.rankActive < CONFIG.NOMINIERTEN_ANZAHL;
-
-                const rowClass =
-                  (isTop ? "top " : "") +
-                  (a.absage ? "absage-row " : "") +
-                  (gender === "w" ? "w-row" : "m-row");
-
-                return `
-                  <tr class="${rowClass}">
-                    <td class="name">${escapeHtml(a.name)}</td>
-                    <td class="ak">${escapeHtml(a.ak)}</td>
-                    <td class="og">${escapeHtml(a.og)}</td>
-                    <td class="total ${a.absage ? "absage-cell" : ""}">
-                      ${a.absage ? "Abgesagt" : fmtNumDE(a.total)}
-                    </td>
-
-                    ${DISCIPLINES.map((d) => {
-                      const pts = a.points[d.key] || 0;
-                      const best = a.best[d.key];
-                      const ptsClass = a.topFlags[d.key] ? "pts top-pts" : "pts";
-                      const detail = best ? `${best.meetName} | ${best.timeText}` : "";
-
-                      return `
-                        <td class="${ptsClass}">${pts ? fmtNumDE(pts) : "0"}</td>
-                        <td class="detail">${escapeHtml(detail)}</td>
-                      `;
-                    }).join("")}
-                  </tr>
-                `;
-              })
-              .join("");
-          })()}
+          ${list.map(a => renderAthleteRow(a, gender)).join("")}
         </tbody>
       </table>
     </div>
   `;
 }
 
+function renderAthleteRow(a, gender) {
+  // Top-N (nur aktive)
+  const isTop = !a.absage && a.rankActive !== null && a.rankActive < CONFIG.NOMINIERTEN_ANZAHL;
+
+  const rowClass =
+    "athlete-row " +
+    (isTop ? "top " : "") +
+    (a.absage ? "absage-row " : "") +
+    (gender === "w" ? "w-row" : "m-row");
+
+  const totalText = a.absage ? "Abgesagt" : `${fmtNumDE(a.total)} P`;
+
+  // Details: Disziplinen mit Punkten>0, nach Punkten DESC
+  const details = getDisciplineDetailsSorted(a);
+
+  // Falls jemand keine Details hat (sollte selten), trotzdem klickbar – dann bleibt Details leer.
+  const detailsHtml = details.length
+    ? `
+      <table class="nom-details-table" role="presentation">
+        <tbody>
+          ${details.map(d => `
+            <tr class="detail-row ${d.counted ? "counted" : "noncount"}">
+              <td class="d-dis">${escapeHtml(d.label)}</td>
+              <td class="d-time">${escapeHtml(d.time)}</td>
+              <td class="d-meet">${escapeHtml(d.meet)}</td>
+              <td class="d-pts">${fmtNumDE(d.points)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `
+    : `<div class="nom-details-empty">Keine Disziplindaten.</div>`;
+
+  return `
+    <tr class="${rowClass}" aria-expanded="false">
+      <td class="col-cap">
+        <img class="og-cap" src="${capSrcForOrtsgruppe(a.og)}" alt="" loading="lazy" decoding="async">
+      </td>
+      <td class="col-person">
+        <div class="person-name">${escapeHtml(a.name)}</div>
+        <div class="person-og">${escapeHtml(a.og)}</div>
+      </td>
+      <td class="col-total ${a.absage ? "absage-cell" : ""}">${escapeHtml(totalText)}</td>
+    </tr>
+
+    <tr class="athlete-details" hidden>
+      <td colspan="3">
+        ${detailsHtml}
+      </td>
+    </tr>
+  `;
+}
+
+function getDisciplineDetailsSorted(a) {
+  const out = [];
+
+  for (const dis of DISCIPLINES) {
+    const pts = a.points?.[dis.key] ?? 0;
+    if (!pts || pts <= 0) continue;
+
+    const best = a.best?.[dis.key];
+    if (!best) continue;
+
+    out.push({
+      key: dis.key,
+      points: pts,
+      label: dis.label,
+      meet: best.meetName || "",
+      time: best.timeText || "",
+      counted: !!a.topFlags?.[dis.key], // zählt im 3/4-Kampf => NICHT hell
+    });
+  }
+
+  out.sort((x, y) => y.points - x.points);
+  return out;
+}
+
+function renderPager(gender, page, maxPage) {
+  const prevDisabled = page <= 1 ? "disabled" : "";
+  const nextDisabled = page >= maxPage ? "disabled" : "";
+
+  return `
+    <div class="nom-pager" aria-label="Pagination ${gender}">
+      <button type="button" data-gender="${gender}" data-action="prev" ${prevDisabled}>Zurück</button>
+      <span>Seite ${page} / ${maxPage}</span>
+      <button type="button" data-gender="${gender}" data-action="next" ${nextDisabled}>Weiter</button>
+    </div>
+  `;
+}
+
+// ranks + paging helpers (hast du im Prinzip schon – hier vollständig, damit es konsistent ist)
+function assignActiveRanks(list) {
+  let r = -1;
+  for (const a of list) {
+    if (!a.absage) {
+      r++;
+      a.rankActive = r;     // 0-basiert unter aktiven
+    } else {
+      a.rankActive = null;
+    }
+  }
+}
+
+function getMaxPage(list, pageSize) {
+  const n = Array.isArray(list) ? list.length : 0;
+  return Math.max(1, Math.ceil(n / pageSize));
+}
+
+
 // ---------------------
 // Helfer
 // ---------------------
+const CAP_SVG_FOLDER = "./svg/";
+const CAP_FALLBACK_SRC = CAP_SVG_FOLDER + "Cap-Baden_light.svg";
+
+function capSrcForOrtsgruppe(og) {
+  const raw = String(og ?? "").trim();
+
+  // Schutz vor "/" "\" usw. (damit niemand Pfade „bauen“ kann)
+  const safe = raw.replace(/[\/\\]/g, "-");
+
+  // Dateiname: Cap-[Ortsgruppe].svg (URL-encoded, damit Leerzeichen/Umlaute funktionieren)
+  return CAP_SVG_FOLDER + "Cap-" + encodeURIComponent(safe) + ".svg";
+}
+
+
 function countValidDisciplinesInRow(r) {
   let c = 0;
   for (const dis of DISCIPLINES) {
