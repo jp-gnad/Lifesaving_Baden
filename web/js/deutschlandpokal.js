@@ -185,17 +185,23 @@ async function loadNominierungslisteFromExcel() {
     if (!NOM_PAGER_WIRED) {
       NOM_PAGER_WIRED = true;
       mount.addEventListener("click", (ev) => {
-        const btn = ev.target.closest("button[data-gender][data-action]");
-        if (!btn) return;
+        const pagerBtn = ev.target.closest("button[data-gender]");
+        if (pagerBtn && (pagerBtn.dataset.action || pagerBtn.dataset.page)) {
+          const g = pagerBtn.dataset.gender; // "w" / "m"
+          const maxPage = getMaxPage(NOM_DATA[g], CONFIG.PAGE_SIZE);
 
-        const g = btn.dataset.gender; // "w" oder "m"
-        const action = btn.dataset.action; // "prev" / "next"
-        const maxPage = getMaxPage(NOM_DATA[g], CONFIG.PAGE_SIZE);
+          if (pagerBtn.dataset.action === "prev") {
+            NOM_PAGE[g] = Math.max(1, NOM_PAGE[g] - 1);
+          } else if (pagerBtn.dataset.action === "next") {
+            NOM_PAGE[g] = Math.min(maxPage, NOM_PAGE[g] + 1);
+          } else if (pagerBtn.dataset.page) {
+            const p = Number(pagerBtn.dataset.page);
+            if (Number.isFinite(p)) NOM_PAGE[g] = Math.min(maxPage, Math.max(1, p));
+          }
 
-        if (action === "prev") NOM_PAGE[g] = Math.max(1, NOM_PAGE[g] - 1);
-        if (action === "next") NOM_PAGE[g] = Math.min(maxPage, NOM_PAGE[g] + 1);
-
-        renderNomTables();
+          renderNomTablesCompact();
+          return;
+        }
       });
     }
 
@@ -448,6 +454,8 @@ let NOM_DATA = { w: [], m: [] };
 let NOM_PAGE = { w: 1, m: 1 };
 let NOM_MOUNT = null;
 let NOM_UI_WIRED = false;
+let NOM_STAND_TEXT = "";
+
 
 async function loadNominierungslisteFromExcel() {
   const mount = document.getElementById("dp-list");
@@ -472,6 +480,8 @@ async function loadNominierungslisteFromExcel() {
     defval: "",
     blankrows: false,
   });
+
+  NOM_STAND_TEXT = computeStandTextFromRows(rows);
 
   const athletes = buildAthletes(rows);
 
@@ -516,19 +526,24 @@ async function loadNominierungslisteFromExcel() {
 
 
     mount.addEventListener("click", (ev) => {
-      // Pagination Buttons
-      const btn = ev.target.closest("button[data-gender][data-action]");
-      if (btn) {
-        const g = btn.dataset.gender;         // "w" / "m"
-        const action = btn.dataset.action;     // "prev" / "next"
+      const pagerBtn = ev.target.closest("button[data-gender]");
+      if (pagerBtn && (pagerBtn.dataset.action || pagerBtn.dataset.page)) {
+        const g = pagerBtn.dataset.gender; // "w" / "m"
         const maxPage = getMaxPage(NOM_DATA[g], CONFIG.PAGE_SIZE);
 
-        if (action === "prev") NOM_PAGE[g] = Math.max(1, NOM_PAGE[g] - 1);
-        if (action === "next") NOM_PAGE[g] = Math.min(maxPage, NOM_PAGE[g] + 1);
+        if (pagerBtn.dataset.action === "prev") {
+          NOM_PAGE[g] = Math.max(1, NOM_PAGE[g] - 1);
+        } else if (pagerBtn.dataset.action === "next") {
+          NOM_PAGE[g] = Math.min(maxPage, NOM_PAGE[g] + 1);
+        } else if (pagerBtn.dataset.page) {
+          const p = Number(pagerBtn.dataset.page);
+          if (Number.isFinite(p)) NOM_PAGE[g] = Math.min(maxPage, Math.max(1, p));
+        }
 
         renderNomTablesCompact();
         return;
       }
+
 
       // Row Toggle
       const row = ev.target.closest("tr.athlete-row");
@@ -806,18 +821,88 @@ function renderNomTables() {
   `;
 }
 
+function getPagerItems(current, max) {
+  if (max <= 7) {
+    return Array.from({ length: max }, (_, i) => ({ type: "page", page: i + 1 }));
+  }
+
+  const items = [];
+  const addPage = (p) => items.push({ type: "page", page: p });
+  const addDots = () => items.push({ type: "dots" });
+
+  addPage(1);
+
+  // mittlerer Block bestimmen
+  let start = Math.max(2, current - 1);
+  let end = Math.min(max - 1, current + 1);
+
+  // nahe am Anfang
+  if (current <= 4) {
+    start = 2;
+    end = 4;
+  }
+
+  // nahe am Ende
+  if (current >= max - 3) {
+    start = max - 3;
+    end = max - 1;
+  }
+
+  if (start > 2) addDots();
+
+  for (let p = start; p <= end; p++) addPage(p);
+
+  if (end < max - 1) addDots();
+
+  addPage(max);
+
+  return items;
+}
+
 function renderPager(gender, page, maxPage) {
   const prevDisabled = page <= 1 ? "disabled" : "";
   const nextDisabled = page >= maxPage ? "disabled" : "";
 
+  const items = getPagerItems(page, maxPage);
+
   return `
-    <div class="nom-pager" aria-label="Pagination ${gender}">
-      <button type="button" data-gender="${gender}" data-action="prev" ${prevDisabled}>Zurück</button>
-      <span>Seite ${page} / ${maxPage}</span>
-      <button type="button" data-gender="${gender}" data-action="next" ${nextDisabled}>Weiter</button>
+    <div class="nom-pager" role="navigation" aria-label="Seitenwahl ${gender}">
+      <div class="nom-stand">${escapeHtml(NOM_STAND_TEXT || "")}</div>
+      <div class="nom-pager__group">
+        <button type="button"
+          class="nom-pager__btn"
+          data-gender="${gender}"
+          data-action="prev"
+          ${prevDisabled}
+          aria-label="Vorherige Seite">‹</button>
+
+        ${items.map(it => {
+          if (it.type === "dots") {
+            return `<span class="nom-pager__ellipsis">…</span>`;
+          }
+          const isActive = it.page === page;
+          return `
+            <button type="button"
+              class="nom-pager__btn ${isActive ? "is-active" : ""}"
+              data-gender="${gender}"
+              data-page="${it.page}"
+              ${isActive ? 'aria-current="page"' : ""}>
+              ${it.page}
+            </button>
+          `;
+        }).join("")}
+
+        <button type="button"
+          class="nom-pager__btn"
+          data-gender="${gender}"
+          data-action="next"
+          ${nextDisabled}
+          aria-label="Nächste Seite">›</button>
+      </div>
     </div>
   `;
 }
+
 
 
 function normalizeGender(v) {
@@ -933,6 +1018,42 @@ function parseExcelDate(v) {
   // Fallback (ISO o.ä.)
   const d2 = new Date(s);
   return Number.isNaN(d2.getTime()) ? null : d2;
+}
+
+function computeStandTextFromRows(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) return "";
+
+  // Header-Zeile heuristisch skippen
+  const r0 = rows[0] || [];
+  const g0 = String(r0[COLS.gender] ?? "").toLowerCase();
+  const d0 = String(r0[COLS.excelDatum] ?? "").toLowerCase();
+
+  const startIdx =
+    g0.includes("gender") || g0.includes("geschlecht") || d0.includes("datum")
+      ? 1
+      : 0;
+
+  let latest = null;
+
+  for (let i = startIdx; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r) continue;
+
+    const d = parseExcelDate(r[COLS.excelDatum]);
+    if (!d) continue;
+
+    if (!latest || d.getTime() > latest.getTime()) latest = d;
+  }
+
+  if (!latest) return "";
+
+  const fmt = new Intl.DateTimeFormat("de-DE", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  return `Stand: ${fmt.format(latest)}`;
 }
 
 

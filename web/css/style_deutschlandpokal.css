@@ -368,7 +368,8 @@ main#content {
 .nom-table-wrap {
   overflow-x: auto;
   overflow-y: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+
 }
 
 .nom-table {
@@ -387,10 +388,6 @@ main#content {
 
 .nom-head-1 th {
   font-weight: 700;
-}
-
-.nom-head-2 th {
-  border-bottom: 2px solid rgb(227, 6, 19);
 }
 
 .nom-head-2 .wr {
@@ -426,14 +423,6 @@ td.top-pts {
   font-weight: 700;
 }
 
-tr.top.w-row td {
-  background: rgb(255, 196, 222);
-}
-
-tr.top.m-row td {
-  background: rgb(191, 226, 253);
-}
-
 .absage-cell {
   color: rgb(227, 6, 19);
   font-weight: 700;
@@ -466,16 +455,11 @@ tr.absage-row td {
   font-family: Arial, sans-serif;
 }
 
-.nom-compact-table thead th {
-  text-align: left;
-  padding: 8px 10px;
-  border-bottom: 2px solid rgb(227, 6, 19);
-}
-
 .nom-compact-table td {
   padding: 10px 10px;
   vertical-align: top;
   border-bottom: 1px solid rgba(0,0,0,.12);
+  border-top: 1px solid rgba(0,0,0,.12);
 }
 
 .col-empty {
@@ -537,14 +521,19 @@ td.col-cap {
   --bg-yellow-hover: rgba(255, 193, 7, 0.16);
 }
 
-tr.athlete-row.nominiert.w-row td.col-cap {
-  border-left: var(--mark-width) solid var(--mark-red);
+tr.athlete-row.nominiert.w-row td.col-cap{
+  border-left: none !important;
+  box-shadow: inset var(--mark-width) 0 0 0 var(--mark-red);
 }
-tr.athlete-row.nominiert.m-row td.col-cap {
-  border-left: var(--mark-width) solid var(--mark-blue);
+
+tr.athlete-row.nominiert.m-row td.col-cap{
+  border-left: none !important;
+  box-shadow: inset var(--mark-width) 0 0 0 var(--mark-blue);
 }
-tr.athlete-row.nachruecker td.col-cap {
-  border-left: var(--mark-width) solid var(--mark-yellow);
+
+tr.athlete-row.nachruecker td.col-cap{
+  border-left: none !important;
+  box-shadow: inset var(--mark-width) 0 0 0 var(--mark-yellow);
 }
 
 tr.athlete-row.nominiert.w-row td {
@@ -661,15 +650,16 @@ tr.athlete-row td{
 }
 
 .nom-compact-table thead th{
-  background: #373737;
-  color: #ffffff;
+  background: #575756;
+  color: white;
   font-weight: 700;
   padding: 10px 10px;
 
   border-top: none !important;
   border-left: none !important;
   border-right: none !important;
-  border-bottom: 3px solid rgba(0,0,0,.25) !important;
+  border-bottom: 2px solid rgba(0,0,0,.25) !important;
+  text-align: left;
 }
 
 .nom-compact-table thead th.col-total{
@@ -678,4 +668,91 @@ tr.athlete-row td{
 
 .nom-compact-table thead th.col-cap{
   width: 48px;
+}
+
+
+.nom-pager{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:10px;
+}
+
+.nom-pager__group{
+  display:inline-flex;
+  align-items:stretch;
+  border:1px solid rgba(0,0,0,.18);
+  border-radius:4px;
+  overflow:hidden;
+  background:#fff;
+}
+
+.nom-pager__btn{
+  width: 22px;
+  height: 30px;
+  border:0;
+  background:transparent;
+  cursor:pointer;
+  color: #575756;
+  font-weight:600;
+  line-height:1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nom-pager__btn:hover{
+  background:rgba(87,87,86,.08);
+}
+
+.nom-pager__btn.is-active{
+  background: #575756;
+  color:#fff;
+}
+
+.nom-pager__btn:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+}
+
+.nom-pager__btn + .nom-pager__btn,
+.nom-pager__ellipsis{
+  border-left:1px solid rgba(0,0,0,.14);
+}
+
+.nom-pager__ellipsis{
+  width: 22px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:rgba(0,0,0,.55);
+  background:#fff;
+  border-right:1px solid rgba(0,0,0,.14);
+}
+
+.nom-table-wrap{
+  border-left: none !important;
+  border-right: none !important;
+}
+
+td.col-cap{
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+td.col-cap .og-cap{
+  transform: translateX(6px);
+}
+
+.nom-pager{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-left: 10px;
+}
+
+.nom-stand{
+  font-size:12px;
+  color:rgba(0,0,0,.45);
+  white-space:nowrap;
 }
