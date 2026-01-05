@@ -615,8 +615,7 @@ function renderCompactTableSlice(list, gender) {
       <table class="nom-compact-table" role="table">
         <thead>
           <tr>
-            <th class="col-empty"></th>
-            <th class="col-person">Name / Gliederung</th>
+            <th class="col-person" colspan="2">Name / Gliederung</th>
             <th class="col-total">${escapeHtml(titleKampf)}</th>
           </tr>
         </thead>
@@ -661,9 +660,12 @@ function renderAthleteRow(a, gender) {
             <tr class="detail-row ${d.counted ? "counted" : "noncount"}">
               <td class="d-main">
                 <div class="d-dis">${escapeHtml(d.label)}</div>
-                <div class="d-time">${escapeHtml(d.time)}</div>
+                <div class="d-sub">
+                  <span class="d-time">${escapeHtml(d.time)}</span>
+                  <span class="d-sep"> | </span>
+                  <span class="d-meet">${escapeHtml(d.meet)}</span>
+                </div>
               </td>
-              <td class="d-meet">${escapeHtml(d.meet)}</td>
               <td class="d-pts">${fmtNumDE(d.points)}</td>
             </tr>
           `).join("")}
@@ -832,18 +834,18 @@ function getPagerItems(current, max) {
 
   addPage(1);
 
-  // mittlerer Block bestimmen
+  // Standard: Mitte zeigt current-1, current, current+1
   let start = Math.max(2, current - 1);
   let end = Math.min(max - 1, current + 1);
 
-  // nahe am Anfang
-  if (current <= 4) {
+  // Anfang nur bis Seite 3
+  if (current <= 3) {
     start = 2;
     end = 4;
   }
 
-  // nahe am Ende
-  if (current >= max - 3) {
+  // Ende erst ab max-2 (bei 10 also ab 8)
+  if (current >= max - 2) {
     start = max - 3;
     end = max - 1;
   }
@@ -858,6 +860,7 @@ function getPagerItems(current, max) {
 
   return items;
 }
+
 
 function renderPager(gender, page, maxPage) {
   const prevDisabled = page <= 1 ? "disabled" : "";
