@@ -567,6 +567,12 @@ function buildAthletesForConfig(rows, cfg) {
     1,
     Math.min(discLen, Number.isFinite(cfg.MIN_DISCIPLINES) && cfg.MIN_DISCIPLINES > 0 ? cfg.MIN_DISCIPLINES : topCount)
   );
+  const ageRefYear = (() => {
+    const s = String(cfg?.DATE_TO ?? "").trim();
+    const y = s && s.length >= 4 ? parseInt(s.slice(0, 4), 10) : NaN;
+    return Number.isFinite(y) ? y : SEASON_YEAR;
+  })();
+
 
   for (let i = startIdx; i < rows.length; i++) {
     const r = rows[i];
@@ -580,8 +586,8 @@ function buildAthletesForConfig(rows, cfg) {
     if (!nameRaw) continue;
 
     const yy2 = fmtYY2(r[COLS.yy2]);
-    const birthYear = birthYearFromYY2(yy2, cfg.REF_YEAR || SEASON_YEAR);
-    const age = (cfg.REF_YEAR || SEASON_YEAR) - birthYear;
+    const birthYear = birthYearFromYY2(yy2, ageRefYear);
+    const age = ageRefYear - birthYear;
 
     if (Number.isFinite(cfg.AGE_MIN) && age < cfg.AGE_MIN) continue;
     if (Number.isFinite(cfg.AGE_MAX) && age > cfg.AGE_MAX) continue;
