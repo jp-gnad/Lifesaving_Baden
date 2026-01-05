@@ -411,41 +411,6 @@ function loadConfigsFromWorkbook(wb) {
   return out;
 }
 
-function logDpConfigs(cfgs) {
-  console.groupCollapsed(`DP_konfig: ${cfgs.length} Konfiguration(en)`);
-  cfgs.forEach((c, i) => {
-    const title = `#${i + 1} ${c.TABELLEN_NAME || "(ohne Name)"} | G=${c.GENDER || "-"} | ${c.AGE_MIN}-${c.AGE_MAX} | ${c.KAMPF}-Kampf`;
-    console.groupCollapsed(title);
-    console.table([{
-      TABELLEN_NAME: c.TABELLEN_NAME,
-      GENDER: c.GENDER,
-      AGE_MIN: c.AGE_MIN,
-      AGE_MAX: c.AGE_MAX,
-      DATE_FROM: c.DATE_FROM,
-      DATE_TO: c.DATE_TO,
-      LAST_COMP_FROM: c.LAST_COMP_FROM,
-      KAMPF: c.KAMPF,
-      LANDESVERBAND: c.LANDESVERBAND,
-      OMS_ALLOWED: c.OMS_ALLOWED,
-      POOL: c.POOL,
-      REGELWERK: c.REGELWERK,
-      REFERENZ: c.REFERENZ,
-      REF_YEAR: c.REF_YEAR,
-      MIN_POINTS: c.MIN_POINTS,
-      MIN_DISCIPLINES: c.MIN_DISCIPLINES,
-      DP_3KAMPF_RULE: c.DP_3KAMPF_RULE,
-      NOMINIERTEN_ANZAHL: c.NOMINIERTEN_ANZAHL,
-      NACHRUECKER_ANZAHL: c.NACHRUECKER_ANZAHL,
-      PAGE_SIZE: c.PAGE_SIZE,
-      ABSAGEN: Array.isArray(c.ABSAGEN) ? c.ABSAGEN.join(", ") : "",
-    }]);
-    console.log("RAW_CFG_OBJ:", c);
-    console.groupEnd();
-  });
-  console.groupEnd();
-}
-
-
 function detectAthleteSheetName(wb) {
   const names = wb.SheetNames || [];
   const preferred = ["Tabelle2", "Tabelle1", "DP_Daten", "DP Daten", "DP-Data", "DP Data", "Daten", "Data", "Nominierung", "Nominierungsliste"];
@@ -1014,7 +979,6 @@ async function loadNominierungslisteFromExcel() {
     mount.innerHTML = `<p class="info-status info-error">Keine Konfigurationen in "${CONFIG_SHEET}" gefunden.</p>`;
     return;
   }
-  logDpConfigs(cfgs);
 
   const dataRes = await fetch(DATA_EXCEL_URL, { cache: "no-store" });
   if (!dataRes.ok) throw new Error(`Daten-Excel konnte nicht geladen werden (${dataRes.status})`);
@@ -1035,7 +999,6 @@ async function loadNominierungslisteFromExcel() {
 
   NOM_TABLES = cfgs.map(cfg => {
     const athletes = buildAthletesForConfig(dataRows, cfg);
-    console.log(`TABLE "${cfg.TABELLEN_NAME}" -> athletes=${athletes.length}`);
     const sorted = sortWithAbsagenLast(athletes);
     assignActiveRanks(sorted);
     const pageSize = Math.max(1, cfg.PAGE_SIZE || 10);
@@ -1156,82 +1119,12 @@ const DP_EXTS = [".jpg"];
 
 const DP_SLIDE_SETTINGS = {
   "2025": {
-    text: "LV-Gesamtwertung: 8. Platz",
+    text: "LV-Gesamtwertung: 2. Platz",
     cta: {
       label: "Mehr Infos!",
-      href: "https://baden.dlrg.de/mitmachen/rettungssport/news-detail/drei-badische-rekorde-in-warendorf-134005-n/",
+      href: "https://baden.dlrg.de/mitmachen/rettungssport/news-detail/bodensee-pokal-feiert-revival-131606-n/",
     },
     bgPos: "center 55%",
-  },
-  "2024": {
-    text: "LV-Gesamtwertung: 9. Platz",
-    cta: {
-      label: "Mehr Infos!",
-      href: "https://www.dlrg.de/mitmachen/rettungssport/nationale-und-internationale-wettkaempfe/deutschlandpokal-2024/",
-    },
-    bgPos: "center 40%",
-  },
-  "2023": {
-    text: "LV-Gesamtwertung: 9. Platz",
-    cta: {
-      label: "Mehr Infos!",
-      href: "https://www.dlrg.de/mitmachen/rettungssport/nationale-und-internationale-wettkaempfe/internationaler-deutschlandpokal-2023/",
-    },
-    bgPos: "center 65%",
-  },
-  "2022": {
-    text: "LV-Gesamtwertung: 5. Platz",
-    cta: {
-      label: "Mehr Infos!",
-      href: "https://www.dlrg.de/mitmachen/rettungssport/nationale-und-internationale-wettkaempfe/deutschlandpokal-2022/ergebnisse-einzel/#:~:text=Ergebnisse%20Einzel%20%2D%20Deutschlandpokal%202022%20%7C%20DLRG%20e.V.",
-    },
-    bgPos: "center 25%",
-  },
-  "2019": {
-    text: "LV-Gesamtwertung: 5. Platz",
-    cta: {
-      label: "Mehr Infos!",
-      href: "https://baden.dlrg-jugend.de/wir/news/detailansicht/internationaler-deutschlandpokal-2019-312-n/",
-    },
-    bgPos: "center 35%",
-  },
-  "2017": {
-    text: "LV-Gesamtwertung: 7. Platz",
-    cta: {
-      label: "Mehr Infos!",
-      href: "https://baden.dlrg-jugend.de/wir/news/detailansicht/deutschlandpokal-2017-234-n/",
-    },
-    bgPos: "center 50%",
-  },
-  "2016": {
-    text: "LV-Gesamtwertung: 4. Platz",
-    cta: {
-      label: "Mehr Infos!",
-      href: "https://baden.dlrg-jugend.de/wir/news/detailansicht/erfolgreicher-deutschlandpokal-2016-199-n/",
-    },
-    bgPos: "center 15%",
-  },
-  "2015": {
-    text: "LV-Gesamtwertung: 8. Platz",
-    cta: { label: "Mehr Infos!", href: "https://www.youtube.com/watch?v=AwgeM_VwPOs" },
-    bgPos: "center 30%",
-  },
-  "2014": {
-    text: "LV-Gesamtwertung: 8. Platz",
-    cta: { label: "Mehr Infos!", href: "https://www.badische-zeitung.de/verena-weis-knackt-rekord" },
-    bgPos: "center 10%",
-  },
-  "2011": {
-    text: "LV-Gesamtwertung: 7. Platz",
-    cta: {
-      label: "Mehr Infos!",
-      href: "https://www.durlacher.de/start/neuigkeiten-archiv/artikel/2011/dezember/15/schwimmer-der-dlrg-durlach-auch-international-erfolgreich",
-    },
-    bgPos: "center 30%",
-  },
-  "2000": {
-    text: "LV-Gesamtwertung: 11. Platz",
-    bgPos: "center 15%",
   },
 };
 
@@ -1531,7 +1424,7 @@ async function loadLatestDpPdfAndRenderCard() {
     repo: "Lifesaving_Baden",
     branch: "main",
     dirCandidates: ["nominierungsrichtlinien", "web/nominierungsrichtlinien"],
-    cacheKey: "lsb_dp_latest_pdf_v2",
+    cacheKey: "lsb_bp_latest_pdf_v1",
     cacheTtlMs: 10 * 60 * 1000,
   };
 

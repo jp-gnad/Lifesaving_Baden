@@ -1,17 +1,62 @@
-function setInitialImage(imgEl, url) {
+// 1) setInitialImage so anpassen, dass es Erfolg zurückgibt (true/false)
+function setInitialImage(imgEl, url, timeoutMs = 5000) {
   return new Promise((resolve) => {
     const pre = new Image();
+    let done = false;
+
+    const t = window.setTimeout(() => {
+      if (done) return;
+      done = true;
+      resolve(false);
+    }, timeoutMs);
+
     pre.onload = () => {
-      // Initial: sauber ohne Animation / ohne Klassenreste
+      if (done) return;
+      done = true;
+      window.clearTimeout(t);
+
+      // sauber ohne Animation / ohne Klassenreste
       imgEl.classList.remove("yr-swipe-exit", "yr-swipe-enter", "yr-swipe-active");
-      imgEl.removeAttribute("style"); // wichtig: keine Inline-Overrides
+      imgEl.removeAttribute("style");
+      // für Above-the-fold: nicht künstlich verzögern
+      imgEl.loading = "eager";
+      imgEl.decoding = "async";
+      imgEl.setAttribute("fetchpriority", "high");
+
       imgEl.src = url;
-      resolve();
+      resolve(true);
     };
-    pre.onerror = () => resolve();
+
+    pre.onerror = () => {
+      if (done) return;
+      done = true;
+      window.clearTimeout(t);
+      resolve(false);
+    };
+
     pre.src = url;
   });
 }
+
+// optional: Browser ruhig arbeiten lassen (statt UI zu blocken)
+function idleYield() {
+  return new Promise((r) => {
+    if ("requestIdleCallback" in window) {
+      requestIdleCallback(() => r(), { timeout: 800 });
+    } else {
+      setTimeout(() => r(), 0);
+    }
+  });
+}
+
+// optional: in den Cache vorladen, damit spätere Swaps sofort sind
+function preloadImage(url) {
+  const img = new Image();
+  img.decoding = "async";
+  img.loading = "eager";
+  img.src = url;
+}
+
 
 
 // nominierung.js
@@ -128,9 +173,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function initYearRotators() {
   const imgs = document.querySelectorAll('img[data-year-rotator="1"]');
-  imgs.forEach((img) => startYearRotator(img));
+  if (!imgs.length) return;
+
+  const io = new IntersectionObserver(
+    (entries, obs) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        obs.unobserve(e.target);
+        startYearRotator(e.target);
+      }
+    },
+    { root: null, rootMargin: "250px 0px" } // etwas vor dem Sichtbereich starten
+  );
+
+  imgs.forEach((img) => io.observe(img));
 }
 
+// 3) Neu: erst neuestes Bild finden/anzeigen, danach Hintergrund-Scan
 async function startYearRotator(imgEl) {
   const folder = (imgEl.dataset.folder || "").trim();
   if (!folder) return;
@@ -141,26 +200,49 @@ async function startYearRotator(imgEl) {
 
   const exts = [".jpg"];
 
-  // 1) verfügbare URLs in absteigender Reihenfolge sammeln
-  const urls = [];
+  // A) Sofort: neuestes vorhandenes Bild finden (stoppt beim ersten Treffer)
+  let foundYear = null;
+  let firstUrl = null;
+
+  outer:
   for (let y = maxYear; y >= minYear; y--) {
-    const url = await firstExistingUrl(folder, y, exts);
-    if (url) urls.push(url);
+    for (const ext of exts) {
+      const url = `${folder}${y}${ext}`;
+      const ok = await setInitialImage(imgEl, url); // lädt genau dieses Bild
+      if (ok) {
+        foundYear = y;
+        firstUrl = url;
+        break outer;
+      }
+    }
+    // kleine Entlastung fürs UI (optional)
+    await idleYield();
   }
 
-  if (!urls.length) return;
+  if (!firstUrl) return;
 
-  // 2) mit höchstem Jahr starten
-  await setInitialImage(imgEl, urls[0]);
-
-  // 3) alle 10s nächst kleineres, dann wieder von oben
-  if (urls.length === 1) return;
-
+  // B) URLs-Liste beginnt mit dem neuesten Bild
+  const urls = [firstUrl];
   let idx = 0;
-  window.setInterval(async () => {
+
+  // C) Rotation läuft, macht aber erst was, wenn mehr als 1 Bild bekannt ist
+  const timer = window.setInterval(() => {
+    if (urls.length < 2) return;
     idx = (idx + 1) % urls.length;
-    await swapImage(imgEl, urls[idx]);
+    swapImage(imgEl, urls[idx]);
   }, interval);
+
+  // D) Hintergrund: ältere Jahre einsammeln (blockiert Initialanzeige nicht)
+  (async () => {
+    for (let y = foundYear - 1; y >= minYear; y--) {
+      const url = await firstExistingUrl(folder, y, exts); // nutzt deine urlExists/probeByImage
+      if (url) {
+        urls.push(url);
+        preloadImage(url); // optional: macht Swaps später schneller
+      }
+      await idleYield();
+    }
+  })();
 }
 
 function toInt(v, fallback) {

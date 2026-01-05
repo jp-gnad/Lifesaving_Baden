@@ -415,7 +415,7 @@ async function loadLatestDpPdfAndRenderCard() {
     repo: "Lifesaving_Baden",
     branch: "main",
     dirCandidates: ["nominierungsrichtlinien", "web/nominierungsrichtlinien"],
-    cacheKey: "lsb_dp_latest_pdf_v2",
+    cacheKey: "lsb_jrp_latest_pdf_v1",
     cacheTtlMs: 10 * 60 * 1000,
   };
 
