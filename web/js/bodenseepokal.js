@@ -1140,16 +1140,16 @@ function loadScript(src) {
   });
 }
 
-const DP_BADGE_FOLDER = "./png/events/";
+const BP_BADGE_FOLDER = "./png/events/";
 
 function dpBadgeUrlFromSlideImg(slideImgPath) {
   const m = String(slideImgPath).match(/(\d{4})/);
   if (!m) return null;
   const year = m[1];
-  return DP_BADGE_FOLDER + encodeURIComponent(`DP - ${year}.png`);
+  return BP_BADGE_FOLDER + encodeURIComponent(`BP - ${year}.png`);
 }
 
-const DP_FOLDER = "./png/DP-Team/";
+const DP_FOLDER = "./png/BP-Team/";
 const DP_MIN_YEAR = 2000;
 const DP_MAX_YEAR = new Date().getFullYear() + 1;
 const DP_EXTS = [".jpg"];
@@ -1161,7 +1161,7 @@ const DP_SLIDE_SETTINGS = {
       label: "Mehr Infos!",
       href: "https://baden.dlrg.de/mitmachen/rettungssport/news-detail/drei-badische-rekorde-in-warendorf-134005-n/",
     },
-    bgPos: "center 25%",
+    bgPos: "center 55%",
   },
   "2024": {
     text: "LV-Gesamtwertung: 9. Platz",
@@ -1580,7 +1580,7 @@ async function fetchLatestDpPdfFromGitHub(cfg) {
 
   if (!items) throw new Error("no_dir");
 
-  const re = /^bodenseepokal\s*(?:-|–)?\s*(19\d{2}|20\d{2})\.pdf$/i;
+  const re = /^bodensee pokal\s*(?:-|–)?\s*(19\d{2}|20\d{2})\.pdf$/i;
 
   let best = null;
   for (const it of items) {
