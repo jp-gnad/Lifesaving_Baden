@@ -371,7 +371,7 @@ function loadConfigsFromWorkbook(wb) {
     const ref = String(getCell(r, idxMap.get("referenz") ?? -1) ?? "").trim();
     const refYear = parseYearExpr(getCell(r, idxMap.get("referenz jahr") ?? -1), SEASON_YEAR);
 
-    const minPoints = parseFloatMaybe(getCell(r, idxMap.get("minderst punktzahl") ?? -1), 0);
+    const minPoints = parseFloatMaybe(getCell(r, idxMap.get("mindest punktzahl") ?? -1), 0);
 
     const rule3 = parseBoolDE(getCell(r, idxMap.get("3-kampf regel") ?? -1), true);
     
@@ -400,6 +400,7 @@ function loadConfigsFromWorkbook(wb) {
       REFERENZ: ref,
       REF_YEAR: refYear,
       MIN_POINTS: minPoints,
+      MIN_DISCIPLINES: minDisciplines,
       DP_3KAMPF_RULE: rule3,
       NOMINIERTEN_ANZAHL: nNom,
       NACHRUECKER_ANZAHL: nNach,
@@ -662,10 +663,6 @@ function buildAthletesForConfig(rows, cfg) {
       }
     }
 
-    const startedCount = DISCIPLINES.reduce((c, dis) => c + (a.best?.[dis.key] ? 1 : 0), 0);
-    if (startedCount < minNeeded) continue;
-
-
     let inQualiWindow = true;
     if (cfg.DATE_FROM || cfg.DATE_TO) {
       if (!rowDate) {
@@ -709,6 +706,10 @@ function buildAthletesForConfig(rows, cfg) {
 
   for (const a of byKey.values()) {
     if (cfg.LAST_COMP_FROM && !a.lastCompOk) continue;
+    
+    const startedCount = DISCIPLINES.reduce((c, dis) => c + (a.best?.[dis.key] ? 1 : 0), 0);
+    if (startedCount < minNeeded) continue;
+
 
     const wr = WR_OPEN[a.gender];
     let nonZeroCount = 0;
