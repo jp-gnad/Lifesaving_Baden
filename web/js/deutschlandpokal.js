@@ -1224,7 +1224,7 @@ const DP_SLIDE_SETTINGS = {
   "2013": {
     text: "LV-Gesamtwertung: 5. Platz",
     cta: { label: "Mehr Infos!", href: "https://sachsen-anhalt.dlrg.de/rettungssport/deutschlandpokal/dp-2013/" },
-    bgPos: "center 40%",
+    bgPos: "center 20%",
   },
   "2011": {
     text: "LV-Gesamtwertung: 7. Platz",
