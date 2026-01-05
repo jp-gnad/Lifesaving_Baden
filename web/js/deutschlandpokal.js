@@ -328,6 +328,7 @@ function loadConfigsFromWorkbook(wb) {
     "referenz",
     "referenz jahr",
     "mindest punktzahl",
+    "mindest disziplinen",
     "3-kampf regel",
     "anzahl nominierte",
     "anzahl nachruecker",
@@ -373,6 +374,8 @@ function loadConfigsFromWorkbook(wb) {
     const minPoints = parseFloatMaybe(getCell(r, idxMap.get("minderst punktzahl") ?? -1), 0);
 
     const rule3 = parseBoolDE(getCell(r, idxMap.get("3-kampf regel") ?? -1), true);
+    
+    const minDisciplines = parseIntMaybe(getCell(r, idxMap.get("mindest disziplinen") ?? -1), 0);
 
     const nNom = parseIntMaybe(getCell(r, idxMap.get("anzahl nominierte") ?? -1), 0);
     const nNach = parseIntMaybe(getCell(r, idxMap.get("anzahl nachruecker") ?? -1), 0);
@@ -428,6 +431,7 @@ function logDpConfigs(cfgs) {
       REFERENZ: c.REFERENZ,
       REF_YEAR: c.REF_YEAR,
       MIN_POINTS: c.MIN_POINTS,
+      MIN_DISCIPLINES: c.MIN_DISCIPLINES,
       DP_3KAMPF_RULE: c.DP_3KAMPF_RULE,
       NOMINIERTEN_ANZAHL: c.NOMINIERTEN_ANZAHL,
       NACHRUECKER_ANZAHL: c.NACHRUECKER_ANZAHL,
@@ -556,8 +560,12 @@ function buildAthletesForConfig(rows, cfg) {
   const startIdx = maybeHeader.includes("gender") || maybeHeader.includes("geschlecht") ? 1 : 0;
 
   const byKey = new Map();
-  const topCount = Math.max(1, Math.min(cfg.KAMPF || 4, DISCIPLINES.length));
-  const minNeeded = Math.max(1, Math.min(topCount, DISCIPLINES.length));
+  const discLen = DISCIPLINES.length;
+  const topCount = Math.max(1, Math.min(cfg.KAMPF || 4, discLen));
+  const minNeeded = Math.max(
+    1,
+    Math.min(discLen, Number.isFinite(cfg.MIN_DISCIPLINES) && cfg.MIN_DISCIPLINES > 0 ? cfg.MIN_DISCIPLINES : topCount)
+  );
 
   for (let i = startIdx; i < rows.length; i++) {
     const r = rows[i];
@@ -654,6 +662,10 @@ function buildAthletesForConfig(rows, cfg) {
       }
     }
 
+    const startedCount = DISCIPLINES.reduce((c, dis) => c + (a.best?.[dis.key] ? 1 : 0), 0);
+    if (startedCount < minNeeded) continue;
+
+
     let inQualiWindow = true;
     if (cfg.DATE_FROM || cfg.DATE_TO) {
       if (!rowDate) {
@@ -721,8 +733,6 @@ function buildAthletesForConfig(rows, cfg) {
       a.points[dis.key] = pts2;
       if (pts2 > 0) nonZeroCount++;
     }
-
-    if (nonZeroCount < minNeeded) continue;
 
     const ptsArr = DISCIPLINES.map(d => ({ key: d.key, v: a.points[d.key] || 0 }));
     ptsArr.sort((x, y) => y.v - x.v);
