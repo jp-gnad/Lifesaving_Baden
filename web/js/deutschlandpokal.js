@@ -407,6 +407,40 @@ function loadConfigsFromWorkbook(wb) {
   return out;
 }
 
+function logDpConfigs(cfgs) {
+  console.groupCollapsed(`DP_konfig: ${cfgs.length} Konfiguration(en)`);
+  cfgs.forEach((c, i) => {
+    const title = `#${i + 1} ${c.TABELLEN_NAME || "(ohne Name)"} | G=${c.GENDER || "-"} | ${c.AGE_MIN}-${c.AGE_MAX} | ${c.KAMPF}-Kampf`;
+    console.groupCollapsed(title);
+    console.table([{
+      TABELLEN_NAME: c.TABELLEN_NAME,
+      GENDER: c.GENDER,
+      AGE_MIN: c.AGE_MIN,
+      AGE_MAX: c.AGE_MAX,
+      DATE_FROM: c.DATE_FROM,
+      DATE_TO: c.DATE_TO,
+      LAST_COMP_FROM: c.LAST_COMP_FROM,
+      KAMPF: c.KAMPF,
+      LANDESVERBAND: c.LANDESVERBAND,
+      OMS_ALLOWED: c.OMS_ALLOWED,
+      POOL: c.POOL,
+      REGELWERK: c.REGELWERK,
+      REFERENZ: c.REFERENZ,
+      REF_YEAR: c.REF_YEAR,
+      MIN_POINTS: c.MIN_POINTS,
+      DP_3KAMPF_RULE: c.DP_3KAMPF_RULE,
+      NOMINIERTEN_ANZAHL: c.NOMINIERTEN_ANZAHL,
+      NACHRUECKER_ANZAHL: c.NACHRUECKER_ANZAHL,
+      PAGE_SIZE: c.PAGE_SIZE,
+      ABSAGEN: Array.isArray(c.ABSAGEN) ? c.ABSAGEN.join(", ") : "",
+    }]);
+    console.log("RAW_CFG_OBJ:", c);
+    console.groupEnd();
+  });
+  console.groupEnd();
+}
+
+
 function detectAthleteSheetName(wb) {
   const names = wb.SheetNames || [];
   const preferred = ["Tabelle2", "Tabelle1", "DP_Daten", "DP Daten", "DP-Data", "DP Data", "Daten", "Data", "Nominierung", "Nominierungsliste"];
@@ -963,6 +997,7 @@ async function loadNominierungslisteFromExcel() {
     mount.innerHTML = `<p class="info-status info-error">Keine Konfigurationen in "${CONFIG_SHEET}" gefunden.</p>`;
     return;
   }
+  logDpConfigs(cfgs);
 
   const dataRes = await fetch(DATA_EXCEL_URL, { cache: "no-store" });
   if (!dataRes.ok) throw new Error(`Daten-Excel konnte nicht geladen werden (${dataRes.status})`);
@@ -983,6 +1018,7 @@ async function loadNominierungslisteFromExcel() {
 
   NOM_TABLES = cfgs.map(cfg => {
     const athletes = buildAthletesForConfig(dataRows, cfg);
+    console.log(`TABLE "${cfg.TABELLEN_NAME}" -> athletes=${athletes.length}`);
     const sorted = sortWithAbsagenLast(athletes);
     assignActiveRanks(sorted);
     const pageSize = Math.max(1, cfg.PAGE_SIZE || 10);
