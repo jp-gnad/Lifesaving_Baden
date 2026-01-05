@@ -107,7 +107,15 @@ const DP_SLIDE_SETTINGS = {
       label: "Mehr Infos!",
       href: "https://www.facebook.com/photo/?fbid=283788841660256&set=pb.100066777226581.-2207520000&locale=de_DE",
     },
-    bgPos: "center 60%",
+    bgPos: "center 55%",
+  },
+  "2007": {
+    text: "LV-Gesamtwertung: 7. Platz",
+    cta: {
+      label: "Mehr Infos!",
+      href: "https://www.dlrg.de/fileadmin/user_upload/DLRG.de/Fuer-Mitglieder/Verbandskommunikation/Lebensretter/Lebensretter_2007/LR3-07_west.pdf",
+    },
+    bgPos: "center 40%",
   },
 };
 
