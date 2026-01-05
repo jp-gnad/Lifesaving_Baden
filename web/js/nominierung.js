@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
       },
     },
     {
-      href: "#Bodensee Pokal",
+      href: "./bodenseepokal.html",
       kicker: "Bodensee Pokal (BP)",
       main: "Nominierungsrichtlinien & Liste",
       more: "Du möchtest einemal teil der Badischen Auswahlmannschaft für den Bodensee Pokal sein? Versuche die Kriterien zu erfüllen und dich in der Liste hoch zu schwimmen!",
