@@ -1033,6 +1033,16 @@ function renderCompactTablePaged(fullList, cfg, page, pageSize) {
 }
 
 function renderPager(tableId, page, maxPage, standText) {
+  const showControls = maxPage > 1;
+
+  if (!showControls) {
+    return `
+      <div class="nom-pager" role="navigation" aria-label="Seitenwahl ${escapeHtml(tableId)}">
+        <div class="nom-stand">${escapeHtml(standText || "")}</div>
+      </div>
+    `;
+  }
+
   const prevDisabled = page <= 1 ? "disabled" : "";
   const nextDisabled = page >= maxPage ? "disabled" : "";
   const items = getPagerItems(page, maxPage);
@@ -1072,6 +1082,7 @@ function renderPager(tableId, page, maxPage, standText) {
     </div>
   `;
 }
+
 
 function computeStandTextFromRows(rows) {
   if (!Array.isArray(rows) || rows.length === 0) return "";
@@ -1228,14 +1239,16 @@ function renderAllNomTables() {
   if (!NOM_MOUNT) return;
 
   const panels = NOM_TABLES.map(t => {
+    const list = Array.isArray(t.data) ? t.data : [];
+
     const pageSize = Math.max(1, t.cfg.PAGE_SIZE || 10);
-    t.maxPage = getMaxPage(t.data, pageSize);
-    t.page = Math.min(t.page, t.maxPage);
+    t.maxPage = getMaxPage(list, pageSize); // ergibt bei 0 Einträgen: 1
+    t.page = Math.min(Math.max(1, t.page), t.maxPage);
 
     return `
       <section class="nom-panel">
         <h3>${escapeHtml(t.cfg.TABELLEN_NAME || "")}</h3>
-        ${renderCompactTablePaged(t.data, t.cfg, t.page, pageSize)}
+        ${renderCompactTablePaged(list, t.cfg, t.page, pageSize)}
         ${renderPager(t.id, t.page, t.maxPage, NOM_STAND_TEXT)}
       </section>
     `;
@@ -1243,6 +1256,8 @@ function renderAllNomTables() {
 
   NOM_MOUNT.innerHTML = `<div class="nom-grid">${panels}</div>`;
 }
+
+
 
 async function ensureXlsxLoaded() {
   if (window.XLSX) return;
