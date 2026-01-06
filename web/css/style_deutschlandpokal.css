@@ -718,3 +718,14 @@ tr.athlete-row.nachruecker[aria-expanded="true"] td{
 tr.athlete-row:not(.nominiert):not(.nachruecker):not(.absage-row)[aria-expanded="true"] td{
   background: rgba(0, 0, 0, 0.03);
 }
+
+.athlete-details__inner{
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 260ms ease, opacity 220ms ease;
+}
+
+tr.athlete-details.is-open .athlete-details__inner{
+  opacity: 1;
+}

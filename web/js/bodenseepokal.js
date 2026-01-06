@@ -860,11 +860,14 @@ function renderAthleteRow(a, cfg) {
       </td>
       <td class="col-total ${a.absage ? "absage-cell" : ""}">${escapeHtml(totalText)}</td>
     </tr>
-    <tr class="athlete-details" hidden>
+    <tr class="athlete-details">
       <td colspan="3">
-        ${detailsHtml}
+        <div class="athlete-details__inner">
+          ${detailsHtml}
+        </div>
       </td>
     </tr>
+
   `;
 }
 
@@ -1053,14 +1056,35 @@ async function loadNominierungslisteFromExcel() {
       const details = row.nextElementSibling;
       if (!details || !details.classList.contains("athlete-details")) return;
 
-      const isHidden = details.hasAttribute("hidden");
-      if (isHidden) {
-        details.removeAttribute("hidden");
+      const inner = details.querySelector(".athlete-details__inner");
+      if (!inner) return;
+
+      const isOpen = details.classList.contains("is-open");
+
+      if (!isOpen) {
+        details.classList.add("is-open");
         row.setAttribute("aria-expanded", "true");
+
+        inner.style.maxHeight = "0px";
+        requestAnimationFrame(() => {
+          inner.style.maxHeight = inner.scrollHeight + "px";
+        });
       } else {
-        details.setAttribute("hidden", "");
         row.setAttribute("aria-expanded", "false");
+
+        inner.style.maxHeight = inner.scrollHeight + "px";
+        requestAnimationFrame(() => {
+          inner.style.maxHeight = "0px";
+        });
+
+        const onEnd = (e) => {
+          if (e.propertyName !== "max-height") return;
+          details.classList.remove("is-open");
+          inner.removeEventListener("transitionend", onEnd);
+        };
+        inner.addEventListener("transitionend", onEnd);
       }
+
     });
   }
 }
