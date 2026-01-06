@@ -1,6 +1,6 @@
 const CONFIG_EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx";
 const CONFIG_SHEET = "BP";
-const CONFIG_TABLE_NAME = "DP_konfig";
+const CONFIG_TABLE_NAME = "BP_konfig";
 
 const DATA_EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test%20(1).xlsx";
 const DATA_SHEET = "Tabelle2";
@@ -134,6 +134,22 @@ function calcPointsFromRatio(ratio) {
 
 function normalizeTimeCell(v) {
   if (v === null || v === undefined) return "";
+
+  if (v instanceof Date && !Number.isNaN(v.getTime())) {
+    const sec =
+      v.getUTCHours() * 3600 +
+      v.getUTCMinutes() * 60 +
+      v.getUTCSeconds() +
+      v.getUTCMilliseconds() / 1000;
+
+    if (sec > 0 && sec < 24 * 3600) {
+      const mm = Math.floor(sec / 60);
+      const ss = sec - mm * 60;
+      const sTxt = ss.toFixed(2).replace(".", ",").padStart(5, "0");
+      return `${mm}:${sTxt}`;
+    }
+  }
+
   if (typeof v === "number" && v > 0 && v < 1) {
     const sec = v * 24 * 3600;
     const mm = Math.floor(sec / 60);
@@ -141,8 +157,10 @@ function normalizeTimeCell(v) {
     const sTxt = ss.toFixed(2).replace(".", ",").padStart(5, "0");
     return `${mm}:${sTxt}`;
   }
+
   return String(v).trim();
 }
+
 
 function parseExcelDate(v) {
   if (!v) return null;
@@ -303,6 +321,134 @@ function buildHeaderIndexMap(headerRow) {
   return map;
 }
 
+function findWrHeaderRowIndex(rows) {
+  const required = [
+    "50m retten",
+    "100m retten",
+    "100m kombi",
+    "100m lifesaver",
+    "200m superlifesaver",
+    "200m hindernis",
+    "50m retten2",
+    "100m retten2",
+    "100m kombi2",
+    "100m lifesaver2",
+    "200m superlifesaver2",
+    "200m hindernis2",
+  ];
+
+  for (let i = 0; i < Math.min(rows.length, 60); i++) {
+    const r = rows[i] || [];
+    const keys = r.map(normalizeHeaderKey);
+    const hasAll = required.every(k => keys.includes(k));
+    const hasFirst = keys.includes("wr-open") || keys.includes("wr-youth");
+    if (hasAll && hasFirst) return i;
+  }
+  return -1;
+}
+
+function toYearNumber(v) {
+  const s = String(v ?? "").trim();
+  if (!s) return NaN;
+  const n = Number(s);
+  return Number.isFinite(n) ? Math.trunc(n) : NaN;
+}
+
+function findBestYearRow(rows, yearCol, targetYear, startIdx) {
+  let bestBelow = null; // max <= targetYear
+  let bestAbove = null; // min >= targetYear
+
+  for (let i = startIdx; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r) continue;
+
+    const y = toYearNumber(r[yearCol]);
+    if (!Number.isFinite(y)) continue;
+
+    if (y === targetYear) return { row: r, foundYear: y, mode: "exact" };
+    if (y < targetYear) {
+      if (!bestBelow || y > bestBelow.foundYear) bestBelow = { row: r, foundYear: y, mode: "below" };
+    } else {
+      if (!bestAbove || y < bestAbove.foundYear) bestAbove = { row: r, foundYear: y, mode: "above" };
+    }
+  }
+
+  return bestBelow || bestAbove || null;
+}
+
+function readWrTimesFromConfigWorkbook(cfgWb, refName, refYear) {
+  const sheetName = normalizeReferenceName(refName);
+  const ws = cfgWb.Sheets[sheetName];
+  if (!ws) return null;
+
+  const rows = window.XLSX.utils.sheet_to_json(ws, {
+    header: 1,
+    raw: true,
+    defval: "",
+    blankrows: false,
+  });
+
+  const headerIdx = findWrHeaderRowIndex(rows);
+  if (headerIdx < 0) return null;
+
+  const headerRow = rows[headerIdx] || [];
+  const idxMap = buildHeaderIndexMap(headerRow);
+
+  const yearCol =
+    idxMap.get("wr-open") ??
+    idxMap.get("wr-youth") ??
+    0;
+
+  const pick = findBestYearRow(rows, yearCol, refYear, headerIdx + 1);
+  if (!pick) return null;
+
+  const r = pick.row;
+
+  const getTimeObj = (colKey) => {
+    const col = idxMap.get(colKey);
+    if (col === undefined) return { text: "", sec: 0 };
+    const t = normalizeTimeCell(r[col]);
+    const sec = timeToSeconds(t);
+    return { text: t, sec: Number.isFinite(sec) ? sec : 0 };
+  };
+
+  // Ergebnisstruktur exakt wie bisher WR_OPEN:
+  return {
+    foundYear: pick.foundYear,
+    mode: pick.mode,
+    w: {
+      retten50: getTimeObj("50m retten"),
+      retten100: getTimeObj("100m retten"),
+      kombi100: getTimeObj("100m kombi"),
+      lifesaver100: getTimeObj("100m lifesaver"),
+      super200: getTimeObj("200m superlifesaver"),
+      hindernis200: getTimeObj("200m hindernis"),
+    },
+    m: {
+      retten50: getTimeObj("50m retten2"),
+      retten100: getTimeObj("100m retten2"),
+      kombi100: getTimeObj("100m kombi2"),
+      lifesaver100: getTimeObj("100m lifesaver2"),
+      super200: getTimeObj("200m superlifesaver2"),
+      hindernis200: getTimeObj("200m hindernis2"),
+    },
+  };
+}
+
+function attachReferenceTimesToConfigs(cfgs, cfgWb) {
+  for (const cfg of cfgs) {
+    const refName = cfg.REFERENZ || "WR-Open";
+    const refYear = Number.isFinite(cfg.REF_YEAR) ? cfg.REF_YEAR : SEASON_YEAR;
+
+    const wr = readWrTimesFromConfigWorkbook(cfgWb, refName, refYear);
+
+    // Fallback bleibt möglich, aber Standard ist jetzt Excel
+    cfg.REF_WR = wr ? { w: wr.w, m: wr.m } : null;
+    cfg.REF_WR_INFO = wr ? { refName: normalizeReferenceName(refName), requestedYear: refYear, foundYear: wr.foundYear, mode: wr.mode } : null;
+  }
+}
+
+
 function getCell(row, idx) {
   if (!row) return "";
   return idx >= 0 ? row[idx] : "";
@@ -368,7 +514,7 @@ function loadConfigsFromWorkbook(wb) {
     const pool = String(getCell(r, idxMap.get("pool-laenge") ?? -1) ?? "").trim();
     const regelwerk = String(getCell(r, idxMap.get("regelwerk") ?? -1) ?? "").trim();
 
-    const ref = String(getCell(r, idxMap.get("referenz") ?? -1) ?? "").trim();
+    const ref = normalizeReferenceName(getCell(r, idxMap.get("referenz") ?? -1)) || "WR-Open";
     const refYear = parseYearExpr(getCell(r, idxMap.get("referenz jahr") ?? -1), SEASON_YEAR);
 
     const minPoints = parseFloatMaybe(getCell(r, idxMap.get("mindest punktzahl") ?? -1), 0);
@@ -682,7 +828,8 @@ function buildAthletesForConfig(rows, cfg) {
     if (startedCount < minNeeded) continue;
 
 
-    const wr = WR_OPEN[a.gender];
+    const wrMap = (cfg && cfg.REF_WR) ? cfg.REF_WR : WR_OPEN;
+    const wr = wrMap[a.gender] || WR_OPEN[a.gender];
     let nonZeroCount = 0;
 
     for (const dis of DISCIPLINES) {
@@ -975,13 +1122,15 @@ async function loadNominierungslisteFromExcel() {
 
   const cfgRes = await fetch(CONFIG_EXCEL_URL, { cache: "no-store" });
   if (!cfgRes.ok) throw new Error(`Konfig-Excel konnte nicht geladen werden (${cfgRes.status})`);
-  const cfgWb = window.XLSX.read(await cfgRes.arrayBuffer(), { type: "array", cellDates: true });
+  const cfgWb = window.XLSX.read(await cfgRes.arrayBuffer(), { type: "array" });
 
   const cfgs = loadConfigsFromWorkbook(cfgWb);
   if (!cfgs.length) {
     mount.innerHTML = `<p class="info-status info-error">Keine Konfigurationen in "${CONFIG_SHEET}" gefunden.</p>`;
     return;
   }
+
+  attachReferenceTimesToConfigs(cfgs, cfgWb);
 
   const dataRes = await fetch(DATA_EXCEL_URL, { cache: "no-store" });
   if (!dataRes.ok) throw new Error(`Daten-Excel konnte nicht geladen werden (${dataRes.status})`);
@@ -1097,9 +1246,12 @@ function renderAllNomTables() {
     t.maxPage = getMaxPage(t.data, pageSize);
     t.page = Math.min(t.page, t.maxPage);
 
+    const info = t.cfg.REF_WR_INFO;
+    const refLine = info ? ` (${info.refName} ${info.requestedYear} → ${info.foundYear})` : "";
+
     return `
       <section class="nom-panel">
-        <h3>${escapeHtml(t.cfg.TABELLEN_NAME || "")}</h3>
+        <h3>${escapeHtml(t.cfg.TABELLEN_NAME || "")}${escapeHtml(refLine)}</h3>
         ${renderCompactTablePaged(t.data, t.cfg, t.page, pageSize)}
         ${renderPager(t.id, t.page, t.maxPage, NOM_STAND_TEXT)}
       </section>
@@ -1109,11 +1261,20 @@ function renderAllNomTables() {
   NOM_MOUNT.innerHTML = `<div class="nom-grid">${panels}</div>`;
 }
 
+
 async function ensureXlsxLoaded() {
   if (window.XLSX) return;
   const CDN = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
   await loadScript(CDN);
   if (!window.XLSX) throw new Error("XLSX (SheetJS) konnte nicht initialisiert werden");
+}
+
+function normalizeReferenceName(v) {
+  const s = String(v ?? "").trim().toLowerCase();
+  if (!s) return "";
+  if (s === "wr-open" || s === "wr open" || s === "wropen") return "WR-Open";
+  if (s === "wr-youth" || s === "wr youth" || s === "wryouth") return "WR-Youth";
+  return String(v).trim(); // fallback: as-is
 }
 
 function loadScript(src) {

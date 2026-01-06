@@ -106,6 +106,15 @@ document.addEventListener("DOMContentLoaded", () => {
         intervalMs: 15000
       },
     },
+    {
+      href: "./dem.html",
+      kicker: "Deutsche Einzelstrecken Meisterschaften (DEM)",
+      main: "Erreichte Pflichtzeiten in Baden",
+      more: "Die DEM gehören zu den höchsten und wichtigsten Wettkämpfen im Rettungssport. Teilnahmeberechtigt sind nur die besten Schwimmer deutschlands.",
+      aria: "Deutsche Einzelstrecken Meisterschaften",
+
+      img: "./png/hintergrund9.jpg",
+    },
   ];
 
   main.innerHTML = `

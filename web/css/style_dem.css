@@ -1,0 +1,37 @@
+
+/* Seiteninhalt Startseite */
+main#content {
+  margin: 0 auto;
+}
+
+.hero {
+  position: relative;
+  background: url("../png/hintergrund9.jpg") center/cover no-repeat;  background-position: center 40%;
+  height: 300px;
+  text-align: center;
+  padding-top: 125px;
+  color: white;
+}
+.hero::before{
+  content: "";
+  position: absolute;
+  inset: 0;                  /* über die ganze Fläche */
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.257), rgba(0, 0, 0, 0.825));
+  pointer-events: none;      /* klicks gehen durch */
+}
+
+.hero h1 {
+  position: relative;
+  font-size: 2.75em;
+  z-index: 1;
+}
+
+.updates h2 {
+  margin-top: 1.5rem;
+}
+
+
+@media (max-width:720px){
+  .hero h1 {font-size: 2.0em; }
+  .hero {height: 200px; padding-top: 80px;}
+}
