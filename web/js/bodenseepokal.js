@@ -45,25 +45,6 @@ function timeToSeconds(text) {
   return NaN;
 }
 
-const WR_OPEN = {
-  w: {
-    retten50: { text: "0:31,48", sec: timeToSeconds("0:31,48") },
-    retten100: { text: "0:49,30", sec: timeToSeconds("0:49,30") },
-    kombi100: { text: "1:03,69", sec: timeToSeconds("1:03,69") },
-    lifesaver100: { text: "0:54,20", sec: timeToSeconds("0:54,20") },
-    super200: { text: "2:16,07", sec: timeToSeconds("2:16,07") },
-    hindernis200: { text: "2:01,88", sec: timeToSeconds("2:01,88") },
-  },
-  m: {
-    retten50: { text: "0:27,20", sec: timeToSeconds("0:27,20") },
-    retten100: { text: "0:43,29", sec: timeToSeconds("0:43,29") },
-    kombi100: { text: "0:57,44", sec: timeToSeconds("0:57,44") },
-    lifesaver100: { text: "0:47,68", sec: timeToSeconds("0:47,68") },
-    super200: { text: "2:02,98", sec: timeToSeconds("2:02,98") },
-    hindernis200: { text: "1:51,73", sec: timeToSeconds("1:51,73") },
-  },
-};
-
 let COLS = { ...COLS_DEFAULT };
 
 let DISCIPLINES = [
@@ -828,8 +809,9 @@ function buildAthletesForConfig(rows, cfg) {
     if (startedCount < minNeeded) continue;
 
 
-    const wrMap = (cfg && cfg.REF_WR) ? cfg.REF_WR : WR_OPEN;
-    const wr = wrMap[a.gender] || WR_OPEN[a.gender];
+    const wrMap = cfg?.REF_WR;
+    if (!wrMap) return [];
+    const wr = wrMap[a.gender];
     let nonZeroCount = 0;
 
     for (const dis of DISCIPLINES) {
@@ -1246,12 +1228,9 @@ function renderAllNomTables() {
     t.maxPage = getMaxPage(t.data, pageSize);
     t.page = Math.min(t.page, t.maxPage);
 
-    const info = t.cfg.REF_WR_INFO;
-    const refLine = info ? ` (${info.refName} ${info.requestedYear} → ${info.foundYear})` : "";
-
     return `
       <section class="nom-panel">
-        <h3>${escapeHtml(t.cfg.TABELLEN_NAME || "")}${escapeHtml(refLine)}</h3>
+        <h3>${escapeHtml(t.cfg.TABELLEN_NAME || "")}</h3>
         ${renderCompactTablePaged(t.data, t.cfg, t.page, pageSize)}
         ${renderPager(t.id, t.page, t.maxPage, NOM_STAND_TEXT)}
       </section>
