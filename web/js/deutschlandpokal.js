@@ -45,25 +45,6 @@ function timeToSeconds(text) {
   return NaN;
 }
 
-const WR_OPEN = {
-  w: {
-    retten50: { text: "0:31,48", sec: timeToSeconds("0:31,48") },
-    retten100: { text: "0:49,30", sec: timeToSeconds("0:49,30") },
-    kombi100: { text: "1:03,69", sec: timeToSeconds("1:03,69") },
-    lifesaver100: { text: "0:54,20", sec: timeToSeconds("0:54,20") },
-    super200: { text: "2:16,07", sec: timeToSeconds("2:16,07") },
-    hindernis200: { text: "2:01,88", sec: timeToSeconds("2:01,88") },
-  },
-  m: {
-    retten50: { text: "0:27,20", sec: timeToSeconds("0:27,20") },
-    retten100: { text: "0:43,29", sec: timeToSeconds("0:43,29") },
-    kombi100: { text: "0:57,44", sec: timeToSeconds("0:57,44") },
-    lifesaver100: { text: "0:47,68", sec: timeToSeconds("0:47,68") },
-    super200: { text: "2:02,98", sec: timeToSeconds("2:02,98") },
-    hindernis200: { text: "1:51,73", sec: timeToSeconds("1:51,73") },
-  },
-};
-
 let COLS = { ...COLS_DEFAULT };
 
 let DISCIPLINES = [
@@ -134,6 +115,22 @@ function calcPointsFromRatio(ratio) {
 
 function normalizeTimeCell(v) {
   if (v === null || v === undefined) return "";
+
+  if (v instanceof Date && !Number.isNaN(v.getTime())) {
+    const sec =
+      v.getUTCHours() * 3600 +
+      v.getUTCMinutes() * 60 +
+      v.getUTCSeconds() +
+      v.getUTCMilliseconds() / 1000;
+
+    if (sec > 0 && sec < 24 * 3600) {
+      const mm = Math.floor(sec / 60);
+      const ss = sec - mm * 60;
+      const sTxt = ss.toFixed(2).replace(".", ",").padStart(5, "0");
+      return `${mm}:${sTxt}`;
+    }
+  }
+
   if (typeof v === "number" && v > 0 && v < 1) {
     const sec = v * 24 * 3600;
     const mm = Math.floor(sec / 60);
@@ -141,8 +138,10 @@ function normalizeTimeCell(v) {
     const sTxt = ss.toFixed(2).replace(".", ",").padStart(5, "0");
     return `${mm}:${sTxt}`;
   }
+
   return String(v).trim();
 }
+
 
 function parseExcelDate(v) {
   if (!v) return null;
@@ -303,6 +302,132 @@ function buildHeaderIndexMap(headerRow) {
   return map;
 }
 
+function findWrHeaderRowIndex(rows) {
+  const required = [
+    "50m retten",
+    "100m retten",
+    "100m kombi",
+    "100m lifesaver",
+    "200m superlifesaver",
+    "200m hindernis",
+    "50m retten2",
+    "100m retten2",
+    "100m kombi2",
+    "100m lifesaver2",
+    "200m superlifesaver2",
+    "200m hindernis2",
+  ];
+
+  for (let i = 0; i < Math.min(rows.length, 60); i++) {
+    const r = rows[i] || [];
+    const keys = r.map(normalizeHeaderKey);
+    const hasAll = required.every(k => keys.includes(k));
+    const hasFirst = keys.includes("wr-open") || keys.includes("wr-youth");
+    if (hasAll && hasFirst) return i;
+  }
+  return -1;
+}
+
+function toYearNumber(v) {
+  const s = String(v ?? "").trim();
+  if (!s) return NaN;
+  const n = Number(s);
+  return Number.isFinite(n) ? Math.trunc(n) : NaN;
+}
+
+function findBestYearRow(rows, yearCol, targetYear, startIdx) {
+  let bestBelow = null; // max <= targetYear
+  let bestAbove = null; // min >= targetYear
+
+  for (let i = startIdx; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r) continue;
+
+    const y = toYearNumber(r[yearCol]);
+    if (!Number.isFinite(y)) continue;
+
+    if (y === targetYear) return { row: r, foundYear: y, mode: "exact" };
+    if (y < targetYear) {
+      if (!bestBelow || y > bestBelow.foundYear) bestBelow = { row: r, foundYear: y, mode: "below" };
+    } else {
+      if (!bestAbove || y < bestAbove.foundYear) bestAbove = { row: r, foundYear: y, mode: "above" };
+    }
+  }
+
+  return bestBelow || bestAbove || null;
+}
+
+function readWrTimesFromConfigWorkbook(cfgWb, refName, refYear) {
+  const sheetName = normalizeReferenceName(refName);
+  const ws = cfgWb.Sheets[sheetName];
+  if (!ws) return null;
+
+  const rows = window.XLSX.utils.sheet_to_json(ws, {
+    header: 1,
+    raw: true,
+    defval: "",
+    blankrows: false,
+  });
+
+  const headerIdx = findWrHeaderRowIndex(rows);
+  if (headerIdx < 0) return null;
+
+  const headerRow = rows[headerIdx] || [];
+  const idxMap = buildHeaderIndexMap(headerRow);
+
+  const yearCol =
+    idxMap.get("wr-open") ??
+    idxMap.get("wr-youth") ??
+    0;
+
+  const pick = findBestYearRow(rows, yearCol, refYear, headerIdx + 1);
+  if (!pick) return null;
+
+  const r = pick.row;
+
+  const getTimeObj = (colKey) => {
+    const col = idxMap.get(colKey);
+    if (col === undefined) return { text: "", sec: 0 };
+    const t = normalizeTimeCell(r[col]);
+    const sec = timeToSeconds(t);
+    return { text: t, sec: Number.isFinite(sec) ? sec : 0 };
+  };
+
+  return {
+    foundYear: pick.foundYear,
+    mode: pick.mode,
+    w: {
+      retten50: getTimeObj("50m retten"),
+      retten100: getTimeObj("100m retten"),
+      kombi100: getTimeObj("100m kombi"),
+      lifesaver100: getTimeObj("100m lifesaver"),
+      super200: getTimeObj("200m superlifesaver"),
+      hindernis200: getTimeObj("200m hindernis"),
+    },
+    m: {
+      retten50: getTimeObj("50m retten2"),
+      retten100: getTimeObj("100m retten2"),
+      kombi100: getTimeObj("100m kombi2"),
+      lifesaver100: getTimeObj("100m lifesaver2"),
+      super200: getTimeObj("200m superlifesaver2"),
+      hindernis200: getTimeObj("200m hindernis2"),
+    },
+  };
+}
+
+function attachReferenceTimesToConfigs(cfgs, cfgWb) {
+  for (const cfg of cfgs) {
+    const refName = cfg.REFERENZ || "WR-Open";
+    const refYear = Number.isFinite(cfg.REF_YEAR) ? cfg.REF_YEAR : SEASON_YEAR;
+
+    const wr = readWrTimesFromConfigWorkbook(cfgWb, refName, refYear);
+
+    cfg.REF_WR = wr ? { w: wr.w, m: wr.m } : null;
+    cfg.REF_WR_INFO = wr ? { refName: normalizeReferenceName(refName), requestedYear: refYear, foundYear: wr.foundYear, mode: wr.mode } : null;
+  }
+}
+
+
 function getCell(row, idx) {
   if (!row) return "";
   return idx >= 0 ? row[idx] : "";
@@ -368,7 +493,7 @@ function loadConfigsFromWorkbook(wb) {
     const pool = String(getCell(r, idxMap.get("pool-laenge") ?? -1) ?? "").trim();
     const regelwerk = String(getCell(r, idxMap.get("regelwerk") ?? -1) ?? "").trim();
 
-    const ref = String(getCell(r, idxMap.get("referenz") ?? -1) ?? "").trim();
+    const ref = normalizeReferenceName(getCell(r, idxMap.get("referenz") ?? -1)) || "WR-Open";
     const refYear = parseYearExpr(getCell(r, idxMap.get("referenz jahr") ?? -1), SEASON_YEAR);
 
     const minPoints = parseFloatMaybe(getCell(r, idxMap.get("mindest punktzahl") ?? -1), 0);
@@ -410,41 +535,6 @@ function loadConfigsFromWorkbook(wb) {
   }
   return out;
 }
-
-function logDpConfigs(cfgs) {
-  console.groupCollapsed(`DP_konfig: ${cfgs.length} Konfiguration(en)`);
-  cfgs.forEach((c, i) => {
-    const title = `#${i + 1} ${c.TABELLEN_NAME || "(ohne Name)"} | G=${c.GENDER || "-"} | ${c.AGE_MIN}-${c.AGE_MAX} | ${c.KAMPF}-Kampf`;
-    console.groupCollapsed(title);
-    console.table([{
-      TABELLEN_NAME: c.TABELLEN_NAME,
-      GENDER: c.GENDER,
-      AGE_MIN: c.AGE_MIN,
-      AGE_MAX: c.AGE_MAX,
-      DATE_FROM: c.DATE_FROM,
-      DATE_TO: c.DATE_TO,
-      LAST_COMP_FROM: c.LAST_COMP_FROM,
-      KAMPF: c.KAMPF,
-      LANDESVERBAND: c.LANDESVERBAND,
-      OMS_ALLOWED: c.OMS_ALLOWED,
-      POOL: c.POOL,
-      REGELWERK: c.REGELWERK,
-      REFERENZ: c.REFERENZ,
-      REF_YEAR: c.REF_YEAR,
-      MIN_POINTS: c.MIN_POINTS,
-      MIN_DISCIPLINES: c.MIN_DISCIPLINES,
-      DP_3KAMPF_RULE: c.DP_3KAMPF_RULE,
-      NOMINIERTEN_ANZAHL: c.NOMINIERTEN_ANZAHL,
-      NACHRUECKER_ANZAHL: c.NACHRUECKER_ANZAHL,
-      PAGE_SIZE: c.PAGE_SIZE,
-      ABSAGEN: Array.isArray(c.ABSAGEN) ? c.ABSAGEN.join(", ") : "",
-    }]);
-    console.log("RAW_CFG_OBJ:", c);
-    console.groupEnd();
-  });
-  console.groupEnd();
-}
-
 
 function detectAthleteSheetName(wb) {
   const names = wb.SheetNames || [];
@@ -716,8 +806,9 @@ function buildAthletesForConfig(rows, cfg) {
     const startedCount = DISCIPLINES.reduce((c, dis) => c + (a.best?.[dis.key] ? 1 : 0), 0);
     if (startedCount < minNeeded) continue;
 
-
-    const wr = WR_OPEN[a.gender];
+    const wrMap = cfg?.REF_WR;
+    if (!wrMap) return [];
+    const wr = wrMap[a.gender];
     let nonZeroCount = 0;
 
     for (const dis of DISCIPLINES) {
@@ -778,6 +869,15 @@ function assignActiveRanks(list) {
     }
   }
 }
+
+function normalizeReferenceName(v) {
+  const s = String(v ?? "").trim().toLowerCase();
+  if (!s) return "";
+  if (s === "wr-open" || s === "wr open" || s === "wropen") return "WR-Open";
+  if (s === "wr-youth" || s === "wr youth" || s === "wryouth") return "WR-Youth";
+  return String(v).trim();
+}
+
 
 function getMaxPage(list, pageSize) {
   const n = Array.isArray(list) ? list.length : 0;
@@ -1009,14 +1109,14 @@ async function loadNominierungslisteFromExcel() {
 
   const cfgRes = await fetch(CONFIG_EXCEL_URL, { cache: "no-store" });
   if (!cfgRes.ok) throw new Error(`Konfig-Excel konnte nicht geladen werden (${cfgRes.status})`);
-  const cfgWb = window.XLSX.read(await cfgRes.arrayBuffer(), { type: "array", cellDates: true });
+  const cfgWb = window.XLSX.read(await cfgRes.arrayBuffer(), { type: "array" });
 
   const cfgs = loadConfigsFromWorkbook(cfgWb);
   if (!cfgs.length) {
     mount.innerHTML = `<p class="info-status info-error">Keine Konfigurationen in "${CONFIG_SHEET}" gefunden.</p>`;
     return;
   }
-  logDpConfigs(cfgs);
+  attachReferenceTimesToConfigs(cfgs, cfgWb);
 
   const dataRes = await fetch(DATA_EXCEL_URL, { cache: "no-store" });
   if (!dataRes.ok) throw new Error(`Daten-Excel konnte nicht geladen werden (${dataRes.status})`);
@@ -1037,7 +1137,6 @@ async function loadNominierungslisteFromExcel() {
 
   NOM_TABLES = cfgs.map(cfg => {
     const athletes = buildAthletesForConfig(dataRows, cfg);
-    console.log(`TABLE "${cfg.TABELLEN_NAME}" -> athletes=${athletes.length}`);
     const sorted = sortWithAbsagenLast(athletes);
     assignActiveRanks(sorted);
     const pageSize = Math.max(1, cfg.PAGE_SIZE || 10);
