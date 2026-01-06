@@ -361,7 +361,7 @@ main#content {
 .nom-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 40px;
+  gap: 50px;
   align-items: start;
 }
 
