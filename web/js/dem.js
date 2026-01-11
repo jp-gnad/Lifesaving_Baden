@@ -104,6 +104,11 @@ async function renderAllFromExcel() {
   if (!wsCfg) throw new Error(`Arbeitsblatt "${CONFIG_SHEET}" nicht gefunden.`);
 
   const cfgRows = XLSX.utils.sheet_to_json(wsCfg, { header: 1, raw: true, defval: "", blankrows: false });
+  console.log("cfgRows[0..15]:", cfgRows.slice(0, 15));
+  const hi = findHeaderRowIndex(cfgRows);
+  console.log("headerIdx:", hi);
+  if (hi >= 0) console.log("headerRow:", cfgRows[hi]);
+
   PZ_CONFIGS = parseConfigsFromRows(cfgRows);
 
   if (!PZ_CONFIGS.length) {
@@ -236,11 +241,10 @@ function parseConfigsFromRows(rows) {
     for (const d of DISCIPLINES) {
       const h1 = PZ_COLS.pz1[d.key];
       const h2 = PZ_COLS.pz2[d.key];
-      const t1 = String(getCell(r, col, h1) ?? "").trim();
-      const t2 = String(getCell(r, col, h2) ?? "").trim();
-
-      pz1[d.key] = timeTextToCentiOrNull(t1);
-      pz2[d.key] = timeTextToCentiOrNull(t2);
+      const v1 = getCellRaw(r, col, h1);
+      const v2 = getCellRaw(r, col, h2);
+      pz1[d.key] = parseExcelTimeToCentiOrNull(v1);
+      pz2[d.key] = parseExcelTimeToCentiOrNull(v2);
     }
 
     const id = `cfg-${out.length + 1}-${slug(String(tableName))}-${gender}`;
@@ -867,6 +871,28 @@ function timeTextToCentiOrNull(s) {
   const t = String(s ?? "").trim();
   if (!t) return null;
   const c = timeTextToCenti(t);
+  return c > 0 ? c : null;
+}
+
+function parseExcelTimeToCentiOrNull(v) {
+  if (v === null || v === undefined || v === "") return null;
+
+  if (v instanceof Date && !isNaN(v.getTime())) {
+    const h = v.getHours();
+    const m = v.getMinutes();
+    const s = v.getSeconds();
+    const ms = v.getMilliseconds();
+    return (h * 3600 + m * 60 + s) * 100 + Math.round(ms / 10);
+  }
+
+  if (typeof v === "number" && Number.isFinite(v)) {
+    const frac = ((v % 1) + 1) % 1;
+    return Math.round(frac * 86400 * 100);
+  }
+
+  const s = String(v).trim();
+  if (!s) return null;
+  const c = timeTextToCenti(s);
   return c > 0 ? c : null;
 }
 
