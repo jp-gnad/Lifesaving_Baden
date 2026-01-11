@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           </a>
 
-          <a class="home-card" href="./rekorde.html" aria-label="Wettkämpfe und Nominierung">
+          <a class="home-card" href="./nominierung.html" aria-label="Wettkämpfe und Nominierung">
             <img class="home-card__img" src="./png/karussel/bild2.jpg" alt="" loading="lazy" decoding="async">
             <div class="home-card__overlay">
               <div class="home-card__kicker">Wettkämpfe &amp; Nominierung</div>

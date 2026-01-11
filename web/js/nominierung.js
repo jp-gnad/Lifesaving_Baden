@@ -141,7 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </a>
           </li>
           <li>
-            <a href="https://rettungssport.com/" target="_blank" rel="noopener noreferrer">
+            <a href="https://rettungssport.com/wettkaempfe/" target="_blank" rel="noopener noreferrer">
               Rettungssport.com
             </a>
           </li>
