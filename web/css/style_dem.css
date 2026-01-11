@@ -321,3 +321,62 @@ main#content{
     width: 60px;
   }
 }
+
+
+.pz-pager{
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.pz-pager__group{
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.pz-pager__btn{
+  width: 22px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: #575756;
+  font-weight: 600;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pz-pager__btn:hover{
+  background: rgba(87, 87, 86, 0.08);
+}
+
+.pz-pager__btn.is-active{
+  background: #575756;
+  color: #fff;
+}
+
+.pz-pager__btn:disabled{
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pz-pager__btn + .pz-pager__btn,
+.pz-pager__ellipsis{
+  border-left: 1px solid rgba(0, 0, 0, 0.14);
+}
+
+.pz-pager__ellipsis{
+  width: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(0, 0, 0, 0.55);
+  background: #fff;
+  border-right: 1px solid rgba(0, 0, 0, 0.14);
+}

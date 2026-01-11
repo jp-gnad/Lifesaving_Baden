@@ -1,59 +1,65 @@
-// ================================
-// Konfiguration
-// ================================
-const EXCEL_URL =
+const DATA_EXCEL_URL =
   "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test%20(1).xlsx";
-const SHEET_NAME = "Tabelle2";
+const DATA_SHEET = "Tabelle2";
 
-// 0-basierte Indizes (A=0, B=1, ...)
-const COLS = {
-  gender: 0, // A
-  name: 1, // B
-  zeit_100_lifesaver: 3, // D
-  zeit_50_retten: 4, // E
-  zeit_200_super: 5, // F
-  zeit_100_kombi: 6, // G
-  zeit_100_retten_flossen: 7, // H
-  zeit_200_hindernis: 8, // I
-  excelDatum: 9, // J
-  meet_name: 10, // K
-  yy2: 11, // L
-  ortsgruppe: 12, // M
-  landesverband: 13, // N
-  poollaenge: 21, // V
-  regelwerk: 25, // Z
+const CONFIG_EXCEL_URL =
+  "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx";
+const CONFIG_SHEET = "DEM";
+const CONFIG_TABLE_NAME = "DEM_konfig";
+
+const DATA_COLS = {
+  gender: 0,
+  name: 1,
+  zeit_100_lifesaver: 3,
+  zeit_50_retten: 4,
+  zeit_200_super: 5,
+  zeit_100_kombi: 6,
+  zeit_100_retten_flossen: 7,
+  zeit_200_hindernis: 8,
+  excelDatum: 9,
+  meet_name: 10,
+  yy2: 11,
+  ortsgruppe: 12,
+  landesverband: 13,
+  poollaenge: 21,
+  regelwerk: 22,
 };
 
-// Qualifikationszeitraum inkl. Enddatum
-const QUALI_START = new Date(2025, 0, 1); // 2025-01-01
-const QUALI_END = new Date(2026, 3, 1); // 2026-04-01 (inkl.)
-
-// Disziplinen (Reihenfolge wie bisher)
 const DISCIPLINES = [
-  { key: "tow", label: "100m Lifesaver", col: COLS.zeit_100_lifesaver },
-  { key: "carry50", label: "50m Retten", col: COLS.zeit_50_retten },
-  { key: "super", label: "200m Super-Lifesaver", col: COLS.zeit_200_super },
-  { key: "kombi", label: "100m Kombi", col: COLS.zeit_100_kombi },
-  { key: "carry100", label: "100m Retten mit Flossen", col: COLS.zeit_100_retten_flossen },
-  { key: "obstacle", label: "200m Hindernis", col: COLS.zeit_200_hindernis },
+  { key: "ret50", label: "50m Retten", dataCol: DATA_COLS.zeit_50_retten },
+  { key: "ret100", label: "100m Retten", dataCol: DATA_COLS.zeit_100_retten_flossen },
+  { key: "kombi100", label: "100m Kombi", dataCol: DATA_COLS.zeit_100_kombi },
+  { key: "life100", label: "100m Lifesaver", dataCol: DATA_COLS.zeit_100_lifesaver },
+  { key: "super200", label: "200m Super-Lifesaver", dataCol: DATA_COLS.zeit_200_super },
+  { key: "hind200", label: "200m Hindernis", dataCol: DATA_COLS.zeit_200_hindernis },
 ];
 
-// Tabellen-Sets
-const TABLES = [
-  { gender: "w", ak: "U17",  title: "U17 – Weiblich" },
-  { gender: "m", ak: "U17",  title: "U17 – Männlich" },
+const PZ_COLS = {
+  pz1: {
+    ret50: "PZ1 - 50m Retten",
+    ret100: "PZ1 - 100m Retten",
+    kombi100: "PZ1 - 100m Kombi",
+    life100: "PZ1 - 100m Lifesaver",
+    super200: "PZ1 - 200m Super-Lifesaver",
+    hind200: "PZ1 - 200m Hindernis",
+  },
+  pz2: {
+    ret50: "PZ2 - 50m Retten",
+    ret100: "PZ2 - 100m Retten",
+    kombi100: "PZ2 - 100m Kombi",
+    life100: "PZ2 - 100m Lifesaver",
+    super200: "PZ2 - 200m Super-Lifesaver",
+    hind200: "PZ2 - 200m Hindernis",
+  },
+};
 
-  { gender: "w", ak: "U19",  title: "U19 – Weiblich" },
-  { gender: "m", ak: "U19",  title: "U19 – Männlich" },
+let PZ_CONFIGS = [];
+let PZ_DATA_ROWS = [];
+let PZ_MOUNT = null;
 
-  { gender: "w", ak: "Offen", title: "Offen – Weiblich" },
-  { gender: "m", ak: "Offen", title: "Offen – Männlich" },
-];
+let PZ_PAGER_WIRED = false;
+const PZ_TABLE_STATE = new Map();
 
-
-// ================================
-// Page init
-// ================================
 document.addEventListener("DOMContentLoaded", () => {
   const main = document.getElementById("content");
   if (!main) return;
@@ -71,144 +77,366 @@ document.addEventListener("DOMContentLoaded", () => {
     </section>
   `;
 
-  renderPflichtzeitenTables6().catch((err) => {
+  PZ_MOUNT = document.getElementById("pflichtzeiten-root");
+
+  renderAllFromExcel().catch((err) => {
     console.error(err);
     const status = document.getElementById("pflichtzeiten-status");
-    if (status) status.textContent = "Fehler beim Laden/Verarbeiten der Excel-Datei.";
+    if (status) status.textContent = "Fehler beim Laden/Verarbeiten der Excel-Dateien.";
   });
 });
 
-// ================================
-// Hauptlogik
-// ================================
-async function renderPflichtzeitenTables6() {
+async function renderAllFromExcel() {
   if (typeof XLSX === "undefined") {
     throw new Error("XLSX ist nicht geladen. Bitte XLSX CDN Script einbinden.");
   }
+  if (!PZ_MOUNT) return;
 
-  const root = document.getElementById("pflichtzeiten-root");
   const status = document.getElementById("pflichtzeiten-status");
-  if (!root) return;
+  if (status) status.textContent = "Lade Konfiguration …";
 
-  const people = await loadAndProcessPeople();
+  const cfgWb = XLSX.read(await (await fetch(CONFIG_EXCEL_URL, { cache: "no-store" })).arrayBuffer(), {
+    type: "array",
+    cellDates: true,
+  });
+
+  const wsCfg = cfgWb.Sheets[CONFIG_SHEET];
+  if (!wsCfg) throw new Error(`Arbeitsblatt "${CONFIG_SHEET}" nicht gefunden.`);
+
+  const cfgRows = XLSX.utils.sheet_to_json(wsCfg, { header: 1, raw: true, defval: "", blankrows: false });
+  PZ_CONFIGS = parseConfigsFromRows(cfgRows);
+
+  if (!PZ_CONFIGS.length) {
+    if (status) status.textContent = "Keine Konfigurationen gefunden.";
+    return;
+  }
+
+  if (status) status.textContent = "Lade Daten …";
+
+  const dataWb = XLSX.read(await (await fetch(DATA_EXCEL_URL, { cache: "no-store" })).arrayBuffer(), {
+    type: "array",
+    cellDates: true,
+  });
+
+  const wsData = dataWb.Sheets[DATA_SHEET];
+  if (!wsData) throw new Error(`Arbeitsblatt "${DATA_SHEET}" nicht gefunden.`);
+
+  let rows = XLSX.utils.sheet_to_json(wsData, { header: 1, raw: true, defval: "", blankrows: false });
+  rows = rows.filter((r) => Array.isArray(r) && r.some((v) => String(v ?? "").trim() !== ""));
+
+  const g0 = normalizeGender(rows[0]?.[DATA_COLS.gender]);
+  const d0 = String(rows[0]?.[DATA_COLS.excelDatum] ?? "").toLowerCase();
+  const startIdx =
+    g0.includes("gender") || g0.includes("geschlecht") || d0.includes("datum") ? 1 : 0;
+
+  PZ_DATA_ROWS = rows.slice(startIdx);
 
   if (status) status.remove();
-  root.innerHTML = "";
-  root.classList.add("pz-grid");
 
-  for (const t of TABLES) {
-    const list = people
-      .filter((p) => p.gender === t.gender && p.altersklasse === t.ak)
-      .sort(personSort);
+  PZ_MOUNT.classList.add("pz-grid");
+  renderTablesIntoMount();
 
-    root.appendChild(buildTableBlock(t.title, list));
+  if (!PZ_PAGER_WIRED) {
+    PZ_PAGER_WIRED = true;
+
+    PZ_MOUNT.addEventListener("click", (ev) => {
+      const btn = ev.target.closest("button[data-table]");
+      if (!btn) return;
+
+      const tableId = btn.dataset.table;
+      const action = btn.dataset.action;
+      const pageAttr = btn.dataset.page;
+
+      const cfg = PZ_CONFIGS.find((x) => x.id === tableId);
+      if (!cfg) return;
+
+      const fullList = buildPeopleForConfig(PZ_DATA_ROWS, cfg).sort(personSort);
+
+      const pageSize = Math.max(1, Number(cfg.pageSize || 5));
+      const maxPage = getMaxPage(fullList, pageSize);
+
+      let page = PZ_TABLE_STATE.get(tableId) || 1;
+
+      if (action === "prev") page = clamp(page - 1, 1, maxPage);
+      else if (action === "next") page = clamp(page + 1, 1, maxPage);
+      else if (pageAttr) {
+        const p = Number(pageAttr);
+        if (Number.isFinite(p)) page = clamp(p, 1, maxPage);
+      }
+
+      PZ_TABLE_STATE.set(tableId, page);
+      renderTablesIntoMount();
+    });
   }
 }
 
-// ================================
-// Excel -> Personen aggregieren (Bestzeiten + Pflichtzeiten-Filter)
-// ================================
-async function loadAndProcessPeople() {
-  const res = await fetch(EXCEL_URL, { mode: "cors" });
-  if (!res.ok) throw new Error(`Excel Download fehlgeschlagen: ${res.status}`);
+function renderTablesIntoMount() {
+  if (!PZ_MOUNT) return;
 
-  const ab = await res.arrayBuffer();
-  const wb = XLSX.read(ab, { type: "array" });
-  const ws = wb.Sheets[SHEET_NAME];
-  if (!ws) throw new Error(`Arbeitsblatt "${SHEET_NAME}" nicht gefunden.`);
+  PZ_MOUNT.innerHTML = "";
 
-  let rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
-  rows = rows.filter((r) => Array.isArray(r) && r.some((v) => String(v ?? "").trim() !== ""));
+  const colW = document.createElement("div");
+  const colM = document.createElement("div");
 
-  // Header ggf. entfernen
-  const g0 = normalizeGender(rows[0]?.[COLS.gender]);
-  if (g0 !== "m" && g0 !== "w") rows = rows.slice(1);
+  for (const cfg of PZ_CONFIGS) {
+    const fullList = buildPeopleForConfig(PZ_DATA_ROWS, cfg).sort(personSort);
+    const block = buildTableBlock(cfg, fullList);
+    if (cfg.gender === "w") colW.appendChild(block);
+    else colM.appendChild(block);
+  }
 
-  // Key -> personRec
+  if (colW.childElementCount) PZ_MOUNT.appendChild(colW);
+  if (colM.childElementCount) PZ_MOUNT.appendChild(colM);
+
+  if (!colW.childElementCount && !colM.childElementCount) {
+    const p = document.createElement("p");
+    p.className = "pz-empty";
+    p.textContent = "Keine Einträge.";
+    PZ_MOUNT.appendChild(p);
+  }
+}
+
+function parseConfigsFromRows(rows) {
+  const headerIdx = findHeaderRowIndex(rows);
+  if (headerIdx < 0) return [];
+
+  const header = rows[headerIdx].map((x) => String(x ?? "").trim());
+  const col = buildHeaderMap(header);
+
+  const out = [];
+  for (let i = headerIdx + 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || !Array.isArray(r)) continue;
+
+    const tableName = getCell(r, col, "Tabellen Name");
+    const gender = normalizeGender(getCell(r, col, "Geschlecht"));
+    if (!tableName || (gender !== "m" && gender !== "w")) continue;
+
+    const minAge = parseIntSafe(getCell(r, col, "Mindest Alter"));
+    const maxAge = parseIntSafe(getCell(r, col, "Maximales Alter"));
+
+    const qualiStart = tryParseExcelDate(getCellRaw(r, col, "Qualizeitraum anfang"));
+    const qualiEnd = tryParseExcelDate(getCellRaw(r, col, "Qualizeitraum Ende"));
+    if (!qualiStart || !qualiEnd) continue;
+
+    const lastActive = tryParseExcelDate(getCellRaw(r, col, "Letzter Wettkampf am"));
+
+    const lv = String(getCell(r, col, "Landesverband") ?? "").trim().toUpperCase();
+    const omsRaw = String(getCell(r, col, "OMS") ?? "").trim().toLowerCase();
+    const omsFilter = omsRaw === "ja" || omsRaw === "true" || omsRaw === "1";
+
+    const poolLength = String(getCell(r, col, "Pool-Länge") ?? "").trim();
+    const rulebook = normalizeRulebook(getCell(r, col, "Regelwerk"));
+
+    const pageSize = parseIntSafe(getCell(r, col, "Seiten Anzahl"));
+    const seasonYear = qualiEnd.getFullYear();
+
+    const pz1 = {};
+    const pz2 = {};
+    for (const d of DISCIPLINES) {
+      const h1 = PZ_COLS.pz1[d.key];
+      const h2 = PZ_COLS.pz2[d.key];
+      const t1 = String(getCell(r, col, h1) ?? "").trim();
+      const t2 = String(getCell(r, col, h2) ?? "").trim();
+
+      pz1[d.key] = timeTextToCentiOrNull(t1);
+      pz2[d.key] = timeTextToCentiOrNull(t2);
+    }
+
+    const id = `cfg-${out.length + 1}-${slug(String(tableName))}-${gender}`;
+
+    out.push({
+      id,
+      title: String(tableName).trim(),
+      gender,
+      minAge: Number.isFinite(minAge) ? minAge : null,
+      maxAge: Number.isFinite(maxAge) ? maxAge : null,
+      qualiStart,
+      qualiEnd,
+      lastActive: lastActive || null,
+      lv: lv || "",
+      omsFilter,
+      poolLength,
+      rulebook,
+      pageSize: Number.isFinite(pageSize) ? pageSize : 5,
+      seasonYear,
+      pz1,
+      pz2,
+    });
+  }
+
+  return out;
+}
+
+function findHeaderRowIndex(rows) {
+  const needed = ["Tabellen Name", "Geschlecht", "Qualizeitraum anfang", "Qualizeitraum Ende"];
+  for (let i = 0; i < Math.min(rows.length, 50); i++) {
+    const r = rows[i];
+    if (!Array.isArray(r)) continue;
+    const set = new Set(r.map((x) => normHeader(x)));
+    const ok = needed.every((h) => set.has(normHeader(h)));
+    if (ok) return i;
+  }
+  return -1;
+}
+
+function buildHeaderMap(headerRow) {
+  const m = new Map();
+  for (let i = 0; i < headerRow.length; i++) {
+    const key = normHeader(headerRow[i]);
+    if (key) m.set(key, i);
+  }
+  return m;
+}
+
+function getCell(row, map, headerName) {
+  const idx = map.get(normHeader(headerName));
+  if (idx === undefined) return "";
+  return row[idx] ?? "";
+}
+
+function getCellRaw(row, map, headerName) {
+  const idx = map.get(normHeader(headerName));
+  if (idx === undefined) return null;
+  return row[idx];
+}
+
+function normHeader(v) {
+  return String(v ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function slug(s) {
+  return String(s ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
+
+function buildPeopleForConfig(rows, cfg) {
   const dict = new Map();
 
-  for (const row of rows) {
-    const lv = String(row[COLS.landesverband] ?? "").trim().toUpperCase();
-    if (lv !== "BA") continue;
+  const qualiStart = cfg.qualiStart;
+  const qualiEnd = cfg.qualiEnd;
+  const endInc = endOfDay(qualiEnd);
 
-    const nm = String(row[COLS.name] ?? "").trim();
+  for (const row of rows) {
+    if (!row) continue;
+
+    const lv = String(row[DATA_COLS.landesverband] ?? "").trim().toUpperCase();
+    if (cfg.lv && lv !== cfg.lv) continue;
+
+    const g = normalizeGender(row[DATA_COLS.gender]);
+    if (g !== cfg.gender) continue;
+
+    const nm = String(row[DATA_COLS.name] ?? "").trim();
     if (!nm) continue;
 
-    const g = normalizeGender(row[COLS.gender]);
-    if (g !== "m" && g !== "w") continue;
-
-    const og = String(row[COLS.ortsgruppe] ?? "").trim();
-    const birthYear = normalizeBirthYear(String(row[COLS.yy2] ?? "").trim());
+    const birthYear = normalizeBirthYear(String(row[DATA_COLS.yy2] ?? "").trim());
     if (!birthYear) continue;
 
-    const wkDate = tryParseExcelDate(row[COLS.excelDatum]);
+    const wkDate = tryParseExcelDate(row[DATA_COLS.excelDatum]);
     if (!wkDate) continue;
-    if (wkDate < QUALI_START || wkDate > endOfDay(QUALI_END)) continue;
+    if (wkDate < qualiStart || wkDate > endInc) continue;
 
-    const compName = String(row[COLS.meet_name] ?? "").trim();
-    const key = `${nm}|${g}|${og}|${birthYear}`;
+    const compName = String(row[DATA_COLS.meet_name] ?? "").trim();
+    if (cfg.omsFilter && compName.toUpperCase().startsWith("OMS-")) continue;
 
+    if (cfg.poolLength !== "") {
+      const pl = normalizePoolLength(row[DATA_COLS.poollaenge]);
+      if (pl !== Number(cfg.poolLength)) continue;
+    }
+
+    if (cfg.rulebook !== "") {
+      const want = String(cfg.rulebook).trim().toLowerCase();
+      const rw = normalizeRulebook(row[DATA_COLS.regelwerk]);
+      if (rw !== want) continue;
+    }
+
+    const og = String(row[DATA_COLS.ortsgruppe] ?? "").trim();
+
+    const key = `${nm}|${g}|${birthYear}`;
     const rec = dict.get(key) ?? initPersonRec({ name: nm, gender: g, ortsgruppe: og, birthYear });
 
-    // Bestzeiten aktualisieren
+    if (og) {
+      if (!rec.lastStartDate || wkDate > rec.lastStartDate) {
+        rec.ortsgruppe = og;
+        rec.lastStartDate = wkDate;
+        rec.lastStartComp = compName;
+      }
+    }
+
     for (let i = 0; i < DISCIPLINES.length; i++) {
-      const colIdx = DISCIPLINES[i].col;
+      const colIdx = DISCIPLINES[i].dataCol;
       updateBest(rec, i, row[colIdx], compName);
     }
 
     dict.set(key, rec);
   }
 
-  // Nur Personen mit mind. 1 erreichter Pflichtzeit (<= PZ2)
   const people = [];
   for (const rec of dict.values()) {
-    rec.altersklasse = altersklasseText(rec.birthYear);
+    const age = cfg.seasonYear - rec.birthYear;
+    if (cfg.minAge !== null && age < cfg.minAge) continue;
+    if (cfg.maxAge !== null && age > cfg.maxAge) continue;
 
-    const pz = getPflichtzeiten(rec.birthYear, rec.gender);
-    if (!pz) continue;
+    if (cfg.lastActive) {
+      if (!rec.lastStartDate || rec.lastStartDate.getTime() < cfg.lastActive.getTime()) continue;
+    }
 
-    const { pz1Count, pz2Count, qualifies } = computePZCounts(rec, pz);
+    const { pz1Count, pz2Count, qualifies } = computePZCountsFromConfig(rec, cfg);
     if (!qualifies) continue;
 
     rec.pz1Count = pz1Count;
     rec.pz2Count = pz2Count;
-    rec._pz = pz; // cache für Rendering
+    rec._cfg = cfg;
+
     people.push(rec);
   }
 
   return people;
 }
 
-// ================================
-// Rendering
-// ================================
-function buildTableBlock(title, list) {
+function buildTableBlock(cfg, fullList) {
   const wrap = document.createElement("section");
   wrap.className = "pz-block";
 
   const h3 = document.createElement("h3");
   h3.className = "pz-title";
-  h3.textContent = title;
+  h3.textContent = cfg.title;
   wrap.appendChild(h3);
 
   const table = document.createElement("table");
   table.className = "pz-table";
 
-  // HEAD
   const thead = document.createElement("thead");
   const trh = document.createElement("tr");
+
   const th1 = document.createElement("th");
   th1.textContent = "Name / Gliederung";
+
   const th2 = document.createElement("th");
   th2.textContent = "Status";
   th2.className = "pz-th-status";
+
   trh.appendChild(th1);
   trh.appendChild(th2);
   thead.appendChild(trh);
   table.appendChild(thead);
 
-  // BODY
   const tbody = document.createElement("tbody");
+
+  const pageSize = Math.max(1, Number(cfg.pageSize || 5));
+  const maxPage = getMaxPage(fullList, pageSize);
+  const currentPage = clamp(PZ_TABLE_STATE.get(cfg.id) || 1, 1, maxPage);
+  PZ_TABLE_STATE.set(cfg.id, currentPage);
+
+  const start = (currentPage - 1) * pageSize;
+  const list = fullList.slice(start, start + pageSize);
 
   if (list.length === 0) {
     const trEmpty = document.createElement("tr");
@@ -219,22 +447,21 @@ function buildTableBlock(title, list) {
     trEmpty.appendChild(tdEmpty);
     tbody.appendChild(trEmpty);
   } else {
-    list.forEach((rec, idx) => {
+    list.forEach((rec) => {
       const mainRow = document.createElement("tr");
       mainRow.className = "pz-row";
       mainRow.tabIndex = 0;
       mainRow.setAttribute("aria-expanded", "false");
 
-      // Name/Gliederung cell
       const tdLeft = document.createElement("td");
       const person = document.createElement("div");
       person.className = "pz-person";
-
 
       const cap = document.createElement("img");
       cap.className = "pz-cap";
       cap.alt = "";
       cap.loading = "lazy";
+      cap.decoding = "async";
       cap.src = capSrcFromOrtsgruppe(rec.ortsgruppe);
       cap.addEventListener("error", () => {
         cap.src = "./svg/Cap-Baden_light.svg";
@@ -256,45 +483,34 @@ function buildTableBlock(title, list) {
 
       person.appendChild(cap);
       person.appendChild(text);
-
       tdLeft.appendChild(person);
 
-      // Status cell: 6 Punkte (PZ1=grün, danach PZ2=gelb, Rest grau)
       const tdRight = document.createElement("td");
       tdRight.className = "pz-status";
 
       const dots = document.createElement("div");
       dots.className = "pz-dots";
-      dots.setAttribute(
-        "aria-label",
-        `Status: ${rec.pz1Count}x PZ1, ${rec.pz2Count}x PZ2`
-      );
+      dots.setAttribute("aria-label", `Status: ${rec.pz1Count}x PZ1, ${rec.pz2Count}x PZ2`);
 
-      const total = 6;
+      const total = DISCIPLINES.length;
       const pz1 = Math.max(0, Math.min(rec.pz1Count || 0, total));
       const pz2 = Math.max(0, Math.min(rec.pz2Count || 0, total - pz1));
 
       for (let i = 0; i < total; i++) {
         const dot = document.createElement("span");
         dot.className = "pz-dot";
-
         if (i < pz1) dot.classList.add("is-pz1");
         else if (i < pz1 + pz2) dot.classList.add("is-pz2");
         else dot.classList.add("is-none");
-
         dots.appendChild(dot);
       }
 
       tdRight.appendChild(dots);
 
-
       mainRow.appendChild(tdLeft);
       mainRow.appendChild(tdRight);
 
-      // Detail row (collapsed)
       const detailRow = document.createElement("tr");
-      // Zeilenfärbung nach Status:
-      // mind. 1x PZ1 => grün, sonst (nur PZ2) => gelb
       if (rec.pz1Count > 0) {
         mainRow.classList.add("has-pz1");
         detailRow.classList.add("has-pz1");
@@ -310,29 +526,23 @@ function buildTableBlock(title, list) {
       const detailWrap = document.createElement("div");
       detailWrap.className = "pz-detail-wrap";
 
-      // Detail lines: nur Disziplinen anzeigen, die PZ1 oder PZ2 sind
-      let shown = 0;
-
-      // 1) Sammeln (nur PZ1/PZ2)
       const reached = [];
       for (let i = 0; i < DISCIPLINES.length; i++) {
         const best = rec.best[i];
-        const level = disciplineLevel(best, rec._pz, i); // "PZ1" | "PZ2" | "—"
+        const level = disciplineLevelFromConfig(best, rec._cfg, DISCIPLINES[i].key);
         if (level === "PZ1" || level === "PZ2") {
           reached.push({ i, level, best });
         }
       }
 
-      // 2) Sortieren: PZ1 oben, PZ2 unten (Disziplin-Reihenfolge bleibt)
       const prio = { PZ1: 0, PZ2: 1 };
       reached.sort((a, b) => {
         const pa = prio[a.level] ?? 9;
         const pb = prio[b.level] ?? 9;
         if (pa !== pb) return pa - pb;
-        return a.i - b.i; // innerhalb gleicher Stufe: Original-Reihenfolge
+        return a.i - b.i;
       });
 
-      // 3) Rendern
       for (const item of reached) {
         const i = item.i;
         const best = item.best;
@@ -371,11 +581,9 @@ function buildTableBlock(title, list) {
         detailWrap.appendChild(line);
       }
 
-
       detailTd.appendChild(detailWrap);
       detailRow.appendChild(detailTd);
 
-      // Click/Key toggle
       const toggle = () => {
         const isOpen = mainRow.classList.toggle("is-open");
         detailRow.classList.toggle("is-open", isOpen);
@@ -397,59 +605,118 @@ function buildTableBlock(title, list) {
 
   table.appendChild(tbody);
   wrap.appendChild(table);
+  wrap.appendChild(renderPager(cfg.id, currentPage, maxPage));
+
   return wrap;
 }
 
-function capSrcFromOrtsgruppe(ortsgruppe) {
-  const og = String(ortsgruppe ?? "").trim();
-  if (!og) return "./svg/Cap-Baden_light.svg";
-  // Ortsgruppe kann Leerzeichen enthalten -> URL-Encode
-  return `./svg/Cap-${encodeURIComponent(og)}.svg`;
+function renderPager(tableId, page, maxPage) {
+  const nav = document.createElement("div");
+  nav.className = "pz-pager";
+  nav.setAttribute("role", "navigation");
+  nav.setAttribute("aria-label", `Seitenwahl ${tableId}`);
+
+  if (maxPage <= 1) return nav;
+
+  const group = document.createElement("div");
+  group.className = "pz-pager__group";
+
+  const mkBtn = (txt, opts = {}) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "pz-pager__btn" + (opts.active ? " is-active" : "");
+    b.textContent = txt;
+    b.dataset.table = tableId;
+
+    if (opts.action) b.dataset.action = opts.action;
+    if (opts.page) b.dataset.page = String(opts.page);
+    if (opts.disabled) b.disabled = true;
+    if (opts.ariaCurrent) b.setAttribute("aria-current", "page");
+    if (opts.ariaLabel) b.setAttribute("aria-label", opts.ariaLabel);
+
+    return b;
+  };
+
+  group.appendChild(mkBtn("‹", { action: "prev", disabled: page <= 1, ariaLabel: "Vorherige Seite" }));
+
+  const items = getPagerItems(page, maxPage);
+  for (const it of items) {
+    if (it.type === "dots") {
+      const sp = document.createElement("span");
+      sp.className = "pz-pager__ellipsis";
+      sp.textContent = "…";
+      group.appendChild(sp);
+      continue;
+    }
+    const isActive = it.page === page;
+    group.appendChild(mkBtn(String(it.page), { page: it.page, active: isActive, ariaCurrent: isActive }));
+  }
+
+  group.appendChild(mkBtn("›", { action: "next", disabled: page >= maxPage, ariaLabel: "Nächste Seite" }));
+
+  nav.appendChild(group);
+  return nav;
 }
 
-function disciplineLevel(best, pz, idx) {
-  if (!pz || !best || !(best.centi < 99999999)) return "—";
-  if (best.centi <= pz.PZ1[idx]) return "PZ1";
-  if (best.centi <= pz.PZ2[idx]) return "PZ2";
-  return "—";
+function getMaxPage(list, pageSize) {
+  const n = Array.isArray(list) ? list.length : 0;
+  return Math.max(1, Math.ceil(n / pageSize));
 }
 
-// ================================
-// Sortierung
-// ================================
+function getPagerItems(current, max) {
+  if (max <= 7) return Array.from({ length: max }, (_, i) => ({ type: "page", page: i + 1 }));
+  const items = [];
+  const addPage = (p) => items.push({ type: "page", page: p });
+  const addDots = () => items.push({ type: "dots" });
+
+  addPage(1);
+
+  let start = Math.max(2, current - 1);
+  let end = Math.min(max - 1, current + 1);
+
+  if (current <= 3) {
+    start = 2;
+    end = 4;
+  }
+
+  if (current >= max - 2) {
+    start = max - 3;
+    end = max - 1;
+  }
+
+  if (start > 2) addDots();
+  for (let p = start; p <= end; p++) addPage(p);
+  if (end < max - 1) addDots();
+
+  addPage(max);
+  return items;
+}
+
+function clamp(n, min, max) {
+  return Math.min(max, Math.max(min, n));
+}
+
 function personSort(a, b) {
-  // 1) Mehr PZ1 nach oben
-  if ((b.pz1Count ?? 0) !== (a.pz1Count ?? 0)) {
-    return (b.pz1Count ?? 0) - (a.pz1Count ?? 0);
-  }
+  if ((b.pz1Count ?? 0) !== (a.pz1Count ?? 0)) return (b.pz1Count ?? 0) - (a.pz1Count ?? 0);
+  if ((b.pz2Count ?? 0) !== (a.pz2Count ?? 0)) return (b.pz2Count ?? 0) - (a.pz2Count ?? 0);
 
-  // 2) Bei Gleichstand: mehr PZ2 nach oben
-  if ((b.pz2Count ?? 0) !== (a.pz2Count ?? 0)) {
-    return (b.pz2Count ?? 0) - (a.pz2Count ?? 0);
-  }
-
-  // 3) Tie-Breaker: Name, dann Ortsgruppe (damit Reihenfolge stabil bleibt)
   const nameCmp = (a.name || "").localeCompare(b.name || "", "de");
   if (nameCmp !== 0) return nameCmp;
-
   return (a.ortsgruppe || "").localeCompare(b.ortsgruppe || "", "de");
 }
 
-
-// ================================
-// Datenmodell + Parsing
-// ================================
 function initPersonRec({ name, gender, ortsgruppe, birthYear }) {
   return {
     name,
     gender,
     ortsgruppe,
     birthYear,
-    altersklasse: "",
     pz1Count: 0,
     pz2Count: 0,
-    _pz: null,
-    best: Array.from({ length: 6 }, () => ({
+    _cfg: null,
+    lastStartDate: null,
+    lastStartComp: "",
+    best: Array.from({ length: DISCIPLINES.length }, () => ({
       centi: 99999999,
       text: "",
       comp: "",
@@ -469,24 +736,71 @@ function updateBest(rec, dIdx, timeVal, compName) {
   }
 }
 
-function computePZCounts(rec, pz) {
+function computePZCountsFromConfig(rec, cfg) {
   let pz1Count = 0;
   let pz2Count = 0;
   let qualifies = false;
 
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < DISCIPLINES.length; i++) {
+    const dKey = DISCIPLINES[i].key;
     const best = rec.best[i];
     if (!(best.centi < 99999999)) continue;
 
-    if (best.centi <= pz.PZ1[i]) {
+    const t1 = cfg.pz1?.[dKey];
+    const t2 = cfg.pz2?.[dKey];
+
+    if (!Number.isFinite(t2)) continue;
+
+    if (Number.isFinite(t1) && best.centi <= t1) {
       pz1Count += 1;
       qualifies = true;
-    } else if (best.centi <= pz.PZ2[i]) {
+    } else if (best.centi <= t2) {
       pz2Count += 1;
       qualifies = true;
     }
   }
+
   return { pz1Count, pz2Count, qualifies };
+}
+
+function disciplineLevelFromConfig(best, cfg, dKey) {
+  if (!cfg || !best || !(best.centi < 99999999)) return "—";
+
+  const t1 = cfg.pz1?.[dKey];
+  const t2 = cfg.pz2?.[dKey];
+
+  if (!Number.isFinite(t2)) return "—";
+  if (Number.isFinite(t1) && best.centi <= t1) return "PZ1";
+  if (best.centi <= t2) return "PZ2";
+  return "—";
+}
+
+function capSrcFromOrtsgruppe(ortsgruppe) {
+  const og = String(ortsgruppe ?? "").trim();
+  if (!og) return "./svg/Cap-Baden_light.svg";
+  const safe = og.replace(/[\/\\]/g, "-");
+  return `./svg/Cap-${encodeURIComponent(safe)}.svg`;
+}
+
+function normalizePoolLength(v) {
+  const s = String(v ?? "").trim().toLowerCase();
+  if (!s) return null;
+
+  const m = s.match(/(25|50)/);
+  if (m) return Number(m[1]);
+
+  if (typeof v === "number" && (v === 25 || v === 50)) return v;
+  return null;
+}
+
+function normalizeRulebook(v) {
+  const s = String(v ?? "").trim().toLowerCase();
+  if (!s) return "";
+  if (s === "national") return "national";
+  if (s === "international") return "international";
+  if (s.startsWith("nat")) return "national";
+  if (s.startsWith("inter")) return "international";
+  return "";
 }
 
 function normalizeGender(v) {
@@ -495,6 +809,13 @@ function normalizeGender(v) {
   if (s === "m" || s.startsWith("m")) return "m";
   if (s === "w" || s.startsWith("w")) return "w";
   return "";
+}
+
+function parseIntSafe(v) {
+  const s = String(v ?? "").trim();
+  if (!s) return NaN;
+  const n = Number(s);
+  return Number.isFinite(n) ? Math.trunc(n) : NaN;
 }
 
 function normalizeBirthYear(yTxt) {
@@ -514,7 +835,6 @@ function normalizeBirthYear(yTxt) {
 
 function tryParseExcelDate(v) {
   if (v === null || v === undefined || v === "") return null;
-
   if (v instanceof Date && !isNaN(v.getTime())) return v;
 
   if (typeof v === "number" && isFinite(v) && v > 1) {
@@ -543,6 +863,13 @@ function endOfDay(d) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
 }
 
+function timeTextToCentiOrNull(s) {
+  const t = String(s ?? "").trim();
+  if (!t) return null;
+  const c = timeTextToCenti(t);
+  return c > 0 ? c : null;
+}
+
 function timeTextToCenti(s) {
   try {
     let t = String(s ?? "").trim();
@@ -553,11 +880,11 @@ function timeTextToCenti(s) {
     if (parts.length !== 2) return -1;
 
     const mm = Number(parts[0]);
-    if (!isFinite(mm)) return -1;
+    if (!Number.isFinite(mm)) return -1;
 
     const secParts = parts[1].split(",");
     const ss = Number(secParts[0]);
-    if (!isFinite(ss)) return -1;
+    if (!Number.isFinite(ss)) return -1;
 
     let cc = 0;
     if (secParts.length >= 2) {
@@ -565,7 +892,7 @@ function timeTextToCenti(s) {
       if (cctxt.length === 1) cctxt = cctxt + "0";
       if (cctxt.length > 2) cctxt = cctxt.slice(0, 2);
       cc = Number(cctxt);
-      if (!isFinite(cc)) cc = 0;
+      if (!Number.isFinite(cc)) cc = 0;
     }
 
     return (mm * 60 + ss) * 100 + cc;
@@ -576,82 +903,4 @@ function timeTextToCenti(s) {
 
 function yearLabel2(birthYear) {
   return String(birthYear % 100).padStart(2, "0");
-}
-
-function altersklasseText(birthYear) {
-  if (birthYear <= 2007) return "Offen";
-  if (birthYear === 2008 || birthYear === 2009) return "U19";
-  if (birthYear === 2010 || birthYear === 2011) return "U17";
-  return "Unbekannt";
-}
-
-// Pflichtzeiten wie VBA (PZ1/PZ2 in Hundertstel)
-function getPflichtzeiten(birthYear, gender) {
-  const grp = altersklasseText(birthYear);
-  const g = String(gender).toLowerCase();
-  if (grp !== "Offen" && grp !== "U19" && grp !== "U17") return null;
-  if (g !== "m" && g !== "w") return null;
-
-  const PZ1 = new Array(6);
-  const PZ2 = new Array(6);
-
-  // Offen (= AK)
-  if (grp === "Offen" && g === "w") {
-    PZ1[0] = timeTextToCenti("1:06,39"); PZ2[0] = timeTextToCenti("1:10,37");
-    PZ1[1] = timeTextToCenti("0:39,01"); PZ2[1] = timeTextToCenti("0:41,35");
-    PZ1[2] = timeTextToCenti("2:45,76"); PZ2[2] = timeTextToCenti("2:55,71");
-    PZ1[3] = timeTextToCenti("1:26,91"); PZ2[3] = timeTextToCenti("1:32,12");
-    PZ1[4] = timeTextToCenti("1:02,56"); PZ2[4] = timeTextToCenti("1:06,31");
-    PZ1[5] = timeTextToCenti("2:34,86"); PZ2[5] = timeTextToCenti("2:44,15");
-    return { PZ1, PZ2 };
-  }
-  if (grp === "Offen" && g === "m") {
-    PZ1[0] = timeTextToCenti("0:55,14"); PZ2[0] = timeTextToCenti("0:58,45");
-    PZ1[1] = timeTextToCenti("0:31,53"); PZ2[1] = timeTextToCenti("0:33,39");
-    PZ1[2] = timeTextToCenti("2:18,92"); PZ2[2] = timeTextToCenti("2:27,26");
-    PZ1[3] = timeTextToCenti("1:08,19"); PZ2[3] = timeTextToCenti("1:12,28");
-    PZ1[4] = timeTextToCenti("0:50,08"); PZ2[4] = timeTextToCenti("0:53,08");
-    PZ1[5] = timeTextToCenti("2:15,44"); PZ2[5] = timeTextToCenti("2:23,57");
-    return { PZ1, PZ2 };
-  }
-
-  if (grp === "U19" && g === "w") {
-    PZ1[0] = timeTextToCenti("1:11,15"); PZ2[0] = timeTextToCenti("1:15,42");
-    PZ1[1] = timeTextToCenti("0:40,65"); PZ2[1] = timeTextToCenti("0:43,57");
-    PZ1[2] = timeTextToCenti("2:51,87"); PZ2[2] = timeTextToCenti("3:02,18");
-    PZ1[3] = timeTextToCenti("1:26,42"); PZ2[3] = timeTextToCenti("1:31,61");
-    PZ1[4] = timeTextToCenti("1:07,50"); PZ2[4] = timeTextToCenti("1:11,55");
-    PZ1[5] = timeTextToCenti("2:42,85"); PZ2[5] = timeTextToCenti("2:52,62");
-    return { PZ1, PZ2 };
-  }
-  if (grp === "U19" && g === "m") {
-    PZ1[0] = timeTextToCenti("1:02,93"); PZ2[0] = timeTextToCenti("1:06,71");
-    PZ1[1] = timeTextToCenti("0:34,20"); PZ2[1] = timeTextToCenti("0:35,92");
-    PZ1[2] = timeTextToCenti("2:33,88"); PZ2[2] = timeTextToCenti("2:43,72");
-    PZ1[3] = timeTextToCenti("1:15,50"); PZ2[3] = timeTextToCenti("1:20,03");
-    PZ1[4] = timeTextToCenti("0:56,99"); PZ2[4] = timeTextToCenti("1:00,41");
-    PZ1[5] = timeTextToCenti("2:23,90"); PZ2[5] = timeTextToCenti("2:32,53");
-    return { PZ1, PZ2 };
-  }
-
-  if (grp === "U17" && g === "w") {
-    PZ1[0] = timeTextToCenti("1:13,87"); PZ2[0] = timeTextToCenti("1:17,25");
-    PZ1[1] = timeTextToCenti("0:41,59"); PZ2[1] = timeTextToCenti("0:43,60");
-    PZ1[2] = timeTextToCenti("3:00,51"); PZ2[2] = timeTextToCenti("3:12,71");
-    PZ1[3] = timeTextToCenti("1:31,33"); PZ2[3] = timeTextToCenti("1:40,14");
-    PZ1[4] = timeTextToCenti("1:09,55"); PZ2[4] = timeTextToCenti("1:13,85");
-    PZ1[5] = timeTextToCenti("2:38,99"); PZ2[5] = timeTextToCenti("2:49,55");
-    return { PZ1, PZ2 };
-  }
-  if (grp === "U17" && g === "m") {
-    PZ1[0] = timeTextToCenti("1:06,47"); PZ2[0] = timeTextToCenti("1:10,59");
-    PZ1[1] = timeTextToCenti("0:37,12"); PZ2[1] = timeTextToCenti("0:39,24");
-    PZ1[2] = timeTextToCenti("2:43,70"); PZ2[2] = timeTextToCenti("2:58,98");
-    PZ1[3] = timeTextToCenti("1:23,90"); PZ2[3] = timeTextToCenti("1:29,88");
-    PZ1[4] = timeTextToCenti("1:01,72"); PZ2[4] = timeTextToCenti("1:05,67");
-    PZ1[5] = timeTextToCenti("2:25,58"); PZ2[5] = timeTextToCenti("2:36,57");
-    return { PZ1, PZ2 };
-  }
-
-  return null;
 }
