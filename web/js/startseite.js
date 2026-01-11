@@ -11,12 +11,6 @@ const WIDE_SLIDES = [
     cta: { label: "Mehr Infos!", href: "./kalender.html" }
   },
   {
-    title: "Nominierungen",
-    text: "Aktuelle Nominierungslisten und Kriterien für den Deutschlandpokal, Bodensee Pokal und Junioren Rettungspokal",
-    img: "./png/karussel/bild2.jpg",
-    cta: { label: "Mehr Infos!", href: "./nominierung.html" }
-  },
-  {
     title: "Infoschreiben",
     text: "Aktuelles Jahres Infoschreiben vom Landeskader Baden",
     img: "./png/karussel/bild5.JPG",
@@ -103,6 +97,17 @@ document.addEventListener("DOMContentLoaded", () => {
               <div class="home-card__box home-card__box--main">National und internationale Punkte</div>
               <div class="home-card__box home-card__box--more">
                 Errechne dir deine Punkte aus Zeiten – national (deutscher Rekord) oder international (Weltrekord).
+              </div>
+            </div>
+          </a>
+
+          <a class="home-card" href="./rekorde.html" aria-label="Wettkämpfe und Nominierung">
+            <img class="home-card__img" src="./png/karussel/bild2.jpg" alt="" loading="lazy" decoding="async">
+            <div class="home-card__overlay">
+              <div class="home-card__kicker">Wettkämpfe &amp; Nominierung</div>
+              <div class="home-card__box home-card__box--main">Aktuelle Nominierungslisten und Richtlinien</div>
+              <div class="home-card__box home-card__box--more">
+                Niminierungsrichtlinien & Listen für DP, JRP, BP, sowie Pflichtzeiten für die DEM.
               </div>
             </div>
           </a>

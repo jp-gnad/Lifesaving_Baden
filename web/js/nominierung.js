@@ -118,24 +118,45 @@ document.addEventListener("DOMContentLoaded", () => {
   ];
 
   main.innerHTML = `
-    <section class="nom-hero" aria-label="Nominierungen">
+    <section class="nom-hero" aria-label="Nominierungen_Wettkämpfe">
       <div class="nom-hero__inner">
-        <h1>Nominierungen</h1>
+        <h1>Wettkämpfe / Nominierungen</h1>
       </div>
     </section>
 
     <section class="updates" aria-label="Aktuelles">
       <div class="container">
-        <h2>Aktuelles</h2>
+        <h2>Wettkämpfe finden</h2>
+        <p>Auf diesen Internetseiten findest eine Übersicht zu einem Großteil der nationalen und internationalen Wettkämpfe.</p>
+
         <ul class="updates__list">
-          <li>Erste Inhalte folgen.</li>
+          <li>
+            <a href="https://www.dlrg.de/mitmachen/rettungssport/nationale-und-internationale-wettkaempfe/" target="_blank" rel="noopener noreferrer">
+              DLRG Bundesverband
+            </a>
+          </li>
+          <li>
+            <a href="https://baden.dlrg.de/mitmachen/rettungssport/wettkaempfe/" target="_blank" rel="noopener noreferrer">
+              DLRG Landesverband Baden
+            </a>
+          </li>
+          <li>
+            <a href="https://rettungssport.com/" target="_blank" rel="noopener noreferrer">
+              Rettungssport.com
+            </a>
+          </li>
+          <li>
+            <a href="https://sport.ilsf.org/calendar" target="_blank" rel="noopener noreferrer">
+              International Life Saving Federation (ILS)
+            </a>
+          </li>
         </ul>
       </div>
     </section>
 
     <section class="intro">
       <div class="container">
-        <h2>Inhalte</h2>
+        <h2>Aktuelle Nominierungen</h2>
       </div>
     </section>
 

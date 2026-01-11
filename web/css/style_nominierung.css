@@ -1,18 +1,13 @@
-/* style_nominierung.css */
-
-/* Seiteninhalt */
 main#content{
   margin: 0 auto;
 }
 
-/* Container (wie Startseite/Landeskader) */
 .container{
   max-width: 1100px;
   margin: 0 auto;
   padding: 0 16px;
 }
 
-/* HERO */
 .nom-hero{
   position: relative;
   min-height: 300px;
@@ -50,7 +45,6 @@ main#content{
   font-weight: 800;
 }
 
-/* Aktuelles */
 .updates{
   padding: 1.6rem 0 0.8rem;
 }
@@ -62,6 +56,13 @@ main#content{
   font-size: 1.8rem;
 }
 
+.updates p{
+  margin: 0 auto 0.9rem;
+  max-width: 780px;
+  text-align: center;
+  line-height: 1.6;
+}
+
 .updates__list{
   list-style: disc;
   padding-left: 1.2rem;
@@ -70,10 +71,35 @@ main#content{
   line-height: 1.6;
 }
 
-/* Intro */
+.updates__list li{
+  margin: 0.35rem 0;
+}
+
+.updates__list a{
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(227, 6, 19, 0.55);
+  transition: color 200ms ease, text-decoration-color 200ms ease;
+}
+
+.updates__list a:hover,
+.updates__list a:focus-visible{
+  color: rgb(227, 6, 19);
+  text-decoration-color: rgb(227, 6, 19);
+}
+
+.updates__list a:focus-visible{
+  outline: 2px solid rgba(227, 6, 19, 0.45);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
 .intro{
   padding: 1.2rem 0 1.25rem;
 }
+
 .intro h2{
   text-align:center;
   margin: 2.0rem 0 1.6rem;
@@ -81,10 +107,10 @@ main#content{
   font-size: 2rem;
 }
 
-/* Cards (wie Startseite/Landeskader) */
 .home-links{
   padding: 1rem 0 2.75rem;
 }
+
 .home-links .container{
   max-width: 1400px;
   padding: 0 8px;
@@ -106,7 +132,6 @@ main#content{
   background:#eee;
   aspect-ratio: 4.5 / 5;
 }
-/* ===== Bild: Hover-Scale + Wisch-Animation (kombiniert) ===== */
 
 .home-card__img{
   position: absolute;
@@ -115,46 +140,31 @@ main#content{
   height: 100%;
   object-fit: cover;
   display: block;
-
-  /* Transform über Variablen kombinieren (translate + scale) */
   --hc-x: 0%;
   --hc-scale: 1;
   transform: translate3d(var(--hc-x), 0, 0) scale(var(--hc-scale));
   backface-visibility: hidden;
-
   opacity: 1;
   z-index: 0;
-
   transition: transform 1200ms ease-in-out, filter 420ms ease;
   will-change: transform;
 }
 
-/* Hover/Focus: nur Scale verändern, Wisch-Logik bleibt intakt */
 .home-card:hover .home-card__img,
 .home-card:focus-visible .home-card__img{
   --hc-scale: 1.04;
 }
-/* Alt raus nach links */
+
 .yr-swipe-exit{
   --hc-x: -100%;
 }
 
-/* Neu startet rechts außerhalb */
 .yr-swipe-enter{
   --hc-x: 100%;
 }
 
-/* Neu fährt in die Mitte */
 .yr-swipe-enter.yr-swipe-active{
   --hc-x: 0%;
-}
-
-
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce){
-  .home-card__img{
-    transition: none;
-  }
 }
 
 .home-card::after{
@@ -230,35 +240,6 @@ main#content{
   transition: opacity 420ms ease, transform 480ms ease, max-height 560ms ease;
 }
 
-/* Responsive */
-@media (max-width: 1024px){
-  .home-cards{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 720px){
-  .nom-hero{ min-height: 200px; }
-  .updates h2{ font-size: 1.5rem; }
-  .intro h2{
-    font-size: 1.5rem;
-    margin-top: 0rem;
-    margin-bottom: 0rem;
-  }
-  .home-links .container{ padding: 0 12px; }
-}
-@media (max-width: 520px){
-  .home-cards{ grid-template-columns: 1fr; }
-}
-
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce){
-  .home-card__img,
-  .home-card__overlay,
-  .home-card__box--more{
-    transition:none;
-  }
-}
-
-
-/* Hover/Focus: Overlay hoch, "more" einblenden */
 .home-card:hover::before,
 .home-card:focus-visible::before{
   background: rgba(0,0,0,0.28);
@@ -276,4 +257,44 @@ main#content{
   max-height: 140px;
   padding-top: 14px;
   padding-bottom: 14px;
+}
+
+@media (max-width: 1024px){
+  .home-cards{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px){
+  .nom-hero{
+    min-height: 200px;
+  }
+
+  .updates h2{
+    font-size: 1.5rem;
+  }
+
+  .intro h2{
+    font-size: 1.5rem;
+    margin-top: 0rem;
+    margin-bottom: 0rem;
+  }
+
+  .home-links .container{
+    padding: 0 12px;
+  }
+}
+
+@media (max-width: 520px){
+  .home-cards{
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .home-card__img,
+  .home-card__overlay,
+  .home-card__box--more{
+    transition:none;
+  }
 }
