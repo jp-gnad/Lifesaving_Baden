@@ -127,7 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <section class="updates" aria-label="Aktuelles">
       <div class="container">
         <h2>Wettkämpfe finden</h2>
-        <p>Auf diesen Internetseiten findest eine Übersicht zu einem Großteil der nationalen und internationalen Wettkämpfe.</p>
+        <p>Auf diesen Internetseiten findest du eine Übersicht zu einem Großteil der nationalen und internationalen Wettkämpfe.</p>
 
         <ul class="updates__list">
           <li>

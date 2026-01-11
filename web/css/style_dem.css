@@ -35,3 +35,264 @@ main#content {
   .hero h1 {font-size: 2.0em; }
   .hero {height: 200px; padding-top: 80px;}
 }
+
+
+/* =========================
+   Pflichtzeiten – neuer Look
+   ========================= */
+
+.pz-root{
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.pz-block { margin-top: 1.25rem; }
+
+.pz-title{
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.pz-status-line{
+  display: block;
+  line-height: 1.15;
+  font-size: 0.85rem;   /* kleiner */
+  font-weight: 700;     /* optional: etwas kräftig */
+}
+
+.pz-status-line + .pz-status-line{
+  margin-top: 0.15rem;
+}
+
+.pz-status-line.is-zero{
+  color: rgba(0,0,0,0.35);  /* hellgrau */
+  font-weight: 600;
+}
+
+.pz-table{
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 4px 4px 0px 0px;
+  overflow: hidden;
+}
+
+.pz-table thead th{
+  background: #5b5b5b;
+  color: #fff;
+  text-align: left;
+  padding: 0.65rem 0.85rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.pz-th-status{
+  text-align: right;
+  width: 220px;
+}
+
+.pz-table tbody tr{
+  border-bottom: 1px solid rgba(0,0,0,0.10);
+}
+
+.pz-row{
+  cursor: pointer;
+}
+
+.pz-row:hover{
+  background: rgba(0,0,0,0.03);
+}
+
+.pz-row.is-open{
+  background: rgba(0,0,0,0.03);
+}
+
+.pz-table td{
+  padding: 0.70rem 0.85rem;
+  vertical-align: middle;
+}
+
+.pz-status{
+  text-align: right;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Person cell layout */
+.pz-person{
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pz-cap{
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+
+.pz-person-text{ line-height: 1.1; }
+.pz-name{
+  font-weight: 800;
+  font-size: 1rem;
+}
+.pz-og{
+  margin-top: 0.15rem;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+/* Accordion detail row */
+.pz-detail{
+  display: none;
+  background: #fafafa;
+}
+
+.pz-detail.is-open{
+  display: table-row;
+}
+
+.pz-detail-line{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.70rem;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+
+.pz-detail-left{
+  min-width: 0; /* wichtig für Ellipsis */
+}
+
+.pz-detail-discipline{
+  font-weight: 700;
+}
+
+.pz-detail-meta{
+  margin-top: 0.18rem;
+  font-size: 0.82rem;
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pz-detail-right{
+  text-align: right;
+  flex: 0 0 auto;
+}
+
+/* Badges */
+.pz-badge{
+  display: inline-block;
+  padding: 0.20rem 0.55rem;
+  border-radius: 4px;
+  font-weight: 800;
+  font-size: 0.82rem;
+}
+
+.pz-badge.is-pz1{
+  background: rgba(198, 239, 206, 0.95);
+}
+
+.pz-badge.is-pz2{
+  background: rgba(255, 235, 156, 0.95);
+}
+
+.pz-badge.is-none{
+  background: rgba(0,0,0,0.06);
+  opacity: 0.85;
+}
+
+.pz-empty{
+  padding: 0.85rem;
+  opacity: 0.85;
+}
+
+/* Mobile */
+@media (max-width: 720px){
+  .pz-th-status{ width: 150px; }
+  .pz-name{ font-size: 0.95rem; }
+  .pz-status{ font-size: 0.92rem; }
+
+  .pz-detail-line{
+    grid-template-columns: 1fr;
+  }
+  .pz-detail-right{
+    text-align: left;
+  }
+}
+
+/* 2-spaltige Anordnung der 6 Tabellen */
+.pz-grid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  align-items: start;
+}
+
+/* Mobile: untereinander */
+@media (max-width: 900px){
+  .pz-grid{
+    grid-template-columns: 1fr;
+  }
+}
+
+
+
+/* Farbstreifen direkt am linken Rand der ersten Zelle */
+.pz-row td:first-child{
+  position: relative; /* Anker für ::before */
+}
+
+.pz-row td:first-child::before{
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;         /* dicke des Streifens */
+  background: transparent;
+}
+
+/* grün wenn mind. 1x PZ1 */
+.pz-row.has-pz1 td:first-child::before{
+  background: rgba(46, 160, 67, 0.9);
+}
+
+/* gelb wenn keine PZ1, aber PZ2 */
+.pz-row.has-pz2 td:first-child::before{
+  background: rgba(214, 167, 0, 0.9);
+}
+
+/* Status: 6 dickere Punkte */
+.pz-dots{
+  display: inline-flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.pz-dot{
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.18);          /* grau */
+}
+
+.pz-dot.is-pz1{
+  background: rgba(46, 160, 67, 0.95);   /* grün */
+}
+
+.pz-dot.is-pz2{
+  background: rgba(214, 167, 0, 0.95);   /* gelb */
+}
+
+.pz-dot.is-none{
+  background: rgba(0,0,0,0.18);
+}
