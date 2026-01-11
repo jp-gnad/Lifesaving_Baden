@@ -6,7 +6,7 @@
   --pz-gray-dot: rgba(0, 0, 0, 0.18);
   --pz-head: #5b5b5b;
   --pz-white: #fff;
-  --pz-detail-bg: #fafafa;
+  --pz-detail-bg: #ffffff;
   --pz-row-hover: rgba(0, 0, 0, 0.03);
   --pz-border: rgba(0, 0, 0, 0.10);
   --pz-border-soft: rgba(0, 0, 0, 0.08);
@@ -15,6 +15,7 @@
   --pz-badge-pz1: rgba(198, 239, 206, 0.95);
   --pz-badge-pz2: rgba(255, 235, 156, 0.95);
   --pz-badge-none: rgba(0, 0, 0, 0.06);
+  --pz-red: #cc0000;
 }
 
 main#content{
@@ -45,14 +46,65 @@ main#content{
   z-index: 1;
 }
 
+.updates{
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 16px 24px 16px;
+}
+
 .updates h2{
   margin-top: 1.5rem;
+  font-size: 2rem;
+  color: var(--pz-red);
+  font-weight: 800;
+  text-align: center;
+}
+
+.updates p{
+  margin: 0.75rem auto 0 auto;
+  margin-bottom: 4rem;
+  max-width: 700px;
+  text-align: center;
+  line-height: 1.6;
+  color: rgb(87, 87, 86);
+  font-size: 1.2rem;
+}
+
+.updates ul{
+  margin: 0.75rem auto 0 auto;
+  padding-left: 1.2rem;
+  max-width: 560px;
+}
+
+.updates li{
+  margin: 0.35rem 0;
+}
+
+.updates a{
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(227, 6, 19, 0.55);
+  transition: color 200ms ease, text-decoration-color 200ms ease;
+}
+
+.updates a:hover,
+.updates a:focus-visible{
+  color: rgb(227, 6, 19);
+  text-decoration-color: rgb(227, 6, 19);
+}
+
+.updates a:focus-visible{
+  outline: 2px solid rgba(227, 6, 19, 0.45);
+  outline-offset: 3px;
+  border-radius: 6px;
 }
 
 .pz-root{
-  max-width: 1200px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 0;
 }
 
 .pz-grid{
@@ -96,6 +148,7 @@ main#content{
 
 .pz-table tbody tr{
   border-bottom: 1px solid var(--pz-border);
+  border-top: 1px solid var(--pz-border);
 }
 
 .pz-row{
@@ -201,13 +254,24 @@ main#content{
 }
 
 .pz-detail{
-  display: none;
+  display: table-row;
   background: var(--pz-detail-bg);
 }
 
-.pz-detail.is-open{
-  display: table-row;
-  padding: 0;
+.pz-detail-inner{
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 260ms ease, opacity 180ms ease;
+  will-change: max-height;
+}
+
+.pz-detail.is-open .pz-detail-inner{
+  opacity: 1;
+}
+
+.pz-table tbody tr.pz-detail{
+  border-top: 0;
 }
 
 .pz-detail-line{
@@ -215,7 +279,7 @@ main#content{
   justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.55rem 0.70rem;
+  padding: 7px 7px;
   border-top: 1px solid var(--pz-border-soft);
 }
 
@@ -228,12 +292,12 @@ main#content{
 }
 
 .pz-detail-meta{
-  margin-top: 0.18rem;
   font-size: 0.82rem;
   opacity: 0.85;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: rgb(87, 87, 86);
 }
 
 .pz-detail-right{
@@ -266,62 +330,6 @@ main#content{
   padding: 0.85rem;
   opacity: 0.85;
 }
-
-@media (max-width: 1080px){
-  .pz-grid{
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 720px){
-  .hero h1{
-    font-size: 2.0em;
-  }
-
-  .hero{
-    height: 200px;
-    padding-top: 80px;
-  }
-
-  .pz-th-status{
-    width: 120px;
-  }
-
-  .pz-name{
-    font-size: 0.95rem;
-  }
-
-  .pz-status{
-    font-size: 0.92rem;
-  }
-
-  .pz-detail-right{
-    text-align: left;
-  }
-
-  .pz-dots{
-    gap: 5px;
-  }
-
-  .pz-dot{
-    width: 10px;
-    height: 10px;
-  }
-}
-
-@media (max-width: 440px){
-  .pz-dots{
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 4px;
-    justify-items: end;
-  }
-
-  .pz-th-status{
-    width: 60px;
-  }
-}
-
 
 .pz-pager{
   display: flex;
@@ -379,4 +387,71 @@ main#content{
   color: rgba(0, 0, 0, 0.55);
   background: #fff;
   border-right: 1px solid rgba(0, 0, 0, 0.14);
+}
+
+@media (max-width: 1080px){
+  .pz-grid{
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px){
+  .hero h1{
+    font-size: 2.0em;
+  }
+
+  .hero{
+    height: 200px;
+    padding-top: 45px;
+  }
+
+  .pz-th-status{
+    width: 120px;
+  }
+
+  .pz-name{
+    font-size: 0.95rem;
+  }
+
+  .pz-status{
+    font-size: 0.92rem;
+  }
+
+  .pz-detail-right{
+    text-align: left;
+  }
+
+  .pz-dots{
+    gap: 5px;
+  }
+
+  .pz-dot{
+    width: 10px;
+    height: 10px;
+  }
+
+  .updates h2{
+    font-size: 1.5rem;
+  }
+
+  .updates p{
+    margin: 0.75rem auto 0 auto;
+    margin-bottom: 3rem;
+    text-align: center;
+    line-height: 1.5;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 440px){
+  .pz-dots{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    justify-items: end;
+  }
+
+  .pz-th-status{
+    width: 60px;
+  }
 }

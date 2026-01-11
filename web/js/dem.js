@@ -4,8 +4,8 @@ const DATA_SHEET = "Tabelle2";
 
 const CONFIG_EXCEL_URL =
   "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx";
-const CONFIG_SHEET = "JRP";
-const CONFIG_TABLE_NAME = "JRP_konfig";
+const CONFIG_SHEET = "DEM";
+const CONFIG_TABLE_NAME = "DEM_konfig";
 
 const DATA_COLS = {
   gender: 0,
@@ -70,12 +70,15 @@ document.addEventListener("DOMContentLoaded", () => {
     </section>
 
     <section class="updates">
-      <h2>Aktuelles</h2>
+      <h2>Infos zum Wettkampf</h2>
+      <p>Alle offiziellen Pflichtzeiten, Ausschreibung und weitere Infos zu den DEM findest du auf der <a href="https://www.dlrg.de/mitmachen/rettungssport/nationale-und-internationale-wettkaempfe/" target="_blank" rel="noopener noreferrer">Homepage</a> der DLRG. </p>
+      <h2>Alle erreichten Pflichtzeiten</h2>
       <div id="pflichtzeiten-root" class="pz-root">
         <p id="pflichtzeiten-status" class="pz-statusline">Lade Pflichtzeiten aus Excel …</p>
       </div>
     </section>
   `;
+
 
   PZ_MOUNT = document.getElementById("pflichtzeiten-root");
 
@@ -595,14 +598,48 @@ function buildTableBlock(cfg, fullList) {
         detailWrap.appendChild(line);
       }
 
-      detailTd.appendChild(detailWrap);
+      const detailInner = document.createElement("div");
+      detailInner.className = "pz-detail-inner";
+      detailInner.style.maxHeight = "0px";
+
+      detailInner.appendChild(detailWrap);
+      detailTd.appendChild(detailInner);
       detailRow.appendChild(detailTd);
 
       const toggle = () => {
-        const isOpen = mainRow.classList.toggle("is-open");
-        detailRow.classList.toggle("is-open", isOpen);
-        mainRow.setAttribute("aria-expanded", String(isOpen));
-      };
+      const detailInner = detailRow.querySelector(".pz-detail-inner");
+      if (!detailInner) return;
+
+      const isCurrentlyOpen = detailRow.classList.contains("is-open");
+
+      if (!isCurrentlyOpen) {
+        mainRow.classList.add("is-open");
+        detailRow.classList.add("is-open");
+        mainRow.setAttribute("aria-expanded", "true");
+
+        detailInner.style.maxHeight = "0px";
+        requestAnimationFrame(() => {
+          detailInner.style.maxHeight = detailInner.scrollHeight + "px";
+        });
+
+      } else {
+        mainRow.classList.remove("is-open");
+        mainRow.setAttribute("aria-expanded", "false");
+
+        detailInner.style.maxHeight = detailInner.scrollHeight + "px";
+        requestAnimationFrame(() => {
+          detailInner.style.maxHeight = "0px";
+        });
+
+        const onEnd = (e) => {
+          if (e.propertyName !== "max-height") return;
+          detailRow.classList.remove("is-open");
+          detailInner.removeEventListener("transitionend", onEnd);
+        };
+        detailInner.addEventListener("transitionend", onEnd);
+      }
+    };
+
 
       mainRow.addEventListener("click", toggle);
       mainRow.addEventListener("keydown", (e) => {
