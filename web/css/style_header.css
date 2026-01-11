@@ -14,14 +14,11 @@
   font-display: swap;
 }
 
-
-
 :root{
-  --hdr-h: 64px;                 /* Höhe von Box 1 UND Box 2 */
-  --bg:#ffffff; 
-  --fg:#0f172a; 
-  --border:#e5e7eb; 
-  --accent:#0a66c2; 
+  --bg:#ffffff;
+  --fg: #575756;
+  --border:#e5e7eb;
+  --accent:#0a66c2;
   --nav-bg:#f3f4f6;
   --dlrg_red: rgb(227,6,19);
   --dlrg_yellow: rgb(255,237,0);
@@ -30,6 +27,7 @@
 }
 
 *{box-sizing:border-box}
+
 body{
   margin:0;
   color:var(--fg);
@@ -37,119 +35,201 @@ body{
   font-family: "DLRG", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
-
-/* Sticky Header als Rahmen für beide Boxen */
 #site-header{
-  position:sticky; top:0; z-index:1000;
+  position:sticky;
+  top:0;
+  z-index:1000;
   height: var(--hdr-h);
   background: var(--black);
 }
 
-/* Box 1: Hintergrund mit Brand (links) */
 .hdr-bg{height:100%}
+
 .hdr-container{
-  max-width:1100px; margin:0 auto;
+  max-width:1100px;
+  margin:0 auto;
   height:100%;
   padding:0 1rem;
-  display:flex; align-items:center; justify-content:flex-start;
-  position:absolute; top:0; left:0;
-  gap: .75rem; 
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  position:absolute;
+  top:0;
+  left:0;
+  gap:.75rem;
 }
+
 .brand{
-  font-weight: 800; 
-  text-decoration:none; 
-  color:var(--dlrg_yellow); 
-  font-size: 2.2em;
-  display: inline-flex;
-  align-items: center;
-  gap: 1rem;
-  line-height: 1;
+  font-weight:800;
+  text-decoration:none;
+  color:var(--dlrg_yellow);
+  font-size:2.2em;
+  display:inline-flex;
+  align-items:center;
+  gap:1rem;
+  line-height:1;
 }
-/* Elch-Icon: an Headerhöhe angepasst */
+
 .brand-mascot{
   display:block;
-  height: calc(var(--hdr-h) - 45px);  /* etwas Luft oben/unten */
-  width: auto;
-  object-fit: contain;
-}
-
-.brand .brand-baden { color: #fff; }
-
-/* SVG-Logo skaliert sich an die Headerhöhe an */
-.brand-logo{
-  display:block;
-  height:calc(var(--hdr-h) - 20px); /* passt in die Box, oben/unten 10px Luft */
+  height: calc(var(--hdr-h) - 45px);
   width:auto;
   object-fit:contain;
 }
 
-/* Optional: falls der Text zu lang wäre, kürzen */
+.brand .brand-baden{color:#fff}
+
+.brand-logo{
+  display:block;
+  height:calc(var(--hdr-h) - 20px);
+  width:auto;
+  object-fit:contain;
+}
+
 .brand-title{
   white-space:nowrap;
   text-overflow:ellipsis;
-  max-width:60vw; /* verhindert Überschneidung mit der rechten Nav-Box */
+  max-width:60vw;
 }
 
-/* Box 2: Nav (liegt oben rechts, gleiche Höhe wie Box 1) */
 .hdr-nav-wrap{
-  position:absolute; top:0; right:0;
+  position:absolute;
+  top:0;
+  right:0;
   height:var(--hdr-h);
-  display:flex; align-items:center;
+  display:flex;
+  align-items:center;
 }
+
 .hdr-nav{
-  height:100%;                     /* exakt gleiche Höhe wie Box 1 */
-  display:flex; align-items:center;
+  height:100%;
+  display:flex;
+  align-items:center;
   background: var(--dlrg_yellow);
   border-radius: 100px 0 0 100px;
-  box-shadow:0 8px 22px rgba(0, 0, 0, 0.154);
-  overflow:hidden;                 /* saubere, abgerundete Kanten */
+  box-shadow:0 8px 22px rgba(0,0,0,.154);
+  overflow:hidden;
+  position:relative;
 }
 
-/* Nav-Inhalt als einzeilige Leiste */
 .nav{
-  display:flex; align-items:center; gap:.5rem;
+  display:flex;
+  align-items:center;
+  gap:.5rem;
   padding:0 .5rem;
   list-style:none;
-  flex-wrap:nowrap; white-space:nowrap;
-  font-size: 1.25em;
-  margin-left: 20px;
-  margin-right: 50px;
+  flex-wrap:nowrap;
+  white-space:nowrap;
+  font-size:1.25em;
+  margin-left:20px;
+  margin-right:50px;
 }
-.nav li{list-style:none}
+
+.nav li{list-style:none; position:relative}
+
 .nav a{
-  display: inline-block;
-  text-decoration:none; color:var(--black);
-  padding:.55rem .9rem; border-radius:.55rem;
+  display:inline-block;
+  text-decoration:none;
+  color:var(--black);
+  padding:.55rem .9rem;
+  border-radius:.55rem;
 }
-/* Aktiv: nur Unterstreichung, keine Farbfläche */
-.nav a.active{
+
+.nav button{
+  font:inherit;
+  border:0;
+  background:transparent;
+  padding:.55rem .9rem;
+  border-radius:.55rem;
+  cursor:pointer;
+  color:var(--black);
+  display:inline-flex;
+  align-items:center;
+}
+
+.nav a.active,
+.nav button.active{
   color: var(--dlrg_red);
 }
 
-/* Falls du eine Hover-Farbe hast, hier für aktive Links unterdrücken */
-.nav a:hover{
-  background: none;            /* überschreibt evtl. frühere Regeln */
-  color: var(--black);              /* oder: var(--fg) */
-  text-decoration: underline;
-  text-underline-offset: 1.45em;
-  text-decoration-thickness: 4px;
-  text-decoration-skip-ink: auto;
+.nav a.active-parent,
+.nav button.active-parent{
+  color: var(--dlrg_red);
 }
 
-/* Falls du eine Hover-Farbe hast, hier für aktive Links unterdrücken */
-.nav a.active:hover{
-  color: var(--dlrg_red);  
-  text-decoration: none;
+.nav a:hover,
+.nav button:hover{
+  background:none;
+  color:var(--black);
+  text-decoration:underline;
+  text-underline-offset:1.45em;
+  text-decoration-thickness:4px;
+  text-decoration-skip-ink:auto;
 }
 
-
-
-/* Fokus sichtbar */
-.nav a:focus-visible{
-  outline:2px solid #000; outline-offset:2px;
+.nav a.active:hover,
+.nav button.active:hover{
+  color: var(--dlrg_red);
+  text-decoration:none;
 }
 
-/* Icon-Button: standardmäßig ausblenden (Desktop) */
+.nav a:focus-visible,
+.nav button:focus-visible{
+  outline:2px solid #000;
+  outline-offset:2px;
+}
+
+.subnav{
+  display:none;
+  position:fixed;
+  top: var(--hdr-h);
+  left:0;
+  right:0;
+  width:100vw;
+  margin:0;
+  padding:0;
+  list-style:none;
+  background:#fff;
+  border-top:1px solid var(--border);
+  box-shadow:0 12px 28px rgba(0,0,0,.12);
+  z-index:1500;
+}
+
+.subnav li{
+  border-top:1px solid #e5e7eb;
+}
+
+.subnav li:first-child{
+  border-top:0;
+}
+
+.subnav a{
+  display:block;
+  max-width:1100px;
+  margin:0 auto;
+  padding:1rem 1.25rem;
+  font-size:1.15rem;
+  color:var(--fg);
+  text-decoration:none;
+  border-radius:0;
+}
+
+.subnav a:hover{
+  background:#f9fafb;
+  text-decoration:none;
+}
+
+.subnav a.active{
+  color: var(--dlrg_red);
+}
+
+@media (min-width:1001px){
+  .nav > li.has-children:hover > .subnav,
+  .nav > li.has-children:focus-within > .subnav{
+    display:block;
+  }
+}
+
 .menu-toggle{
   display:none;
   appearance:none;
@@ -159,94 +239,218 @@ body{
   border-radius:.5rem;
   cursor:pointer;
 }
-.menu-toggle:hover{ background:rgba(0,0,0,.06); }
-.menu-toggle:focus-visible{ outline:2px solid #000; outline-offset:2px; }
 
-/* Für die Dropdown-Positionierung */
-.hdr-nav{ position: relative; }
-
+.menu-toggle:hover{background:rgba(0,0,0,.06)}
+.menu-toggle:focus-visible{outline:2px solid #000; outline-offset:2px}
 
 @media (max-width:1000px){
   :root{ --hdr-h: 70px; }
 
-  /* Hamburger sichtbar */
   .menu-toggle{
-    display:inline-flex; align-items:center; justify-content:center;
-    margin-right: 10px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    margin-right:10px;
   }
 
-  .brand{
-    font-size: 1.5em;
+  .brand{ font-size:1.5em; }
+
+  .hdr-nav{
+    background:transparent;
+    border:none;
+    box-shadow:none;
+    height:100%;
+    overflow:visible;
+    position:static;
   }
 
-  /* Desktop-Stile neutralisieren */
-  .hdr-nav{ background: transparent; border: none; box-shadow: none; height: 100%; }
-  .hdr-nav .nav{ display: none; } /* geschlossen -> unsichtbar */
+  .hdr-nav .nav{ display:none; }
 
-  /* GEÖFFNET: volle Breite, unter dem Header, über dem Content */
-  .hdr-nav{ position: static; } /* Referenz egal, wir arbeiten fixed */
   .hdr-nav.open .nav{
-    position: fixed;
-    top: 50px;
-    left: -20px;
-    right: 0;
-    display: block !important;
-    background: var(--bg);
-    border: 0;
-    border-radius: 0;
-    box-shadow: 0 12px 28px rgba(0,0,0,.12);
-    padding: 0;                     /* Listeneinträge übernehmen Abstand */
-    z-index: 2000;
-    max-height: calc(100vh - var(--hdr-h));
+    position:fixed;
+    top:var(--hdr-h);
+    left:0;
+    right:0;
+    width:100vw;
+    display:block !important;
+    background:var(--bg);
+    border:0;
+    border-radius:0;
+    box-shadow:0 12px 28px rgba(0,0,0,.12);
+    padding:0;
+    z-index:2000;
+    max-height:calc(100vh - var(--hdr-h));
     overflow:auto;
-    width: 100%;
+    margin:0;
   }
 
-  /* Listeneinträge wie im Screenshot: große Zeilen, Trennlinien, Chevron rechts */
   .hdr-nav.open .nav li{
-    list-style: none;
-    border-top: 1px solid #e5e7eb;
-    background: #fff;
+    list-style:none;
+    border-top:1px solid #e5e7eb;
+    background:#fff;
   }
-  .hdr-nav.open .nav li:first-child{ border-top: 0; }
+
+  .hdr-nav.open .nav li:first-child{ border-top:0; }
 
   .hdr-nav.open .nav a{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: .75rem;
-    padding: 1rem 1.25rem;
-    font-size: 1.35rem;
-    color: var(--fg);
-    text-decoration: none;          /* keine Unterstreichung mobil */
-    white-space: nowrap;
-  }
-  .hdr-nav.open .nav a:hover{
-    background: #f9fafb;            /* dezentes Hover statt Unterstreichung */
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:.75rem;
+    padding:1rem 1.25rem;
+    font-size:1.35rem;
+    color:var(--fg);
+    text-decoration:none;
+    white-space:nowrap;
   }
 
-  /* Chevron rechts */
-  .hdr-nav.open .nav a::after{
-    content: "›";                    /* einfacher, robuster Pfeil */
-    font-weight: 700;
-    color: var(--accent);
-    margin-left: .75rem;
+  .hdr-nav.open .nav button{
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:.75rem;
+    padding:1rem 1.25rem;
+    font-size:1.35rem;
+    color:var(--fg);
+    background:transparent;
+    border-radius:0;
+    text-decoration:none;
+    border:0;
   }
 
-  /* Aktiver Punkt: rote Schrift, Chevron folgt der Farbe */
-  .hdr-nav.open .nav a.active{
-    color: var(--dlrg_red);
+  .hdr-nav.open .nav a:hover,
+  .hdr-nav.open .nav button:hover{
+    background:#f9fafb;
+    text-decoration:none;
   }
-  .hdr-nav.open .nav a.active::after{
-    color: var(--dlrg_red);
+
+  .hdr-nav.open .nav li.nav-back{
+    background:#e6e6e6;
+    border-top:0;
+    border-bottom:1px solid #cfcfcf;
   }
+
+  .hdr-nav.open .nav button.nav-back-btn{
+    font-weight:800;
+    color:var(--fg);
+    background:transparent;
+    justify-content:flex-start;
+    padding: .65rem 1.25rem;
+  }
+
+  .hdr-nav.open .nav button.nav-back-btn::before{
+    content:"‹";
+    font-weight:800;
+    color:var(--fg);
+  }
+
+  .hdr-nav.open .nav button.nav-back-btn::after{ content:""; }
+
+  .hdr-nav.open .nav a.active,
+  .hdr-nav.open .nav button.active,
+  .hdr-nav.open .nav button.active-parent{
+    color:var(--dlrg_red);
+  }
+
+  .hdr-nav.open .nav a,
+  .hdr-nav.open .nav button.nav-drill{
+    justify-content:space-between;
+  }
+
+  .hdr-nav.open .nav a.active::after,
+  .hdr-nav.open .nav button.active::after,
+  .hdr-nav.open .nav button.active-parent::after{
+    color:var(--dlrg_red);
+  }
+
+  .subnav{ display:none !important; }
+
+  .hdr-nav.open .nav li.nav-row{
+    display:grid;
+    grid-template-columns:1fr 64px;
+    align-items:stretch;
+  }
+
+  .hdr-nav.open .nav a.nav-mainlink{
+    grid-column:1;
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    padding:1rem 1.25rem;
+    font-size:1.2rem;
+    color:var(--fg);
+    text-decoration:none;
+    white-space:nowrap;
+  }
+
+  .hdr-nav.open .nav li.no-arrow a.nav-mainlink{
+    grid-column:1 / -1;
+  }
+
+  .hdr-nav.open .nav button.nav-arrow{
+    grid-column:2;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    background:transparent;
+    border-left:1px solid #e5e7eb;
+    font:inherit;
+    font-size:2.2rem;
+    line-height:1;
+    color:var(--accent);
+    cursor:pointer;
+    padding:0;
+    transform: translateX(-8px)
+  }
+
+  .hdr-nav.open .nav a.nav-mainlink:hover,
+  .hdr-nav.open .nav button.nav-arrow:hover{
+    background:#f9fafb;
+    text-decoration:none;
+  }
+
+  .hdr-nav.open .nav a.nav-mainlink.active{ color:var(--dlrg_red); }
+
+  .hdr-nav.open .nav button.nav-arrow.active,
+  .hdr-nav.open .nav button.nav-arrow.active-parent{
+    color:var(--dlrg_red);
+  }
+
+  @media (max-width:1000px){
+    .hdr-nav.open .nav[data-level="sub"] a.nav-mainlink{
+      font-size: 1.1rem;
+    }
+  }
+
+  @media (max-width:1000px){
+    .hdr-nav.open .nav[data-level="sub"] .nav-back-btn{
+      font-size: 1.0rem;
+    }
+  }
+
+
 }
 
 
+.menu-toggle { color: var(--bg); }
+.menu-toggle:hover { color: var(--nav-bg); }
+.menu-toggle svg path { fill: currentColor; }
 
 
-/* Farbe steuert die Icon-Farbe */
-.menu-toggle { color: var(--bg); }                 /* Standard */
-.menu-toggle:hover { color: var(--nav-bg); }       /* Hover */
+@media (min-width:1001px){
+  .nav{ height: 100%; }
 
-.menu-toggle svg path { fill: currentColor; }      /* übernimmt die Textfarbe */
+  .nav > li{
+    height: 100%;
+    display: flex;
+    align-items: stretch;
+  }
+
+  .nav > li > a{
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+}
