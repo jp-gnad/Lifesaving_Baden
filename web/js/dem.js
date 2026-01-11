@@ -4,8 +4,8 @@ const DATA_SHEET = "Tabelle2";
 
 const CONFIG_EXCEL_URL =
   "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx";
-const CONFIG_SHEET = "DEM";
-const CONFIG_TABLE_NAME = "DEM_konfig";
+const CONFIG_SHEET = "JRP";
+const CONFIG_TABLE_NAME = "JRP_konfig";
 
 const DATA_COLS = {
   gender: 0,
@@ -180,26 +180,36 @@ function renderTablesIntoMount() {
 
   PZ_MOUNT.innerHTML = "";
 
-  const colW = document.createElement("div");
-  const colM = document.createElement("div");
+  const pairs = pairConfigsByCriteria(PZ_CONFIGS);
 
-  for (const cfg of PZ_CONFIGS) {
-    const fullList = buildPeopleForConfig(PZ_DATA_ROWS, cfg).sort(personSort);
-    const block = buildTableBlock(cfg, fullList);
-    if (cfg.gender === "w") colW.appendChild(block);
-    else colM.appendChild(block);
+  for (const p of pairs) {
+    if (p.w) {
+      const listW = buildPeopleForConfig(PZ_DATA_ROWS, p.w).sort(personSort);
+      PZ_MOUNT.appendChild(buildTableBlock(p.w, listW));
+    } else {
+      const ph = document.createElement("div");
+      ph.setAttribute("aria-hidden", "true");
+      PZ_MOUNT.appendChild(ph);
+    }
+
+    if (p.m) {
+      const listM = buildPeopleForConfig(PZ_DATA_ROWS, p.m).sort(personSort);
+      PZ_MOUNT.appendChild(buildTableBlock(p.m, listM));
+    } else {
+      const ph = document.createElement("div");
+      ph.setAttribute("aria-hidden", "true");
+      PZ_MOUNT.appendChild(ph);
+    }
   }
 
-  if (colW.childElementCount) PZ_MOUNT.appendChild(colW);
-  if (colM.childElementCount) PZ_MOUNT.appendChild(colM);
-
-  if (!colW.childElementCount && !colM.childElementCount) {
+  if (!pairs.length) {
     const p = document.createElement("p");
     p.className = "pz-empty";
     p.textContent = "Keine Einträge.";
     PZ_MOUNT.appendChild(p);
   }
 }
+
 
 function parseConfigsFromRows(rows) {
   const headerIdx = findHeaderRowIndex(rows);
@@ -926,6 +936,69 @@ function timeTextToCenti(s) {
     return -1;
   }
 }
+
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
+
+function ymdLocal(d) {
+  if (!(d instanceof Date) || isNaN(d.getTime())) return "";
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+function cfgPairKey(cfg) {
+  return [
+    cfg.minAge ?? "",
+    cfg.maxAge ?? "",
+    ymdLocal(cfg.qualiStart),
+    ymdLocal(cfg.qualiEnd),
+    ymdLocal(cfg.lastActive),
+    String(cfg.lv ?? ""),
+    cfg.omsFilter ? "1" : "0",
+    String(cfg.poolLength ?? ""),
+    String(cfg.rulebook ?? ""),
+    String(cfg.pageSize ?? ""),
+  ].join("|");
+}
+
+function pairConfigsByCriteria(cfgs) {
+  const order = [];
+  const map = new Map();
+
+  for (let i = 0; i < cfgs.length; i++) {
+    const cfg = cfgs[i];
+    const key = cfgPairKey(cfg);
+
+    let p = map.get(key);
+    if (!p) {
+      p = { key, order: i, w: null, m: null };
+      map.set(key, p);
+      order.push(p);
+    }
+
+    if (cfg.gender === "w") {
+      if (!p.w) p.w = cfg;
+      else {
+        const key2 = key + "#w#" + i;
+        const p2 = { key: key2, order: i, w: cfg, m: null };
+        order.push(p2);
+        map.set(key2, p2);
+      }
+    } else if (cfg.gender === "m") {
+      if (!p.m) p.m = cfg;
+      else {
+        const key2 = key + "#m#" + i;
+        const p2 = { key: key2, order: i, w: null, m: cfg };
+        order.push(p2);
+        map.set(key2, p2);
+      }
+    }
+  }
+
+  order.sort((a, b) => a.order - b.order);
+  return order;
+}
+
 
 function yearLabel2(birthYear) {
   return String(birthYear % 100).padStart(2, "0");
