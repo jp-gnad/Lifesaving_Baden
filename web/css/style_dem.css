@@ -1,45 +1,53 @@
+:root{
+  --pz-green: #008800;
+  --pz-green-bar: #008800;
+  --pz-yellow: #ffbf00;
+  --pz-yellow-bar: #ffc107;
+  --pz-gray-dot: rgba(0, 0, 0, 0.18);
+  --pz-head: #5b5b5b;
+  --pz-white: #fff;
+  --pz-detail-bg: #fafafa;
+  --pz-row-hover: rgba(0, 0, 0, 0.03);
+  --pz-border: rgba(0, 0, 0, 0.10);
+  --pz-border-soft: rgba(0, 0, 0, 0.08);
+  --pz-hero-grad-top: rgba(0, 0, 0, 0.257);
+  --pz-hero-grad-bot: rgba(0, 0, 0, 0.825);
+  --pz-badge-pz1: rgba(198, 239, 206, 0.95);
+  --pz-badge-pz2: rgba(255, 235, 156, 0.95);
+  --pz-badge-none: rgba(0, 0, 0, 0.06);
+}
 
-/* Seiteninhalt Startseite */
-main#content {
+main#content{
   margin: 0 auto;
 }
 
-.hero {
+.hero{
   position: relative;
-  background: url("../png/hintergrund9.jpg") center/cover no-repeat;  background-position: center 40%;
+  background: url("../png/hintergrund9.jpg") center/cover no-repeat;
+  background-position: center 40%;
   height: 300px;
   text-align: center;
   padding-top: 125px;
   color: white;
 }
+
 .hero::before{
   content: "";
   position: absolute;
-  inset: 0;                  /* über die ganze Fläche */
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.257), rgba(0, 0, 0, 0.825));
-  pointer-events: none;      /* klicks gehen durch */
+  inset: 0;
+  background: linear-gradient(to bottom, var(--pz-hero-grad-top), var(--pz-hero-grad-bot));
+  pointer-events: none;
 }
 
-.hero h1 {
+.hero h1{
   position: relative;
   font-size: 2.75em;
   z-index: 1;
 }
 
-.updates h2 {
+.updates h2{
   margin-top: 1.5rem;
 }
-
-
-@media (max-width:720px){
-  .hero h1 {font-size: 2.0em; }
-  .hero {height: 200px; padding-top: 80px;}
-}
-
-
-/* =========================
-   Pflichtzeiten – neuer Look
-   ========================= */
 
 .pz-root{
   max-width: 1200px;
@@ -47,7 +55,16 @@ main#content {
   padding: 0 16px;
 }
 
-.pz-block { margin-top: 1.25rem; }
+.pz-grid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 50px;
+  align-items: start;
+}
+
+.pz-block{
+  margin-top: 1.25rem;
+}
 
 .pz-title{
   margin: 0 0 0.5rem 0;
@@ -55,33 +72,17 @@ main#content {
   font-weight: 700;
 }
 
-.pz-status-line{
-  display: block;
-  line-height: 1.15;
-  font-size: 0.85rem;   /* kleiner */
-  font-weight: 700;     /* optional: etwas kräftig */
-}
-
-.pz-status-line + .pz-status-line{
-  margin-top: 0.15rem;
-}
-
-.pz-status-line.is-zero{
-  color: rgba(0,0,0,0.35);  /* hellgrau */
-  font-weight: 600;
-}
-
 .pz-table{
   width: 100%;
   border-collapse: collapse;
-  background: #fff;
-  border-radius: 4px 4px 0px 0px;
+  background: var(--pz-white);
+  border-radius: 4px 4px 0 0;
   overflow: hidden;
 }
 
 .pz-table thead th{
-  background: #5b5b5b;
-  color: #fff;
+  background: var(--pz-head);
+  color: var(--pz-white);
   text-align: left;
   padding: 0.65rem 0.85rem;
   font-weight: 700;
@@ -94,33 +95,50 @@ main#content {
 }
 
 .pz-table tbody tr{
-  border-bottom: 1px solid rgba(0,0,0,0.10);
+  border-bottom: 1px solid var(--pz-border);
 }
 
 .pz-row{
   cursor: pointer;
 }
 
-.pz-row:hover{
-  background: rgba(0,0,0,0.03);
-}
-
+.pz-row:hover,
 .pz-row.is-open{
-  background: rgba(0,0,0,0.03);
+  background: var(--pz-row-hover);
 }
 
-.pz-table td{
-  padding: 0.70rem 0.85rem;
+.pz-row td{
+  padding: 0.60rem 0.85rem;
   vertical-align: middle;
 }
 
-.pz-status{
-  text-align: right;
-  font-weight: 700;
-  white-space: nowrap;
+.pz-detail td{
+  padding: 0;
+  vertical-align: top;
 }
 
-/* Person cell layout */
+.pz-row td:first-child{
+  position: relative;
+}
+
+.pz-row td:first-child::before{
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: transparent;
+}
+
+.pz-row.has-pz1 td:first-child::before{
+  background: var(--pz-green-bar);
+}
+
+.pz-row.has-pz2 td:first-child::before{
+  background: var(--pz-yellow-bar);
+}
+
 .pz-person{
   display: flex;
   align-items: center;
@@ -135,25 +153,61 @@ main#content {
   flex: 0 0 auto;
 }
 
-.pz-person-text{ line-height: 1.1; }
+.pz-person-text{
+  line-height: 1.1;
+}
+
 .pz-name{
   font-weight: 800;
   font-size: 1rem;
 }
+
 .pz-og{
   margin-top: 0.15rem;
   font-size: 0.85rem;
   opacity: 0.85;
 }
 
-/* Accordion detail row */
+.pz-status{
+  text-align: right;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pz-dots{
+  display: inline-flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.pz-dot{
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--pz-gray-dot);
+}
+
+.pz-dot.is-pz1{
+  background: var(--pz-green);
+}
+
+.pz-dot.is-pz2{
+  background: var(--pz-yellow);
+}
+
+.pz-dot.is-none{
+  background: var(--pz-gray-dot);
+}
+
 .pz-detail{
   display: none;
-  background: #fafafa;
+  background: var(--pz-detail-bg);
 }
 
 .pz-detail.is-open{
   display: table-row;
+  padding: 0;
 }
 
 .pz-detail-line{
@@ -162,11 +216,11 @@ main#content {
   align-items: center;
   gap: 0.75rem;
   padding: 0.55rem 0.70rem;
-  border-top: 1px solid rgba(0,0,0,0.08);
+  border-top: 1px solid var(--pz-border-soft);
 }
 
 .pz-detail-left{
-  min-width: 0; /* wichtig für Ellipsis */
+  min-width: 0;
 }
 
 .pz-detail-discipline{
@@ -187,7 +241,6 @@ main#content {
   flex: 0 0 auto;
 }
 
-/* Badges */
 .pz-badge{
   display: inline-block;
   padding: 0.20rem 0.55rem;
@@ -197,15 +250,15 @@ main#content {
 }
 
 .pz-badge.is-pz1{
-  background: rgba(198, 239, 206, 0.95);
+  background: var(--pz-badge-pz1);
 }
 
 .pz-badge.is-pz2{
-  background: rgba(255, 235, 156, 0.95);
+  background: var(--pz-badge-pz2);
 }
 
 .pz-badge.is-none{
-  background: rgba(0,0,0,0.06);
+  background: var(--pz-badge-none);
   opacity: 0.85;
 }
 
@@ -214,85 +267,57 @@ main#content {
   opacity: 0.85;
 }
 
-/* Mobile */
-@media (max-width: 720px){
-  .pz-th-status{ width: 150px; }
-  .pz-name{ font-size: 0.95rem; }
-  .pz-status{ font-size: 0.92rem; }
-
-  .pz-detail-line{
-    grid-template-columns: 1fr;
-  }
-  .pz-detail-right{
-    text-align: left;
-  }
-}
-
-/* 2-spaltige Anordnung der 6 Tabellen */
-.pz-grid{
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.25rem;
-  align-items: start;
-}
-
-/* Mobile: untereinander */
-@media (max-width: 900px){
+@media (max-width: 1080px){
   .pz-grid{
     grid-template-columns: 1fr;
   }
 }
 
+@media (max-width: 720px){
+  .hero h1{
+    font-size: 2.0em;
+  }
 
+  .hero{
+    height: 200px;
+    padding-top: 80px;
+  }
 
-/* Farbstreifen direkt am linken Rand der ersten Zelle */
-.pz-row td:first-child{
-  position: relative; /* Anker für ::before */
+  .pz-th-status{
+    width: 120px;
+  }
+
+  .pz-name{
+    font-size: 0.95rem;
+  }
+
+  .pz-status{
+    font-size: 0.92rem;
+  }
+
+  .pz-detail-right{
+    text-align: left;
+  }
+
+  .pz-dots{
+    gap: 5px;
+  }
+
+  .pz-dot{
+    width: 10px;
+    height: 10px;
+  }
 }
 
-.pz-row td:first-child::before{
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 6px;         /* dicke des Streifens */
-  background: transparent;
-}
+@media (max-width: 440px){
+  .pz-dots{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    justify-items: end;
+  }
 
-/* grün wenn mind. 1x PZ1 */
-.pz-row.has-pz1 td:first-child::before{
-  background: rgba(46, 160, 67, 0.9);
-}
-
-/* gelb wenn keine PZ1, aber PZ2 */
-.pz-row.has-pz2 td:first-child::before{
-  background: rgba(214, 167, 0, 0.9);
-}
-
-/* Status: 6 dickere Punkte */
-.pz-dots{
-  display: inline-flex;
-  gap: 8px;
-  justify-content: flex-end;
-  align-items: center;
-}
-
-.pz-dot{
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  background: rgba(0,0,0,0.18);          /* grau */
-}
-
-.pz-dot.is-pz1{
-  background: rgba(46, 160, 67, 0.95);   /* grün */
-}
-
-.pz-dot.is-pz2{
-  background: rgba(214, 167, 0, 0.95);   /* gelb */
-}
-
-.pz-dot.is-none{
-  background: rgba(0,0,0,0.18);
+  .pz-th-status{
+    width: 60px;
+  }
 }
