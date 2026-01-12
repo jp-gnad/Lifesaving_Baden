@@ -232,25 +232,25 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     const d = new Date(base.getTime() + num * 86400000);
     return d.toISOString().slice(0,10);
   }
-  function normalizeRegelwerk(s){
-    const t = String(s||"").toLowerCase();
-    if (t.startsWith("nat")) return "National";
-    if (t.startsWith("int")) return "International";
-    return s || "";
-  }
-  function normalizeLand(x){
-    const t = String(x||"").trim();
-    if (!t) return "";
-    if (t.toUpperCase() === "GER") return "Deutschland";
-    return t;
-  }
-  function normalizePool(v){
-    return (String(v).trim() === "25" || String(v).trim() === "50") ? String(v).trim() : "";
-  }
-  function normalizeStartrecht(s){
-    const t = String(s||"").trim().toUpperCase();
-    return (t==="OG"||t==="LV"||t==="BV"||t==="BZ") ? t : "";
-  }
+    function normalizeRegelwerk(s){
+      const t = String(s||"").toLowerCase();
+      if (t.startsWith("nat")) return "National";
+      if (t.startsWith("int")) return "International";
+      return s || "";
+    }
+    function normalizeLand(x){
+      const t = String(x||"").trim();
+      if (!t) return "";
+      if (t.toUpperCase() === "GER") return "Deutschland";
+      return t;
+    }
+    function normalizePool(v){
+      return (String(v).trim() === "25" || String(v).trim() === "50") ? String(v).trim() : "";
+    }
+    function normalizeStartrecht(s){
+      const t = String(s||"").trim().toUpperCase();
+      return (t==="OG"||t==="LV"||t==="BV"||t==="BZ") ? t : "";
+    }
   function toNumOrBlank(v){
     const n = parseInt(String(v).replace(/[^\d\-]/g,""), 10);
     return Number.isFinite(n) ? String(n) : String(v||"").trim();
