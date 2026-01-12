@@ -33,9 +33,230 @@ document.addEventListener("DOMContentLoaded", () => {
     return el;
   };
   const hDiv = h;
-  const PAGE_MODE = "athleten";
+  const PAGE_MODE = "profil";
 
-  
+
+  function renderAthleteName(name) {
+    const full = (name || "").toString().trim();
+    const idx = full.indexOf(" ");
+    if (idx === -1) {
+      return [full];
+    }
+
+    const first = full.slice(0, idx);   
+    const rest  = full.slice(idx + 1); 
+
+    return [
+      h("span", { class: "name-first" }, first),
+      " ",
+      h("span", { class: "name-rest" }, rest)
+    ];
+  }
+
+  function fitProfileName() {
+    const h2 = document.querySelector(".ath-profile-title h2");
+    if (!h2) {
+      alignCapToName();
+      return;
+    }
+
+    const rest = h2.querySelector(".name-rest");
+    const vw   = window.innerWidth;
+
+    h2.style.fontSize   = "";
+    h2.style.whiteSpace = "";
+    if (rest) rest.style.fontSize = "";
+
+    if (vw > 720) {
+      h2.style.whiteSpace = "nowrap";
+
+      const computed = getComputedStyle(h2);
+      let sizePx     = parseFloat(computed.fontSize) || 24;
+
+      const rootComputed = getComputedStyle(document.documentElement);
+      const rootPx       = parseFloat(rootComputed.fontSize) || 16;
+      const minPx        = rootPx * 1.4;  
+
+      const step = 0.5; 
+
+      while (sizePx > minPx) {
+        h2.style.fontSize = sizePx + "px";
+
+        if (h2.scrollWidth <= h2.clientWidth + 0.5) {
+          break;
+        }
+        sizePx -= step;
+      }
+
+      alignCapToName();
+      return;
+    }
+
+    if (vw > 720) {
+      alignCapToName();
+      return;
+    }
+
+    if (!rest) {
+      alignCapToName();
+      return;
+    }
+
+    const computedRest = getComputedStyle(rest);
+    let maxSizePx = parseFloat(computedRest.fontSize) || 20;
+    const minSizePx = maxSizePx * 0.7;  
+    let size = maxSizePx;
+    const step = 0.5;
+
+    while (size > minSizePx) {
+      rest.style.fontSize = size + "px";
+
+      const needWidth = rest.scrollWidth;
+      const avail     = h2.clientWidth;
+
+      if (needWidth <= avail) {
+        break;
+      }
+      size -= step;
+    }
+
+    alignCapToName();
+  }
+
+  const HISTORIE_ICON_BASE = "png/historie";
+
+  const HISTORIE_TOOLTIP = {
+    DP: "Internationaler Deutschland-Pokal",
+    JRP: "Junioren Rettungspokal",
+    WM: "Weltmeisterschaft",
+    EM: "Europameisterschaft",
+    WG: "World Games",
+  };
+
+  function classifyHistorie(meet) {
+    const raw = (meet.meet_name || meet.name || "");
+    if (!raw) return null;
+
+    const name = raw.toLowerCase();
+
+    const hasWord = (token) => {
+      const re = new RegExp(`\\b${token}\\b`, "i");
+      return re.test(raw);
+    };
+
+    if (hasWord("wg") || name.includes("world-games")) {
+      return "WG";
+    }
+
+    if (hasWord("wm") || name.includes("weltmeisterschaft")) {
+      return "WM";
+    }
+
+    if (hasWord("em") || name.includes("europameisterschaft")) {
+      return "EM";
+    }
+
+    if (hasWord("jrp")) {
+      return "JRP";
+    }
+
+    if (hasWord("dp") || name.includes("deutsche meisterschaft")) {
+      return "DP";
+    }
+
+    return null;
+  }
+
+  function getMeetYear(meet) {
+    const dRaw = meet.date || meet.datum || meet.datum_raw;
+
+    if (dRaw instanceof Date) {
+      return dRaw.getFullYear();
+    }
+    if (typeof dRaw === "string" && dRaw.trim()) {
+      const d = new Date(dRaw);
+      if (!Number.isNaN(d.getTime())) return d.getFullYear();
+
+      const m = dRaw.match(/\b(19|20)\d{2}\b/);
+      if (m) return Number(m[0]);
+    }
+    if (typeof meet.jahr === "number") return meet.jahr;
+    return null;
+  }
+
+  function renderhistorieInline(ax) {
+    const meets = Array.isArray(ax.meets) ? ax.meets : [];
+    if (!meets.length) return null;
+
+    const buckets = {
+      DP: new Set(),
+      JRP: new Set(),
+      WM: new Set(),
+      EM: new Set(),
+      WG: new Set(),
+    };
+
+    for (const meet of meets) {
+      const cat = classifyHistorie(meet);
+      if (!cat) continue;
+
+      const year = getMeetYear(meet);
+      if (!year) continue;
+
+      const name = (meet.meet_name || meet.name || "").toLowerCase();
+
+      let key;
+      if (cat === "WM" || cat === "EM") {
+        let kind = "other";
+        if (name.includes("interclub")) kind = "interclub";
+        else if (name.includes("national")) kind = "national";
+        key = `${year}-${kind}`;
+      } else {
+        key = String(year);
+      }
+
+      buckets[cat].add(key);
+    }
+
+    const order = [
+      { code: "WM", label: "Weltmeisterschaften" },
+      { code: "EM", label: "Europameisterschaften" },
+      { code: "WG", label: "World Games" },
+      { code: "DP", label: "Deutschland-Pokale" },
+      { code: "JRP", label: "Jugend-Rettungspokale" },
+    ];
+
+    const frag = document.createDocumentFragment();
+    let any = false;
+
+    for (const { code, label } of order) {
+      const count = buckets[code].size;
+      if (!count) continue;
+      any = true;
+
+      const wrap = h("span", { class: "historie-badge" });
+
+      wrap.appendChild(
+        h("span", { class: "historie-count" }, `${count}×`)
+      );
+
+      const info = HISTORIE_TOOLTIP[code] || label;
+
+      wrap.appendChild(
+        h("img", {
+          class: `historie-icon historie-${code.toLowerCase()}`,
+          src: `${HISTORIE_ICON_BASE}/${code}.png`,
+          alt: `${info} (${count}×)`,
+          title: info,
+        })
+      );
+
+      frag.appendChild(wrap);
+    }
+
+    if (!any) return null;
+    return frag;
+  }
     function openAthleteProfileByName(rawName) {
       if (!rawName) return;
       if (!Array.isArray(AppState.athletes) || !AppState.athletes.length) {
@@ -71,6 +292,29 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    function getAthleteIdFromUrl() {
+  const sp = new URLSearchParams(window.location.search);
+  const id = sp.get("ath");
+  if (id) return String(id).trim();
+  return "";
+}
+
+function openFromUrlIfPossible() {
+  const id = getAthleteIdFromUrl();
+  if (!id) return;
+
+  if (!Array.isArray(AppState.athletes) || !AppState.athletes.length) return;
+
+  const hit = AppState.athletes.find(a => String(a.id) === id);
+  if (!hit) return;
+
+  openProfile(hit);
+
+  const prof = document.getElementById("ath-profile");
+  if (prof) prof.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+
     window.openAthleteProfileByName = openAthleteProfileByName;
 
 
@@ -105,6 +349,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
       window.location.href = `./profil.html#${slug}`;
     }
+
+
+
+
+  function alignCapToName() {
+    const head = document.querySelector(".ath-profile-head");
+    if (!head) return;
+
+    const cap = head.querySelector(".cap-flip");
+    const h2  = head.querySelector(".ath-profile-title h2");
+    if (!cap || !h2) return;
+
+    cap.style.setProperty("--cap-offset-y", "0px");
+
+    const capRect  = cap.getBoundingClientRect();
+    const nameRect = h2.getBoundingClientRect();
+
+    const capCenter  = capRect.top  + capRect.height  / 2;
+    const nameCenter = nameRect.top + nameRect.height / 2;
+
+    const delta = nameCenter - capCenter;
+
+    cap.style.setProperty("--cap-offset-y", `${delta}px`);
+  }
+
+
+
+  let nameFitHandlerInstalled = false;
+
+  function installNameFitHandlerOnce() {
+    if (nameFitHandlerInstalled) return;
+    nameFitHandlerInstalled = true;
+    window.addEventListener("resize", fitProfileName);
+  }
 
   const FLAG_BASE_URL = "./svg";
   const CAP_FALLBACK_FILE = "Cap-Baden_light.svg";
@@ -370,6 +648,16 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return athletesLight;
   }
 
+  function countStartrechte(a){
+    const c = { OG:0, BZ:0, LV:0, BV:0 };
+    if (!Array.isArray(a?.meets)) return c;
+    for (const m of a.meets){
+      const sr = String(m?.Startrecht || "").toUpperCase();
+      if (sr in c) c[sr] += 1;
+    }
+    return c;
+  }
+
   function dismissKeyboard(){
     try{
       Refs.input?.blur();
@@ -436,6 +724,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         const age = Math.round(ageYears * 100) / 100;
         const meetName = String(m.meet_name || m.meet || "").replace(/\s+-\s+.*$/, "").trim();
 
+        const rl = roundLabelFromLauf(lauf, laufMax);
         const showRound = (rl === "Vorlauf" || rl === "Finale") ? rl : "";
 
         rows.push({
@@ -585,7 +874,832 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return card;
   }
 
+
+
+  function poolLabel(pool){
+    return pool === "25" ? "25m" : (pool === "50" ? "50m" : "—");
+  }
+
+  function meetKey(m){
+    const name = String(m?.meet_name || "").trim().toLowerCase();
+    const date = String(m?.date || "").trim();
+    return name + "||" + date;
+  }
+
   function nonEmpty(v){ return v != null && String(v).trim() !== ""; }
+    
+  function mergeDuplicateMeets(meets){
+    const list = Array.isArray(meets) ? meets.slice() : [];
+    const groups = new Map();
+
+    list.forEach((m, idx) => {
+      if (!m || !m.meet_name) return;
+      const k = meetKey(m);
+      if (!groups.has(k)) groups.set(k, []);
+
+      const raw = (m.Vorläufe ?? m._lauf ?? "").toString().trim();
+      const parsed = parseInt(raw, 10);
+      const runNo = Number.isFinite(parsed) && parsed > 0
+        ? parsed
+        : (groups.get(k).length + 1);
+
+      groups.get(k).push({
+        ...m,
+        _lauf: runNo,
+        _lauf_raw: raw,
+        _srcIndex: idx
+      });
+    });
+
+    const merged = [];
+
+    for (const runs0 of groups.values()){
+      const runs = runs0.sort((a, b) => (a._lauf - b._lauf) || (a._srcIndex - b._srcIndex));
+
+      const highest = runs[runs.length - 1];
+      const out = { ...highest };
+      out._runs = runs.map(r => ({ ...r }));
+      out._lauf_max = runs.reduce((m, r) => Math.max(m, Number(r._lauf)||0), 0) || runs.length;
+
+      const ALL_TIME_FIELDS = MEET_DISC_TIME_FIELDS.slice();
+      const PLACE_FIELDS = MEET_DISC_TIME_FIELDS.map(f => f.replace(/_Zeit$/i, "_Platz"));
+
+      function pickFromHighest(field){
+        for (let i = runs.length - 1; i >= 0; i--){
+          const v = runs[i][field];
+          if (v != null && String(v).trim() !== "") return v;
+        }
+        return "";
+      }
+
+      ALL_TIME_FIELDS.forEach(f => { out[f] = pickFromHighest(f); });
+      PLACE_FIELDS.forEach(f => { out[f] = pickFromHighest(f); });
+
+      out.Mehrkampf_Platz = pickFromHighest("Mehrkampf_Platz");
+      out.LSC             = pickFromHighest("LSC");
+      out.Wertung         = highest.Wertung || out.Wertung || "";
+      out.Startrecht      = highest.Startrecht || out.Startrecht || "";
+      out.Regelwerk       = highest.Regelwerk || out.Regelwerk || "";
+      out.Ortsgruppe      = highest.Ortsgruppe || out.Ortsgruppe || "";
+      out.pool            = highest.pool || out.pool;
+      out.Land            = highest.Land || out.Land;
+
+      merged.push(out);
+    }
+
+    merged.sort((l, r) => new Date(r.date) - new Date(l.date));
+    return merged;
+  }
+
+
+
+  function fmtDateShort(dStr){
+    if (!dStr) return "—";
+    const d = new Date(dStr);
+    if (isNaN(d)) return "—";
+    const months = ["Jan.","Feb.","März","Apr.","Mai","Jun.","Jul.","Aug.","Sep.","Okt.","Nov.","Dez."];
+    return `${d.getDate()}. ${months[d.getMonth()]}`;
+  }
+
+  const LAND_TO_ISO3 = {
+    "Deutschland":"GER",
+    "Schweiz":"SUI",
+    "Italien":"ITA",
+    "Frankreich":"FRA",
+    "Belgien":"BEL",
+    "Niederlande":"NED",
+    "Spanien":"ESP",
+    "Polen":"POL",
+    "Japan":"JPN",
+    "Dänemark":"DEN",
+    "Ägypten":"EGY",
+    "Großbritannien":"GBR",
+    "Australien":"AUS",
+  };
+
+  const LV_STATE_LABEL = {
+    BA: "LV Baden",
+    BY: "LV Bayern",
+    BE: "LV Berlin",
+    BB: "LV Brandenburg",
+    HB: "LV Bremen",
+    HH: "LV Hamburg",
+    HE: "LV Hessen",
+    MV: "LV Mecklenburg-Vorp.",
+    NI: "LV Niedersachsen",
+    NR: "LV Nordrhein",
+    WF: "LV Westfahlen",
+    RP: "LV Rheinland-Pfalz",
+    SL: "LV Saarland",
+    SN: "LV Sachsen",
+    ST: "LV Sachsen-Anhalt",
+    SH: "LV Schleswig-Holstein",
+    TH: "LV Thüringen",
+  };
+
+  const ISO3_TO_EN = {
+    GER: "GERMANY",
+    POL: "POLAND",
+    FRA: "FRANCE",
+    BEL: "BELGIUM",
+    NED: "NETHERLANDS",
+    ESP: "SPAIN",
+    ITA: "ITALY",
+    SUI: "SWITZERLAND",
+    JPN: "JAPAN",
+    DEN: "DENMARK",
+    EGY: "EGYPT",
+    GBR: "GREAT BRITAIN",
+    AUS: "AUSTRALIA",
+  };
+
+
+  function iso3FromLand(landName){
+    return LAND_TO_ISO3[String(landName||"").trim()] || "—";
+  }
+
+  function normalizeBVCode(bvRaw) {
+    const s = String(bvRaw ?? "").trim();
+    if (!s) {
+      return "";
+    }
+
+    if (/^[A-Z]{3}$/.test(s)) {
+      return s;
+    }
+
+    const iso = iso3FromLand(s);
+    if (iso && iso !== "—") {
+      return iso;
+    }
+
+    const upper = s.toUpperCase();
+    return upper;
+  }
+
+
+  function ogInfoFromMeet(m) {
+    const ogRaw    = m.Ortsgruppe ?? m.ortsgruppe ?? "";
+    const lvRaw    = m.LV_state  ?? m.lv_state  ?? "";
+    const startRaw = String(m.Startrecht ?? m.startrecht ?? "").trim().toUpperCase();
+    const bvRaw    = m.BV_natio ?? m.BV_nation ?? "";
+
+    const ogKey  = String(ogRaw || "").trim();
+    const lvCode = String(lvRaw || "").trim().toUpperCase();
+    const bvCode = normalizeBVCode(bvRaw);
+
+    let label;
+
+    if (startRaw === "LV" && lvCode) {
+      label = LV_STATE_LABEL[lvCode] || lvCode;
+    } else if (startRaw === "BV" && bvCode) {
+      label =
+        ISO3_TO_EN[bvCode] ||
+        bvCode ||
+        String(bvRaw || "").trim();
+    } else {
+      label = ogKey;
+    }
+
+    return {
+      label,
+      ogKey,
+      lvCode,
+      bvCode,
+      startrecht: startRaw
+    };
+  }
+
+
+  function buildOgCapCell(ogInfo) {
+    const cell = h("span", { class: "m-ogcap-cell" });
+
+    const { ogKey, lvCode, bvCode, startrecht, label } = ogInfo;
+
+    /** @type {{key:string, overlay:boolean}[]} */
+    let seq = [];
+
+    if (startrecht === "OG") {
+      seq = [
+        { key: ogKey,  overlay: false },
+        { key: lvCode, overlay: true  },
+        { key: bvCode, overlay: true  },
+      ];
+    } else if (startrecht === "LV") {
+      seq = [
+        { key: lvCode, overlay: false },
+        { key: ogKey,  overlay: true  },
+        { key: bvCode, overlay: true  },
+      ];
+    } else if (startrecht === "BV") {
+      seq = [
+        { key: bvCode, overlay: false },
+        { key: ogKey,  overlay: true  },
+        { key: lvCode, overlay: true  },
+      ];
+    } else {
+      seq = [
+        { key: ogKey,  overlay: false },
+        { key: lvCode, overlay: true  },
+        { key: bvCode, overlay: true  },
+      ];
+    }
+
+    seq = seq.filter(entry => entry.key && String(entry.key).trim() !== "");
+
+    let currentIndex = 0;
+    let noneUsed = false;
+
+    if (!seq.length) {
+      const imgNone = h("img", {
+        class: "m-ogcap-icon",
+        src: "svg/Cap-None.svg",
+        alt: "no cap",
+        loading: "lazy",
+        decoding: "async",
+        onerror: (e) => e.currentTarget.remove()
+      });
+      cell.appendChild(imgNone);
+      return cell;
+    }
+
+    const img = h("img", {
+      class: "m-ogcap-icon",
+      src: "", 
+      alt: label || seq[0].key,
+      loading: "lazy",
+      decoding: "async",
+      onerror: (e) => {
+        if (currentIndex + 1 < seq.length) {
+          currentIndex++;
+          applyCandidate();
+        } else if (!noneUsed) {
+          noneUsed = true;
+          cell.classList.remove("ogcap-overlay");
+          img.src = "svg/Cap-None.svg";
+        } else {
+          img.remove();
+        }
+      }
+    });
+
+    function applyCandidate() {
+      const entry = seq[currentIndex];
+      if (entry.overlay) {
+        cell.classList.add("ogcap-overlay");
+      } else {
+        cell.classList.remove("ogcap-overlay");
+      }
+      img.src = `svg/Cap-${encodeURIComponent(entry.key)}.svg`;
+    }
+    applyCandidate();
+
+    cell.appendChild(img);
+    return cell;
+  }
+
+
+
+
+
+
+
+  function medalForPlace(placeStr){
+    const p = parseInt(placeStr, 10);
+    if (!Number.isFinite(p)) return null;
+    if (p === 1) return { file:"medal_gold.svg",   alt:"Gold"   };
+    if (p === 2) return { file:"medal_silver.svg", alt:"Silber" };
+    if (p === 3) return { file:"medal_bronze.svg", alt:"Bronze" };
+    return null;
+  }
+
+  function roundLabelFromLauf(laufNummer, maxLauf){
+    const ln = Number(laufNummer);
+    const mx = Number(maxLauf);
+    if (!Number.isFinite(ln) || !Number.isFinite(mx) || mx <= 1) return null;
+
+    if (mx === 2) return ln === 1 ? "Vorlauf" : (ln === 2 ? "Finale" : null);
+    if (mx === 3) return ln === 1 ? "Vorlauf" : (ln === 2 ? "Halbfinale" : (ln === 3 ? "Finale" : null));
+    if (mx === 4) return ln === 1 ? "Vorlauf" : (ln === 2 ? "Viertelfinale" : (ln === 3 ? "Halbfinale" : (ln === 4 ? "Finale" : null)));
+
+    if (ln === mx) return "Finale";
+    if (ln === mx - 1) return "Halbfinale";
+    if (ln === mx - 2) return "Viertelfinale";
+    return "Vorlauf";
+  }
+
+
+
+  function shortMeetName(name){
+    if (!name) return "—";
+    const s = String(name);
+    const i = s.indexOf(" - ");
+    return (i >= 0 ? s.slice(0, i) : s).trim();
+  }
+
+  function renderAthTabsAndPanels(ax){
+    const panels = h("div", { class: "ath-tab-panels" },
+      h("div", { class: "ath-tab-panel", "data-key": "bests" }, renderBestzeitenSection(ax)),
+      h("div", { class: "ath-tab-panel", "data-key": "info"  }, renderOverviewSection(ax)),
+      h("div", { class: "ath-tab-panel", "data-key": "meets" }, renderMeetsSection(ax))
+    );
+
+    const tabs = renderAthTabs(["Bestzeiten","Info","Wettkämpfe"], "Bestzeiten", (key) => {
+      panels.querySelectorAll(".ath-tab-panel").forEach(p => {
+        p.classList.toggle("active", p.dataset.key === key);
+      });
+    });
+
+    const wrap = h("div", { class: "ath-tabs-wrap" }, tabs, panels);
+
+    requestAnimationFrame(() => {
+      panels.querySelectorAll(".ath-tab-panel").forEach(p =>
+        p.classList.toggle("active", p.dataset.key === "bests")
+      );
+      const activeBtn = wrap.querySelector(".ath-tab.active") || wrap.querySelector(".ath-tab");
+      if (activeBtn) {
+        const ul  = wrap.querySelector(".ath-tabs-underline");
+        const lst = wrap.querySelector(".ath-tabs-list");
+        const pr  = lst.getBoundingClientRect();
+        const tr  = activeBtn.getBoundingClientRect();
+        ul.style.width = tr.width + "px";
+        ul.style.left  = (tr.left - pr.left) + "px";
+      }
+    });
+
+    return wrap;
+  }
+
+
+  function renderAthTabs(labels, activeLabel, onChange){
+    const map = { "Bestzeiten":"bests", "Info":"info", "Wettkämpfe":"meets" };
+    const bar  = h("div", { class: "ath-tabs full-bleed" });
+    const list = h("div", { class: "ath-tabs-list" });
+    const ul   = h("div", { class: "ath-tabs-underline" });
+
+    let activeBtn = null;
+
+    labels.forEach(lbl => {
+      const key = map[lbl] || lbl.toLowerCase();
+      const btn = h("button", {
+        class: "ath-tab" + (lbl === activeLabel ? " active" : ""),
+        type: "button",
+        onclick: () => setActive(btn, key)
+      }, lbl.toUpperCase());
+      list.appendChild(btn);
+      if (lbl === activeLabel) activeBtn = btn;
+    });
+
+    bar.appendChild(list);
+    bar.appendChild(ul);
+
+    function positionUnderline(btn){
+      const r = btn.getBoundingClientRect();
+      const p = list.getBoundingClientRect();
+      ul.style.width = r.width + "px";
+      ul.style.left  = (r.left - p.left) + "px";
+    }
+    function setActive(btn, key){
+      list.querySelectorAll(".ath-tab").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      positionUnderline(btn);
+      onChange?.(key);
+    }
+
+    requestAnimationFrame(() => activeBtn && positionUnderline(activeBtn));
+    window.addEventListener("resize", () => {
+      const cur = list.querySelector(".ath-tab.active");
+      cur && positionUnderline(cur);
+    });
+
+    return bar;
+  }
+
+  function renderMeetsSection(a){
+    const allMeets = Array.isArray(a.meets) ? a.meets.slice() : [];
+    const jahrgang = Number(a?.jahrgang);
+    if (!allMeets.length){
+      const emptyBox = h("div", { class: "ath-profile-section meets" },
+        h("div", { class: "ath-info-header" }, h("h3", {}, "Wettkämpfe (—)")),
+        h("div", { class: "best-empty" }, "Keine Wettkämpfe erfasst.")
+      );
+      return emptyBox;
+    }
+
+    const years = Array.from(new Set(
+      allMeets
+        .map(m => (new Date(m.date)).getFullYear())
+        .filter(y => Number.isFinite(y))
+    )).sort((a,b) => b - a);
+
+    let idx = 0; 
+
+    let meetDebugId = 0;
+
+    const box   = h("div", { class: "ath-profile-section meets" });
+
+    const title = h("h3", {}, "");
+    const head  = h("div", { class: "ath-info-header meets-head" },
+      h("button", { class: "nav-btn", type: "button", onclick: () => changeYear(+1) }, "‹"),
+      title,
+      h("button", { class: "nav-btn", type: "button", onclick: () => changeYear(-1) }, "›")
+    );
+
+
+    const listWrap = h("div", { class: "meets-list" });
+    box.appendChild(head);
+    box.appendChild(listWrap);
+
+    paint(years[idx]);
+
+    return box;
+
+    function changeYear(delta){
+      const next = idx + delta;
+      if (next < 0 || next >= years.length) return;
+      idx = next;
+      paint(years[idx]);
+    }
+
+    function paint(year){
+      title.textContent = year;
+
+      const items = allMeets
+        .filter(m => (new Date(m.date)).getFullYear() === year)
+        .sort((l, r) => new Date(r.date) - new Date(l.date));
+
+      listWrap.innerHTML = "";
+      if (!items.length){
+        listWrap.appendChild(h("div", { class: "best-empty" }, "Keine Wettkämpfe in diesem Jahr."));
+        return;
+      }
+
+      items.forEach(m => {
+
+        const debugId = ++meetDebugId;
+
+        const placeStr = (m.Mehrkampf_Platz || "").toString().trim();
+        const medal    = medalForPlace(placeStr);
+
+        const placeEl = h("span", { class: "m-place" },
+          placeStr || "",
+          medal ? h("img", {
+            class: "m-medal",
+            src: `${FLAG_BASE_URL}/${medal.file}`,
+            alt: medal.alt,
+            loading: "lazy",
+            decoding: "async",
+            onerror: (e)=>e.currentTarget.remove()
+          }) : null
+        );
+
+        const poolEl = h("span", { class: "m-pool" }, poolLabel(m.pool));
+
+        const landName = (m.Land || "").toString().trim();
+        const iso3 = iso3FromLand(landName);
+        const landEl = h("span", { class: "m-country" },
+          h("img", {
+            class: "m-flag",
+            src: `${FLAG_BASE_URL}/${encodeURIComponent(landName)}.svg`,
+            alt: landName || "Land",
+            loading: "lazy",
+            decoding: "async",
+            onerror: (e)=>e.currentTarget.remove()
+          }),
+          h("span", { class: "m-iso" }, ` ${iso3}`)
+        );
+
+        const dateEl = buildDateEl(m.date);
+
+        const meetRawName  = (m.meet_name || "").toString().trim();
+        const meetShortName = (meetRawName || "—").replace(/\s+-\s+.*$/, "");
+        const nameEl = h("span", { class: "m-name" },
+          h("span", { class: "m-name-main" }, meetShortName)
+        );
+
+        const eventIconCell = h("span", { class: "m-event-cell" },
+          meetRawName
+            ? h("img", {
+                class: "m-event-icon",
+                src: `png/events/${encodeURIComponent(meetRawName)}.png`,
+                alt: meetShortName,
+                loading: "lazy",
+                decoding: "async",
+                onerror: (e) => {
+                  const img = e.currentTarget;
+                  if (!img.dataset.fallback) {
+                    img.dataset.fallback = "1";
+                    img.src = "png/events/DLRG.png";
+                  } else {
+                    img.remove();
+                  }
+                }
+              })
+            : null
+        );
+
+
+
+        const ageLabel = ageLabelAtMeet(m.date);
+        const ageEl = h("span", { class: "m-age" }, ageLabel || "");
+
+        const ogInfo = ogInfoFromMeet(m);
+        const ogLabel = ogInfo.label;
+
+        const ogCapCell = buildOgCapCell(ogInfo);
+
+        const ogEl = h("span", { class: "m-og" }, ogLabel || "");
+
+        const row = h("div", {
+          class: "meet-row",
+          role: "button",
+          tabindex: "0",
+          "aria-expanded": "false",
+          onkeydown: (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              toggle();
+            }
+          },
+          onclick: toggle
+        },
+          dateEl,
+          placeEl,
+          eventIconCell,
+          nameEl,
+          ageEl,
+          ogCapCell,
+          ogEl,
+          landEl,
+          poolEl
+        );
+
+
+
+
+        const details = h("div", {
+          class: "meet-details",
+          "aria-hidden": "true",
+          style: "height:0"
+        }, ...buildResultRows(m));
+
+
+        listWrap.appendChild(row);
+        listWrap.appendChild(details);
+
+        function toggle(){
+          const isOpen = row.classList.toggle("open");
+          row.setAttribute("aria-expanded", isOpen ? "true" : "false");
+          if (isOpen) expand(details); else collapse(details);
+        }
+
+        function expand(el){
+          el.setAttribute("aria-hidden", "false");
+          el.style.height = el.scrollHeight + "px";
+          el.addEventListener("transitionend", () => {
+            if (row.classList.contains("open")) el.style.height = "auto";
+          }, { once: true });
+        }
+
+        function collapse(el){
+          el.setAttribute("aria-hidden", "true");
+          if (el.style.height === "" || el.style.height === "auto"){
+            el.style.height = el.scrollHeight + "px";
+          }
+          requestAnimationFrame(() => {
+            el.style.height = "0px";
+          });
+        }
+      });
+    }
+
+    function ageLabelAtMeet(dateStr){
+      if (!Number.isFinite(jahrgang)) return "";
+      const v = ageAt(dateStr, jahrgang);
+      if (!Number.isFinite(v)) return "";
+      const years = Math.floor(v + 1e-6);
+      return years + " J.";
+    }
+
+
+    function buildDateEl(dateStr){
+      const d = new Date(dateStr);
+      if (isNaN(d)) {
+        return h("span", { class: "m-date" }, fmtDateShort(dateStr));
+      }
+      const day   = d.getDate();
+      const month = monthShortDE(d.getMonth());
+
+      return h("span", { class: "m-date" },
+        h("span", { class: "m-date-day" }, day + "."),
+        h("span", { class: "m-date-month" }, month)
+      );
+    }
+
+    function monthShortDE(idx){
+      const names = ["Jan.", "Feb.", "Mär.", "Apr.", "Mai", "Jun.", "Jul.", "Aug.", "Sep.", "Okt.", "Nov.", "Dez."];
+      return names[idx] ?? "";
+    }
+
+    function ageAtMeet(athlete, dateStr){
+      const birthRaw =
+        athlete.birthdate ||
+        athlete.geburtsdatum ||
+        athlete.Geburtsdatum ||
+        athlete.birth_date ||
+        athlete.DOB ||
+        "";
+
+      if (!birthRaw) return "";
+
+      const b = new Date(birthRaw);
+      const d = new Date(dateStr);
+      if (isNaN(b) || isNaN(d)) return "";
+
+      let age = d.getFullYear() - b.getFullYear();
+      const m = d.getMonth() - b.getMonth();
+      if (m < 0 || (m === 0 && d.getDate() < b.getDate())) {
+        age--;
+      }
+
+      if (!Number.isFinite(age)) return "";
+      return age + " J.";
+    }
+
+
+    function meetOG(m){
+      const raw =
+        m.Ortsgruppe ||
+        m.OG ||
+        m.verein ||
+        m.Verein ||
+        m.club ||
+        m.Club ||
+        "";
+      return (raw || "").toString().trim();
+    }
+
+    function buildResultRows(m){
+      const F = [
+        { base:"50m_Retten",            label:"50m Retten" },
+        { base:"100m_Retten",           label:"100m Retten mit Flossen" },
+        { base:"100m_Kombi",            label:"100m Kombi" },
+        { base:"100m_Lifesaver",        label:"100m Lifesaver" },
+        { base:"200m_SuperLifesaver",   label:"200m Super Lifesaver" },
+        { base:"200m_Hindernis",        label:"200m Hindernis" },
+      ];
+
+      const runs = Array.isArray(m._runs) && m._runs.length
+        ? [...m._runs].sort((a,b) => (a._lauf || 1) - (b._lauf || 1))
+        : [ m ];
+      const total = runs.length;
+
+      const rows = [];
+
+      for (const f of F){
+        for (let i = 0; i < runs.length; i++){
+          const run = runs[i];
+          const t = run[`${f.base}_Zeit`];
+          const p = run[`${f.base}_Platz`];
+
+          const hasAny = (t && String(t).trim() !== "") || (p && String(p).trim() !== "");
+          if (!hasAny) continue;
+
+          const wRaw = String(run.Wertung ?? m.Wertung ?? "").toLowerCase();
+          const isEinzel = wRaw.replace(/[\s\-]+/g, "").includes("einzel");
+
+          const placeStr = (p || "").toString().trim();
+          const medal = isEinzel ? medalForPlace(placeStr) : null;
+
+          const placeEl = h("span", { class: "pl" },
+            placeStr || "",
+            medal ? h("img", {
+              class: "res-medal",
+              src: `${FLAG_BASE_URL}/${medal.file}`,
+              alt: medal.alt,
+              loading: "lazy",
+              decoding: "async",
+              onerror: (e)=>e.currentTarget.remove()
+            }) : null
+          );
+
+          const total = Number.isFinite(m._lauf_max) ? m._lauf_max : runs.length;
+          const rLabel = roundLabelFromLauf(run._lauf, total);
+          const discWrap = h("span", { class: "d-wrap" },
+            h("span", { class: "d" }, f.label),
+            (rLabel ? h("span", { class: "d-sub" }, rLabel) : null)
+          );
+
+          rows.push(
+            h("div", { class: "meet-res" },
+              discWrap,
+              placeEl,
+              h("span", { class: "t" }, (t && String(t).trim() !== "") ? String(t) : "—")
+            )
+          );
+        }
+      }
+
+
+      return rows.length ? rows : [ h("div", { class: "best-empty" }, "Keine Einzelergebnisse erfasst.") ];
+    }
+
+  }
+
+  function computeLaneDQProb(ax){
+    const out = { "25": { starts: 0, dq: 0 }, "50": { starts: 0, dq: 0 } };
+    const stats = (ax && ax.stats) || {};
+
+    for (const lane of ["25","50"]){
+      const laneStats = stats[lane] || {};
+      for (const d of DISCIPLINES){
+        const s = laneStats[d.key];
+        if (!s) continue;
+        out[lane].starts += Number(s.starts || 0);
+        out[lane].dq     += Number(s.dq     || 0);
+      }
+    }
+
+    const pct = (dq, starts) => (starts > 0 ? Math.round((dq/starts)*1000)/10 : 0);
+    return {
+      "25": { ...out["25"], pct: pct(out["25"].dq, out["25"].starts) },
+      "50": { ...out["50"], pct: pct(out["50"].dq, out["50"].starts) }
+    };
+  }
+
+  function hasStartrecht(a, code){
+    const meets = Array.isArray(a?.meets) ? a.meets : [];
+    for (const m of meets){
+      const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
+      if (runs.some(r => String(r?.Startrecht || "").toUpperCase() === String(code).toUpperCase()))
+        return true;
+    }
+    return false;
+  }
+
+  function sumWettkampfMeter(a){
+    const meets = Array.isArray(a.meets) ? a.meets : [];
+    let total = 0;
+    for (const m of meets){
+      const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
+      for (const run of runs){
+        for (const [key, val] of Object.entries(run)){
+          if (!/_Zeit$/i.test(key)) continue;
+          const v = (val ?? "").toString().trim();
+          if (!v) continue;
+          let dist = NaN;
+          let mm = key.match(/^(\d+)m[_ ]/i) || key.match(/(\d+)m/i);
+          if (mm) dist = parseInt(mm[1], 10);
+          if (Number.isFinite(dist)) total += dist;
+        }
+      }
+    }
+    return total;
+  }
+
+
+  function fmtMeters(m){
+    if (!Number.isFinite(m) || m <= 0) return "—";
+    return `${m.toLocaleString("de-DE")} m`;
+  }
+
+
+  function renderStartrechtIcons(a){
+    const icons = [];
+    if (hasStartrecht(a, "LV")) icons.push({file: "Cap-Baden.svg",       label: "Landeskader Athlet", key: "LV"});
+    if (hasStartrecht(a, "BV")) icons.push({file: "Cap-Deutschland.svg", label: "Bundeskader Athlet", key: "BV"});
+
+    if (icons.length === 0) return null;
+
+    const wrap = h("div", { class: "sr-icons", "aria-label": "Startrechte" });
+    icons.forEach(ic => {
+      const img = h("img", {
+        class: "sr-icon",
+        src: `${FLAG_BASE_URL}/${encodeURIComponent(ic.file)}`,
+        alt: ic.label,
+        title: ic.label,
+        "data-startrecht": ic.key,
+        loading: "lazy",
+        decoding: "async",
+        onerror: (e) => e.currentTarget.remove()
+      });
+      wrap.appendChild(img);
+    });
+    return wrap;
+  }
+
+  function countRegelwerk(meets){
+    let intl = 0, nat = 0;
+    (meets || []).forEach(m => {
+      const r = String(m.Regelwerk || "").toLowerCase();
+      if (r.startsWith("int")) intl++;
+      else if (r.startsWith("nat")) nat++;
+    });
+    const total   = intl + nat;
+    const pctIntl = total ? Math.round((intl / total) * 100) : 0;
+    const pctNat  = total ? 100 - pctIntl : 0;
+    return { intl, nat, pctIntl, pctNat, total };
+  }
 
   const DISCIPLINES = [
     { key: "50_retten",         label: "50m Retten",                 meetZeit: "50m_Retten_Zeit",         meetPlatz: "50m_Retten_Platz" },
@@ -860,6 +1974,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       }
     }
 
+    const bvCode = normalizeBVCode(bvRaw);
 
     return { ogKey, lvCode, bvCode };
   }
@@ -1093,6 +2208,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         years.add(d.getFullYear());
         if (!first || d < first){
           first = d;
+          firstName = shortMeetName?.(m.meet_name || m.meet || "") || (m.meet_name || m.meet || null);
         }        
         if (!last  || d > last ){ last  = d; }
       }
@@ -1111,8 +2227,49 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     };
   }
 
+  const MEET_DISC_TIME_FIELDS = [
+    "50m_Retten_Zeit",
+    "100m_Retten_Zeit",
+    "100m_Kombi_Zeit",
+    "100m_Lifesaver_Zeit",
+    "200m_SuperLifesaver_Zeit",
+    "200m_Hindernis_Zeit"
+  ];
+
   function hasStartVal(v){
     return v != null && String(v).trim() !== "";
+  }
+
+  function totalStartsFromMeets(a){
+    const meets = Array.isArray(a.meets) ? a.meets : [];
+    let total = 0;
+    for (const m of meets){
+      const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
+      for (const run of runs){
+        for (const f of MEET_DISC_TIME_FIELDS){
+          if (hasStartVal(run[f])) total++;
+        }
+      }
+    }
+    return total;
+  }
+
+  function computeStartsPerStartrecht(a){
+    const meets = Array.isArray(a.meets) ? a.meets : [];
+    const out = { OG:0, BZ:0, LV:0, BV:0 };
+    for (const m of meets){
+      const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
+      for (const run of runs){
+        const sr = (run.Startrecht || "").toUpperCase();
+        if (!out.hasOwnProperty(sr)) continue;
+        let cnt = 0;
+        for (const f of MEET_DISC_TIME_FIELDS){
+          if (hasStartVal(run[f])) cnt++;
+        }
+        out[sr] += cnt;
+      }
+    }
+    return out;
   }
 
 
@@ -1269,6 +2426,63 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return { curr, others };
   }
 
+  function sumAllDQ(obj){
+    const s50 = (obj.stats && obj.stats["50"]) || {};
+    const s25 = (obj.stats && obj.stats["25"]) || {};
+    let total = 0;
+    for (const d of DISCIPLINES){
+      total += Number(s50[d.key]?.dq || 0);
+      total += Number(s25[d.key]?.dq || 0);
+    }
+    return total;
+  }
+
+  function parseLSC(v){
+    if (v == null) return NaN;
+    const s = String(v).trim().replace(",", ".");
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  function assumedBirthDate(jahrgang){
+    const y = Number(jahrgang);
+    if (!Number.isFinite(y)) return null;
+    return new Date(y, 6, 1);
+  }
+
+  function ageAt(dateStr, jahrgang){
+    const birth = assumedBirthDate(jahrgang);
+    if (!birth) return NaN;
+    const d = new Date(dateStr);
+    if (isNaN(d)) return NaN;
+    const msPerYear = 365.2425 * 24 * 60 * 60 * 1000;
+    return (d - birth) / msPerYear;
+  }
+
+  function buildLSCSeries(a){
+    const meets = Array.isArray(a.meets) ? a.meets : [];
+    const byDate = new Map();
+
+    for (const m of meets){
+      const lsc = parseLSC(m.LSC);
+      if (!Number.isFinite(lsc)) continue;
+      const d = (m.date || "").slice(0,10);
+      if (!d) continue;
+
+      const lauf = Number(m._lauf_max || m.Vorläufe || m._lauf || 1);
+
+      const prev = byDate.get(d);
+      if (!prev || lauf > prev.lauf || (lauf === prev.lauf && lsc > prev.lsc)){
+        byDate.set(d, { date: d, lsc, lauf });
+      }
+    }
+
+    const arr = Array.from(byDate.values()).sort((x,y)=> new Date(x.date) - new Date(y.date));
+    return arr
+      .map(p => ({ ...p, age: ageAt(p.date, a.jahrgang) }))
+      .filter(p => Number.isFinite(p.age));
+  }
+
   function s(tag, attrs = {}, ...children){
     const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
     for (const [k,v] of Object.entries(attrs || {})){
@@ -1319,6 +2533,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       return el;
     };
 
+    const basePts = buildLSCSeries(a);
     const card = hEl("div", { class:"ath-lsc-card" },
       hEl("div", { class:"lsc-head" }, hEl("h4", {}, "LSC Verlauf"))
     );
@@ -1421,8 +2636,10 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     function chooseCmp(ax){
       const full = withHydratedMeets(ax);
+      const merged = mergeDuplicateMeets(full.meets);
 
       cmpAth = { ...full, meets: merged };
+      cmpPts = buildLSCSeries(cmpAth);
 
       legend.querySelector(".lsc-key--cmp")?.remove();
       legend.appendChild(
@@ -1825,6 +3042,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       basePts = buildTimeSeriesForDiscipline(a, discKey, { lanes });
       if (cmpAth){
         const full   = withHydratedMeets(cmpAth);
+        const merged = mergeDuplicateMeets(full.meets);
         cmpPts = buildTimeSeriesForDiscipline({ ...full, meets: merged }, discKey, { lanes });
       } else {
         cmpPts = null;
@@ -1933,6 +3151,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     function hideCmpSuggest(){ suggest.classList.add("hidden"); }
     function chooseCmp(ax){
       const full   = withHydratedMeets(ax);
+      const merged = mergeDuplicateMeets(full.meets);
 
       cmpAth = { ...full, meets: merged };
       recomputeSeries();
@@ -2188,6 +3407,77 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return card;
   }
 
+  function buildLSCSeries(a){
+    const jahrgang = Number(a?.jahrgang);
+    if (!Number.isFinite(jahrgang)) return [];
+    const meets = Array.isArray(a?.meets) ? a.meets : [];
+    const birth = new Date(`${jahrgang}-07-01T00:00:00Z`);
+
+    const rows = [];
+    for (const m of meets){
+      const dateISO = String(m?.date || "").slice(0,10);
+      if (!dateISO) continue;
+      const d = new Date(dateISO);
+      if (isNaN(d)) continue;
+
+      const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
+      let best = { lauf:-1, lsc:NaN };
+      for (const r of runs){
+        const lauf = Number(r?._lauf || r?.Vorläufe || 1);
+        const lsc  = parseFloat(String(r?.LSC ?? m?.LSC ?? "").replace(",", "."));
+        if (Number.isFinite(lauf) && Number.isFinite(lsc) && lauf >= best.lauf){
+          best = { lauf, lsc };
+        }
+      }
+      if (!Number.isFinite(best.lsc)) continue;
+
+      const years = (d - birth) / (365.2425 * 24 * 3600 * 1000);
+      const age = Math.round(years * 100) / 100;
+      const meetName = String(m.meet_name || m.meet || "").replace(/\s+-\s+.*$/, "").trim();
+
+      rows.push({ age, lsc: best.lsc, date: dateISO, meet_name: meetName });
+    }
+
+    rows.sort((l, r) => new Date(l.date) - new Date(r.date));
+    return rows;
+  }
+
+  function buildLSCSeries(a){
+    const jahrgang = Number(a?.jahrgang);
+    if (!Number.isFinite(jahrgang)) return [];
+    const meets = Array.isArray(a?.meets) ? a.meets : [];
+    const birth = new Date(`${jahrgang}-07-01T00:00:00Z`);
+
+    const rows = [];
+    for (const m of meets){
+      const dateISO = String(m?.date || "").slice(0,10);
+      if (!dateISO) continue;
+      const d = new Date(dateISO);
+      if (isNaN(d)) continue;
+
+      const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
+      let best = { lauf: -1, lsc: NaN };
+      for (const r of runs){
+        const lauf = Number(r?._lauf || r?.Vorläufe || 1);
+        const lsc  = parseFloat(String(r?.LSC ?? m?.LSC ?? "").replace(",", "."));
+        if (Number.isFinite(lauf) && Number.isFinite(lsc) && lauf >= best.lauf){
+          best = { lauf, lsc };
+        }
+      }
+      if (!Number.isFinite(best.lsc)) continue;
+
+      const years = (d - birth) / (365.2425 * 24 * 3600 * 1000);
+      const age = Math.round(years * 100) / 100;
+      const meetName = String(m.meet_name || m.meet || "").replace(/\s+-\s+.*$/, "").trim();
+
+      rows.push({ age, lsc: best.lsc, date: dateISO, meet_name: meetName });
+    }
+
+    rows.sort((l, r) => new Date(l.date) - new Date(r.date));
+    return rows;
+  }
+
+
  const AppState = {
     query: "",
     suggestions: [],
@@ -2214,33 +3504,33 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     top10Mount: null
   };
 
-  function renderApp() {
-    const mount = $("#athleten-container");
-    if (!mount) return;
+    function renderApp() {
+        const mount = $("#athleten-container");
+        if (!mount) return;
 
-    mount.innerHTML = "";
-    const ui = h("section", { class: "ath-ui", role: "region", "aria-label": "Athletenbereich" });
+        mount.innerHTML = "";
+        const ui = h("section", { class: "ath-ui", role: "region", "aria-label": "Athletenbereich" });
 
-    ui.appendChild(renderSearch());
+        ui.appendChild(renderSearch());
 
-    const top10 = h("div", { id: "ath-top10", class: "ath-top10" });
-    Refs.top10Mount = top10;
+        const top10 = h("div", { id: "ath-top10", class: "ath-top10" });
+        Refs.top10Mount = top10;
 
-    const profile = h("div", { id: "ath-profile" });
-    Refs.profileMount = profile;
+        const profile = h("div", { id: "ath-profile" });
+        Refs.profileMount = profile;
 
-    if (PAGE_MODE === "athleten") {
-      ui.appendChild(top10);
-    } else {
-      top10.style.display = "none";
+        if (PAGE_MODE === "athleten") {
+            ui.appendChild(top10);
+        } else {
+            top10.style.display = "none";
+        }
+
+        if (PAGE_MODE === "profil") {
+            ui.appendChild(profile);
+        }
+
+        mount.appendChild(ui);
     }
-
-    if (PAGE_MODE === "profil") {
-      ui.appendChild(profile);
-    }
-
-    mount.appendChild(ui);
-  }
 
 
   async function loadTop10Json() {
@@ -2799,6 +4089,11 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     const meets = computeMeetInfo(a);
     const totalDisc = Number.isFinite(+a.totalDisciplines) ? +a.totalDisciplines : null;
+    const totalDQ = sumAllDQ(a);
+    const startsPer = computeStartsPerStartrecht(a);
+    const totalStarts = totalStartsFromMeets(a);
+    const dqLane = computeLaneDQProb(a);
+    const totalMeters = sumWettkampfMeter(a);
     const chartCard = renderLSCChart(a);
     const pieCard = renderDisciplinePieCard(a);
 
@@ -2909,6 +4204,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
 
     function infoTileWettkaempfeFlip(a, meets){
+      const counts = countStartrechte(a); 
       const rows = Object.entries(counts).filter(([,v]) => v > 0);
 
       const tile = h("div", {
@@ -3003,6 +4299,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     }
 
     function renderRegelwerkTile(a){
+      const c = countRegelwerk(a.meets);
 
       const tile  = h("div", {
         class: "info-tile flip regelwerk",
@@ -3116,10 +4413,12 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
       const front = h("div", { class: "tile-face tile-front" },
         h("div", { class: "info-label" }, label),
+        h("div", { class: "info-value" }, fmtMeters(totalMeters)) 
       );
 
       const back = h("div", { class: "tile-face tile-back" },
         h("div", { class: "info-label" }, "⌀ Meter / Wettkampf"),
+        h("div", { class: "info-value" }, avg != null ? fmtMeters(avg) : "—")
       );
 
       inner.append(front, back);
@@ -3202,25 +4501,26 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     }
   }
 
-  function openProfile(a) {
+   function openProfile(a) {
     if (!a) return;
 
     if (PAGE_MODE === "athleten") {
-      const id = a.id ? String(a.id) : "";
-      const url = id ? `./profil.html?ath=${encodeURIComponent(id)}` : `./profil.html?name=${encodeURIComponent(String(a.name || "").trim())}`;
-      window.location.href = url;
-      return;
+        const id = a.id ? String(a.id) : "";
+        const url = id ? `./profil.html?ath=${encodeURIComponent(id)}` : `./profil.html?name=${encodeURIComponent(String(a.name || "").trim())}`;
+        window.location.href = url;
+        return;
     }
 
     if (Refs.top10Mount) {
-      Refs.top10Mount.style.display = "none";
+        Refs.top10Mount.style.display = "none";
     }
 
     if (!Array.isArray(a.meets) || a.meets.length === 0) {
-      const list = AllMeetsByAthleteId.get(a.id) || [];
-      a = { ...a, meets: list };
+        const list = AllMeetsByAthleteId.get(a.id) || [];
+        a = { ...a, meets: list };
     }
 
+    const mergedMeets = mergeDuplicateMeets(a.meets);
     const derived = deriveFromMeets({ ...a, meets: mergedMeets });
     const ax = { ...a, ...derived, meets: mergedMeets };
 
@@ -3233,53 +4533,57 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     if (!mount) return;
 
     if (!ax) {
-      mount.innerHTML = "";
-      return;
+        mount.innerHTML = "";
+        return;
     }
 
     const KV = (k, v) =>
-      h("span", { class: "kv", "data-key": k },
+        h("span", { class: "kv", "data-key": k },
         h("span", { class: "k" }, k + ":"),
         h("span", { class: "v" }, v)
-      );
+        );
+
+    const tabsWrap = renderAthTabsAndPanels(ax);
 
     const header = h("div", { class: "ath-profile-head" },
-      renderCapAvatarProfile(ax),
-      h("div", { class: "ath-profile-title" },
+        renderCapAvatarProfile(ax),
+        h("div", { class: "ath-profile-title" },
         h("h2", {}, ...renderAthleteName(ax.name)),
         (() => {
-          const gt = genderTag(ax.geschlecht);
-          const ak = akLabelFromJahrgang(ax.jahrgang);
-          const meets = computeMeetInfo(ax);
-          const act = activityStatusFromLast(meets.last);
-          const lastStr = fmtDate(meets.last);
-          const age = ageFromJahrgang(ax.jahrgang);
-          const band = (age != null && age <= 18) ? "youth" : "open";
+            const gt = genderTag(ax.geschlecht);
+            const ak = akLabelFromJahrgang(ax.jahrgang);
+            const meets = computeMeetInfo(ax);
+            const act = activityStatusFromLast(meets.last);
+            const lastStr = fmtDate(meets.last);
+            const age = ageFromJahrgang(ax.jahrgang);
+            const band = (age != null && age <= 18) ? "youth" : "open";
+            const srIcons = renderStartrechtIcons(ax);
 
-          return h("div", { class: "gender-row" },
+            return h("div", { class: "gender-row" },
             h("span", { class: `gender-chip ${gt.cls}`, title: gt.full, "aria-label": `Geschlecht: ${gt.full}` }, gt.full),
             h("span", { class: `ak-chip ${band}`, title: `Altersklasse ${ak}`, "aria-label": `Altersklasse ${ak}` }, ak),
             h("span", { class: `status-chip ${act.key}`, title: `Letzter Wettkampf: ${lastStr}`, "aria-label": `Aktivitätsstatus: ${act.label}. Letzter Wettkampf: ${lastStr}` },
-              h("span", { class: "status-dot" }),
-              act.label
+                h("span", { class: "status-dot" }),
+                act.label
             ),
             srIcons
-          );
+            );
         })(),
         h("div", { class: "ath-profile-meta" },
-          renderOrtsgruppeMeta(ax),
-          KV("Jahrgang", String(ax.jahrgang)),
-          KV("Länderpins", renderCountryFlagsInline(ax) || "—"),
+            renderOrtsgruppeMeta(ax),
+            KV("Jahrgang", String(ax.jahrgang)),
+            KV("Länderpins", renderCountryFlagsInline(ax) || "—"),
+            KV("Historie", renderhistorieInline(ax) || "—")
         )
-      ),
-      renderMedalStats(ax)
+        ),
+        renderMedalStats(ax)
     );
 
     const disclaimer = h("div", { class: "ath-profile-section muted" },
-      h("p", {}, "Die Datenbank erfasst nur Einzel-Pool-Wettkämpfe von Badischen Schwimmerinnen und Schwimmern im Rettungssport."),
-      h("p", {}, "Staffeln und Freigewässer sind nicht enthalten."),
-      h("p", {}, "Platzierungen sind noch nicht alle eingetragen."),
-      h("p", {}, "Sollten Fehler oder neue Ergebnisse gefunden werden, wenden sie sich bitte an jan-philipp.gnad@dlrg.org")
+        h("p", {}, "Die Datenbank erfasst nur Einzel-Pool-Wettkämpfe von Badischen Schwimmerinnen und Schwimmern im Rettungssport."),
+        h("p", {}, "Staffeln und Freigewässer sind nicht enthalten."),
+        h("p", {}, "Platzierungen sind noch nicht alle eingetragen."),
+        h("p", {}, "Sollten Fehler oder neue Ergebnisse gefunden werden, wenden sie sich bitte an jan-philipp.gnad@dlrg.org")
     );
 
     mount.innerHTML = "";
@@ -3289,7 +4593,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     requestAnimationFrame(() => { fitProfileName(); });
 
     if (Refs.input) {
-      Refs.input.value = "";
+        Refs.input.value = "";
     }
     AppState.query = "";
     AppState.suggestions = [];
@@ -3297,27 +4601,28 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     hideSuggestions();
 
     if (ax?.id) {
-      const u = new URL(window.location.href);
-      u.searchParams.set("ath", String(ax.id));
-      u.hash = "";
-      history.replaceState(null, "", u.toString());
+        const u = new URL(window.location.href);
+        u.searchParams.set("ath", String(ax.id));
+        u.hash = "";
+        history.replaceState(null, "", u.toString());
     }
-  }
+   }
 
 
   // ---------- Boot ----------
   document.addEventListener("DOMContentLoaded", async () => {
     renderApp();
 
-    if (PAGE_MODE === "athleten") {
-      await initTop10();
-    }
+    await initTop10();
     await new Promise(requestAnimationFrame); // 1 Frame zum Rendern
 
     try {
       const rows = await loadWorkbookArray("Tabelle2");
       const light = buildIndicesFromRows(rows);
       AppState.athletes = light;
+    if (PAGE_MODE === "profil") {
+        openFromUrlIfPossible();
+    }
       hideSuggestions();
     } catch (err) {
       if (Refs.suggest) {
