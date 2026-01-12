@@ -21,8 +21,8 @@ document.addEventListener("DOMContentLoaded", () => {
       label: "Kader",
       href: "landeskader.html",
       children: [
-        { key: "kaderliste", label: "Kaderliste", href: "#" },
-        { key: "kaderrichtlinien", label: "Kaderrichtlinien", href: "#" },
+        { key: "kaderliste", label: "Kaderliste", href: "kaderstatus.html" },
+        { key: "kaderrichtlinien", label: "Kaderrichtlinien", href: "kriterien.html" },
         { key: "trainingsplaene", label: "Trainingspläne", href: "#" },
       ],
     },
