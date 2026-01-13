@@ -257,40 +257,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!any) return null;
     return frag;
   }
-    function openAthleteProfileByName(rawName) {
-      if (!rawName) return;
-      if (!Array.isArray(AppState.athletes) || !AppState.athletes.length) {
-        console.warn("Top10: AppState.athletes ist noch leer.");
-        return;
-      }
-
-      const name = String(rawName).trim();
-      if (!name) return;
-
-      const targetNorm = normalize(name);
-
-      let hit = AppState.athletes.find(a => normalize(a.name) === targetNorm);
-
-      if (!hit) {
-        const stripped = name.replace(/\s*\(.*?\)\s*$/, "").trim();
-        if (stripped && stripped !== name) {
-          const n2 = normalize(stripped);
-          hit = AppState.athletes.find(a => normalize(a.name) === n2);
-        }
-      }
-
-      if (!hit) {
-        console.warn("Top10: kein Athlet für Namen gefunden:", name);
-        return;
-      }
-
-      openProfile(hit);
-
-      const prof = document.getElementById("ath-profile");
-      if (prof) {
-        prof.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    }
 
     function getAthleteIdFromUrl() {
   const sp = new URLSearchParams(window.location.search);
@@ -313,45 +279,6 @@ function openFromUrlIfPossible() {
   const prof = document.getElementById("ath-profile");
   if (prof) prof.scrollIntoView({ behavior: "smooth", block: "start" });
 }
-
-
-    window.openAthleteProfileByName = openAthleteProfileByName;
-
-
-    function openProfileFromTop10Row(tr) {
-      if (!tr) return;
-
-      let name = "";
-      if (tr.dataset && tr.dataset.name) {
-        name = tr.dataset.name.trim();
-      }
-
-      if (!name) {
-        const nameEl = tr.querySelector(".ath-top10-name");
-        if (nameEl) {
-          name = nameEl.textContent.trim();
-        }
-      }
-
-      if (!name) return;
-
-      if (typeof window.openAthleteProfileByName === "function") {
-        window.openAthleteProfileByName(name);
-        return;
-      }
-
-      const slug = name
-        .normalize("NFD")                
-        .replace(/\p{Diacritic}/gu, "")  
-        .replace(/[^a-zA-Z0-9]+/g, "-") 
-        .replace(/^-+|-+$/g, "")
-        .toLowerCase();
-
-      window.location.href = `./profil.html#${slug}`;
-    }
-
-
-
 
   function alignCapToName() {
     const head = document.querySelector(".ath-profile-head");
@@ -417,18 +344,8 @@ function openFromUrlIfPossible() {
 
   const MIN_QUERY_LEN = 3;
   const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test (1).xlsx";
-  const TOP10_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/top10.json";
 
   let AllMeetsByAthleteId = new Map();
-
-  const TOP10_GROUPS = [
-    { key: "starts",             label: "Starts",               startCol: 0 },
-    { key: "wettkaempfe",        label: "Wettkämpfe",          startCol: 3 },
-    { key: "lsc_aktuell",        label: "LSC aktuell",         startCol: 6 },
-    { key: "aktive_jahre",       label: "Aktive Jahre",        startCol: 9 },
-    { key: "hoechster_lsc",      label: "Höchster LSC",        startCol: 12 },
-    { key: "auslandswettkaempfe",label: "Auslandswettkämpfe",  startCol: 15 }
-  ];
 
 
   let xlsxScriptPromise = null;
@@ -1158,12 +1075,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return cell;
   }
 
-
-
-
-
-
-
   function medalForPlace(placeStr){
     const p = parseInt(placeStr, 10);
     if (!Number.isFinite(p)) return null;
@@ -1187,7 +1098,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     if (ln === mx - 2) return "Viertelfinale";
     return "Vorlauf";
   }
-
 
 
   function shortMeetName(name){
@@ -1398,8 +1308,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
             : null
         );
 
-
-
         const ageLabel = ageLabelAtMeet(m.date);
         const ageEl = h("span", { class: "m-age" }, ageLabel || "");
 
@@ -1433,9 +1341,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
           landEl,
           poolEl
         );
-
-
-
 
         const details = h("div", {
           class: "meet-details",
@@ -1499,44 +1404,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     function monthShortDE(idx){
       const names = ["Jan.", "Feb.", "Mär.", "Apr.", "Mai", "Jun.", "Jul.", "Aug.", "Sep.", "Okt.", "Nov.", "Dez."];
       return names[idx] ?? "";
-    }
-
-    function ageAtMeet(athlete, dateStr){
-      const birthRaw =
-        athlete.birthdate ||
-        athlete.geburtsdatum ||
-        athlete.Geburtsdatum ||
-        athlete.birth_date ||
-        athlete.DOB ||
-        "";
-
-      if (!birthRaw) return "";
-
-      const b = new Date(birthRaw);
-      const d = new Date(dateStr);
-      if (isNaN(b) || isNaN(d)) return "";
-
-      let age = d.getFullYear() - b.getFullYear();
-      const m = d.getMonth() - b.getMonth();
-      if (m < 0 || (m === 0 && d.getDate() < b.getDate())) {
-        age--;
-      }
-
-      if (!Number.isFinite(age)) return "";
-      return age + " J.";
-    }
-
-
-    function meetOG(m){
-      const raw =
-        m.Ortsgruppe ||
-        m.OG ||
-        m.verein ||
-        m.Verein ||
-        m.club ||
-        m.Club ||
-        "";
-      return (raw || "").toString().trim();
     }
 
     function buildResultRows(m){
@@ -1777,10 +1644,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return d.toLocaleDateString("de-DE");
   }
 
-  function getOrtsgruppe(a) {
-    return a.aktuelleOrtsgruppe || a.AktuelleOrtsgruppe || a.ortsgruppe || "";
-  }
-
   function countriesFromAthlete(a) {
     const fromMeets = new Set();
     (a.meets || []).forEach(m => {
@@ -1927,7 +1790,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       fetchpriority: size === "xl" ? "high" : "low"
     });
 
-    // NEU: sofort Fallback, Custom nur bei Erfolg (mit Cache)
     setCapWithCache(img, file);
 
     wrap.appendChild(img);
@@ -2459,30 +2321,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return (d - birth) / msPerYear;
   }
 
-  function buildLSCSeries(a){
-    const meets = Array.isArray(a.meets) ? a.meets : [];
-    const byDate = new Map();
-
-    for (const m of meets){
-      const lsc = parseLSC(m.LSC);
-      if (!Number.isFinite(lsc)) continue;
-      const d = (m.date || "").slice(0,10);
-      if (!d) continue;
-
-      const lauf = Number(m._lauf_max || m.Vorläufe || m._lauf || 1);
-
-      const prev = byDate.get(d);
-      if (!prev || lauf > prev.lauf || (lauf === prev.lauf && lsc > prev.lsc)){
-        byDate.set(d, { date: d, lsc, lauf });
-      }
-    }
-
-    const arr = Array.from(byDate.values()).sort((x,y)=> new Date(x.date) - new Date(y.date));
-    return arr
-      .map(p => ({ ...p, age: ageAt(p.date, a.jahrgang) }))
-      .filter(p => Number.isFinite(p.age));
-  }
-
   function s(tag, attrs = {}, ...children){
     const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
     for (const [k,v] of Object.entries(attrs || {})){
@@ -2495,25 +2333,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     }
     return el;
   }
-
-  function yearTicksForWidth(xMin, xMax, widthPx){
-    const span = xMax - xMin;
-    let step = 1;
-    if ((widthPx < 720 && span > 15) || (widthPx >= 720 && span > 30)) {
-      step = 5;
-    }
-    let start = Math.ceil(xMin / step) * step;
-    if (start > xMax) start = Math.floor(xMin);
-
-    const ticks = [];
-    for (let v = start; v <= Math.floor(xMax + 1e-9); v += step) ticks.push(v);
-
-    if (!ticks.length) {
-      ticks.push(Math.floor(xMin), Math.ceil(xMax));
-    }
-    return ticks;
-  }
-
 
   function renderLSCChart(a){
     const sLocal = (tag, attrs = {}, ...children) => {
@@ -2580,7 +2399,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     cmpWrap.appendChild(suggest);
     card.appendChild(cmpWrap);
 
-    // Suche
     let cmpQuery = "", cmpResults = [], cmpActive = -1;
     const normalizeLocal = (s) => (s||"").toString().toLowerCase().normalize("NFKD").replace(/\p{Diacritic}/gu,"").replace(/\s+/g," ").trim();
 
@@ -3421,41 +3239,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       if (isNaN(d)) continue;
 
       const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
-      let best = { lauf:-1, lsc:NaN };
-      for (const r of runs){
-        const lauf = Number(r?._lauf || r?.Vorläufe || 1);
-        const lsc  = parseFloat(String(r?.LSC ?? m?.LSC ?? "").replace(",", "."));
-        if (Number.isFinite(lauf) && Number.isFinite(lsc) && lauf >= best.lauf){
-          best = { lauf, lsc };
-        }
-      }
-      if (!Number.isFinite(best.lsc)) continue;
-
-      const years = (d - birth) / (365.2425 * 24 * 3600 * 1000);
-      const age = Math.round(years * 100) / 100;
-      const meetName = String(m.meet_name || m.meet || "").replace(/\s+-\s+.*$/, "").trim();
-
-      rows.push({ age, lsc: best.lsc, date: dateISO, meet_name: meetName });
-    }
-
-    rows.sort((l, r) => new Date(l.date) - new Date(r.date));
-    return rows;
-  }
-
-  function buildLSCSeries(a){
-    const jahrgang = Number(a?.jahrgang);
-    if (!Number.isFinite(jahrgang)) return [];
-    const meets = Array.isArray(a?.meets) ? a.meets : [];
-    const birth = new Date(`${jahrgang}-07-01T00:00:00Z`);
-
-    const rows = [];
-    for (const m of meets){
-      const dateISO = String(m?.date || "").slice(0,10);
-      if (!dateISO) continue;
-      const d = new Date(dateISO);
-      if (isNaN(d)) continue;
-
-      const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
       let best = { lauf: -1, lsc: NaN };
       for (const r of runs){
         const lauf = Number(r?._lauf || r?.Vorläufe || 1);
@@ -3488,11 +3271,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     currentTop10Index: 0
   };
 
-  const Top10State = {
-    groups: null, 
-    currentKey: "starts"
-  };
-
   const Refs = {
     input: null,
     suggest: null,
@@ -3514,7 +3292,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         ui.appendChild(renderSearch());
 
         const top10 = h("div", { id: "ath-top10", class: "ath-top10" });
-        Refs.top10Mount = top10;
 
         const profile = h("div", { id: "ath-profile" });
         Refs.profileMount = profile;
@@ -3531,253 +3308,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
         mount.appendChild(ui);
     }
-
-
-  async function loadTop10Json() {
-    const resp = await fetch(encodeURI(TOP10_URL), { mode: "cors" });
-    if (!resp.ok) throw new Error(`Top10 HTTP ${resp.status}`);
-    const data = await resp.json();
-    return data;
-  }
-
-  function buildTop10GroupsFromJson(top10) {
-    const out = {};
-    const g = top10?.groups || {};
-
-    const map = {
-      starts: "disciplines",
-      wettkaempfe: "competitions",
-      lsc_aktuell: "lscRecent2y",
-      aktive_jahre: "activeYears",
-      hoechster_lsc: "lscAlltimeHigh",
-      auslandswettkaempfe: "foreignStarts"
-    };
-
-    for (const def of TOP10_GROUPS) {
-      const jsonKey = map[def.key];
-      const arr = Array.isArray(g[jsonKey]) ? g[jsonKey] : [];
-
-      out[def.key] = {
-        key: def.key,
-        label: def.label,
-        header: ["", "", def.label],
-        rows: arr
-          .slice()
-          .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
-          .map(it => [it.name ?? "", it.og ?? "", it.value ?? ""])
-      };
-    }
-    return out;
-  }
-
-
-  async function initTop10() {
-    const mount = Refs.top10Mount;
-    if (!mount) return;
-
-    try {
-      const top10 = await loadTop10Json();
-      Top10State.groups = buildTop10GroupsFromJson(top10);
-      renderTop10();
-    } catch (err) {
-      console.error("Top10 Laden:", err);
-      mount.innerHTML = '<div class="ath-top10-error">Top&nbsp;10 konnten nicht geladen werden.</div>';
-    }
-  }
-
-
-  function renderTop10CapCell(ortsgruppeRaw) {
-    const ogNow = String(ortsgruppeRaw || "").trim();
-    const td = h("td", { class: "ath-top10-cap-cell" });
-
-    if (!ogNow) {
-      return td;
-    }
-
-    const file = capFileFromOrtsgruppe(ogNow);
-
-    const img = h("img", {
-      class: "avatar-img",
-      alt: `Vereinskappe ${formatOrtsgruppe(ogNow)}`,
-      loading: "lazy",
-      decoding: "async",
-      fetchpriority: "low"
-    });
-
-    setCapWithCache(img, file);
-
-    const wrap = h("div", { class: "ath-avatar sm ath-top10-cap" }, img);
-    td.appendChild(wrap);
-    return td;
-  }
-
-
-  function renderTop10() {
-    const mount = Refs.top10Mount;
-    if (!mount) return;
-
-    const groups = Top10State.groups || {};
-    const available = TOP10_GROUPS.filter(def =>
-      groups[def.key] && groups[def.key].rows.length
-    );
-
-    if (!available.length) {
-      mount.innerHTML = '<div class="ath-top10-empty">Keine Top&nbsp;10 Daten vorhanden.</div>';
-      return;
-    }
-
-    if (!available.some(g => g.key === Top10State.currentKey)) {
-      Top10State.currentKey = available[0].key;
-    }
-
-    const current = groups[Top10State.currentKey];
-
-    const select = h("select", { class: "ath-top10-select", "aria-label": "Top-10-Auswahl" },
-      available.map(def =>
-        h("option", {
-          value: def.key,
-          selected: def.key === Top10State.currentKey
-        }, def.label)
-      )
-    );
-
-    const head = h("div", { class: "ath-top10-head" },
-      h("div", { class: "ath-top10-label" }, "Top-10")
-    );
-
-    select.addEventListener("change", (e) => {
-      Top10State.currentKey = e.target.value;
-      renderTop10();
-    });
-
-    let infoNode = null;
-    if (current && typeof current.label === "string") {
-      const labelLower = current.label.toLowerCase();
-      if (labelLower.includes("höchster") && labelLower.includes("lsc")) {
-        infoNode = h(
-          "div",
-          { class: "ath-top10-info" },
-          [
-            "Hinweis:",
-            h("br"),
-            "In dieser Auswertung werden nur LifesavingScore-Werte ab dem Jahr 2001 berücksichtigt."
-          ]
-        );
-      }
-      if (labelLower.includes("starts")) {
-        infoNode = h(
-          "div",
-          { class: "ath-top10-info" },
-          [
-            "Hinweis:",
-            h("br"),
-            "Es werden nur 50m Retten, 100m Retten mit Flossen, 100m Kombi, 100m Lifesaver, 200m Super Lifesaver und 200m Hindernis gezählt."
-          ]
-        );
-      }
-      if (labelLower.includes("wettkämpfe")) {
-        infoNode = h(
-          "div",
-          { class: "ath-top10-info" },
-          [
-            "Hinweis:",
-            h("br"),
-            "Es werden nur Pool-Einzel Wettkämpfe gezählt."
-          ]
-        );
-      }
-      if (labelLower.includes("lsc") && labelLower.includes("aktuell")) {
-        infoNode = h(
-          "div",
-          { class: "ath-top10-info" },
-          [
-            "Hinweis:",
-            h("br"),
-            "Es werden nur Sportler berücksichtigt, die in den letzten 2 Jahren an Pool-Einzel Wettkämpfen teilgenommen haben."
-          ]
-        );
-      }
-      if (labelLower.includes("aktive") && labelLower.includes("jahre")) {
-        infoNode = h(
-          "div",
-          { class: "ath-top10-info" },
-          [
-            "Hinweis:",
-            h("br"),
-            "Es werden nur Jahre gezählt, inden man Pool-Einzel Wettkämpfe geschwommen ist."
-          ]
-        );
-      }
-    }
-
-    const tableWrap = h("div", { class: "ath-top10-table-wrap" },
-      renderTop10Table(current, select)
-    );
-
-    mount.innerHTML = "";
-    mount.appendChild(head);
-    mount.appendChild(tableWrap);
-    if (infoNode) mount.appendChild(infoNode);
-  }
-
-
-  function renderTop10Table(group, headerRightNode) {
-    if (!group) return h("div", {}, "Keine Daten.");
-
-    const rows = group.rows || [];
-
-    const headTable = h("table", { class: "ath-top10-table ath-top10-table-head" },
-      h("tbody", {},
-        h("tr", { class: "ath-top10-header-row" },
-          h("th", { class: "ath-top10-header-cell ath-top10-header-nameog" },
-            "Name / Ortsgruppe"
-          ),
-          h("th", { class: "ath-top10-header-cell ath-top10-header-select" },
-            h("div", { class: "ath-top10-header-select-wrap" }, headerRightNode || "Wert")
-          )
-        )
-      )
-    );
-
-    const bodyRows = rows.map(cells => {
-      const name  = String(cells[0] ?? "").trim();
-      const og    = String(cells[1] ?? "").trim();
-      const value = cells[2] ?? "";
-
-      const capTd = renderTop10CapCell(og);
-
-      const nameOgTd = h("td", { class: "ath-top10-name-cell" },
-        h("div", { class: "ath-top10-name" }, name),
-        og ? h("div", { class: "ath-top10-og" }, og) : null
-      );
-
-      const valueTd = h("td", { class: "ath-top10-value-cell" }, String(value ?? ""));
-
-      return h("tr", {
-        class: "ath-top10-row",
-        role: "button",
-        tabindex: "0",
-        dataset: { name },
-        onclick: (e) => openProfileFromTop10Row(e.currentTarget),
-        onkeydown: (e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            openProfileFromTop10Row(e.currentTarget);
-          }
-        },
-        onpointerdown: function () { this.classList.add("active"); },
-        onpointerup: function () { this.classList.remove("active"); },
-        onpointercancel: function () { this.classList.remove("active"); },
-        onpointerleave: function () { this.classList.remove("active"); }
-      }, capTd, nameOgTd, valueTd);
-    });
-
-    const bodyTable = h("table", { class: "ath-top10-table ath-top10-table-body" },
-      h("tbody", {}, ...bodyRows)
-    );
-
-    return h("div", { class: "ath-top10-table-combo" }, headTable, bodyTable);
-  }
 
 
   function renderSearch() {
@@ -4130,13 +3660,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       }
       return wrap;
     }
-    function infoTileDist(label, m){
-      return h("div", { class: "info-tile dist" },
-        h("div", { class: "info-label" }, label),
-        h("div", { class: "info-progress" }, h("div", { class: "p50", style: `width:${m.pct50 || 0}%` })),
-        h("div", { class: "info-legend" }, h("span", { class: "l50" }, `50m ${m.pct50 || 0}%`))
-      );
-    }
+
 
     function renderBahnverteilungTile(a){
       const m = computeMeetInfo(a); 
@@ -4364,10 +3888,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       }
     }
 
-
-
-
-
     function infoTileYearsFlip(activeYears, firstISO, firstName){
       const tile = h("div", {
         class: "info-tile flip years-flip",
@@ -4434,8 +3954,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
       return tile;
     }
-
-
 
     function infoTileDQFlip(totalDQ, dqLane){
       const tile = h("div", {
@@ -4509,10 +4027,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         const url = id ? `./profil.html?ath=${encodeURIComponent(id)}` : `./profil.html?name=${encodeURIComponent(String(a.name || "").trim())}`;
         window.location.href = url;
         return;
-    }
-
-    if (Refs.top10Mount) {
-        Refs.top10Mount.style.display = "none";
     }
 
     if (!Array.isArray(a.meets) || a.meets.length === 0) {
@@ -4613,8 +4127,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
   document.addEventListener("DOMContentLoaded", async () => {
     renderApp();
 
-    await initTop10();
-    await new Promise(requestAnimationFrame); // 1 Frame zum Rendern
+    await new Promise(requestAnimationFrame);
 
     try {
       const rows = await loadWorkbookArray("Tabelle2");
