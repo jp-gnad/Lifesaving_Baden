@@ -275,9 +275,6 @@ function openFromUrlIfPossible() {
   if (!hit) return;
 
   openProfile(hit);
-
-  const prof = document.getElementById("ath-profile");
-  if (prof) prof.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
   function alignCapToName() {
