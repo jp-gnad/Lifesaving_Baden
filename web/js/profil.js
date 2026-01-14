@@ -516,6 +516,70 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return meet;
   }
 
+  function pickCurrentOgPreferNatFromMeetList(list, fallback = "") {
+    let bestNat = null;
+    let bestInt = null;
+
+    const isNewer = (d, idx, best) =>
+      !best || d > best.d || (d.getTime() === best.d.getTime() && idx > best.idx);
+
+    for (let i = 0; i < (list?.length || 0); i++) {
+      const m = list[i];
+      if (!m) continue;
+
+      const og = String(m.Ortsgruppe ?? m.ortsgruppe ?? "").trim();
+      if (!og) continue;
+
+      const dStr = String(m.date || "").slice(0, 10);
+      const d = new Date(dStr);
+      if (isNaN(d)) continue;
+
+      const rw = String(m.Regelwerk || "").trim().toLowerCase();
+      const isNat = rw.startsWith("nat"); // "national"
+      if (isNat) {
+        if (isNewer(d, i, bestNat)) bestNat = { d, idx: i, og };
+      } else {
+        if (isNewer(d, i, bestInt)) bestInt = { d, idx: i, og };
+      }
+    }
+
+    return bestNat?.og || bestInt?.og || String(fallback || "").trim();
+  }
+
+  function pickOgForCapPreferNational(meets, fallback = "") {
+    const rows = Array.isArray(meets) ? meets : [];
+
+    const cand = rows
+      .map(m => {
+        const dStr = String(m?.date || "").slice(0, 10);
+        const d = new Date(dStr);
+        if (Number.isNaN(d.getTime())) return null;
+
+        const og =
+          m?.Ortsgruppe ??
+          m?.ortsgruppe ??
+          m?.OG ??
+          m?.og ??
+          "";
+
+        const ogTrim = String(og).trim();
+        if (!ogTrim) return null;
+
+        const rw = String(m?.Regelwerk || "").toLowerCase().trim();
+
+        return { d, og: ogTrim, rw };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.d - a.d);
+
+    const nat = cand.find(x => x.rw.startsWith("nat"));
+    if (nat) return nat.og;
+
+    const intl = cand.find(x => x.rw.startsWith("int"));
+    if (intl) return intl.og;
+
+    return String(fallback || "").trim();
+  }
 
   function buildIndicesFromRows(rows){
     const minimalById = new Map();  
@@ -538,22 +602,12 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       meetsById.get(aMin.id).push(meet);
     }
 
-    for (const [id, min] of minimalById.entries()){
+    for (const [id, min] of minimalById.entries()) {
       const list = meetsById.get(id) || [];
-      let latest = null;
-      let lastOG = (min.ortsgruppe || "").trim();
-
-      for (const m of list){
-        const dStr = String(m?.date || "").slice(0,10);
-        const d = new Date(dStr);
-        if (isNaN(d)) continue;
-        if (!latest || d > latest){
-          latest = d;
-          if (m?.Ortsgruppe) lastOG = String(m.Ortsgruppe).trim();
-        }
-      }
+      const lastOG = pickCurrentOgPreferNatFromMeetList(list, (min.ortsgruppe || "").trim());
       minimalById.set(id, { ...min, ortsgruppe: lastOG });
     }
+
 
     AllMeetsByAthleteId = meetsById;
 
@@ -1793,9 +1847,45 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return wrap;
   }
 
+  function pickCapBasisMeetPreferNat(meets) {
+    const list = Array.isArray(meets) ? meets : [];
+
+    let bestNat = null;
+    let bestInt = null;
+
+    const isNewer = (d, idx, best) =>
+      !best || d > best.d || (d.getTime() === best.d.getTime() && idx > best.idx);
+
+    for (let i = 0; i < list.length; i++) {
+      const m = list[i];
+      if (!m) continue;
+
+      const og = String(m.Ortsgruppe ?? m.ortsgruppe ?? "").trim();
+      if (!og) continue;
+
+      const dStr = String(m.date || "").slice(0, 10);
+      const d = new Date(dStr);
+      if (isNaN(d.getTime())) continue;
+
+      const rw = String(m.Regelwerk || "").trim().toLowerCase();
+      const isNat = rw.startsWith("nat"); // "national"
+
+      if (isNat) {
+        if (isNewer(d, i, bestNat)) bestNat = { d, idx: i, m };
+      } else {
+        if (isNewer(d, i, bestInt)) bestInt = { d, idx: i, m };
+      }
+    }
+
+    return (bestNat?.m) || (bestInt?.m) || null;
+  }
+
+
 
   function deriveCapKeysForAthlete(a) {
-    let ogKey = String(
+    const meets = Array.isArray(a?.meets) ? a.meets : [];
+
+    const ogFallback = String(
       a?.Ortsgruppe ??
       a?.ortsgruppe ??
       a?.OG ??
@@ -1803,40 +1893,46 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       ""
     ).trim();
 
-    let lvCode = String(
-      a?.LV_state ??
-      a?.lv_state ??
-      ""
-    ).trim().toUpperCase();
+    const basis = pickCapBasisMeetPreferNat(meets);
 
-    let bvRaw = String(
-      a?.BV_natio ??
-      a?.BV_nation ??
-      ""
-    ).trim();
+    let ogKey = "";
+    let lvCode = "";
+    let bvRaw = "";
 
-    if (Array.isArray(a?.meets)) {
-      for (const m of a.meets) {
-        if (!ogKey) {
-          const ogM = m.Ortsgruppe ?? m.ortsgruppe ?? m.OG ?? m.og;
-          if (ogM) ogKey = String(ogM).trim();
-        }
+    if (basis) {
+      ogKey = String(basis.Ortsgruppe ?? basis.ortsgruppe ?? basis.OG ?? basis.og ?? "").trim();
+      lvCode = String(basis.LV_state ?? basis.lv_state ?? "").trim().toUpperCase();
+      bvRaw = String(basis.BV_natio ?? basis.BV_nation ?? "").trim();
+    }
+
+    if (!ogKey) ogKey = ogFallback;
+
+    if (!lvCode) {
+      lvCode = String(a?.LV_state ?? a?.lv_state ?? "").trim().toUpperCase();
+    }
+    if (!bvRaw) {
+      bvRaw = String(a?.BV_natio ?? a?.BV_nation ?? "").trim();
+    }
+
+    if ((meets.length) && (!lvCode || !bvRaw)) {
+      for (const m of meets) {
         if (!lvCode) {
-          const lvM = m.LV_state ?? m.lv_state;
+          const lvM = m?.LV_state ?? m?.lv_state;
           if (lvM) lvCode = String(lvM).trim().toUpperCase();
         }
         if (!bvRaw) {
-          const bvM = m.BV_natio ?? m.BV_nation;
+          const bvM = m?.BV_natio ?? m?.BV_nation;
           if (bvM) bvRaw = String(bvM).trim();
         }
-        if (ogKey && lvCode && bvRaw) break;
+        if (lvCode && bvRaw) break;
       }
     }
 
     const bvCode = normalizeBVCode(bvRaw);
-
     return { ogKey, lvCode, bvCode };
   }
+
+
 
   function applyCapFallbackToImg(img, frontEl, ogKey, lvCode, bvCode) {
     let seq = [
@@ -2132,55 +2228,11 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
   }
 
 
-  function currentOrtsgruppeFromMeets(a){
-    const meets = Array.isArray(a?.meets)
-      ? a.meets.filter(m => m && m.date && m.Ortsgruppe)
-      : [];
-    if (meets.length === 0) return a?.ortsgruppe || "";
-
-    const rows = meets.map(m => {
-      const d = new Date(m.date);
-      if (isNaN(d)) return null;
-      const rw = String(m.Regelwerk || "").toLowerCase();
-      return {
-        ...m,
-        _d: d,
-        _y: d.getFullYear(),
-        _isNational: rw.startsWith("national")
-      };
-    }).filter(Boolean);
-
-    if (rows.length === 0) return a?.ortsgruppe || "";
-
-    const latestYear = rows.reduce((y, r) => (r._y > y ? r._y : y), rows[0]._y);
-
-    const inYear = rows
-      .filter(r => r._y === latestYear)
-      .sort((x, y) => x._d - y._d);
-
-    const nationals = inYear.filter(r => r._isNational);
-    if (nationals.length > 0) return nationals[0].Ortsgruppe || a?.ortsgruppe || "";
-
-    const lastMeet = inYear[inYear.length - 1];
-    return lastMeet?.Ortsgruppe || a?.ortsgruppe || "";
+  function currentOrtsgruppeFromMeets(a) {
+    const meets = Array.isArray(a?.meets) ? a.meets : [];
+    return pickCurrentOgPreferNatFromMeetList(meets, a?.ortsgruppe || "");
   }
 
-  function collectOrtsgruppenFromMeets(ax) {
-    const set = new Set();
-
-    if (Array.isArray(ax?.meets)) {
-      for (const m of ax.meets) {
-        const og = m?.ortsgruppe || m?.og || "";
-        if (!og) continue;
-        const norm = String(og).trim();
-        if (norm) set.add(norm);
-      }
-    }
-
-    return Array.from(set).sort((a, b) =>
-      a.localeCompare(b, "de-DE")
-    );
-  }
 
   function renderOrtsgruppeMeta(ax) {
     const { curr, others } = collectOrtsgruppenForAthlete(ax);

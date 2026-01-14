@@ -25,7 +25,7 @@ const COLS_DEFAULT = {
   ortsgruppe: 12,
   landesverband: 13,
   poollaenge: 21,
-  regelwerk: 25,
+  regelwerk: 22,
 };
 
 function timeToSeconds(text) {
@@ -69,6 +69,14 @@ function normalizeGender(v) {
   const s = String(v ?? "").trim().toLowerCase();
   if (s === "m" || s === "male" || s === "mann" || s === "männlich") return "m";
   if (s === "w" || s === "f" || s === "female" || s === "frau" || s === "weiblich") return "w";
+  return "";
+}
+
+function normalizeRulebook(v) {
+  const s = String(v ?? "").trim().toLowerCase();
+  if (!s) return "";
+  if (s === "national" || s.startsWith("nat")) return "national";
+  if (s === "international" || s.startsWith("inter")) return "international";
   return "";
 }
 
@@ -724,6 +732,13 @@ function buildAthletesForConfig(rows, cfg) {
         yy2,
         birthYear,
         age,
+        ogNat: "",
+        ogNatDate: null,
+        ogNatRowIndex: -1,
+
+        ogInt: "",
+        ogIntDate: null,
+        ogIntRowIndex: -1,
         best: {},
         points: {},
         total: 0,
@@ -736,17 +751,38 @@ function buildAthletesForConfig(rows, cfg) {
       byKey.set(key, a);
     }
 
+    const rwRowNorm = normalizeRulebook(r[COLS.regelwerk]);
     const ogCandidate = String(r[COLS.ortsgruppe] ?? "").trim();
+
+    const isNewer = (d, bestD, rowIdx, bestRowIdx) => {
+      const newerByDate = d && (!bestD || d.getTime() > bestD.getTime());
+      const sameDateButLaterRow = d && bestD && d.getTime() === bestD.getTime() && rowIdx > bestRowIdx;
+      const noDateFallback = !d && !bestD && rowIdx > bestRowIdx;
+      return newerByDate || sameDateButLaterRow || noDateFallback;
+    };
+
     if (ogCandidate) {
-      const newerByDate = rowDate && (!a.ogDate || rowDate.getTime() > a.ogDate.getTime());
-      const sameDateButLaterRow = rowDate && a.ogDate && rowDate.getTime() === a.ogDate.getTime() && i > a.ogRowIndex;
-      const noDateFallback = !rowDate && !a.ogDate && i > a.ogRowIndex;
-      if (newerByDate || sameDateButLaterRow || noDateFallback) {
-        a.og = ogCandidate;
-        if (rowDate) a.ogDate = rowDate;
-        a.ogRowIndex = i;
+      if (rwRowNorm === "national") {
+        if (isNewer(rowDate, a.ogNatDate, i, a.ogNatRowIndex)) {
+          a.ogNat = ogCandidate;
+          a.ogNatDate = rowDate || null;
+          a.ogNatRowIndex = i;
+        }
+      } else if (rwRowNorm === "international") {
+        if (!a.ogNat) {
+          if (isNewer(rowDate, a.ogIntDate, i, a.ogIntRowIndex)) {
+            a.ogInt = ogCandidate;
+            a.ogIntDate = rowDate || null;
+            a.ogIntRowIndex = i;
+          }
+        }
       }
+
+      a.og = a.ogNat || a.ogInt || "";
+      a.ogDate = a.ogNat ? a.ogNatDate : a.ogIntDate;
+      a.ogRowIndex = a.ogNat ? a.ogNatRowIndex : a.ogIntRowIndex;
     }
+
 
     if (cfg.LAST_COMP_FROM && rowDate) {
       const fromLC = new Date(cfg.LAST_COMP_FROM + "T00:00:00");

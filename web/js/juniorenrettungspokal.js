@@ -866,7 +866,9 @@ function buildPeopleForConfig(rows, cfg) {
   const qualiEnd = cfg.qualiEnd;
   const endInc = endOfDay(qualiEnd);
 
+  let rowIdx = -1;
   for (const row of rows) {
+    rowIdx++;
     if (!row) continue;
 
     const lv = String(row[DATA_COLS.landesverband] ?? "").trim().toUpperCase();
@@ -893,24 +895,53 @@ function buildPeopleForConfig(rows, cfg) {
       if (pl !== Number(cfg.poolLength)) continue;
     }
 
+    const rwRow = normalizeRulebook(row[DATA_COLS.regelwerk]);
+
     if (cfg.rulebook !== "") {
       const want = String(cfg.rulebook).trim().toLowerCase();
-      const rw = normalizeRulebook(row[DATA_COLS.regelwerk]);
-      if (rw !== want) continue;
+      if (rwRow !== want) continue;
     }
 
     const og = String(row[DATA_COLS.ortsgruppe] ?? "").trim();
 
     const key = `${nm}|${g}|${birthYear}`;
-    const rec = dict.get(key) ?? initPersonRec({ name: nm, gender: g, ortsgruppe: og, birthYear });
+    const rec = dict.get(key) ?? initPersonRec({ name: nm, gender: g, ortsgruppe: "", birthYear });
+
+    if (!rec.lastStartDate || wkDate > rec.lastStartDate) {
+      rec.lastStartDate = wkDate;
+      rec.lastStartComp = compName;
+    }
 
     if (og) {
-      if (!rec.lastStartDate || wkDate > rec.lastStartDate) {
-        rec.ortsgruppe = og;
-        rec.lastStartDate = wkDate;
-        rec.lastStartComp = compName;
+      if (rwRow === "national") {
+        const newerNat =
+          !rec.ogNatDate ||
+          wkDate > rec.ogNatDate ||
+          (wkDate.getTime() === rec.ogNatDate.getTime() && rowIdx > rec.ogNatRow);
+
+        if (newerNat) {
+          rec.ogNat = og;
+          rec.ogNatDate = wkDate;
+          rec.ogNatRow = rowIdx;
+        }
+      } else if (rwRow === "international") {
+        if (!rec.ogNatDate) {
+          const newerInt =
+            !rec.ogIntDate ||
+            wkDate > rec.ogIntDate ||
+            (wkDate.getTime() === rec.ogIntDate.getTime() && rowIdx > rec.ogIntRow);
+
+          if (newerInt) {
+            rec.ogInt = og;
+            rec.ogIntDate = wkDate;
+            rec.ogIntRow = rowIdx;
+          }
+        }
       }
+
+      rec.ortsgruppe = rec.ogNat || rec.ogInt || "";
     }
+
 
     for (let i = 0; i < DISCIPLINES.length; i++) {
       const colIdx = DISCIPLINES[i].dataCol;
@@ -1285,6 +1316,12 @@ function initPersonRec({ name, gender, ortsgruppe, birthYear }) {
     gender,
     ortsgruppe,
     birthYear,
+    ogNat: "",
+    ogNatDate: null,
+    ogNatRow: -1,
+    ogInt: "",
+    ogIntDate: null,
+    ogIntRow: -1,
     pz1Count: 0,
     pz2Count: 0,
     _cfg: null,
