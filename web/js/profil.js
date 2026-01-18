@@ -1657,28 +1657,67 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
 
   function renderStartrechtIcons(a){
+    const meets = Array.isArray(a?.meets) ? a.meets : [];
+    const seen = new Set();
     const icons = [];
-    if (hasStartrecht(a, "LV")) icons.push({file: "Cap-Baden.svg",       label: "Landesauswahlmannschaft", key: "LV"});
-    if (hasStartrecht(a, "BV")) icons.push({file: "Cap-Deutschland.svg", label: "Nationalmannschaft", key: "BV"});
 
-    if (icons.length === 0) return null;
+    for (const m of meets){
+      const runs = (Array.isArray(m?._runs) && m._runs.length) ? m._runs : [m];
+
+      for (const r of runs){
+        const sr = String(r?.Startrecht ?? m?.Startrecht ?? "").trim().toUpperCase();
+
+        if (sr === "LV"){
+          let lvCode = String(r?.LV_state ?? m?.LV_state ?? "").trim().toUpperCase();
+          if (!/^[A-Z]{2}$/.test(lvCode)) continue;
+
+          const key = `LV:${lvCode}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+
+          icons.push({
+            file: `Cap-${lvCode}.svg`,
+            label: LV_STATE_LABEL?.[lvCode] ? `Landesverband: ${LV_STATE_LABEL[lvCode]}` : `Landesverband: ${lvCode}`
+          });
+        }
+
+        if (sr === "BV"){
+          const bvRaw = (r?.BV_natio ?? r?.BV_nation ?? m?.BV_natio ?? m?.BV_nation ?? "");
+          const bvCode = normalizeBVCode(bvRaw);
+          if (!bvCode) continue;
+
+          const key = `BV:${bvCode}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+
+          icons.push({
+            file: `Cap-${bvCode}.svg`,
+            label: ISO3_TO_EN?.[bvCode] ? `Bundesverband: ${ISO3_TO_EN[bvCode]}` : `Bundesverband: ${bvCode}`
+          });
+        }
+      }
+    }
+
+    if (!icons.length) return null;
 
     const wrap = h("div", { class: "sr-icons", "aria-label": "Startrechte" });
+
     icons.forEach(ic => {
       const img = h("img", {
         class: "sr-icon",
         src: `${FLAG_BASE_URL}/${encodeURIComponent(ic.file)}`,
         alt: ic.label,
         title: ic.label,
-        "data-startrecht": ic.key,
         loading: "lazy",
         decoding: "async",
         onerror: (e) => e.currentTarget.remove()
       });
       wrap.appendChild(img);
     });
+
     return wrap;
   }
+
 
   function countRegelwerk(meets){
     let intl = 0, nat = 0;
