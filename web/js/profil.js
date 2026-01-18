@@ -542,7 +542,11 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
         if (isNewer(d, i, bestAny)) bestAny = { d, idx: i, kind, m };
 
         const og = String(m.Ortsgruppe ?? m.ortsgruppe ?? "").trim();
-        if (!og) continue;
+        const lv = String(m.LV_state ?? m.lv_state ?? "").trim().toUpperCase();
+        const bv = String(m.BV_natio ?? m.BV_nation ?? "").trim();
+
+        const hasAff = !!(og || lv || bv);
+        if (!hasAff) continue;
 
         if (isNat) {
           if (isNewer(d, i, bestNat)) bestNat = { d, idx: i, m };
@@ -1654,8 +1658,8 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
   function renderStartrechtIcons(a){
     const icons = [];
-    if (hasStartrecht(a, "LV")) icons.push({file: "Cap-Baden.svg",       label: "Landeskader Athlet", key: "LV"});
-    if (hasStartrecht(a, "BV")) icons.push({file: "Cap-Deutschland.svg", label: "Bundeskader Athlet", key: "BV"});
+    if (hasStartrecht(a, "LV")) icons.push({file: "Cap-Baden.svg",       label: "Landesauswahlmannschaft", key: "LV"});
+    if (hasStartrecht(a, "BV")) icons.push({file: "Cap-Deutschland.svg", label: "Nationalmannschaft", key: "BV"});
 
     if (icons.length === 0) return null;
 
@@ -1917,76 +1921,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return wrap;
   }
 
-
-
-  function deriveCapKeysForAthlete(a) {
-    const meets = Array.isArray(a?.meets) ? a.meets : [];
-
-    const rows = meets
-      .map(m => {
-        const d = new Date(String(m?.date || "").slice(0, 10));
-        if (isNaN(d)) return null;
-
-        const rw = String(m?.Regelwerk || "").toLowerCase().trim();
-
-        return {
-          m,
-          _d: d,
-          _isNational: rw.startsWith("national"),
-          _isInternational: rw.startsWith("international"),
-        };
-      })
-      .filter(Boolean)
-      .sort((x, y) => y._d - x._d);
-
-    const pickKeysFrom = (arr) => {
-      let ogKey = String(currentOrtsgruppeFromMeets(a) || a?.ortsgruppe || "").trim();
-      let lvCode = String(a?.LV_state ?? a?.lv_state ?? "").trim().toUpperCase();
-      let bvRaw  = String(a?.BV_natio ?? a?.BV_nation ?? "").trim();
-
-      for (const r of arr) {
-        const m = r.m;
-
-        if (!ogKey) {
-          const v = m?.Ortsgruppe ?? m?.ortsgruppe ?? m?.OG ?? m?.og;
-          if (v) ogKey = String(v).trim();
-        }
-        if (!lvCode) {
-          const v = m?.LV_state ?? m?.lv_state;
-          if (v) lvCode = String(v).trim().toUpperCase();
-        }
-        if (!bvRaw) {
-          const v = m?.BV_natio ?? m?.BV_nation;
-          if (v) bvRaw = String(v).trim();
-        }
-
-        if (ogKey && lvCode && bvRaw) break;
-      }
-
-      return { ogKey, lvCode, bvRaw };
-    };
-
-    const nat = rows.filter(r => r._isNational);
-    const intl = rows.filter(r => r._isInternational);
-
-    const src = nat.length ? nat : (intl.length ? intl : rows);
-    let { ogKey, lvCode, bvRaw } = pickKeysFrom(src);
-
-    if (!ogKey) {
-      ogKey = String(a?.Ortsgruppe ?? a?.ortsgruppe ?? a?.OG ?? a?.og ?? "").trim();
-    }
-    if (!lvCode) {
-      lvCode = String(a?.LV_state ?? a?.lv_state ?? "").trim().toUpperCase();
-    }
-    if (!bvRaw) {
-      bvRaw = String(a?.BV_natio ?? a?.BV_nation ?? "").trim();
-    }
-
-    const bvCode = normalizeBVCode(bvRaw);
-    return { ogKey, lvCode, bvCode };
-  }
-
-
   function applyCapFallback(img, hostEl, seq, { overlayClass = "cap-overlay", noneSrc = "svg/Cap-None.svg" } = {}) {
     if (!seq || !seq.length) {
       hostEl.classList.remove(overlayClass);
@@ -2008,11 +1942,8 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       if (i + 1 < seq.length) {
         i++;
         load();
-      } else if (!noneUsed) {
-        noneUsed = true;
-        hostEl.classList.remove(overlayClass);
-        img.src = noneSrc;
       } else {
+        hostEl.classList.remove(overlayClass);
         img.onerror = null;
         img.remove();
       }
@@ -2378,13 +2309,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       total += Number(s25[d.key]?.dq || 0);
     }
     return total;
-  }
-
-  function parseLSC(v){
-    if (v == null) return NaN;
-    const s = String(v).trim().replace(",", ".");
-    const n = parseFloat(s);
-    return Number.isFinite(n) ? n : NaN;
   }
 
   function assumedBirthDate(jahrgang){
@@ -2946,19 +2870,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       } else {
         cmpPts = null;
       }
-    }
-
-    function getYAxisBaseSec(dKey){
-      const dm = DISCIPLINES.find(d => d.key === dKey);
-      const name = (dm?.label || dKey).toLowerCase();
-
-      if (name.includes("50m retten"))          return 20;
-      if (name.includes("100m retten"))         return 30;
-      if (name.includes("100m kombi"))          return 30;
-      if (name.includes("100m lifesaver"))      return 30;
-      if (name.includes("200m hindernis"))      return 90;
-      if (name.includes("200m superlifesaver")) return 120;
-      return 0;
     }
 
     const Y_SPEC = {

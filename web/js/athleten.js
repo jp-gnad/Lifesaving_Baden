@@ -49,8 +49,13 @@ document.addEventListener("DOMContentLoaded", () => {
     excelDate: 9,
     meet_name: 10,
     yy2: 11,
-    ortsgruppe: 12
+    ortsgruppe: 12,
+    LV_state: 13,
+    regelwerk: 22,
+    startrecht: 24,
+    BV_natio: 27
   };
+
 
   const normalize = (s) =>
     (s || "")
@@ -83,6 +88,53 @@ document.addEventListener("DOMContentLoaded", () => {
     return d.toISOString().slice(0, 10);
   }
 
+  function regelwerkKind(v) {
+    const t = String(v || "").toLowerCase().trim();
+    if (t.startsWith("nat") || t.startsWith("national")) return "nat";
+    if (t.startsWith("int") || t.startsWith("international")) return "int";
+    return "other";
+  }
+
+  const LAND_TO_ISO3 = {
+    "Deutschland":"GER",
+    "Schweiz":"SUI",
+    "Italien":"ITA",
+    "Frankreich":"FRA",
+    "Belgien":"BEL",
+    "Niederlande":"NED",
+    "Spanien":"ESP",
+    "Polen":"POL",
+    "Japan":"JPN",
+    "Dänemark":"DEN",
+    "Ägypten":"EGY",
+    "Großbritannien":"GBR",
+    "Australien":"AUS",
+  };
+
+  function iso3FromLand(landName) {
+    return LAND_TO_ISO3[String(landName||"").trim()] || "";
+  }
+
+  function normalizeBVCode(bvRaw) {
+    const s = String(bvRaw ?? "").trim();
+    if (!s) return "";
+
+    if (/^[A-Z]{3}$/.test(s)) return s;
+
+    const iso = iso3FromLand(s);
+    if (iso) return iso;
+
+    return s.toUpperCase();
+  }
+
+
+  function regelwerkKind(v) {
+    const t = String(v || "").toLowerCase().trim();
+    if (t.startsWith("nat") || t.startsWith("national")) return "nat";
+    if (t.startsWith("int") || t.startsWith("international")) return "int";
+    return "other";
+  }
+
   function parseTwoDigitYearWithMeetYear(twoDigit, meetISO) {
     const yy = Number(twoDigit);
     const meetYear = Number((meetISO || "").slice(0, 4));
@@ -106,50 +158,135 @@ document.addEventListener("DOMContentLoaded", () => {
   function buildIndicesFromRows(rows) {
     const byId = new Map();
 
+    const isNewerNum = (curNum, prevNum) =>
+      Number.isFinite(curNum) && (!Number.isFinite(prevNum) || curNum >= prevNum);
+
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       if (!row || row.length === 0) continue;
 
-      const name = String(row[COLS.name] || "").trim();
+      const name   = String(row[COLS.name] || "").trim();
       const gender = String(row[COLS.gender] || "").trim();
+
       const dNum = Number(row[COLS.excelDate]);
-      const iso = excelSerialToISO(row[COLS.excelDate]);
-      const yy2 = row[COLS.yy2];
+      const iso  = excelSerialToISO(row[COLS.excelDate]);
+
+      const yy2  = row[COLS.yy2];
       const jahrgang = parseTwoDigitYearWithMeetYear(yy2, iso);
+
       const og = String(row[COLS.ortsgruppe] || "").trim();
+      const kind = regelwerkKind(row[COLS.regelwerk]);
+
+      const lv = String(row[COLS.LV_state] ?? "").trim().toUpperCase();
+      const bv = String(row[COLS.BV_natio] ?? "").trim();
+      const sr = String(row[COLS.startrecht] ?? "").trim().toUpperCase();
 
       if (!name || !jahrgang) continue;
 
       const id = makeAthleteId(name, gender, jahrgang);
 
-      const prev = byId.get(id);
-      if (!prev) {
-        byId.set(id, {
-          id,
-          name,
-          jahrgang,
-          geschlecht: gender,
-          ortsgruppe: og,
-          _lastDateNum: Number.isFinite(dNum) ? dNum : -Infinity
-        });
-      } else {
-        const prevNum = Number(prev._lastDateNum);
-        const curNum = Number.isFinite(dNum) ? dNum : -Infinity;
-        if (curNum >= prevNum && og) {
-          prev.ortsgruppe = og;
-          prev._lastDateNum = curNum;
+      let rec = byId.get(id);
+      if (!rec) {
+        rec = {
+          id, name, jahrgang, geschlecht: gender,
+
+          _bestAnyNum: -Infinity,
+          _bestAnyKind: "other",
+
+          _bestOgAnyNum: -Infinity,
+          _bestOgAny: "",
+
+          _bestNatNum: -Infinity,
+          _bestNat: null, 
+
+          _bestIntNum: -Infinity,
+          _bestInt: null,
+
+          _lastLVNum: -Infinity, _lastLV: "",
+          _lastBVNum: -Infinity, _lastBV: "",
+          _lastSRNum: -Infinity, _lastSR: ""
+        };
+        byId.set(id, rec);
+      }
+
+      if (isNewerNum(dNum, rec._bestAnyNum)) {
+        rec._bestAnyNum  = dNum;
+        rec._bestAnyKind = kind;
+      }
+
+      if (lv && isNewerNum(dNum, rec._lastLVNum)) { rec._lastLVNum = dNum; rec._lastLV = lv; }
+      if (bv && isNewerNum(dNum, rec._lastBVNum)) { rec._lastBVNum = dNum; rec._lastBV = bv; }
+      if (sr && isNewerNum(dNum, rec._lastSRNum)) { rec._lastSRNum = dNum; rec._lastSR = sr; }
+
+      if (og && isNewerNum(dNum, rec._bestOgAnyNum)) {
+        rec._bestOgAnyNum = dNum;
+        rec._bestOgAny = og;
+      }
+
+      if (og) {
+        const packed = { og, lv, bv, sr };
+
+        if (kind === "nat") {
+          if (isNewerNum(dNum, rec._bestNatNum)) {
+            rec._bestNatNum = dNum;
+            rec._bestNat = packed;
+          }
+        } else if (kind === "int") {
+          if (isNewerNum(dNum, rec._bestIntNum)) {
+            rec._bestIntNum = dNum;
+            rec._bestInt = packed;
+          }
         }
       }
     }
 
-    const athletes = Array.from(byId.values()).map(a => {
-      const { _lastDateNum, ...clean } = a;
-      return clean;
+    const athletes = Array.from(byId.values()).map(rec => {
+      const hasNat = !!rec._bestNat;
+      const hasInt = !!rec._bestInt;
+
+      let basis = null;
+
+      if (hasNat && !hasInt) {
+        basis = rec._bestNat;
+      } else if (!hasNat && hasInt) {
+        basis = rec._bestInt;
+      } else if (hasNat && hasInt) {
+
+        const lastWasInt = rec._bestAnyKind === "int";
+
+        const natStaleVsLastInt =
+          lastWasInt &&
+          Number.isFinite(rec._bestAnyNum) &&
+          Number.isFinite(rec._bestNatNum) &&
+          (rec._bestAnyNum - rec._bestNatNum >= 365);
+
+        basis = natStaleVsLastInt ? rec._bestInt : rec._bestNat;
+      }
+
+      const ortsgruppe = String(basis?.og || rec._bestOgAny || "").trim();
+
+      const LV_state = String(basis?.lv || rec._lastLV || "").trim().toUpperCase();
+      const BV_natio = String(basis?.bv || rec._lastBV || "").trim();
+      const Startrecht = String(basis?.sr || rec._lastSR || "OG").trim().toUpperCase();
+
+      return {
+        id: rec.id,
+        name: rec.name,
+        jahrgang: rec.jahrgang,
+        geschlecht: rec.geschlecht,
+
+        ortsgruppe,
+        LV_state,
+        BV_natio,
+        Startrecht
+      };
     });
 
     athletes.sort((l, r) => l.name.localeCompare(r.name, "de"));
     return athletes;
   }
+
+
 
   const FLAG_BASE_URL = "./svg";
   const CAP_FALLBACK_FILE = "Cap-Baden_light.svg";
@@ -198,25 +335,96 @@ document.addEventListener("DOMContentLoaded", () => {
     return `Cap-${og}.svg`;
   }
 
+  function deriveAffiliation(a) {
+  const ogKey = String(a?.ortsgruppe || "").trim();
+  const lvCode = String(a?.LV_state ?? a?.lv_state ?? "").trim().toUpperCase();
+  const bvCode = normalizeBVCode(a?.BV_natio ?? a?.BV_nation ?? "");
+  const startrecht = String(a?.Startrecht ?? a?.startrecht ?? "").trim().toUpperCase();
+  return { ogKey, lvCode, bvCode, startrecht, label: ogKey };
+}
+
+function capCandidates({ ogKey, lvCode, bvCode, startrecht }) {
+  let seq;
+  if (startrecht === "OG") {
+    seq = [
+      { key: ogKey,  overlay: false },
+      { key: lvCode, overlay: true  },
+      { key: bvCode, overlay: true  },
+    ];
+  } else if (startrecht === "LV") {
+    seq = [
+      { key: lvCode, overlay: false },
+      { key: ogKey,  overlay: true  },
+      { key: bvCode, overlay: true  },
+    ];
+  } else if (startrecht === "BV") {
+    seq = [
+      { key: bvCode, overlay: false },
+      { key: ogKey,  overlay: true  },
+      { key: lvCode, overlay: true  },
+    ];
+  } else {
+    seq = [
+      { key: ogKey,  overlay: false },
+      { key: lvCode, overlay: true  },
+      { key: bvCode, overlay: true  },
+    ];
+  }
+  return seq.filter(x => x.key && String(x.key).trim() !== "");
+}
+
+function applyCapFallback(img, hostEl, seq, { overlayClass = "cap-overlay", noneSrc = `${FLAG_BASE_URL}/Cap-None.svg` } = {}) {
+  if (!seq || !seq.length) {
+    hostEl.classList.remove(overlayClass);
+    img.onerror = null;
+    img.src = noneSrc;
+    return;
+  }
+
+  let i = 0;
+  let noneUsed = false;
+
+  const load = () => {
+    const entry = seq[i];
+    hostEl.classList.toggle(overlayClass, !!entry.overlay);
+    img.src = `${FLAG_BASE_URL}/Cap-${encodeURIComponent(entry.key)}.svg`;
+  };
+
+  img.onerror = () => {
+    if (i + 1 < seq.length) {
+      i++;
+      load();
+    } else {
+      hostEl.classList.remove(overlayClass);
+      img.onerror = null;
+      img.remove();
+    }
+  };
+
+  load();
+}
+
+
   function renderCapAvatar(a, size = "xl", extraClass = "") {
     const wrap = h("div", { class: `ath-avatar ${size} ${extraClass}` });
 
-    const ogNow = String(a?.ortsgruppe || "").trim();
-    const file = capFileFromOrtsgruppe(ogNow);
+    const aff = deriveAffiliation(a);
+    const ogNow = aff.ogKey || "";
 
     const img = h("img", {
       class: "avatar-img",
-      alt: `Vereinskappe ${formatOrtsgruppe(ogNow)}`,
+      alt: ogNow ? `Vereinskappe ${formatOrtsgruppe(ogNow)}` : "Vereinskappe",
       loading: size === "xl" ? "eager" : "lazy",
       decoding: "async",
       fetchpriority: size === "xl" ? "high" : "low"
     });
 
-    setCapWithCache(img, file);
+    applyCapFallback(img, wrap, capCandidates(aff), { overlayClass: "cap-overlay" });
 
     wrap.appendChild(img);
     return wrap;
   }
+
 
   let xlsxScriptPromise = null;
 
