@@ -409,21 +409,19 @@ html, body {
 }
 
 
-.cap-face.cap-front.cap-overlay {
+/* Overlay auch auf normalen Avataren (z.B. Suchliste) erlauben */
+.ath-avatar.cap-overlay {
   position: relative;
 }
 
-.cap-face.cap-overlay::after {
+.ath-avatar.cap-overlay::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.747); /* Transparenz anpassen */
-  border-radius: 999px;                  /* falls Cap rund ist */
+  background: rgba(255, 255, 255, 0.747);
+  border-radius: 999px;
   pointer-events: none;
 }
-
-
-
 
 
 /* =========================================================

@@ -516,70 +516,56 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     return meet;
   }
 
-  function pickCurrentOgPreferNatFromMeetList(list, fallback = "") {
-    let bestNat = null;
-    let bestInt = null;
+    function pickBasisMeetPreferNat(meets, { staleNationalDays = 365 } = {}) {
+      const list = Array.isArray(meets) ? meets : [];
 
-    const isNewer = (d, idx, best) =>
-      !best || d > best.d || (d.getTime() === best.d.getTime() && idx > best.idx);
+      let bestNat = null;
+      let bestInt = null;
+      let bestAny = null;
 
-    for (let i = 0; i < (list?.length || 0); i++) {
-      const m = list[i];
-      if (!m) continue;
+      const isNewer = (d, idx, best) =>
+        !best || d > best.d || (d.getTime() === best.d.getTime() && idx > best.idx);
 
-      const og = String(m.Ortsgruppe ?? m.ortsgruppe ?? "").trim();
-      if (!og) continue;
+      for (let i = 0; i < list.length; i++) {
+        const m = list[i];
+        if (!m) continue;
 
-      const dStr = String(m.date || "").slice(0, 10);
-      const d = new Date(dStr);
-      if (isNaN(d)) continue;
+        const dStr = String(m.date || "").slice(0, 10);
+        const d = new Date(dStr);
+        if (isNaN(d.getTime())) continue;
 
-      const rw = String(m.Regelwerk || "").trim().toLowerCase();
-      const isNat = rw.startsWith("nat"); // "national"
-      if (isNat) {
-        if (isNewer(d, i, bestNat)) bestNat = { d, idx: i, og };
-      } else {
-        if (isNewer(d, i, bestInt)) bestInt = { d, idx: i, og };
+        const rw = String(m.Regelwerk || "").toLowerCase().trim();
+        const isNat = rw.startsWith("nat") || rw.startsWith("national");
+        const isInt = rw.startsWith("int") || rw.startsWith("international");
+        const kind  = isNat ? "nat" : (isInt ? "int" : "other");
+
+        if (isNewer(d, i, bestAny)) bestAny = { d, idx: i, kind, m };
+
+        const og = String(m.Ortsgruppe ?? m.ortsgruppe ?? "").trim();
+        if (!og) continue;
+
+        if (isNat) {
+          if (isNewer(d, i, bestNat)) bestNat = { d, idx: i, m };
+        } else if (isInt) {
+          if (isNewer(d, i, bestInt)) bestInt = { d, idx: i, m };
+        }
       }
+
+      if (!bestNat && !bestInt) return null;
+      if (!bestNat) return bestInt.m;
+      if (!bestInt) return bestNat.m;
+
+      if (bestAny?.kind === "int") {
+        const staleMs = staleNationalDays * 24 * 60 * 60 * 1000;
+        const diffMs = bestAny.d.getTime() - bestNat.d.getTime(); // WICHTIG: relativ zum letzten internationalen Datum
+        if (diffMs >= staleMs) {
+          return bestInt.m;
+        }
+      }
+
+      return bestNat.m;
     }
 
-    return bestNat?.og || bestInt?.og || String(fallback || "").trim();
-  }
-
-  function pickOgForCapPreferNational(meets, fallback = "") {
-    const rows = Array.isArray(meets) ? meets : [];
-
-    const cand = rows
-      .map(m => {
-        const dStr = String(m?.date || "").slice(0, 10);
-        const d = new Date(dStr);
-        if (Number.isNaN(d.getTime())) return null;
-
-        const og =
-          m?.Ortsgruppe ??
-          m?.ortsgruppe ??
-          m?.OG ??
-          m?.og ??
-          "";
-
-        const ogTrim = String(og).trim();
-        if (!ogTrim) return null;
-
-        const rw = String(m?.Regelwerk || "").toLowerCase().trim();
-
-        return { d, og: ogTrim, rw };
-      })
-      .filter(Boolean)
-      .sort((a, b) => b.d - a.d);
-
-    const nat = cand.find(x => x.rw.startsWith("nat"));
-    if (nat) return nat.og;
-
-    const intl = cand.find(x => x.rw.startsWith("int"));
-    if (intl) return intl.og;
-
-    return String(fallback || "").trim();
-  }
 
   function buildIndicesFromRows(rows){
     const minimalById = new Map();  
@@ -604,8 +590,25 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     for (const [id, min] of minimalById.entries()) {
       const list = meetsById.get(id) || [];
-      const lastOG = pickCurrentOgPreferNatFromMeetList(list, (min.ortsgruppe || "").trim());
-      minimalById.set(id, { ...min, ortsgruppe: lastOG });
+
+      const basis = pickBasisMeetPreferNat(list);
+
+      const lastOG = String(
+        basis?.Ortsgruppe ??
+        basis?.ortsgruppe ??
+        min.ortsgruppe ??
+        ""
+      ).trim();
+
+      const lv = String(basis?.LV_state ?? "").trim().toUpperCase();
+      const bv = String(basis?.BV_natio ?? "").trim(); // bleibt roh, normalizeBVCode kommt später
+
+      minimalById.set(id, {
+        ...min,
+        ortsgruppe: lastOG,
+        LV_state: lv,
+        BV_natio: bv
+      });
     }
 
 
@@ -1003,6 +1006,73 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
     const upper = s.toUpperCase();
     return upper;
+  }
+
+  function deriveAffiliation(a) {
+    const meets =
+      Array.isArray(a?.meets) && a.meets.length
+        ? a.meets
+        : (AllMeetsByAthleteId.get(a?.id) || []);
+
+    const basis = pickBasisMeetPreferNat(meets);
+
+    const ogKey = String(
+      basis?.Ortsgruppe ?? basis?.ortsgruppe ?? a?.ortsgruppe ?? ""
+    ).trim();
+
+    const lvCode = String(
+      basis?.LV_state ?? a?.LV_state ?? a?.lv_state ?? ""
+    ).trim().toUpperCase();
+
+    const bvCode = normalizeBVCode(
+      basis?.BV_natio ?? a?.BV_natio ?? a?.BV_nation ?? ""
+    );
+
+    const startrecht = String(
+      basis?.Startrecht ?? ""
+    ).trim().toUpperCase();
+
+    let label = ogKey;
+
+    if (startrecht === "LV" && lvCode) {
+      label = LV_STATE_LABEL[lvCode] || lvCode;
+    } else if (startrecht === "BV" && bvCode) {
+      label = ISO3_TO_EN[bvCode] || bvCode;
+    }
+
+    return { ogKey, lvCode, bvCode, startrecht, label };
+  }
+
+  function capCandidates({ ogKey, lvCode, bvCode, startrecht }) {
+    let seq;
+
+    if (startrecht === "OG") {
+      seq = [
+        { key: ogKey,  overlay: false },
+        { key: lvCode, overlay: true  },
+        { key: bvCode, overlay: true  },
+      ];
+    } else if (startrecht === "LV") {
+      seq = [
+        { key: lvCode, overlay: false },
+        { key: ogKey,  overlay: true  },
+        { key: bvCode, overlay: true  },
+      ];
+    } else if (startrecht === "BV") {
+      seq = [
+        { key: bvCode, overlay: false },
+        { key: ogKey,  overlay: true  },
+        { key: lvCode, overlay: true  },
+      ];
+    } else {
+      seq = [
+        { key: ogKey,  overlay: false },
+        { key: lvCode, overlay: true  },
+        { key: bvCode, overlay: true  },
+      ];
+    }
+
+    return seq.filter(x => x.key && String(x.key).trim() !== "");
   }
 
 
@@ -1830,54 +1900,21 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
   function renderCapAvatar(a, size = "xl", extraClass = "") {
     const wrap = h("div", { class: `ath-avatar ${size} ${extraClass}` });
 
-    const ogNow = currentOrtsgruppeFromMeets(a) || a.ortsgruppe || "";
-    const file  = capFileFromOrtsgruppe(ogNow);
+    const aff = deriveAffiliation(a);
+    const ogNow = aff.ogKey || String(a?.ortsgruppe || "").trim();
 
     const img = h("img", {
       class: "avatar-img",
-      alt: `Vereinskappe ${formatOrtsgruppe(ogNow)}`,
+      alt: ogNow ? `Vereinskappe ${formatOrtsgruppe(ogNow)}` : "Vereinskappe",
       loading: size === "xl" ? "eager" : "lazy",
       decoding: "async",
       fetchpriority: size === "xl" ? "high" : "low"
     });
 
-    setCapWithCache(img, file);
+    applyCapFallback(img, wrap, capCandidates(aff), { overlayClass: "cap-overlay" });
 
     wrap.appendChild(img);
     return wrap;
-  }
-
-  function pickCapBasisMeetPreferNat(meets) {
-    const list = Array.isArray(meets) ? meets : [];
-
-    let bestNat = null;
-    let bestInt = null;
-
-    const isNewer = (d, idx, best) =>
-      !best || d > best.d || (d.getTime() === best.d.getTime() && idx > best.idx);
-
-    for (let i = 0; i < list.length; i++) {
-      const m = list[i];
-      if (!m) continue;
-
-      const og = String(m.Ortsgruppe ?? m.ortsgruppe ?? "").trim();
-      if (!og) continue;
-
-      const dStr = String(m.date || "").slice(0, 10);
-      const d = new Date(dStr);
-      if (isNaN(d.getTime())) continue;
-
-      const rw = String(m.Regelwerk || "").trim().toLowerCase();
-      const isNat = rw.startsWith("nat"); // "national"
-
-      if (isNat) {
-        if (isNewer(d, i, bestNat)) bestNat = { d, idx: i, m };
-      } else {
-        if (isNewer(d, i, bestInt)) bestInt = { d, idx: i, m };
-      }
-    }
-
-    return (bestNat?.m) || (bestInt?.m) || null;
   }
 
 
@@ -1885,28 +1922,59 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
   function deriveCapKeysForAthlete(a) {
     const meets = Array.isArray(a?.meets) ? a.meets : [];
 
-    const ogFallback = String(
-      a?.Ortsgruppe ??
-      a?.ortsgruppe ??
-      a?.OG ??
-      a?.og ??
-      ""
-    ).trim();
+    const rows = meets
+      .map(m => {
+        const d = new Date(String(m?.date || "").slice(0, 10));
+        if (isNaN(d)) return null;
 
-    const basis = pickCapBasisMeetPreferNat(meets);
+        const rw = String(m?.Regelwerk || "").toLowerCase().trim();
 
-    let ogKey = "";
-    let lvCode = "";
-    let bvRaw = "";
+        return {
+          m,
+          _d: d,
+          _isNational: rw.startsWith("national"),
+          _isInternational: rw.startsWith("international"),
+        };
+      })
+      .filter(Boolean)
+      .sort((x, y) => y._d - x._d);
 
-    if (basis) {
-      ogKey = String(basis.Ortsgruppe ?? basis.ortsgruppe ?? basis.OG ?? basis.og ?? "").trim();
-      lvCode = String(basis.LV_state ?? basis.lv_state ?? "").trim().toUpperCase();
-      bvRaw = String(basis.BV_natio ?? basis.BV_nation ?? "").trim();
+    const pickKeysFrom = (arr) => {
+      let ogKey = String(currentOrtsgruppeFromMeets(a) || a?.ortsgruppe || "").trim();
+      let lvCode = String(a?.LV_state ?? a?.lv_state ?? "").trim().toUpperCase();
+      let bvRaw  = String(a?.BV_natio ?? a?.BV_nation ?? "").trim();
+
+      for (const r of arr) {
+        const m = r.m;
+
+        if (!ogKey) {
+          const v = m?.Ortsgruppe ?? m?.ortsgruppe ?? m?.OG ?? m?.og;
+          if (v) ogKey = String(v).trim();
+        }
+        if (!lvCode) {
+          const v = m?.LV_state ?? m?.lv_state;
+          if (v) lvCode = String(v).trim().toUpperCase();
+        }
+        if (!bvRaw) {
+          const v = m?.BV_natio ?? m?.BV_nation;
+          if (v) bvRaw = String(v).trim();
+        }
+
+        if (ogKey && lvCode && bvRaw) break;
+      }
+
+      return { ogKey, lvCode, bvRaw };
+    };
+
+    const nat = rows.filter(r => r._isNational);
+    const intl = rows.filter(r => r._isInternational);
+
+    const src = nat.length ? nat : (intl.length ? intl : rows);
+    let { ogKey, lvCode, bvRaw } = pickKeysFrom(src);
+
+    if (!ogKey) {
+      ogKey = String(a?.Ortsgruppe ?? a?.ortsgruppe ?? a?.OG ?? a?.og ?? "").trim();
     }
-
-    if (!ogKey) ogKey = ogFallback;
-
     if (!lvCode) {
       lvCode = String(a?.LV_state ?? a?.lv_state ?? "").trim().toUpperCase();
     }
@@ -1914,71 +1982,45 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       bvRaw = String(a?.BV_natio ?? a?.BV_nation ?? "").trim();
     }
 
-    if ((meets.length) && (!lvCode || !bvRaw)) {
-      for (const m of meets) {
-        if (!lvCode) {
-          const lvM = m?.LV_state ?? m?.lv_state;
-          if (lvM) lvCode = String(lvM).trim().toUpperCase();
-        }
-        if (!bvRaw) {
-          const bvM = m?.BV_natio ?? m?.BV_nation;
-          if (bvM) bvRaw = String(bvM).trim();
-        }
-        if (lvCode && bvRaw) break;
-      }
-    }
-
     const bvCode = normalizeBVCode(bvRaw);
     return { ogKey, lvCode, bvCode };
   }
 
 
-
-  function applyCapFallbackToImg(img, frontEl, ogKey, lvCode, bvCode) {
-    let seq = [
-      { key: ogKey,  overlay: false },
-      { key: lvCode, overlay: true  },
-      { key: bvCode, overlay: true  },
-    ].filter(e => e.key && String(e.key).trim() !== "");
-
-    if (!seq.length) {
-      frontEl.classList.remove("cap-overlay");
-      img.src = "svg/Cap-None.svg";
+  function applyCapFallback(img, hostEl, seq, { overlayClass = "cap-overlay", noneSrc = "svg/Cap-None.svg" } = {}) {
+    if (!seq || !seq.length) {
+      hostEl.classList.remove(overlayClass);
+      img.onerror = null;
+      img.src = noneSrc;
       return;
     }
 
-    let index = 0;
+    let i = 0;
     let noneUsed = false;
 
-    function setOverlay(entry) {
-      if (entry.overlay) {
-        frontEl.classList.add("cap-overlay");
-      } else {
-        frontEl.classList.remove("cap-overlay");
-      }
-    }
-
-    function loadCurrent() {
-      const entry = seq[index];
-      setOverlay(entry);
+    const load = () => {
+      const entry = seq[i];
+      hostEl.classList.toggle(overlayClass, !!entry.overlay);
       img.src = `svg/Cap-${encodeURIComponent(entry.key)}.svg`;
-    }
+    };
 
-    img.addEventListener("error", function onErr() {
-      if (index + 1 < seq.length) {
-        index++;
-        loadCurrent();
+    img.onerror = () => {
+      if (i + 1 < seq.length) {
+        i++;
+        load();
       } else if (!noneUsed) {
         noneUsed = true;
-        frontEl.classList.remove("cap-overlay");
-        img.src = "svg/Cap-None.svg";
+        hostEl.classList.remove(overlayClass);
+        img.src = noneSrc;
       } else {
-        img.removeEventListener("error", onErr);
+        img.onerror = null;
+        img.remove();
       }
-    });
+    };
 
-    loadCurrent();
+    load();
   }
+
 
   function renderCapAvatarProfile(a) {
     const frontCap = renderCapAvatar(a);
@@ -2004,12 +2046,8 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     inner.appendChild(back);
     wrap.appendChild(inner);
 
-    const { ogKey, lvCode, bvCode } = deriveCapKeysForAthlete(a);
-
-    const frontImg = front.querySelector("img");
-    if (frontImg) {
-      applyCapFallbackToImg(frontImg, front, ogKey, lvCode, bvCode);
-    }
+    const aff = deriveAffiliation(a);
+    const seq = capCandidates(aff);
 
     const toggle = () => {
       const locked = wrap.classList.toggle("is-flipped");
@@ -2052,11 +2090,6 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
       const backCap = renderCapAvatar(a);
       if (backCap) {
         back.appendChild(backCap);
-
-        const backImg = backCap.querySelector("img");
-        if (backImg) {
-          applyCapFallbackToImg(backImg, back, ogKey, lvCode, bvCode);
-        }
       }
 
       wrap.dataset.hasBack = "1";
@@ -2229,10 +2262,9 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
 
   function currentOrtsgruppeFromMeets(a) {
-    const meets = Array.isArray(a?.meets) ? a.meets : [];
-    return pickCurrentOgPreferNatFromMeetList(meets, a?.ortsgruppe || "");
+    const aff = deriveAffiliation(a);
+    return aff.ogKey || String(a?.ortsgruppe || "").trim();
   }
-
 
   function renderOrtsgruppeMeta(ax) {
     const { curr, others } = collectOrtsgruppenForAthlete(ax);
@@ -3446,7 +3478,8 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     }
   });
 
-      item.appendChild(renderCapAvatar(a, "sm", "ath-suggest-avatar"));
+      const av = renderCapAvatar(a, "sm", "ath-suggest-avatar");
+      item.appendChild(av);
 
       const nameEl = h("div", { class: "ath-suggest-name" });
       nameEl.innerHTML = `${highlight(a.name, q)} <span class="ath-year">(${a.jahrgang})</span>`;
@@ -4187,6 +4220,7 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
     }
       hideSuggestions();
     } catch (err) {
+      console.error("Boot-Fehler:", err);
       if (Refs.suggest) {
         Refs.suggest.classList.remove("hidden");
         Refs.suggest.innerHTML = '<div class="ath-suggest-empty">Fehler beim Laden der Daten.</div>';
