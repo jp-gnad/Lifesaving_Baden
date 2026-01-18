@@ -1658,65 +1658,73 @@ async function loadWorkbookArray(sheetName = "Tabelle2") {
 
   function renderStartrechtIcons(a){
     const meets = Array.isArray(a?.meets) ? a.meets : [];
-    const seen = new Set();
-    const icons = [];
+
+    const lvMap = new Map();
+    const bvMap = new Map();
 
     for (const m of meets){
-      const runs = (Array.isArray(m?._runs) && m._runs.length) ? m._runs : [m];
+      const runs = Array.isArray(m._runs) && m._runs.length ? m._runs : [m];
 
       for (const r of runs){
-        const sr = String(r?.Startrecht ?? m?.Startrecht ?? "").trim().toUpperCase();
+        const sr = String(r?.Startrecht || m?.Startrecht || "").trim().toUpperCase();
+        const dStr = String(r?.date || m?.date || "").slice(0,10);
+        const d = new Date(dStr);
+        const t = isNaN(d.getTime()) ? -Infinity : d.getTime();
 
         if (sr === "LV"){
-          let lvCode = String(r?.LV_state ?? m?.LV_state ?? "").trim().toUpperCase();
-          if (!/^[A-Z]{2}$/.test(lvCode)) continue;
-
-          const key = `LV:${lvCode}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-
-          icons.push({
-            file: `Cap-${lvCode}.svg`,
-            label: LV_STATE_LABEL?.[lvCode] ? `Landesverband: ${LV_STATE_LABEL[lvCode]}` : `Landesverband: ${lvCode}`
-          });
+          const code = String(r?.LV_state ?? m?.LV_state ?? "").trim().toUpperCase();
+          if (!code) continue;
+          const prev = lvMap.get(code);
+          if (prev == null || t > prev) lvMap.set(code, t);
         }
 
         if (sr === "BV"){
-          const bvRaw = (r?.BV_natio ?? r?.BV_nation ?? m?.BV_natio ?? m?.BV_nation ?? "");
-          const bvCode = normalizeBVCode(bvRaw);
-          if (!bvCode) continue;
-
-          const key = `BV:${bvCode}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-
-          icons.push({
-            file: `Cap-${bvCode}.svg`,
-            label: ISO3_TO_EN?.[bvCode] ? `Bundesverband: ${ISO3_TO_EN[bvCode]}` : `Bundesverband: ${bvCode}`
-          });
+          const raw = (r?.BV_natio ?? m?.BV_natio ?? r?.BV_nation ?? m?.BV_nation ?? "");
+          const code = normalizeBVCode(raw);
+          if (!code) continue;
+          const prev = bvMap.get(code);
+          if (prev == null || t > prev) bvMap.set(code, t);
         }
       }
     }
 
-    if (!icons.length) return null;
+    const lvList = Array.from(lvMap.entries())
+      .map(([code, t]) => ({ code, t }))
+      .sort((a,b) => a.t - b.t);  
+
+    const bvList = Array.from(bvMap.entries())
+      .map(([code, t]) => ({ code, t }))
+      .sort((a,b) => a.t - b.t);
+
+    if (!lvList.length && !bvList.length) return null;
 
     const wrap = h("div", { class: "sr-icons", "aria-label": "Startrechte" });
 
-    icons.forEach(ic => {
-      const img = h("img", {
-        class: "sr-icon",
-        src: `${FLAG_BASE_URL}/${encodeURIComponent(ic.file)}`,
-        alt: ic.label,
-        title: ic.label,
-        loading: "lazy",
-        decoding: "async",
-        onerror: (e) => e.currentTarget.remove()
-      });
-      wrap.appendChild(img);
+    const makeImg = (code, srLabel) => h("img", {
+      class: "sr-icon",
+      src: `${FLAG_BASE_URL}/Cap-${encodeURIComponent(code)}.svg`,
+      alt: `${srLabel} ${code}`,
+      title: `${srLabel} ${code}`,
+      loading: "lazy",
+      decoding: "async",
+      onerror: (e) => e.currentTarget.remove()
     });
+
+    if (lvList.length){
+      const gLv = h("span", { class: "sr-group sr-group--lv", "aria-label": "LV Startrechte" });
+      lvList.forEach(x => gLv.appendChild(makeImg(x.code, "LV")));
+      wrap.appendChild(gLv);
+    }
+
+    if (bvList.length){
+      const gBv = h("span", { class: "sr-group sr-group--bv", "aria-label": "BV Startrechte" });
+      bvList.forEach(x => gBv.appendChild(makeImg(x.code, "BV")));
+      wrap.appendChild(gBv);
+    }
 
     return wrap;
   }
+
 
 
   function countRegelwerk(meets){

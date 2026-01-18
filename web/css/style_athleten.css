@@ -265,17 +265,39 @@ html, body {
 
 /* Startrecht-Symbole (LV / BV-Caps) */
 
-.sr-icons {
+.sr-icons{
   display: inline-flex;
-  gap: 0.4rem;
   align-items: center;
+  gap: 0.7rem;
   margin-left: 0.75rem;
 }
 
-.sr-icon {
+.sr-group{
+  display: inline-flex;
+  align-items: center;
+}
+
+.sr-icon{
   width: 1.6rem;
   height: 1.6rem;
   object-fit: contain;
+
+  position: relative;
+
+  background: #fff;
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px #fff;   /* “weißer Rand”, sieht aus wie im Beispiel */
+}
+
+/* Overlap: jedes weitere Icon rückt nach links */
+.sr-group .sr-icon + .sr-icon{
+  margin-left: -0.55rem; /* Stärke der Überlappung */
+}
+
+/* Mobile ggf. etwas weniger Überlappung */
+@media (max-width:720px){
+  .sr-icon{ width: 1.45rem; height: 1.45rem; }
+  .sr-group .sr-icon + .sr-icon{ margin-left: -0.45rem; }
 }
 
 /* Länder-Pins */
