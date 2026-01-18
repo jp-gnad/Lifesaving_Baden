@@ -373,6 +373,33 @@ function capCandidates({ ogKey, lvCode, bvCode, startrecht }) {
   return seq.filter(x => x.key && String(x.key).trim() !== "");
 }
 
+function capCandidatesAvatar(aff){
+  const ogKey = String(aff?.ogKey  || "").trim();
+  const lvCode= String(aff?.lvCode|| "").trim();
+  const bvCode= String(aff?.bvCode|| "").trim();
+  const sr    = String(aff?.startrecht || "").trim().toUpperCase();
+
+  const out = [];
+
+  if (ogKey) out.push({ key: ogKey, overlay: false });
+
+  const pushOverlay = (key) => {
+    const k = String(key || "").trim();
+    if (k) out.push({ key: k, overlay: true });
+  };
+
+  if (sr === "BV") {
+    pushOverlay(bvCode);
+    pushOverlay(lvCode);
+  } else {
+    pushOverlay(lvCode);
+    pushOverlay(bvCode);
+  }
+
+  return out;
+}
+
+
 function applyCapFallback(img, hostEl, seq, { overlayClass = "cap-overlay", noneSrc = `${FLAG_BASE_URL}/Cap-None.svg` } = {}) {
   if (!seq || !seq.length) {
     hostEl.classList.remove(overlayClass);
@@ -419,7 +446,7 @@ function applyCapFallback(img, hostEl, seq, { overlayClass = "cap-overlay", none
       fetchpriority: size === "xl" ? "high" : "low"
     });
 
-    applyCapFallback(img, wrap, capCandidates(aff), { overlayClass: "cap-overlay" });
+    applyCapFallback(img, wrap, capCandidatesAvatar(aff), { overlayClass: "cap-overlay" });
 
     wrap.appendChild(img);
     return wrap;
