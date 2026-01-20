@@ -639,7 +639,8 @@ async function renderAllFromExcel() {
   console.log("headerIdx:", hi);
   if (hi >= 0) console.log("headerRow:", cfgRows[hi]);
 
-  PZ_CONFIGS = parseConfigsFromRows(cfgRows);
+  const rowCfgs = parseConfigsFromRows(cfgRows);
+  PZ_CONFIGS = mergeConfigsByTableName(rowCfgs);
 
   if (!PZ_CONFIGS.length) {
     if (status) status.textContent = "Keine Konfigurationen gefunden.";
@@ -684,7 +685,7 @@ async function renderAllFromExcel() {
       const cfg = PZ_CONFIGS.find((x) => x.id === tableId);
       if (!cfg) return;
 
-      const fullList = buildPeopleForConfig(PZ_DATA_ROWS, cfg).sort(personSort);
+      const fullList = buildPeopleForConfigGroup(PZ_DATA_ROWS, cfg).sort(personSort);
 
       const pageSize = Math.max(1, Number(cfg.pageSize || 5));
       const maxPage = getMaxPage(fullList, pageSize);
@@ -709,27 +710,36 @@ function renderTablesIntoMount() {
 
   PZ_MOUNT.innerHTML = "";
 
-  const pairs = pairConfigsByCriteria(PZ_CONFIGS);
+  const pairs = pairConfigsByTitle(PZ_CONFIGS);
 
   for (const p of pairs) {
-    if (p.w) {
-      const listW = buildPeopleForConfig(PZ_DATA_ROWS, p.w).sort(personSort);
+    if (p.w && p.m) {
+      const listW = buildPeopleForConfigGroup(PZ_DATA_ROWS, p.w).sort(personSort);
       PZ_MOUNT.appendChild(buildTableBlock(p.w, listW));
-    } else {
-      const ph = document.createElement("div");
-      ph.setAttribute("aria-hidden", "true");
-      PZ_MOUNT.appendChild(ph);
+
+      const listM = buildPeopleForConfigGroup(PZ_DATA_ROWS, p.m).sort(personSort);
+      PZ_MOUNT.appendChild(buildTableBlock(p.m, listM));
+
+      continue;
+    }
+
+    if (p.w) {
+      const listW = buildPeopleForConfigGroup(PZ_DATA_ROWS, p.w).sort(personSort);
+      const el = buildTableBlock(p.w, listW);
+      el.classList.add("pz-block--span2");
+      PZ_MOUNT.appendChild(el);
+      continue;
     }
 
     if (p.m) {
-      const listM = buildPeopleForConfig(PZ_DATA_ROWS, p.m).sort(personSort);
-      PZ_MOUNT.appendChild(buildTableBlock(p.m, listM));
-    } else {
-      const ph = document.createElement("div");
-      ph.setAttribute("aria-hidden", "true");
-      PZ_MOUNT.appendChild(ph);
+      const listM = buildPeopleForConfigGroup(PZ_DATA_ROWS, p.m).sort(personSort);
+      const el = buildTableBlock(p.m, listM);
+      el.classList.add("pz-block--span2");
+      PZ_MOUNT.appendChild(el);
+      continue;
     }
   }
+
 
   if (!pairs.length) {
     const p = document.createElement("p");
@@ -809,6 +819,101 @@ function parseConfigsFromRows(rows) {
 
   return out;
 }
+
+
+function mergeConfigsByTableName(cfgs) {
+  const map = new Map();
+  const out = [];
+
+  for (const cfg of cfgs) {
+    const title = String(cfg.title ?? "").trim();
+    const gender = cfg.gender;
+    if (!title || (gender !== "m" && gender !== "w")) continue;
+
+    const key = `${normHeader(title)}|${gender}`;
+
+    let g = map.get(key);
+    if (!g) {
+      g = {
+        id: `tbl-${slug(title)}-${gender}`,
+        title,
+        gender,
+        pageSize: Number.isFinite(Number(cfg.pageSize)) ? Number(cfg.pageSize) : 5,
+        variants: [],
+      };
+      map.set(key, g);
+      out.push(g);
+    }
+
+    g.variants.push(cfg);
+
+    const ps = Number(cfg.pageSize);
+    if (Number.isFinite(ps)) g.pageSize = Math.max(g.pageSize, ps);
+  }
+
+  return out;
+}
+
+
+function buildPeopleForConfigGroup(rows, cfgGroup) {
+  const variants = Array.isArray(cfgGroup?.variants) && cfgGroup.variants.length ? cfgGroup.variants : [cfgGroup];
+
+  const merged = new Map();
+
+  for (const cfg of variants) {
+    const list = buildPeopleForConfig(rows, cfg);
+
+    for (const rec of list) {
+      const key = `${rec.name}|${rec.gender}|${rec.birthYear}`;
+      const prev = merged.get(key);
+
+      if (!prev || isBetterRec(rec, prev)) {
+        merged.set(key, rec);
+      }
+    }
+  }
+
+  return Array.from(merged.values());
+}
+
+function isBetterRec(a, b) {
+  const a1 = a.pz1Count ?? 0, b1 = b.pz1Count ?? 0;
+  if (a1 !== b1) return a1 > b1;
+
+  const a2 = a.pz2Count ?? 0, b2 = b.pz2Count ?? 0;
+  if (a2 !== b2) return a2 > b2;
+
+  const ad = a.lastStartDate instanceof Date ? a.lastStartDate.getTime() : 0;
+  const bd = b.lastStartDate instanceof Date ? b.lastStartDate.getTime() : 0;
+  if (ad !== bd) return ad > bd;
+
+  return false;
+}
+
+
+function pairConfigsByTitle(cfgs) {
+  const order = [];
+  const map = new Map();
+
+  for (let i = 0; i < cfgs.length; i++) {
+    const cfg = cfgs[i];
+    const key = normHeader(cfg.title);
+
+    let p = map.get(key);
+    if (!p) {
+      p = { key, order: i, w: null, m: null };
+      map.set(key, p);
+      order.push(p);
+    }
+
+    if (cfg.gender === "w") p.w = cfg;
+    else if (cfg.gender === "m") p.m = cfg;
+  }
+
+  order.sort((a, b) => a.order - b.order);
+  return order;
+}
+
 
 function findHeaderRowIndex(rows) {
   const needed = ["Tabellen Name", "Geschlecht", "Qualizeitraum anfang", "Qualizeitraum Ende"];
