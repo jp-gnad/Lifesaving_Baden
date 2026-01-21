@@ -180,6 +180,7 @@ let PZ_MOUNT = null;
 
 let PZ_PAGER_WIRED = false;
 const PZ_TABLE_STATE = new Map();
+const PZ_INFO_STATE = new Map();
 
 document.addEventListener("DOMContentLoaded", async () => {
   const main = document.getElementById("content");
@@ -675,33 +676,42 @@ async function renderAllFromExcel() {
     PZ_PAGER_WIRED = true;
 
     PZ_MOUNT.addEventListener("click", (ev) => {
-      const btn = ev.target.closest("button[data-table]");
-      if (!btn) return;
-
-      const tableId = btn.dataset.table;
-      const action = btn.dataset.action;
-      const pageAttr = btn.dataset.page;
-
-      const cfg = PZ_CONFIGS.find((x) => x.id === tableId);
-      if (!cfg) return;
-
-      const fullList = buildPeopleForConfigGroup(PZ_DATA_ROWS, cfg).sort(personSort);
-
-      const pageSize = Math.max(1, Number(cfg.pageSize || 5));
-      const maxPage = getMaxPage(fullList, pageSize);
-
-      let page = PZ_TABLE_STATE.get(tableId) || 1;
-
-      if (action === "prev") page = clamp(page - 1, 1, maxPage);
-      else if (action === "next") page = clamp(page + 1, 1, maxPage);
-      else if (pageAttr) {
-        const p = Number(pageAttr);
-        if (Number.isFinite(p)) page = clamp(p, 1, maxPage);
-      }
-
-      PZ_TABLE_STATE.set(tableId, page);
+    const infoBtn = ev.target.closest("button[data-info]");
+    if (infoBtn) {
+      const tableId = infoBtn.dataset.info;
+      const isOpen = !!PZ_INFO_STATE.get(tableId);
+      PZ_INFO_STATE.set(tableId, !isOpen);
       renderTablesIntoMount();
-    });
+      return;
+    }
+
+    const btn = ev.target.closest("button[data-table]");
+    if (!btn) return;
+
+    const tableId = btn.dataset.table;
+    const action = btn.dataset.action;
+    const pageAttr = btn.dataset.page;
+
+    const cfg = PZ_CONFIGS.find((x) => x.id === tableId);
+    if (!cfg) return;
+
+    const fullList = buildPeopleForConfigGroup(PZ_DATA_ROWS, cfg).sort(personSort);
+
+    const pageSize = Math.max(1, Number(cfg.pageSize || 5));
+    const maxPage = getMaxPage(fullList, pageSize);
+
+    let page = PZ_TABLE_STATE.get(tableId) || 1;
+
+    if (action === "prev") page = clamp(page - 1, 1, maxPage);
+    else if (action === "next") page = clamp(page + 1, 1, maxPage);
+    else if (pageAttr) {
+      const p = Number(pageAttr);
+      if (Number.isFinite(p)) page = clamp(p, 1, maxPage);
+    }
+
+    PZ_TABLE_STATE.set(tableId, page);
+    renderTablesIntoMount();
+  });
   }
 }
 
@@ -1083,10 +1093,33 @@ function buildTableBlock(cfg, fullList) {
   const wrap = document.createElement("section");
   wrap.className = "pz-block";
 
+  const head = document.createElement("div");
+  head.className = "pz-head";
+
   const h3 = document.createElement("h3");
   h3.className = "pz-title";
   h3.textContent = cfg.title;
-  wrap.appendChild(h3);
+
+  const infoBtn = document.createElement("button");
+  infoBtn.type = "button";
+  infoBtn.className = "pz-info-btn";
+  infoBtn.textContent = "Info";
+  infoBtn.dataset.info = cfg.id;
+
+  const infoId = `pz-info-${cfg.id}`;
+  infoBtn.setAttribute("aria-controls", infoId);
+
+  const isInfoOpen = !!PZ_INFO_STATE.get(cfg.id);
+  infoBtn.setAttribute("aria-expanded", isInfoOpen ? "true" : "false");
+
+  head.appendChild(h3);
+  head.appendChild(infoBtn);
+  wrap.appendChild(head);
+
+  const infoBox = buildPflichtzeitenInfoBox(cfg);
+  infoBox.id = infoId;
+  infoBox.hidden = !isInfoOpen;
+  wrap.appendChild(infoBox);
 
   const table = document.createElement("table");
   table.className = "pz-table";
@@ -1704,3 +1737,135 @@ function pairConfigsByCriteria(cfgs) {
 function yearLabel2(birthYear) {
   return String(birthYear % 100).padStart(2, "0");
 }
+
+function buildPflichtzeitenInfoBox(cfgGroup) {
+  const root = document.createElement("div");
+  root.className = "pz-info";
+
+  const variants = Array.isArray(cfgGroup?.variants) && cfgGroup.variants.length
+    ? cfgGroup.variants
+    : [cfgGroup];
+
+  const sorted = variants.slice().sort((a, b) => {
+    const ra = calcBirthYearRange(a);
+    const rb = calcBirthYearRange(b);
+    if (ra.low !== rb.low) return ra.low - rb.low;
+    return ra.high - rb.high;
+  });
+
+  for (const v of sorted) {
+    const sec = document.createElement("section");
+    sec.className = "pz-info-sec";
+
+    const range = calcBirthYearRange(v);
+    const label = rangeLabel(range);
+
+    const title = document.createElement("div");
+    title.className = "pz-info-range";
+    title.textContent = `Pflichtzeiten: ${label}`;
+    sec.appendChild(title);
+
+    const showPZ2 = variantNeedsPZ2(v);
+
+    const table = document.createElement("table");
+    table.className = "pz-info-table";
+
+    const thead = document.createElement("thead");
+    const trh = document.createElement("tr");
+
+    const thDisc = document.createElement("th");
+    thDisc.textContent = "Disziplin";
+    trh.appendChild(thDisc);
+
+    const th1 = document.createElement("th");
+    th1.textContent = "PZ1";
+    trh.appendChild(th1);
+
+    if (showPZ2) {
+      const th2 = document.createElement("th");
+      th2.textContent = "PZ2";
+      trh.appendChild(th2);
+    }
+
+    thead.appendChild(trh);
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+
+    for (const d of DISCIPLINES) {
+      const tr = document.createElement("tr");
+
+      const tdDisc = document.createElement("td");
+      tdDisc.textContent = d.label;
+      tr.appendChild(tdDisc);
+
+      const t1 = v.pz1?.[d.key];
+      const t2 = v.pz2?.[d.key];
+
+      if (!showPZ2) {
+        const val = Number.isFinite(t1) ? t1 : t2;
+        const td1 = document.createElement("td");
+        td1.textContent = centiToTimeText(val);
+        tr.appendChild(td1);
+      } else {
+        const td1 = document.createElement("td");
+        td1.textContent = centiToTimeText(t1);
+        tr.appendChild(td1);
+
+        const td2 = document.createElement("td");
+        td2.textContent = centiToTimeText(t2);
+        tr.appendChild(td2);
+      }
+
+      tbody.appendChild(tr);
+    }
+
+    table.appendChild(tbody);
+    sec.appendChild(table);
+
+    root.appendChild(sec);
+  }
+
+  return root;
+}
+
+function calcBirthYearRange(cfg) {
+  const seasonYear = Number(cfg?.seasonYear);
+  const minAge = Number.isFinite(cfg?.minAge) ? cfg.minAge : null;
+  const maxAge = Number.isFinite(cfg?.maxAge) ? cfg.maxAge : null;
+
+  if (!Number.isFinite(seasonYear) || minAge === null || maxAge === null) {
+    return { low: 0, high: 0, valid: false };
+  }
+
+  const high = seasonYear - minAge;
+  const low = seasonYear - maxAge;
+
+  return { low, high, valid: true };
+}
+
+function rangeLabel(r) {
+  if (!r?.valid) return "—";
+  if (r.low === r.high) return String(r.low);
+  return `${r.high}-${r.low}`;
+}
+
+function variantNeedsPZ2(cfg) {
+  for (const d of DISCIPLINES) {
+    const t1 = cfg.pz1?.[d.key];
+    const t2 = cfg.pz2?.[d.key];
+    if (Number.isFinite(t1) && Number.isFinite(t2) && t1 !== t2) return true;
+  }
+  return false;
+}
+
+function centiToTimeText(centi) {
+  if (!Number.isFinite(centi)) return "—";
+  const c = Math.max(0, Math.trunc(centi));
+  const totalSec = Math.floor(c / 100);
+  const cc = c % 100;
+  const mm = Math.floor(totalSec / 60);
+  const ss = totalSec % 60;
+  return `${mm}:${pad2(ss)},${pad2(cc)}`;
+}
+
