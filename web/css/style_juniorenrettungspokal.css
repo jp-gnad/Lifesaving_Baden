@@ -754,6 +754,7 @@ main#content {
   justify-content: space-between;
   background: transparent;
   margin-bottom: -10px;
+  font-size: 1rem;
 }
 
 .pz-range-toggle::after {
