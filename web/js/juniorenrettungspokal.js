@@ -181,6 +181,7 @@ let PZ_MOUNT = null;
 let PZ_PAGER_WIRED = false;
 const PZ_TABLE_STATE = new Map();
 const PZ_INFO_STATE = new Map();
+const PZ_INFO_RANGE_STATE = new Map();
 
 document.addEventListener("DOMContentLoaded", async () => {
   const main = document.getElementById("content");
@@ -676,42 +677,74 @@ async function renderAllFromExcel() {
     PZ_PAGER_WIRED = true;
 
     PZ_MOUNT.addEventListener("click", (ev) => {
-    const infoBtn = ev.target.closest("button[data-info]");
-    if (infoBtn) {
-      const tableId = infoBtn.dataset.info;
-      const isOpen = !!PZ_INFO_STATE.get(tableId);
-      PZ_INFO_STATE.set(tableId, !isOpen);
+      const infoBtn = ev.target.closest("button[data-info]");
+      if (infoBtn) {
+        const tableId = infoBtn.dataset.info;
+        const next = !PZ_INFO_STATE.get(tableId);
+        PZ_INFO_STATE.set(tableId, next);
+
+        infoBtn.setAttribute("aria-expanded", next ? "true" : "false");
+
+        const block = infoBtn.closest(".pz-block");
+        const infoBox = block?.querySelector(`.pz-info[data-table="${tableId}"]`);
+        if (infoBox) setCollapsibleOpen(infoBox, next);
+        return;
+      }
+
+      const rangeBtn = ev.target.closest("button[data-range]");
+      if (rangeBtn) {
+        const tableId = rangeBtn.dataset.table;
+        const idx = Number(rangeBtn.dataset.idx);
+        const key = `${tableId}|${idx}`;
+
+        const next = !PZ_INFO_RANGE_STATE.get(key);
+        PZ_INFO_RANGE_STATE.set(key, next);
+
+        rangeBtn.setAttribute("aria-expanded", next ? "true" : "false");
+
+        const targetId = rangeBtn.getAttribute("aria-controls");
+        const rangeWrap = targetId ? document.getElementById(targetId) : null;
+
+        if (rangeWrap) setCollapsibleOpen(rangeWrap, next);
+
+        const infoBox = rangeBtn.closest(".pz-info");
+        if (infoBox && infoBox.classList.contains("is-open")) {
+          const infoInner = infoBox.querySelector(":scope > .pz-collapsible__inner");
+          if (infoInner && infoInner.style.maxHeight !== "none") {
+            infoInner.style.maxHeight = infoInner.scrollHeight + "px";
+          }
+        }
+
+        return;
+      }
+
+      const btn = ev.target.closest("button[data-table]");
+      if (!btn) return;
+
+      const tableId = btn.dataset.table;
+      const action = btn.dataset.action;
+      const pageAttr = btn.dataset.page;
+
+      const cfg = PZ_CONFIGS.find((x) => x.id === tableId);
+      if (!cfg) return;
+
+      const fullList = buildPeopleForConfigGroup(PZ_DATA_ROWS, cfg).sort(personSort);
+
+      const pageSize = Math.max(1, Number(cfg.pageSize || 5));
+      const maxPage = getMaxPage(fullList, pageSize);
+
+      let page = PZ_TABLE_STATE.get(tableId) || 1;
+
+      if (action === "prev") page = clamp(page - 1, 1, maxPage);
+      else if (action === "next") page = clamp(page + 1, 1, maxPage);
+      else if (pageAttr) {
+        const p = Number(pageAttr);
+        if (Number.isFinite(p)) page = clamp(p, 1, maxPage);
+      }
+
+      PZ_TABLE_STATE.set(tableId, page);
       renderTablesIntoMount();
-      return;
-    }
-
-    const btn = ev.target.closest("button[data-table]");
-    if (!btn) return;
-
-    const tableId = btn.dataset.table;
-    const action = btn.dataset.action;
-    const pageAttr = btn.dataset.page;
-
-    const cfg = PZ_CONFIGS.find((x) => x.id === tableId);
-    if (!cfg) return;
-
-    const fullList = buildPeopleForConfigGroup(PZ_DATA_ROWS, cfg).sort(personSort);
-
-    const pageSize = Math.max(1, Number(cfg.pageSize || 5));
-    const maxPage = getMaxPage(fullList, pageSize);
-
-    let page = PZ_TABLE_STATE.get(tableId) || 1;
-
-    if (action === "prev") page = clamp(page - 1, 1, maxPage);
-    else if (action === "next") page = clamp(page + 1, 1, maxPage);
-    else if (pageAttr) {
-      const p = Number(pageAttr);
-      if (Number.isFinite(p)) page = clamp(p, 1, maxPage);
-    }
-
-    PZ_TABLE_STATE.set(tableId, page);
-    renderTablesIntoMount();
-  });
+    });
   }
 }
 
@@ -1092,6 +1125,7 @@ function buildPeopleForConfig(rows, cfg) {
 function buildTableBlock(cfg, fullList) {
   const wrap = document.createElement("section");
   wrap.className = "pz-block";
+  wrap.dataset.tableid = cfg.id;
 
   const head = document.createElement("div");
   head.className = "pz-head";
@@ -1103,10 +1137,22 @@ function buildTableBlock(cfg, fullList) {
   const infoBtn = document.createElement("button");
   infoBtn.type = "button";
   infoBtn.className = "pz-info-btn";
-  infoBtn.textContent = "Info";
   infoBtn.dataset.info = cfg.id;
 
-  const infoId = `pz-info-${cfg.id}`;
+  const icon = document.createElement("img");
+  icon.src = "./svg/icon_info.svg";
+  icon.alt = "Info";
+  icon.className = "pz-info-icon";
+  icon.width = 18;
+  icon.height = 18;
+
+
+  infoBtn.appendChild(icon);
+
+  infoBtn.title = "Pflichtzeiten anzeigen";
+  infoBtn.setAttribute("aria-label", "Pflichtzeiten anzeigen");
+
+  const infoId = `pz-info-${safeDomId(cfg.id)}`;
   infoBtn.setAttribute("aria-controls", infoId);
 
   const isInfoOpen = !!PZ_INFO_STATE.get(cfg.id);
@@ -1118,8 +1164,9 @@ function buildTableBlock(cfg, fullList) {
 
   const infoBox = buildPflichtzeitenInfoBox(cfg);
   infoBox.id = infoId;
-  infoBox.hidden = !isInfoOpen;
   wrap.appendChild(infoBox);
+  initCollapsible(infoBox, isInfoOpen);
+
 
   const table = document.createElement("table");
   table.className = "pz-table";
@@ -1739,8 +1786,13 @@ function yearLabel2(birthYear) {
 }
 
 function buildPflichtzeitenInfoBox(cfgGroup) {
-  const root = document.createElement("div");
-  root.className = "pz-info";
+  const box = document.createElement("div");
+  box.className = "pz-info pz-collapsible";
+  box.dataset.table = cfgGroup.id;
+
+  const inner = document.createElement("div");
+  inner.className = "pz-collapsible__inner pz-info__inner";
+  box.appendChild(inner);
 
   const variants = Array.isArray(cfgGroup?.variants) && cfgGroup.variants.length
     ? cfgGroup.variants
@@ -1753,80 +1805,118 @@ function buildPflichtzeitenInfoBox(cfgGroup) {
     return ra.high - rb.high;
   });
 
-  for (const v of sorted) {
+  const multi = sorted.length > 1;
+
+  sorted.forEach((v, idx) => {
     const sec = document.createElement("section");
     sec.className = "pz-info-sec";
 
     const range = calcBirthYearRange(v);
     const label = rangeLabel(range);
 
-    const title = document.createElement("div");
-    title.className = "pz-info-range";
-    title.textContent = `Pflichtzeiten: ${label}`;
-    sec.appendChild(title);
-
     const showPZ2 = variantNeedsPZ2(v);
+    const rangeInnerId = `pz-range-${safeDomId(cfgGroup.id)}-${idx}`;
 
-    const table = document.createElement("table");
-    table.className = "pz-info-table";
+    if (multi) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "pz-range-toggle";
+      btn.textContent = `Pflichtzeiten ${label}`;
+      btn.dataset.range = "1";
+      btn.dataset.table = cfgGroup.id;
+      btn.dataset.idx = String(idx);
+      btn.setAttribute("aria-controls", rangeInnerId);
 
-    const thead = document.createElement("thead");
-    const trh = document.createElement("tr");
+      const key = `${cfgGroup.id}|${idx}`;
+      const isOpen = !!PZ_INFO_RANGE_STATE.get(key);
+      btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
 
-    const thDisc = document.createElement("th");
-    thDisc.textContent = "Disziplin";
-    trh.appendChild(thDisc);
+      sec.appendChild(btn);
 
-    const th1 = document.createElement("th");
-    th1.textContent = "PZ1";
-    trh.appendChild(th1);
+      const rangeWrap = document.createElement("div");
+      rangeWrap.className = "pz-range pz-collapsible";
+      rangeWrap.id = rangeInnerId;
 
-    if (showPZ2) {
-      const th2 = document.createElement("th");
-      th2.textContent = "PZ2";
-      trh.appendChild(th2);
+      const rInner = document.createElement("div");
+      rInner.className = "pz-collapsible__inner pz-range__inner";
+      rInner.appendChild(buildPflichtzeitenTable(v, showPZ2));
+      rangeWrap.appendChild(rInner);
+
+      sec.appendChild(rangeWrap);
+
+      initCollapsible(rangeWrap, isOpen);
+    } else {
+      const title = document.createElement("div");
+      title.className = "pz-info-range";
+      title.textContent = `Pflichtzeiten: ${label}`;
+      sec.appendChild(title);
+
+      sec.appendChild(buildPflichtzeitenTable(v, showPZ2));
     }
 
-    thead.appendChild(trh);
-    table.appendChild(thead);
+    inner.appendChild(sec);
+  });
 
-    const tbody = document.createElement("tbody");
+  initCollapsible(box, false);
+  return box;
+}
 
-    for (const d of DISCIPLINES) {
-      const tr = document.createElement("tr");
+function buildPflichtzeitenTable(cfg, showPZ2) {
+  const table = document.createElement("table");
+  table.className = "pz-info-table";
 
-      const tdDisc = document.createElement("td");
-      tdDisc.textContent = d.label;
-      tr.appendChild(tdDisc);
+  const thead = document.createElement("thead");
+  const trh = document.createElement("tr");
 
-      const t1 = v.pz1?.[d.key];
-      const t2 = v.pz2?.[d.key];
+  const thDisc = document.createElement("th");
+  thDisc.textContent = "Disziplin";
+  trh.appendChild(thDisc);
 
-      if (!showPZ2) {
-        const val = Number.isFinite(t1) ? t1 : t2;
-        const td1 = document.createElement("td");
-        td1.textContent = centiToTimeText(val);
-        tr.appendChild(td1);
-      } else {
-        const td1 = document.createElement("td");
-        td1.textContent = centiToTimeText(t1);
-        tr.appendChild(td1);
+  const th1 = document.createElement("th");
+  th1.textContent = "PZ1";
+  trh.appendChild(th1);
 
-        const td2 = document.createElement("td");
-        td2.textContent = centiToTimeText(t2);
-        tr.appendChild(td2);
-      }
-
-      tbody.appendChild(tr);
-    }
-
-    table.appendChild(tbody);
-    sec.appendChild(table);
-
-    root.appendChild(sec);
+  if (showPZ2) {
+    const th2 = document.createElement("th");
+    th2.textContent = "PZ2";
+    trh.appendChild(th2);
   }
 
-  return root;
+  thead.appendChild(trh);
+  table.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
+
+  for (const d of DISCIPLINES) {
+    const tr = document.createElement("tr");
+
+    const tdDisc = document.createElement("td");
+    tdDisc.textContent = d.label;
+    tr.appendChild(tdDisc);
+
+    const t1 = cfg.pz1?.[d.key];
+    const t2 = cfg.pz2?.[d.key];
+
+    if (!showPZ2) {
+      const val = Number.isFinite(t1) ? t1 : t2;
+      const td1 = document.createElement("td");
+      td1.textContent = centiToTimeText(val);
+      tr.appendChild(td1);
+    } else {
+      const td1 = document.createElement("td");
+      td1.textContent = centiToTimeText(t1);
+      tr.appendChild(td1);
+
+      const td2 = document.createElement("td");
+      td2.textContent = centiToTimeText(t2);
+      tr.appendChild(td2);
+    }
+
+    tbody.appendChild(tr);
+  }
+
+  table.appendChild(tbody);
+  return table;
 }
 
 function calcBirthYearRange(cfg) {
@@ -1869,3 +1959,59 @@ function centiToTimeText(centi) {
   return `${mm}:${pad2(ss)},${pad2(cc)}`;
 }
 
+function safeDomId(s) {
+  return String(s ?? "").replace(/[^a-zA-Z0-9_-]/g, "-");
+}
+
+function initCollapsible(wrap, open) {
+  const inner = wrap?.querySelector(":scope > .pz-collapsible__inner");
+  if (!inner) return;
+
+  if (open) {
+    wrap.classList.add("is-open");
+    inner.style.maxHeight = "none";
+    inner.style.opacity = "1";
+  } else {
+    wrap.classList.remove("is-open");
+    inner.style.maxHeight = "0px";
+    inner.style.opacity = "0";
+  }
+}
+
+function setCollapsibleOpen(wrap, open) {
+  const inner = wrap?.querySelector(":scope > .pz-collapsible__inner");
+  if (!inner) return;
+
+  if (open) {
+    wrap.classList.add("is-open");
+    inner.style.maxHeight = "0px";
+    inner.style.opacity = "0";
+
+    requestAnimationFrame(() => {
+      inner.style.maxHeight = inner.scrollHeight + "px";
+      inner.style.opacity = "1";
+    });
+
+    const onEnd = (e) => {
+      if (e.propertyName !== "max-height") return;
+      inner.style.maxHeight = "none";
+      inner.removeEventListener("transitionend", onEnd);
+    };
+    inner.addEventListener("transitionend", onEnd);
+  } else {
+    inner.style.maxHeight = inner.scrollHeight + "px";
+    inner.style.opacity = "1";
+
+    requestAnimationFrame(() => {
+      inner.style.maxHeight = "0px";
+      inner.style.opacity = "0";
+    });
+
+    const onEnd = (e) => {
+      if (e.propertyName !== "max-height") return;
+      wrap.classList.remove("is-open");
+      inner.removeEventListener("transitionend", onEnd);
+    };
+    inner.addEventListener("transitionend", onEnd);
+  }
+}
