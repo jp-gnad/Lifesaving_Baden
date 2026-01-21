@@ -744,7 +744,6 @@ main#content {
 .pz-range-toggle {
   width: 100%;
   border: 0px transparent;
-  border-radius: 6px;
   padding: 8px 10px;
   cursor: pointer;
   font-weight: 800;
