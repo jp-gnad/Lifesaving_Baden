@@ -746,7 +746,6 @@ main#content {
   border: 0px transparent;
   padding: 8px 10px;
   cursor: pointer;
-  font-weight: 800;
   color: #575756;
   display: flex;
   align-items: center;
@@ -806,7 +805,6 @@ main#content {
 
 .pz-info-range {
   font-weight: 800;
-  margin-bottom: 8px;
   color: #575756;
 
   .pz-info-btn {
@@ -833,3 +831,20 @@ main#content {
 
 }
 
+.pz-range-toggle__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+}
+
+.pz-range-title {
+  font-weight: 700;
+}
+
+.pz-info-meta {
+  font-size: 0.82rem;
+  color: rgba(87, 87, 86, 0.6);
+}

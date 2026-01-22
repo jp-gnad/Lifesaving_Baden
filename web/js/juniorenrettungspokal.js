@@ -1821,7 +1821,22 @@ function buildPflichtzeitenInfoBox(cfgGroup) {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "pz-range-toggle";
-      btn.textContent = `Pflichtzeiten ${label}`;
+      btn.textContent = "";
+
+      const txtWrap = document.createElement("span");
+      txtWrap.className = "pz-range-toggle__text";
+
+      const top = document.createElement("span");
+      top.className = "pz-range-title";
+      top.textContent = `Pflichtzeiten: (${cfgGroup.gender}) ${label}`;
+
+      const meta = document.createElement("span");
+      meta.className = "pz-info-meta";
+      meta.textContent = buildQualiMetaText(v);
+
+      txtWrap.appendChild(top);
+      txtWrap.appendChild(meta);
+      btn.appendChild(txtWrap);
       btn.dataset.range = "1";
       btn.dataset.table = cfgGroup.id;
       btn.dataset.idx = String(idx);
@@ -1848,8 +1863,13 @@ function buildPflichtzeitenInfoBox(cfgGroup) {
     } else {
       const title = document.createElement("div");
       title.className = "pz-info-range";
-      title.textContent = `Pflichtzeiten: ${label}`;
+      title.textContent = `Pflichtzeiten: (${cfgGroup.gender}) ${label}`;
       sec.appendChild(title);
+
+      const meta = document.createElement("div");
+      meta.className = "pz-info-meta";
+      meta.textContent = buildQualiMetaText(v);
+      sec.appendChild(meta);
 
       sec.appendChild(buildPflichtzeitenTable(v, showPZ2));
     }
@@ -1937,7 +1957,7 @@ function calcBirthYearRange(cfg) {
 function rangeLabel(r) {
   if (!r?.valid) return "—";
   if (r.low === r.high) return String(r.low);
-  return `${r.high}-${r.low}`;
+  return `${r.low}-${r.high}`;
 }
 
 function variantNeedsPZ2(cfg) {
@@ -2014,4 +2034,24 @@ function setCollapsibleOpen(wrap, open) {
     };
     inner.addEventListener("transitionend", onEnd);
   }
+}
+
+function fmtDateDE(d) {
+  if (!(d instanceof Date) || isNaN(d.getTime())) return "—";
+  return `${pad2(d.getDate())}.${pad2(d.getMonth() + 1)}.${d.getFullYear()}`;
+}
+
+function buildQualiMetaText(cfg) {
+  const a = fmtDateDE(cfg?.qualiStart);
+  const b = fmtDateDE(cfg?.qualiEnd);
+
+  const plRaw = String(cfg?.poolLength ?? "").trim();
+  let pl = "25m/50m";
+  if (plRaw === "25") pl = "25m";
+  else if (plRaw === "50") pl = "50m";
+
+  const rw = String(cfg?.rulebook ?? "").trim();
+
+  if (rw) return `${a}-${b}  |  ${pl}  |  ${rw}`;
+  return `${a}-${b}  |  ${pl}`;
 }
