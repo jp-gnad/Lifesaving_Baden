@@ -41,7 +41,10 @@ const DP_SLIDE_SETTINGS = {
   },
   "2019": {
     text: "LV-Gesamtwertung: 12. Platz",
-    cta: { label: "Mehr Infos!", href: "https://baden.dlrg-jugend.de/wir/news/detailansicht/junioren-rettungspokal-291-n/" },
+    cta: {
+      label: "Mehr Infos!",
+      href: "https://baden.dlrg-jugend.de/wir/news/detailansicht/junioren-rettungspokal-291-n/",
+    },
     bgPos: "center 45%",
   },
   "2018": {
@@ -75,7 +78,10 @@ const DP_SLIDE_SETTINGS = {
   },
   "2013": {
     text: "LV-Gesamtwertung: 7. Platz",
-    cta: { label: "Mehr Infos!", href: "https://baden.dlrg-jugend.de/wir/news/detailansicht/junioren-rettungspokal-2013-18-n/" },
+    cta: {
+      label: "Mehr Infos!",
+      href: "https://baden.dlrg-jugend.de/wir/news/detailansicht/junioren-rettungspokal-2013-18-n/",
+    },
     bgPos: "center 30%",
   },
   "2011": {
@@ -117,24 +123,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const main = document.getElementById("content");
   if (!main) return;
 
-  main.innerHTML = `
-    <section class="wide-carousel" aria-label="Junioren Rettungspokal Rückblick">
-      <div class="wide-carousel__viewport" data-wide-carousel tabindex="0">
-        <div class="wide-carousel__slides">
-          <article class="wide-carousel__slide" style="background:#111">
-            <div class="wide-carousel__content">
-              <h2>Junioren Rettungspokal</h2>
-              <p>Lade Bilder…</p>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-  `;
+  renderShell(main);
 
-  const slides = await buildDpSlides();
-
-  if (!slides.length) {
+  try {
+    await bootstrapDpCarousel();
+  } catch (e) {
+    console.error(e);
     main.innerHTML = `
       <section class="intro">
         <div class="container">
@@ -146,77 +140,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  renderPage(main, slides);
-  initWideCarousel();
   loadLatestDpPdfAndRenderCard();
   initDpNominationListTables();
 });
 
-async function buildDpSlides() {
-  const slides = [];
-  for (let year = DP_MAX_YEAR; year >= DP_MIN_YEAR; year--) {
-    const imgUrl = await firstExistingUrl(DP_FOLDER, year, DP_EXTS);
-    if (!imgUrl) continue;
-
-    const key = String(year);
-    const cfg = DP_SLIDE_SETTINGS[key] || {};
-    slides.push({
-      year,
-      title: cfg.title ?? `Junioren Rettungspokal ${year}`,
-      text: cfg.text ?? "",
-      img: imgUrl,
-      cta: cfg.cta ?? null,
-      bgPos: cfg.bgPos ?? "center center",
-      h: cfg.h ?? null,
-      textPos: cfg.textPos ?? "bottom",
-      textAlign: cfg.textAlign ?? "center",
-      contentBottom: cfg.contentBottom ?? null,
-    });
-  }
-  return slides;
-}
-
-function renderPage(main, slides) {
+function renderShell(main) {
   main.innerHTML = `
     <section class="wide-carousel" aria-label="Junioren Rettungspokal Rückblick">
       <div class="wide-carousel__viewport" data-wide-carousel tabindex="0">
         <div class="wide-carousel__slides">
-          ${slides
-            .map((s, i) => {
-              const justify = s.textPos === "top" ? "flex-start" : s.textPos === "center" ? "center" : "flex-end";
-              const contentBottomVar = s.contentBottom ? String(s.contentBottom) : "";
-
-              return `
-                <article
-                  class="wide-carousel__slide ${i === 0 ? "wide-carousel__slide--center" : ""}"
-                  style="
-                    background-image:url('${s.img}');
-                    background-position:${s.bgPos || "center center"};
-                    background-size:cover;
-                    background-repeat:no-repeat;
-                    --dp-justify:${justify};
-                    --dp-text-align:${s.textAlign || "center"};
-                    ${contentBottomVar ? `--dp-content-bottom:${contentBottomVar};` : ""}
-                  "
-                  ${s.h ? `data-h="${s.h}"` : ""}
-                  role="group"
-                  aria-roledescription="Folie"
-                  aria-label="${i + 1} von ${slides.length}"
-                >
-                  ${
-                    dpBadgeUrlFromSlideImg(s.img)
-                      ? `<img class="wide-carousel__badge" src="${dpBadgeUrlFromSlideImg(s.img)}" alt="" loading="lazy" decoding="async">`
-                      : ``
-                  }
-                  <div class="wide-carousel__content">
-                    <h2>${escapeHtml(s.title)}</h2>
-                    ${s.text ? `<p>${escapeHtml(s.text)}</p>` : ``}
-                    ${s.cta ? `<a class="wide-carousel__cta" href="${s.cta.href}">${escapeHtml(s.cta.label)}</a>` : ``}
-                  </div>
-                </article>
-              `;
-            })
-            .join("")}
+          <article class="wide-carousel__slide wide-carousel__slide--center" style="background:#111">
+            <div class="wide-carousel__content">
+              <h2>Junioren Rettungspokal</h2>
+              <p>Lade Bilder…</p>
+            </div>
+          </article>
         </div>
 
         <button class="wide-carousel__arrow wide-carousel__arrow--prev" type="button" aria-label="Vorherige Folie">
@@ -251,10 +189,104 @@ function renderPage(main, slides) {
       </section>
     </section>
   `;
+}
 
-  document.querySelectorAll(".wide-carousel__badge").forEach((img) => {
-    img.addEventListener("error", () => img.remove());
-  });
+async function bootstrapDpCarousel() {
+  const viewport = document.querySelector("[data-wide-carousel]");
+  const track = viewport?.querySelector(".wide-carousel__slides");
+  if (!viewport || !track) throw new Error("carousel_missing");
+
+  const first = await findLatestDpSlide();
+  if (!first) throw new Error("no_slides");
+
+  track.innerHTML = slideToHtml(first, true);
+
+  initWideCarousel();
+  initDpSlideLazyLoading();
+
+  loadRemainingDpSlides(first.year - 1).catch(console.error);
+}
+
+function buildSlideObj(year, imgUrl) {
+  const key = String(year);
+  const cfg = DP_SLIDE_SETTINGS[key] || {};
+  return {
+    year,
+    title: cfg.title ?? `Junioren Rettungspokal ${year}`,
+    text: cfg.text ?? "",
+    img: imgUrl,
+    cta: cfg.cta ?? null,
+    bgPos: cfg.bgPos ?? "center center",
+    h: cfg.h ?? null,
+    textPos: cfg.textPos ?? "bottom",
+    textAlign: cfg.textAlign ?? "center",
+    contentBottom: cfg.contentBottom ?? null,
+  };
+}
+
+async function findLatestDpSlide() {
+  for (let year = DP_MAX_YEAR; year >= DP_MIN_YEAR; year--) {
+    const imgUrl = await firstExistingUrl(DP_FOLDER, year, DP_EXTS);
+    if (!imgUrl) continue;
+    return buildSlideObj(year, imgUrl);
+  }
+  return null;
+}
+
+async function loadRemainingDpSlides(startYear) {
+  const viewport = document.querySelector("[data-wide-carousel]");
+  const track = viewport?.querySelector(".wide-carousel__slides");
+  if (!track) return;
+
+  for (let year = startYear; year >= DP_MIN_YEAR; year--) {
+    const imgUrl = await firstExistingUrl(DP_FOLDER, year, DP_EXTS);
+    if (imgUrl) {
+      const s = buildSlideObj(year, imgUrl);
+      track.insertAdjacentHTML("beforeend", slideToHtml(s, false));
+      viewport.dispatchEvent(new CustomEvent("dp-slides-updated"));
+    }
+    await sleep(25);
+  }
+}
+
+function slideToHtml(s, eager) {
+  const justify = s.textPos === "top" ? "flex-start" : s.textPos === "center" ? "center" : "flex-end";
+  const contentBottomVar = s.contentBottom ? String(s.contentBottom) : "";
+  const badge = dpBadgeUrlFromSlideImg(s.img);
+
+  const baseStyle = `
+    background-position:${s.bgPos || "center center"};
+    background-size:cover;
+    background-repeat:no-repeat;
+    --dp-justify:${justify};
+    --dp-text-align:${s.textAlign || "center"};
+    ${contentBottomVar ? `--content-bottom:${contentBottomVar};` : ""}
+  `.trim();
+
+  const bgStyle = eager ? `background-image:url('${s.img}');` : `background:#111;`;
+  const dataBg = eager ? "" : `data-bg="${s.img}"`;
+
+  return `
+    <article
+      class="wide-carousel__slide ${eager ? "wide-carousel__slide--center" : ""}"
+      style="${bgStyle} ${baseStyle}"
+      ${s.h ? `data-h="${s.h}"` : ""}
+      ${dataBg}
+      role="group"
+      aria-roledescription="Folie"
+    >
+      ${
+        badge
+          ? `<img class="wide-carousel__badge" src="${badge}" alt="" loading="lazy" decoding="async">`
+          : ``
+      }
+      <div class="wide-carousel__content">
+        <h2>${escapeHtml(s.title)}</h2>
+        ${s.text ? `<p>${escapeHtml(s.text)}</p>` : ``}
+        ${s.cta ? `<a class="wide-carousel__cta" href="${s.cta.href}">${escapeHtml(s.cta.label)}</a>` : ``}
+      </div>
+    </article>
+  `;
 }
 
 function initWideCarousel() {
@@ -262,16 +294,18 @@ function initWideCarousel() {
   if (!root) return;
 
   const track = root.querySelector(".wide-carousel__slides");
-  const slides = Array.from(root.querySelectorAll(".wide-carousel__slide"));
   const prevBtn = root.querySelector(".wide-carousel__arrow--prev");
   const nextBtn = root.querySelector(".wide-carousel__arrow--next");
-  const count = slides.length;
 
   let index = 0;
   let autoTimer = null;
 
+  const getSlides = () => Array.from(root.querySelectorAll(".wide-carousel__slide"));
+  const getCount = () => getSlides().length;
+
   const startAuto = () => {
     stopAuto();
+    if (getCount() <= 1) return;
     autoTimer = setInterval(() => goTo(index + 1), 10000);
   };
 
@@ -287,6 +321,7 @@ function initWideCarousel() {
   };
 
   const fitHeight = () => {
+    const slides = getSlides();
     const active = slides[index];
     if (!active) return;
 
@@ -309,35 +344,43 @@ function initWideCarousel() {
   };
 
   const update = () => {
+    const slides = getSlides();
+    const count = slides.length;
+    if (!count) return;
+
     track.style.transform = `translate3d(${-index * 100}%, 0, 0)`;
-    slides.forEach((s, i) => s.classList.toggle("wide-carousel__slide--center", i === index));
+
+    slides.forEach((s, i) => {
+      s.classList.toggle("wide-carousel__slide--center", i === index);
+      s.setAttribute("aria-label", `${i + 1} von ${count}`);
+    });
+
+    const many = count > 1;
+    if (prevBtn) prevBtn.style.display = many ? "" : "none";
+    if (nextBtn) nextBtn.style.display = many ? "" : "none";
+
     fitHeight();
+    root.dispatchEvent(new CustomEvent("dp-slide-change", { detail: { index } }));
   };
 
   const goTo = (i) => {
+    const count = getCount();
+    if (!count) return;
     index = (i + count) % count;
     update();
+    startAuto();
   };
 
-  prevBtn?.addEventListener("click", () => {
-    goTo(index - 1);
-    startAuto();
-  });
-
-  nextBtn?.addEventListener("click", () => {
-    goTo(index + 1);
-    startAuto();
-  });
+  prevBtn?.addEventListener("click", () => goTo(index - 1));
+  nextBtn?.addEventListener("click", () => goTo(index + 1));
 
   root.addEventListener("keydown", (e) => {
     if (e.key === "ArrowLeft") {
       e.preventDefault();
       goTo(index - 1);
-      startAuto();
     } else if (e.key === "ArrowRight") {
       e.preventDefault();
       goTo(index + 1);
-      startAuto();
     }
   });
 
@@ -352,8 +395,103 @@ function initWideCarousel() {
   root.addEventListener("focusin", stopAuto);
   root.addEventListener("focusout", startAuto);
 
+  root.addEventListener("dp-slides-updated", () => {
+    const count = getCount();
+    if (index >= count) index = Math.max(0, count - 1);
+    update();
+    startAuto();
+  });
+
   startAuto();
   update();
+}
+
+function initDpSlideLazyLoading() {
+  const viewport = document.querySelector("[data-wide-carousel]");
+  const track = viewport?.querySelector(".wide-carousel__slides");
+  if (!viewport || !track) return;
+
+  const ensureLoaded = (slide) => {
+    const url = slide?.dataset?.bg;
+    if (!url) return;
+
+    slide.dataset.bg = "";
+
+    const img = new Image();
+    img.decoding = "async";
+    img.onload = () => {
+      slide.style.backgroundImage = `url('${url}')`;
+    };
+    img.onerror = () => {
+      slide.style.background = "#111";
+    };
+    img.src = url;
+  };
+
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        ensureLoaded(e.target);
+        io.unobserve(e.target);
+      }
+    },
+    { root: viewport, threshold: 0.35 }
+  );
+
+  const observeSlide = (el) => {
+    if (el?.classList?.contains("wide-carousel__slide") && el.dataset?.bg) io.observe(el);
+  };
+
+  track.querySelectorAll(".wide-carousel__slide").forEach(observeSlide);
+
+  const mo = new MutationObserver((muts) => {
+    for (const m of muts) {
+      for (const n of m.addedNodes) {
+        if (!(n instanceof Element)) continue;
+        if (n.classList.contains("wide-carousel__slide")) observeSlide(n);
+        n.querySelectorAll?.(".wide-carousel__slide").forEach(observeSlide);
+      }
+    }
+  });
+
+  mo.observe(track, { childList: true });
+
+  viewport.addEventListener("dp-slide-change", (ev) => {
+    const idx = ev?.detail?.index ?? 0;
+    const slides = Array.from(track.querySelectorAll(".wide-carousel__slide"));
+    if (!slides.length) return;
+
+    const cur = slides[idx];
+    const next = slides[(idx + 1) % slides.length];
+    const prev = slides[(idx - 1 + slides.length) % slides.length];
+
+    ensureLoaded(cur);
+    setTimeout(() => ensureLoaded(next), 120);
+    setTimeout(() => ensureLoaded(prev), 180);
+  });
+
+  setTimeout(() => {
+    const saveData = !!navigator.connection?.saveData;
+    if (saveData) return;
+
+    const idle = (cb) => {
+      if ("requestIdleCallback" in window) window.requestIdleCallback(cb, { timeout: 1500 });
+      else setTimeout(cb, 600);
+    };
+
+    const nextLazy = () =>
+      Array.from(track.querySelectorAll(".wide-carousel__slide")).find((s) => s.dataset?.bg);
+
+    const step = () => {
+      const s = nextLazy();
+      if (!s) return;
+      ensureLoaded(s);
+      idle(step);
+    };
+
+    idle(step);
+  }, 900);
 }
 
 async function firstExistingUrl(folder, year, exts) {
@@ -401,6 +539,10 @@ function probeByImage(url, timeoutMs) {
 
     img.src = url;
   });
+}
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
 }
 
 async function loadLatestDpPdfAndRenderCard() {
