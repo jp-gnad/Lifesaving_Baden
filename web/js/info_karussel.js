@@ -80,6 +80,25 @@
     return adj;
   }
 
+  function berlinYmdFromDate(date) {
+    var tz = "Europe/Berlin";
+    var dtf = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    });
+    var parts = dtf.formatToParts(date instanceof Date ? date : new Date(date));
+    var map = {};
+    for (var i = 0; i < parts.length; i++) {
+      if (parts[i].type !== "literal") map[parts[i].type] = parts[i].value;
+    }
+    var y = Number(map.year);
+    var m = Number(map.month);
+    var d = Number(map.day);
+    return { y: y, m: m, d: d, num: y * 10000 + m * 100 + d };
+  }
+
   function parseDateRange(dateStr) {
     var s = String(dateStr || "");
     var matches = s.match(/(\d{1,2})\.(\d{1,2})\.(\d{2,4})/g);
@@ -90,7 +109,7 @@
       var dd = Number(p[0]);
       var mo = Number(p[1]);
       var yy = String(p[2]).length === 2 ? 2000 + Number(p[2]) : Number(p[2]);
-      return { y: yy, m: mo, d: dd };
+      return { y: yy, m: mo, d: dd, num: yy * 10000 + mo * 100 + dd };
     }
 
     var start = toYMD(matches[0]);
@@ -152,6 +171,19 @@
     return { start: startUtc, end: endUtc };
   }
 
+  function getItemRangeNums(item) {
+    var dr = parseDateRange(item && item.date ? item.date : "");
+    if (dr) return { startNum: dr.start.num, endNum: dr.end.num };
+
+    if (item && item.start) {
+      var s = berlinYmdFromDate(item.start);
+      var e = item.end ? berlinYmdFromDate(item.end) : s;
+      return { startNum: s.num, endNum: e.num };
+    }
+
+    return null;
+  }
+
   function buildIcs(item, startEnd) {
     var now = new Date();
     var uid;
@@ -159,11 +191,11 @@
     else if (window.crypto && typeof window.crypto.randomUUID === "function") uid = window.crypto.randomUUID();
     else uid = String(Date.now()) + "-" + String(Math.random()).slice(2);
 
-    var title = (item && item.text) ? String(item.text) : "Termin";
-    var location = (item && item.location) ? String(item.location) : "";
-    var kader = (item && item.kader) ? String(item.kader) : "";
-    var dateLabel = (item && item.date) ? String(item.date) : "";
-    var timeLabel = (item && item.time) ? String(item.time) : "";
+    var title = item && item.text ? String(item.text) : "Termin";
+    var location = item && item.location ? String(item.location) : "";
+    var kader = item && item.kader ? String(item.kader) : "";
+    var dateLabel = item && item.date ? String(item.date) : "";
+    var timeLabel = item && item.time ? String(item.time) : "";
 
     var descParts = [];
     if (dateLabel) descParts.push("Datum: " + dateLabel);
@@ -171,7 +203,7 @@
     if (location) descParts.push("Ort: " + location);
     if (kader) descParts.push("Kader: " + kader);
 
-    var ics = [
+    return [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
       "PRODID:-//DLRG//InfoKarussel//DE",
@@ -188,8 +220,6 @@
       "END:VEVENT",
       "END:VCALENDAR"
     ].join("\r\n");
-
-    return ics;
   }
 
   function openIcs(item) {
@@ -197,7 +227,7 @@
     if (!se) return false;
 
     var ics = buildIcs(item, se);
-    var filenameBase = ((item && item.text) ? String(item.text) : "termin").trim();
+    var filenameBase = (item && item.text ? String(item.text) : "termin").trim();
     if (!filenameBase) filenameBase = "termin";
     var filename = filenameBase.replace(/[^\w\-]+/g, "_").slice(0, 60) + ".ics";
 
@@ -228,7 +258,7 @@
   function initInfoKarussel(containerOrSelector, items, options) {
     options = options || {};
     var itemsPerPage = options.itemsPerPage || 4;
-    var buttonTextDefault = options.buttonText || "zum Kalender";
+    var buttonTextDefault = "zum Kalender";
 
     var container =
       typeof containerOrSelector === "string"
@@ -236,6 +266,19 @@
         : containerOrSelector;
 
     if (!container) return;
+
+    var todayNum = berlinYmdFromDate(new Date()).num;
+
+    var filtered = (items || []).filter(function (it) {
+      var r = getItemRangeNums(it);
+      if (!r) return false;
+      return r.endNum >= todayNum;
+    });
+
+    if (filtered.length === 0) {
+      container.innerHTML = `<ul class="updates__list"><li>Erste Inhalte folgen.</li></ul>`;
+      return;
+    }
 
     container.innerHTML = "";
     container.classList.add("info-karussel");
@@ -255,7 +298,7 @@
     container.appendChild(arrowRight);
     container.appendChild(dots);
 
-    var pages = chunk(items || [], itemsPerPage);
+    var pages = chunk(filtered, itemsPerPage);
     var pageCount = pages.length;
     var pageIndex = 0;
 
@@ -285,16 +328,13 @@
       lineKader.appendChild(kaderLabel);
       lineKader.appendChild(kaderVal);
 
-      var btn = el("button", "info-button", { type: "button", text: item && item.buttonText ? String(item.buttonText) : buttonTextDefault });
+      var btn = el("button", "info-button", { type: "button", text: buttonTextDefault });
       btn.addEventListener("click", function () {
         if (typeof options.onCalendarClick === "function") {
           options.onCalendarClick(item);
           return;
         }
-        var ok = openIcs(item);
-        if (!ok) {
-          if (item && item.url) window.location.href = String(item.url);
-        }
+        openIcs(item);
       });
 
       body.appendChild(title);
