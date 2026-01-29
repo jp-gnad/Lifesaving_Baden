@@ -25,6 +25,8 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 20px;
+  padding-left: 20px;
+  padding-right: 20px;
   align-items: start;
   box-sizing: border-box;
 }
@@ -169,7 +171,7 @@
   grid-template-columns: 1fr;
 }
 
-@media (min-width: 770px) {
+@media (min-width: 720px) {
   .info-page {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -186,13 +188,13 @@
     display: none !important;
   }
   .info-karussel {
-    padding: 14px 32px 60px 32px;
+    padding: 14px 12px 60px 12px;
   }
 }
 
 @media (max-width: 600px) {
   .info-karussel {
-    padding: 7px 8px 60px 8px;
+    padding: 7px 0px 60px 0px;
   }
   .info-card-header {
     font-size: 1.1rem;
