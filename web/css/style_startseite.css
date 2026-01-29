@@ -184,7 +184,9 @@ main#content{
 .wide-carousel__slide{
   flex: 0 0 100%;
   height: 100%;
-  background: center/cover no-repeat;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: 50% var(--bg-y, 50%);
   position: relative;
   color: #fff;
 }
@@ -330,4 +332,37 @@ main#content{
   .wide-carousel__viewport{
     transition: none;
   }
+}
+
+
+.wide-carousel__nav{
+  position: absolute;
+  top: 0;
+  bottom: 0;                 /* volle Höhe */
+  width: clamp(44px, 12%, 140px);
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;   /* unsichtbar */
+  cursor: pointer;
+  z-index: 2;                /* über Slides */
+}
+
+.wide-carousel__nav--prev{ left: 0; }
+.wide-carousel__nav--next{ right: 0; }
+
+/* Dots über den Nav-Zonen halten (damit sie sicher klickbar bleiben) */
+.wide-carousel__dots{
+  z-index: 3;
+}
+
+/* Optional: sichtbarer Fokus für Tastatur-Nutzung */
+.wide-carousel__nav:focus-visible{
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+/* erlaubt vertikales Scrollen, Swipe-Handling bleibt zuverlässig */
+.wide-carousel__viewport{
+  touch-action: pan-y;
 }

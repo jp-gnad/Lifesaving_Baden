@@ -1281,6 +1281,8 @@
 
       const multi = sorted.length > 1;
 
+      const genderColor = (g) => (g === "w" ? "rgb(227, 6, 19)" : g === "m" ? "#0069B4" : "");
+
       sorted.forEach((v, idx) => {
         const sec = document.createElement("section");
         sec.className = "pz-info-sec";
@@ -1301,7 +1303,8 @@
 
           const top = document.createElement("span");
           top.className = "pz-range-title";
-          top.textContent = `Pflichtzeiten: (${cfgGroup.gender}) ${label}`;
+          top.textContent = `Pflichtzeiten: ${label}`;
+          top.style.color = genderColor(cfgGroup.gender);
 
           const meta = document.createElement("span");
           meta.className = "pz-info-meta";
@@ -1337,7 +1340,8 @@
         } else {
           const title = document.createElement("div");
           title.className = "pz-info-range";
-          title.textContent = `Pflichtzeiten: (${cfgGroup.gender}) ${label}`;
+          title.textContent = `Pflichtzeiten: ${label}`;
+          title.style.color = genderColor(cfgGroup.gender);
           sec.appendChild(title);
 
           const meta = document.createElement("div");
