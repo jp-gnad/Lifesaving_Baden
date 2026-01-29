@@ -1,0 +1,152 @@
+/* style_info_karussel.css */
+.info-karussel {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 28px 64px 110px 64px;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #ffffff;
+}
+
+.info-viewport {
+  width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.info-track {
+  display: flex;
+  width: 100%;
+  transition: transform 260ms ease;
+  will-change: transform;
+}
+
+.info-page {
+  flex: 0 0 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+  box-sizing: border-box;
+}
+
+.info-card {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ebebeb;
+}
+
+.info-card-header {
+  background: #cacaca;
+  color: #575756;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 2rem;
+  padding: 13px 14px;
+  white-space: pre-line;
+  min-height: 90px;
+}
+
+.info-card-body {
+  background: #ebebeb;
+  padding: 30px 28px 28px 28px;
+  box-sizing: border-box;
+}
+
+.info-title {
+  color: #969695;
+  font-size: 1.4rem;
+  font-weight: 500;
+  line-height: 1.15;
+  margin: 0 0 22px 0;
+  hyphens: auto;
+  overflow-wrap: break-word;
+}
+
+.info-line {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  margin: 10px 0;
+  color: #969695;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.info-label {
+  font-weight: 800;
+  color: #575756;
+}
+
+.info-value {
+  font-weight: 500;
+  color: #969695;
+}
+
+.info-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 12px;
+  background: #e30613;
+  color: #ffed00;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 18px 34px;
+  margin-top: 28px;
+  cursor: pointer;
+}
+
+.info-button:active {
+  transform: translateY(1px);
+}
+
+.info-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: #ababaa;
+  font-size: 62px;
+  line-height: 1;
+  padding: 0 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.info-arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.info-arrow-left {
+  left: 14px;
+}
+
+.info-arrow-right {
+  right: 14px;
+}
+
+.info-dots {
+  position: absolute;
+  right: 34px;
+  bottom: 26px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.info-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 0;
+  background: #ededec;
+  cursor: pointer;
+}
+
+.info-dot.is-active {
+  background: #e30613;
+}

@@ -36,12 +36,10 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     </section>
 
-    <section class="updates" aria-label="Aktuelles">
+    <section class="updates" aria-label="Termine">
       <div class="container">
-        <h2>Aktuelles</h2>
-        <ul class="updates__list">
-          <li>Erste Inhalte folgen.</li>
-        </ul>
+        <h2>Termine & Kadertrainings</h2>
+        <div id="termine-karussel"></div>
       </div>
     </section>
 
@@ -70,4 +68,61 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     </section>
   `;
+
+  const container = document.getElementById("termine-karussel");
+  if (!container) return;
+
+  const TERMINE = [
+    {
+      date: "So, 15.02.26",
+      text: "Didaktisch - methodische Grundlagen - Kurs 1-26",
+      time: "09:00 - 18:00 Uhr",
+      location: "Karlsruhe",
+      buttonText: "Mehr erfahren",
+      url: "#"
+    },
+    {
+      date: "Sa, 21.02. bis\nSo, 22.02.26",
+      text: "Sachkundiger für die Prüfung von Persönlicher Schutzausrüstung gegen Absturz (PSAgA)\nKurs 01-2026",
+      time: "09:00 - 17:00 Uhr",
+      location: "Karlsruhe",
+      buttonText: "Mehr erfahren",
+      url: "#"
+    },
+    {
+      date: "Mi, 25.02.26",
+      text: "Dialog SchwimmFidel",
+      time: "18:30 - 21:00 Uhr",
+      location: "Videokonferenz",
+      buttonText: "Mehr erfahren",
+      url: "#"
+    },
+    {
+      date: "Sa, 28.02.26",
+      text: "Personen- und vereinsbezogene Grundlagen - Kurs 1-26",
+      time: "09:00 - 21:00 Uhr",
+      location: "Karlsruhe",
+      kader: "LK1",
+      buttonText: "Mehr erfahren",
+      url: "#"
+    },
+    {
+      date: "Sa, 29.02.26",
+      text: "Personen- und vereinsbezogene Grundlagen - Kurs 1-26",
+      time: "09:00 - 21:00 Uhr",
+      location: "Karlsruhe",
+      buttonText: "Mehr erfahren",
+      url: "#"
+    }
+  ];
+
+  if (typeof window.initInfoKarussel !== "function") {
+    container.innerHTML = `<ul class="updates__list"><li>Erste Inhalte folgen.</li></ul>`;
+    return;
+  }
+
+  window.initInfoKarussel("#termine-karussel", TERMINE, {
+    itemsPerPage: 4,
+    buttonText: "Mehr erfahren"
+  });
 });
