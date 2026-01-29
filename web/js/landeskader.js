@@ -78,24 +78,21 @@ document.addEventListener("DOMContentLoaded", () => {
       text: "Didaktisch - methodische Grundlagen - Kurs 1-26",
       time: "09:00 - 18:00 Uhr",
       location: "Karlsruhe",
-      buttonText: "Mehr erfahren",
-      url: "#"
+      buttonText: "zum Kalender",
     },
     {
       date: "Sa, 21.02. bis\nSo, 22.02.26",
       text: "Sachkundiger für die Prüfung von Persönlicher Schutzausrüstung gegen Absturz (PSAgA)\nKurs 01-2026",
       time: "09:00 - 17:00 Uhr",
       location: "Karlsruhe",
-      buttonText: "Mehr erfahren",
-      url: "#"
+      buttonText: "zum Kalender",
     },
     {
       date: "Mi, 25.02.26",
       text: "Dialog SchwimmFidel",
       time: "18:30 - 21:00 Uhr",
       location: "Videokonferenz",
-      buttonText: "Mehr erfahren",
-      url: "#"
+      buttonText: "zum Kalender",
     },
     {
       date: "Sa, 28.02.26",
@@ -103,16 +100,14 @@ document.addEventListener("DOMContentLoaded", () => {
       time: "09:00 - 21:00 Uhr",
       location: "Karlsruhe",
       kader: "LK1",
-      buttonText: "Mehr erfahren",
-      url: "#"
+      buttonText: "zum Kalender",
     },
     {
       date: "Sa, 29.02.26",
       text: "Personen- und vereinsbezogene Grundlagen - Kurs 1-26",
       time: "09:00 - 21:00 Uhr",
       location: "Karlsruhe",
-      buttonText: "Mehr erfahren",
-      url: "#"
+      buttonText: "zum Kalender",
     }
   ];
 
