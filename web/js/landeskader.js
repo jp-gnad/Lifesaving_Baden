@@ -107,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     {
       date: "Sa, 13.06.26",
-      text: "Vorbereitungstraining JRP & LMS",
+      text: "Kadertraining: Vorbereitung auf JRP & LMS",
       time: "10:00 - 18:15 Uhr",
       location: "Buchtzigsee, Ettlingen & Fächerbad, Karlsruhe",
       kader: "LK2",
@@ -119,6 +119,30 @@ document.addEventListener("DOMContentLoaded", () => {
       time: "12:45 - 16:00 Uhr",
       location: "Fächerbad, Karlsruhe",
       kader: "LK1",
+      buttonText: "zum Kalender",
+    },
+    {
+      date: "Fr, 26.06. bis\nDi, 01.07.26",
+      text: "Junioren Rettungspokal",
+      time: "Ganztägig",
+      location: "Paderborn/Lippstadt",
+      kader: "LK2",
+      buttonText: "zum Kalender",
+    },
+    {
+      date: "Sa, 04.07.26",
+      text: "Trainingslehrgang mit Heimtrainer (NICHT FEST)",
+      time: "10:00 - 18:00 Uhr",
+      location: "Hallenbad Oberhausen-Rheinhausen",
+      kader: "LK3",
+      buttonText: "zum Kalender",
+    },
+    {
+      date: "Sa, 25.07.26",
+      text: "18. Bodensee Pokal",
+      time: "Ganztägig",
+      location: "Stuttgart, RheinNeckar Park",
+      kader: "LK1 / LK2 / LK3",
       buttonText: "zum Kalender",
     }
   ];
