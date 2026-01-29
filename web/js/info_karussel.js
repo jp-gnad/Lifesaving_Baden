@@ -70,9 +70,9 @@
     return asUTC - date.getTime();
   }
 
-  function berlinToUtcDate(y, m, d, hh, mm) {
+  function berlinToUtcDate(y, m, d, hh, mm, ss) {
     var tz = "Europe/Berlin";
-    var guess = new Date(Date.UTC(y, m - 1, d, hh || 0, mm || 0, 0));
+    var guess = new Date(Date.UTC(y, m - 1, d, hh || 0, mm || 0, ss || 0));
     var off1 = getTzOffsetMs(guess, tz);
     var adj = new Date(guess.getTime() - off1);
     var off2 = getTzOffsetMs(adj, tz);
@@ -99,59 +99,51 @@
     return { y: y, m: m, d: d, num: y * 10000 + m * 100 + d };
   }
 
-  function parseDateRange(dateStr) {
-    var s = String(dateStr || "");
-    var matches = s.match(/(\d{1,2})\.(\d{1,2})\.(\d{2,4})/g);
-    if (!matches || matches.length === 0) return null;
-
-    function toYMD(m) {
-      var p = m.split(".");
-      var dd = Number(p[0]);
-      var mo = Number(p[1]);
-      var yy = String(p[2]).length === 2 ? 2000 + Number(p[2]) : Number(p[2]);
-      return { y: yy, m: mo, d: dd, num: yy * 10000 + mo * 100 + dd };
-    }
-
-    var start = toYMD(matches[0]);
-    var end = toYMD(matches[matches.length - 1]);
-    return { start: start, end: end };
+  function parseDdMmYy(s) {
+    var m = String(s || "").match(/(\d{1,2})\.(\d{1,2})\.(\d{2,4})/);
+    if (!m) return null;
+    var d = Number(m[1]);
+    var mo = Number(m[2]);
+    var yy = String(m[3]).length === 2 ? 2000 + Number(m[3]) : Number(m[3]);
+    return { y: yy, m: mo, d: d, num: yy * 10000 + mo * 100 + d };
   }
 
-  function parseTimeRange(timeStr) {
-    var s = String(timeStr || "");
-    var m = s.match(/(\d{1,2}):(\d{2})/g);
-    if (!m || m.length === 0) return null;
-
-    function hm(x) {
-      var p = x.split(":");
-      return { h: Number(p[0]), min: Number(p[1]) };
-    }
-
-    var start = hm(m[0]);
-    var end = m.length >= 2 ? hm(m[1]) : null;
-    return { start: start, end: end };
+  function parseHm(s) {
+    var m = String(s || "").match(/(\d{1,2}):(\d{2})/);
+    if (!m) return null;
+    return { h: Number(m[1]), min: Number(m[2]) };
   }
 
-  function computeStartEnd(item) {
-    if (item && item.start && item.end) {
-      return {
-        start: item.start instanceof Date ? item.start : new Date(item.start),
-        end: item.end instanceof Date ? item.end : new Date(item.end)
-      };
-    }
+  function getWeekdayShortBerlin(y, m, d) {
+    var dt = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+    var w = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", weekday: "short" }).format(dt);
+    return w.replace(/\.$/, "");
+  }
 
-    var dr = parseDateRange(item && item.date ? item.date : "");
-    if (!dr) return null;
+  function formatDdMmYy(ymd) {
+    return pad2(ymd.d) + "." + pad2(ymd.m) + "." + String(ymd.y).slice(-2);
+  }
 
-    var tr = parseTimeRange(item && item.time ? item.time : "");
+  function normalize(item) {
+    var ds = parseDdMmYy(item && item.dateStart ? item.dateStart : "");
+    if (!ds) return null;
 
-    var sh = tr && tr.start ? tr.start.h : 0;
-    var sm = tr && tr.start ? tr.start.min : 0;
+    var deRaw = item && item.dateEnd ? String(item.dateEnd).trim() : "";
+    var de = deRaw ? parseDdMmYy(deRaw) : null;
+
+    var ts = parseHm(item && item.timeStart ? item.timeStart : "");
+    var te = parseHm(item && item.timeEnd ? item.timeEnd : "");
+
+    var hasEndDate = !!deRaw && !!de;
+    var endDate = hasEndDate ? de : ds;
+
+    var sh = ts ? ts.h : 0;
+    var sm = ts ? ts.min : 0;
 
     var eh, em;
-    if (tr && tr.end) {
-      eh = tr.end.h;
-      em = tr.end.min;
+    if (te) {
+      eh = te.h;
+      em = te.min;
     } else {
       eh = sh;
       em = sm + 60;
@@ -161,47 +153,61 @@
       }
     }
 
-    var startUtc = berlinToUtcDate(dr.start.y, dr.start.m, dr.start.d, sh, sm);
-    var endUtc = berlinToUtcDate(dr.end.y, dr.end.m, dr.end.d, eh, em);
+    var startUtc = berlinToUtcDate(ds.y, ds.m, ds.d, sh, sm, 0);
+    var endUtc = berlinToUtcDate(endDate.y, endDate.m, endDate.d, eh, em, 0);
+    if (endUtc.getTime() <= startUtc.getTime()) endUtc = new Date(startUtc.getTime() + 60 * 60 * 1000);
 
-    if (endUtc.getTime() <= startUtc.getTime()) {
-      endUtc = new Date(startUtc.getTime() + 60 * 60 * 1000);
+    var wdStart = getWeekdayShortBerlin(ds.y, ds.m, ds.d);
+    var header = wdStart + ", " + formatDdMmYy(ds);
+    if (hasEndDate) {
+      var wdEnd = getWeekdayShortBerlin(de.y, de.m, de.d);
+      header = header + " bis\n" + wdEnd + ", " + formatDdMmYy(de);
     }
 
-    return { start: startUtc, end: endUtc };
-  }
+    var durationMs = endUtc.getTime() - startUtc.getTime();
+    var isAllDay = durationMs > 23 * 60 * 60 * 1000;
 
-  function getItemRangeNums(item) {
-    var dr = parseDateRange(item && item.date ? item.date : "");
-    if (dr) return { startNum: dr.start.num, endNum: dr.end.num };
-
-    if (item && item.start) {
-      var s = berlinYmdFromDate(item.start);
-      var e = item.end ? berlinYmdFromDate(item.end) : s;
-      return { startNum: s.num, endNum: e.num };
+    var timeLine = "";
+    if (isAllDay) {
+      timeLine = "Ganztägig";
+    } else if (ts && te) {
+      timeLine = pad2(ts.h) + ":" + pad2(ts.min) + " - " + pad2(te.h) + ":" + pad2(te.min) + " Uhr";
+    } else if (ts) {
+      timeLine = pad2(ts.h) + ":" + pad2(ts.min) + " Uhr";
+    } else {
+      timeLine = "";
     }
 
-    return null;
+    return {
+      _raw: item,
+      _startUtc: startUtc,
+      _endUtc: endUtc,
+      _startNum: ds.num,
+      _endNum: hasEndDate ? de.num : ds.num,
+      _isAllDay: isAllDay,
+      header: header,
+      title: item && item.text ? String(item.text) : "",
+      meta: item && item.meta ? String(item.meta) : "",
+      timeLine: timeLine,
+      location: item && item.location ? String(item.location) : "",
+      kader: item && item.kader ? String(item.kader) : ""
+    };
   }
 
-  function buildIcs(item, startEnd) {
+  function buildIcs(n) {
     var now = new Date();
+    var raw = n._raw || {};
     var uid;
-    if (item && item.uid) uid = String(item.uid);
+    if (raw && raw.uid) uid = String(raw.uid);
     else if (window.crypto && typeof window.crypto.randomUUID === "function") uid = window.crypto.randomUUID();
     else uid = String(Date.now()) + "-" + String(Math.random()).slice(2);
 
-    var title = item && item.text ? String(item.text) : "Termin";
-    var location = item && item.location ? String(item.location) : "";
-    var kader = item && item.kader ? String(item.kader) : "";
-    var dateLabel = item && item.date ? String(item.date) : "";
-    var timeLabel = item && item.time ? String(item.time) : "";
-
     var descParts = [];
-    if (dateLabel) descParts.push("Datum: " + dateLabel);
-    if (timeLabel) descParts.push("Zeit: " + timeLabel);
-    if (location) descParts.push("Ort: " + location);
-    if (kader) descParts.push("Kader: " + kader);
+    if (n.meta) descParts.push(n.meta);
+    if (n.header) descParts.push("Datum: " + n.header.replace(/\n/g, " "));
+    if (n.timeLine) descParts.push("Zeit: " + n.timeLine);
+    if (n.location) descParts.push("Ort: " + n.location);
+    if (n.kader) descParts.push("Kader: " + n.kader);
 
     return [
       "BEGIN:VCALENDAR",
@@ -212,23 +218,19 @@
       "BEGIN:VEVENT",
       "UID:" + escapeIcsText(uid),
       "DTSTAMP:" + toUtcIcsTimestamp(now),
-      "DTSTART:" + toUtcIcsTimestamp(startEnd.start),
-      "DTEND:" + toUtcIcsTimestamp(startEnd.end),
-      "SUMMARY:" + escapeIcsText(title),
+      "DTSTART:" + toUtcIcsTimestamp(n._startUtc),
+      "DTEND:" + toUtcIcsTimestamp(n._endUtc),
+      "SUMMARY:" + escapeIcsText(n.title || "Termin"),
       "DESCRIPTION:" + escapeIcsText(descParts.join("\n")),
-      "LOCATION:" + escapeIcsText(location),
+      "LOCATION:" + escapeIcsText(n.location || ""),
       "END:VEVENT",
       "END:VCALENDAR"
     ].join("\r\n");
   }
 
-  function openIcs(item) {
-    var se = computeStartEnd(item);
-    if (!se) return false;
-
-    var ics = buildIcs(item, se);
-    var filenameBase = (item && item.text ? String(item.text) : "termin").trim();
-    if (!filenameBase) filenameBase = "termin";
+  function openIcs(n) {
+    var ics = buildIcs(n);
+    var filenameBase = (n.title || "termin").trim() || "termin";
     var filename = filenameBase.replace(/[^\w\-]+/g, "_").slice(0, 60) + ".ics";
 
     try {
@@ -258,7 +260,6 @@
   function initInfoKarussel(containerOrSelector, items, options) {
     options = options || {};
     var itemsPerPage = options.itemsPerPage || 4;
-    var buttonTextDefault = "zum Kalender";
 
     var container =
       typeof containerOrSelector === "string"
@@ -269,11 +270,11 @@
 
     var todayNum = berlinYmdFromDate(new Date()).num;
 
-    var filtered = (items || []).filter(function (it) {
-      var r = getItemRangeNums(it);
-      if (!r) return false;
-      return r.endNum >= todayNum;
-    });
+    var normalized = (items || []).map(normalize).filter(function (x) { return !!x; });
+
+    var filtered = normalized
+      .filter(function (n) { return n._endNum >= todayNum; })
+      .sort(function (a, b) { return a._startUtc.getTime() - b._startUtc.getTime(); });
 
     if (filtered.length === 0) {
       container.innerHTML = `<ul class="updates__list"><li>Erste Inhalte folgen.</li></ul>`;
@@ -302,42 +303,51 @@
     var pageCount = pages.length;
     var pageIndex = 0;
 
-    function buildCard(item) {
+    var autoMs = 12000;
+    var autoTimer = null;
+
+    function applyTransform() {
+      track.style.transform = "translateX(" + (-pageIndex * 100) + "%)";
+    }
+
+    function buildCard(n) {
       var card = el("div", "info-card");
       var header = el("div", "info-card-header");
-      header.textContent = item && item.date ? String(item.date) : "";
+      header.textContent = n.header || "";
       var body = el("div", "info-card-body");
 
-      var title = el("div", "info-title", { text: item && item.text ? String(item.text) : "" });
+      var title = el("div", "info-title", { text: n.title || "" });
+      var meta = n.meta ? el("div", "info-meta", { text: n.meta }) : null;
 
       var lineZeit = el("div", "info-line");
       var zeitLabel = el("span", "info-label", { text: "Zeit:" });
-      var zeitVal = el("span", "info-value", { text: item && item.time ? String(item.time) : "" });
+      var zeitVal = el("span", "info-value", { text: n.timeLine || "" });
       lineZeit.appendChild(zeitLabel);
       lineZeit.appendChild(zeitVal);
 
       var lineOrt = el("div", "info-line");
       var ortLabel = el("span", "info-label", { text: "Ort:" });
-      var ortVal = el("span", "info-value", { text: item && item.location ? String(item.location) : "" });
+      var ortVal = el("span", "info-value", { text: n.location || "" });
       lineOrt.appendChild(ortLabel);
       lineOrt.appendChild(ortVal);
 
       var lineKader = el("div", "info-line");
       var kaderLabel = el("span", "info-label", { text: "Kader:" });
-      var kaderVal = el("span", "info-value", { text: item && item.kader ? String(item.kader) : "" });
+      var kaderVal = el("span", "info-value", { text: n.kader || "" });
       lineKader.appendChild(kaderLabel);
       lineKader.appendChild(kaderVal);
 
-      var btn = el("button", "info-button", { type: "button", text: buttonTextDefault });
+      var btn = el("button", "info-button", { type: "button", text: "zum Kalender" });
       btn.addEventListener("click", function () {
         if (typeof options.onCalendarClick === "function") {
-          options.onCalendarClick(item);
+          options.onCalendarClick(n._raw);
           return;
         }
-        openIcs(item);
+        openIcs(n);
       });
 
       body.appendChild(title);
+      if (meta) body.appendChild(meta);
       body.appendChild(lineZeit);
       body.appendChild(lineOrt);
       body.appendChild(lineKader);
@@ -371,7 +381,7 @@
             "aria-label": "Seite " + (idx + 1)
           });
           d.addEventListener("click", function () {
-            setPage(idx);
+            setPage(idx, true);
           });
           dots.appendChild(d);
         })(i);
@@ -390,39 +400,57 @@
       arrowRight.disabled = pageIndex === pageCount - 1;
     }
 
-    function applyTransform() {
-      track.style.transform = "translateX(" + (-pageIndex * 100) + "%)";
+    function stopAuto() {
+      if (autoTimer) {
+        clearInterval(autoTimer);
+        autoTimer = null;
+      }
     }
 
-    function setPage(idx) {
+    function startAuto() {
+      stopAuto();
+      if (pageCount <= 1) return;
+      autoTimer = setInterval(function () {
+        setPage((pageIndex + 1) % pageCount, false);
+      }, autoMs);
+    }
+
+    function setPage(idx, userAction) {
       if (idx < 0) idx = 0;
       if (idx > pageCount - 1) idx = pageCount - 1;
       pageIndex = idx;
       applyTransform();
       buildDots();
       updateArrows();
+      if (userAction) startAuto();
     }
 
     arrowLeft.addEventListener("click", function () {
-      setPage(pageIndex - 1);
+      setPage(pageIndex - 1, true);
     });
     arrowRight.addEventListener("click", function () {
-      setPage(pageIndex + 1);
+      setPage(pageIndex + 1, true);
     });
+
+    container.addEventListener("mouseenter", function () { stopAuto(); });
+    container.addEventListener("mouseleave", function () { startAuto(); });
+    container.addEventListener("focusin", function () { stopAuto(); });
+    container.addEventListener("focusout", function () { startAuto(); });
 
     buildPages();
     buildDots();
     updateArrows();
     applyTransform();
+    startAuto();
 
     window.addEventListener("keydown", function (e) {
       if (pageCount <= 1) return;
-      if (e.key === "ArrowLeft") setPage(pageIndex - 1);
-      if (e.key === "ArrowRight") setPage(pageIndex + 1);
+      if (e.key === "ArrowLeft") setPage(pageIndex - 1, true);
+      if (e.key === "ArrowRight") setPage(pageIndex + 1, true);
     });
 
     return {
-      setPage: setPage,
+      setPage: function (idx) { setPage(idx, true); },
       getPage: function () { return pageIndex; },
       getPageCount: function () { return pageCount; }
     };
