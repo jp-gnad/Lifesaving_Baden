@@ -48,8 +48,9 @@ main#content{
   height: 100%;
   object-fit: cover;
   display: block;
-  transform: scale(1);
-  transition: transform 420ms ease, filter 420ms ease;
+  transform: translate3d(0,0,0) scale(1);
+  transition: transform 750ms ease;
+  will-change: transform;
 }
 
 .home-card::after{
@@ -67,7 +68,7 @@ main#content{
   background: rgba(0, 0, 0, 0.158);
   pointer-events: none;
   z-index: 1;
-  transition: background 420ms ease;
+  transition: background 750ms ease;
 }
 
 .home-card__overlay{
@@ -79,8 +80,9 @@ main#content{
   display: grid;
   gap: 10px;
   z-index: 2;
-  transform: translateY(0);
-  transition: transform 480ms ease;
+  transform: translate3d(0,0,0);
+  transition: transform 750ms ease;
+  will-change: transform;
 }
 
 .home-card__kicker{
@@ -118,11 +120,12 @@ main#content{
   padding: 0;
   font-size: 1.1rem;
   line-height: 1.5;
+  max-height: 0;
   opacity: 0;
   transform: translateY(14px);
-  max-height: 0;
+  
   overflow: hidden;
-  transition: opacity 420ms ease, transform 480ms ease, max-height 560ms ease;
+  transition: opacity 750ms ease, transform 750ms ease, max-height 750ms ease;
 }
 
 .home-card:hover::before,
@@ -169,7 +172,7 @@ main#content{
   height: var(--wide-min-h);
   min-height: var(--wide-min-h);
   max-height: var(--wide-max-h);
-  transition: height 520ms ease;
+  transition: height 650ms ease;
 }
 
 .wide-carousel__slides{
@@ -284,7 +287,7 @@ main#content{
   line-height: 1;
 
   text-decoration: none;
-  transition: transform 220ms ease, filter 220ms ease;
+  transition: transform 750ms ease, filter 750ms ease;
 }
 
 
