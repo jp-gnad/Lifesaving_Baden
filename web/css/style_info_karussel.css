@@ -36,6 +36,9 @@
   border-radius: 10px;
   overflow: hidden;
   background: #ebebeb;
+  min-height: 350px;
+  display: flex;
+  flex-direction: column;
 }
 
 .info-card-header {
@@ -50,6 +53,9 @@
 }
 
 .info-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   background: #ebebeb;
   padding: 20px 18px 18px 18px;
   box-sizing: border-box;
@@ -66,7 +72,7 @@
 }
 .info-meta {
   color: rgb(87, 87, 86);
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 400;
   line-height: 1.2;
   margin: 0 0 24px 0;
@@ -79,10 +85,10 @@
   display: flex;
   gap: 10px;
   align-items: baseline;
-  margin: 10px 0;
+  margin-bottom: 6px;
   color: #969695;
-  font-size: 1.2rem;
-  line-height: 1.2;
+  font-size: 1.1rem;
+  line-height: 1.1;
 }
 
 .info-label {
@@ -98,6 +104,7 @@
 .info-button {
   display: inline-flex;
   align-items: center;
+  align-self: flex-end;
   justify-content: center;
   border: 0;
   border-radius: 10px;
@@ -106,7 +113,7 @@
   font-size: 1rem;
   font-weight: 700;
   padding: 12px 18px;
-  margin-top: 28px;
+  margin-top: auto;
   cursor: pointer;
 }
 
@@ -195,7 +202,10 @@
 
 @media (max-width: 600px) {
   .info-karussel {
-    padding: 7px 0px 60px 0px;
+    padding: 10px 0px 60px 0px;
+  }
+  .info-card {
+    min-height: 0;
   }
   .info-card-header {
     font-size: 1.1rem;
@@ -214,6 +224,7 @@
   .info-line {
     font-size: 1rem;
     line-height: 1.1;
+    margin-bottom: 4px;
   }
   .info-button {
     font-size: 0.9rem;

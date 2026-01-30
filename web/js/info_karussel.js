@@ -447,8 +447,8 @@
       }
       arrowLeft.style.display = "";
       arrowRight.style.display = "";
-      arrowLeft.disabled = pageIndex === 0;
-      arrowRight.disabled = pageIndex === pageCount - 1;
+      arrowLeft.disabled = false;
+      arrowRight.disabled = false;
     }
 
     function stopAuto() {
@@ -467,11 +467,12 @@
     }
 
     arrowLeft.addEventListener("click", function () {
-      setPage(pageIndex - 1, true);
+      setPageWrap(pageIndex - 1, true);
     });
     arrowRight.addEventListener("click", function () {
-      setPage(pageIndex + 1, true);
+      setPageWrap(pageIndex + 1, true);
     });
+
 
     container.addEventListener("mouseenter", function () { stopAuto(); });
     container.addEventListener("mouseleave", function () { startAuto(); });
