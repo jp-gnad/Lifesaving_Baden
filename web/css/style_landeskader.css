@@ -52,7 +52,7 @@ main#content{
 
 /* Aktuelles */
 .updates{
-  padding: 1.6rem 0 0.8rem;
+  padding: 1.6rem 0 0;
 }
 
 .updates h2{
@@ -70,13 +70,12 @@ main#content{
   line-height: 1.6;
 }
 
-/* Intro (wie Startseite) */
 .intro{
   padding: 1.2rem 0 1.25rem;
 }
 .intro h2{
   text-align: center;
-  margin: 2.0rem 0 1.6rem;
+  margin: 0rem 0 1.6rem;
   color: rgb(227, 6, 19);
   font-size: 2rem;
 }

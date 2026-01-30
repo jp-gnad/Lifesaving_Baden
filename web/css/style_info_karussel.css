@@ -3,7 +3,7 @@
   position: relative;
   width: 100%;
   box-sizing: border-box;
-  padding: 28px 64px 110px 64px;
+  padding: 28px 64px 80px 64px;
   background: #ffffff;
 }
 
@@ -196,13 +196,13 @@
     display: none !important;
   }
   .info-karussel {
-    padding: 14px 12px 60px 12px;
+    padding: 14px 12px 70px 12px;
   }
 }
 
 @media (max-width: 600px) {
   .info-karussel {
-    padding: 10px 0px 60px 0px;
+    padding: 10px 0px 70px 0px;
   }
   .info-card {
     min-height: 0;

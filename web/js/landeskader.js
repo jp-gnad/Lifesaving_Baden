@@ -48,13 +48,13 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     </section>
 
-    <section class="intro" id="kader-inhalte">
+    <section class="intro" id="kader-informationen">
       <div class="container">
-        <h2>Inhalte</h2>
+        <h2>Informationen</h2>
       </div>
     </section>
 
-    <section class="home-links" aria-label="Landeskader Inhalte">
+    <section class="home-links" aria-label="Landeskader informationen">
       <div class="container">
         <div class="home-cards">
           ${KADER_CARDS.map(
