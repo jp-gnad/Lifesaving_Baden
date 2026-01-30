@@ -169,7 +169,7 @@
 
     var timeLine = "";
     if (isAllDay) {
-      timeLine = "Ganztägig!";
+      timeLine = "Ganztägig";
     } else if (ts && te) {
       timeLine = pad2(ts.h) + ":" + pad2(ts.min) + " - " + pad2(te.h) + ":" + pad2(te.min) + " Uhr";
     } else if (ts) {
