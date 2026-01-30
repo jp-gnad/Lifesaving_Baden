@@ -169,7 +169,7 @@
 
     var timeLine = "";
     if (isAllDay) {
-      timeLine = "Ganztägig";
+      timeLine = "Ganztägig!";
     } else if (ts && te) {
       timeLine = pad2(ts.h) + ":" + pad2(ts.min) + " - " + pad2(te.h) + ":" + pad2(te.min) + " Uhr";
     } else if (ts) {
@@ -184,7 +184,6 @@
       _endUtc: endUtc,
       _startNum: ds.num,
       _endNum: hasEndDate ? de.num : ds.num,
-      _isAllDay: isAllDay,
       header: header,
       title: item && item.text ? String(item.text) : "",
       meta: item && item.meta ? String(item.meta) : "",
@@ -289,6 +288,10 @@
     var arrowRight = el("button", "info-arrow info-arrow-right", { type: "button", "aria-label": "Nächste Seite", text: "›" });
 
     var viewport = el("div", "info-viewport");
+    viewport.style.height = "0px";
+    viewport.style.transition = "height 780ms ease";
+    viewport.style.touchAction = "pan-y";
+
     var track = el("div", "info-track");
     viewport.appendChild(track);
 
@@ -306,8 +309,52 @@
     var autoMs = 12000;
     var autoTimer = null;
 
+    function currentPageEl() {
+      return track.children && track.children[pageIndex] ? track.children[pageIndex] : null;
+    }
+
+    function measurePageHeight(pageEl) {
+      if (!pageEl) return 0;
+      var h = pageEl.scrollHeight || 0;
+      if (h <= 0) h = pageEl.getBoundingClientRect().height || 0;
+      return Math.max(0, Math.ceil(h));
+    }
+
+    function updateViewportHeight() {
+      var p = currentPageEl();
+      var h = measurePageHeight(p);
+      if (h > 0) viewport.style.height = h + "px";
+    }
+
     function applyTransform() {
       track.style.transform = "translateX(" + (-pageIndex * 100) + "%)";
+    }
+
+    function setPageCore(idx, userAction, wrap) {
+      if (pageCount <= 1) return;
+      if (wrap) idx = ((idx % pageCount) + pageCount) % pageCount;
+      else {
+        if (idx < 0) idx = 0;
+        if (idx > pageCount - 1) idx = pageCount - 1;
+      }
+      pageIndex = idx;
+      updateViewportHeight();
+      applyTransform();
+      buildDots();
+      updateArrows();
+      requestAnimationFrame(function () {
+        updateViewportHeight();
+        requestAnimationFrame(updateViewportHeight);
+      });
+      if (userAction) startAuto();
+    }
+
+    function setPage(idx, userAction) {
+      setPageCore(idx, userAction, false);
+    }
+
+    function setPageWrap(idx, userAction) {
+      setPageCore(idx, userAction, true);
     }
 
     function buildCard(n) {
@@ -365,6 +412,10 @@
         for (var i = 0; i < pages[p].length; i++) page.appendChild(buildCard(pages[p][i]));
         track.appendChild(page);
       }
+      requestAnimationFrame(function () {
+        updateViewportHeight();
+        requestAnimationFrame(updateViewportHeight);
+      });
     }
 
     function buildDots() {
@@ -411,18 +462,8 @@
       stopAuto();
       if (pageCount <= 1) return;
       autoTimer = setInterval(function () {
-        setPage((pageIndex + 1) % pageCount, false);
+        setPageWrap(pageIndex + 1, false);
       }, autoMs);
-    }
-
-    function setPage(idx, userAction) {
-      if (idx < 0) idx = 0;
-      if (idx > pageCount - 1) idx = pageCount - 1;
-      pageIndex = idx;
-      applyTransform();
-      buildDots();
-      updateArrows();
-      if (userAction) startAuto();
     }
 
     arrowLeft.addEventListener("click", function () {
@@ -437,6 +478,102 @@
     container.addEventListener("focusin", function () { stopAuto(); });
     container.addEventListener("focusout", function () { startAuto(); });
 
+    var resizeT = null;
+    window.addEventListener("resize", function () {
+      if (resizeT) clearTimeout(resizeT);
+      resizeT = setTimeout(function () {
+        requestAnimationFrame(function () {
+          updateViewportHeight();
+          requestAnimationFrame(updateViewportHeight);
+        });
+      }, 80);
+    });
+
+    var swipe = { active: false, sx: 0, sy: 0, locked: null };
+    var SWIPE_LOCK_PX = 10;
+    var SWIPE_TRIGGER_PX = 50;
+
+    function isInteractiveTarget(t) {
+      if (!t || !t.closest) return false;
+      return !!t.closest("button,a,input,textarea,select,label,.info-dot,.info-button");
+    }
+
+    function onSwipeStart(x, y, target) {
+      if (pageCount <= 1) return;
+      if (isInteractiveTarget(target)) return;
+      swipe.active = true;
+      swipe.sx = x;
+      swipe.sy = y;
+      swipe.locked = null;
+      stopAuto();
+    }
+
+    function onSwipeMove(x, y, evt) {
+      if (!swipe.active) return;
+      var dx = x - swipe.sx;
+      var dy = y - swipe.sy;
+      if (swipe.locked === null) {
+        if (Math.abs(dx) > SWIPE_LOCK_PX || Math.abs(dy) > SWIPE_LOCK_PX) swipe.locked = Math.abs(dx) > Math.abs(dy);
+      }
+      if (swipe.locked === true && evt && evt.cancelable) evt.preventDefault();
+    }
+
+    function onSwipeEnd(x, y) {
+      if (!swipe.active) return;
+      var dx = x - swipe.sx;
+      var dy = y - swipe.sy;
+      var doSwipe = swipe.locked === true && Math.abs(dx) > SWIPE_TRIGGER_PX && Math.abs(dx) > Math.abs(dy);
+      swipe.active = false;
+      swipe.locked = null;
+      if (doSwipe) {
+        if (dx < 0) setPageWrap(pageIndex + 1, true);
+        else setPageWrap(pageIndex - 1, true);
+      } else {
+        startAuto();
+      }
+    }
+
+    if ("PointerEvent" in window) {
+      viewport.addEventListener("pointerdown", function (e) {
+        if (e.pointerType === "mouse" && e.button !== 0) return;
+        onSwipeStart(e.clientX, e.clientY, e.target);
+      });
+
+      viewport.addEventListener("pointermove", function (e) {
+        onSwipeMove(e.clientX, e.clientY, e);
+      });
+
+      viewport.addEventListener("pointerup", function (e) {
+        onSwipeEnd(e.clientX, e.clientY);
+      });
+
+      viewport.addEventListener("pointercancel", function (e) {
+        onSwipeEnd(e.clientX, e.clientY);
+      });
+    } else {
+      viewport.addEventListener("touchstart", function (e) {
+        if (!e.touches || !e.touches[0]) return;
+        onSwipeStart(e.touches[0].clientX, e.touches[0].clientY, e.target);
+      }, { passive: true });
+
+      viewport.addEventListener("touchmove", function (e) {
+        if (!e.touches || !e.touches[0]) return;
+        onSwipeMove(e.touches[0].clientX, e.touches[0].clientY, e);
+      }, { passive: false });
+
+      viewport.addEventListener("touchend", function (e) {
+        var t = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : null;
+        if (!t) return;
+        onSwipeEnd(t.clientX, t.clientY);
+      }, { passive: true });
+
+      viewport.addEventListener("touchcancel", function (e) {
+        var t = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : null;
+        if (!t) return;
+        onSwipeEnd(t.clientX, t.clientY);
+      }, { passive: true });
+    }
+
     buildPages();
     buildDots();
     updateArrows();
@@ -445,12 +582,13 @@
 
     window.addEventListener("keydown", function (e) {
       if (pageCount <= 1) return;
-      if (e.key === "ArrowLeft") setPage(pageIndex - 1, true);
-      if (e.key === "ArrowRight") setPage(pageIndex + 1, true);
+      if (e.key === "ArrowLeft") setPageWrap(pageIndex - 1, true);
+      if (e.key === "ArrowRight") setPageWrap(pageIndex + 1, true);
     });
 
     return {
       setPage: function (idx) { setPage(idx, true); },
+      setPageWrap: function (idx) { setPageWrap(idx, true); },
       getPage: function () { return pageIndex; },
       getPageCount: function () { return pageCount; }
     };
