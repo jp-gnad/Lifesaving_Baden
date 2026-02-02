@@ -248,6 +248,76 @@
     return aff.ogKey || String(a?.ortsgruppe || "").trim();
   }
 
+  function capCandidatesAvatar(aff) {
+    const ogKey = String(aff?.ogKey || "").trim();
+    const lvCode = String(aff?.lvCode || "").trim().toUpperCase();
+    const bvCode = String(aff?.bvCode || "").trim().toUpperCase();
+    const sr = String(aff?.startrecht || "").trim().toUpperCase();
+
+    const out = [];
+    if (ogKey) out.push({ key: ogKey, overlay: false });
+
+    const pushOverlay = (k) => {
+      const kk = String(k || "").trim();
+      if (kk) out.push({ key: kk, overlay: true });
+    };
+
+    if (sr === "BV") { pushOverlay(bvCode); pushOverlay(lvCode); }
+    else { pushOverlay(lvCode); pushOverlay(bvCode); }
+
+    return out;
+  }
+
+  function applyCapFallback(img, hostEl, seq, {
+    overlayClass = "cap-overlay",
+    noneSrc = `${FLAG_BASE_URL}/Cap-None.svg`
+  } = {}) {
+    if (!seq || !seq.length) {
+      hostEl.classList.remove(overlayClass);
+      img.onerror = null;
+      img.src = noneSrc;
+      return;
+    }
+
+    let i = 0;
+    const load = () => {
+      const entry = seq[i];
+      hostEl.classList.toggle(overlayClass, !!entry.overlay);
+      img.src = `${FLAG_BASE_URL}/Cap-${encodeURIComponent(entry.key)}.svg`;
+    };
+
+    img.onerror = () => {
+      i++;
+      if (i < seq.length) load();
+      else {
+        hostEl.classList.remove(overlayClass);
+        img.onerror = null;
+        img.src = noneSrc;
+      }
+    };
+
+    load();
+  }
+
+  function renderCapAvatarLocal(a, size = "sm", extraClass = "") {
+    const wrap = h("div", { class: `ath-avatar ${size} ${extraClass}`.trim() });
+
+    const img = h("img", {
+      class: "avatar-img",
+      alt: "Vereinskappe",
+      loading: size === "xl" ? "eager" : "lazy",
+      decoding: "async"
+    });
+
+    const aff = deriveAffiliation(a);
+    const seq = capCandidatesAvatar(aff);
+    applyCapFallback(img, wrap, seq, { overlayClass: "cap-overlay" });
+
+    wrap.appendChild(img);
+    return wrap;
+  }
+
+
   function formatOrtsgruppe(raw) {
     let s = (raw || "").toString().trim();
     s = s.replace(/^(og|dlrg)\s+/i, "");
@@ -397,7 +467,7 @@
       } else {
         cell.classList.remove("ogcap-overlay");
       }
-      img.src = `svg/Cap-${encodeURIComponent(entry.key)}.svg`;
+      img.src = `${FLAG_BASE_URL}/Cap-${encodeURIComponent(entry.key)}.svg`;
     }
     applyCandidate();
 
@@ -1168,10 +1238,10 @@
 
     function renderCapAvatarForSuggest(ax, size = "sm", extraClass = "") {
       const fn = global?.ProfileHead?.renderCapAvatar;
-      if (typeof fn === "function") return fn(ax, size, extraClass);
-      const wrap = hEl("div", { class: `ath-avatar ${size} ${extraClass}` });
-      return wrap;
+      const node = (typeof fn === "function") ? fn(ax, size, extraClass) : renderCapAvatarLocal(ax, size, extraClass);
+      return (node instanceof Node) ? node : renderCapAvatarLocal(ax, size, extraClass);
     }
+
 
     function paintCmpSuggest() {
       suggest.innerHTML = "";
@@ -1653,9 +1723,10 @@
 
     function renderCapAvatarForSuggest(ax, size = "sm", extraClass = "") {
       const fn = global?.ProfileHead?.renderCapAvatar;
-      if (typeof fn === "function") return fn(ax, size, extraClass);
-      return el("div", { class: `ath-avatar ${size} ${extraClass}` });
+      const node = (typeof fn === "function") ? fn(ax, size, extraClass) : renderCapAvatarLocal(ax, size, extraClass);
+      return (node instanceof Node) ? node : renderCapAvatarLocal(ax, size, extraClass);
     }
+
 
     function updateCmpSuggest() {
       const q = cmpQuery.trim();
