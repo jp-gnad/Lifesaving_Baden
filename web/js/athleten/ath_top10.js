@@ -5,6 +5,7 @@
     { key: "starts", label: "Starts" },
     { key: "wettkaempfe", label: "Wettkämpfe" },
     { key: "lsc_aktuell", label: "LSC aktuell" },
+    { key: "lsc_junioren_aktuell", label: "LSC Junioren aktuell" },
     { key: "aktive_jahre", label: "Aktive Jahre" },
     { key: "hoechster_lsc", label: "Höchster LSC" },
     { key: "auslandswettkaempfe", label: "Auslandswettkämpfe" }
@@ -97,6 +98,7 @@
       starts: "disciplines",
       wettkaempfe: "competitions",
       lsc_aktuell: "lscRecent2y",
+      lsc_junioren_aktuell: "juniorsCurrentLsc",
       aktive_jahre: "activeYears",
       hoechster_lsc: "lscAlltimeHigh",
       auslandswettkaempfe: "foreignStarts"
@@ -251,9 +253,7 @@
     const select = h(
       "select",
       { class: "ath-top10-select", "aria-label": "Top-10-Auswahl" },
-      available.map((def) =>
-        h("option", { value: def.key, selected: def.key === State.currentKey }, def.label)
-      )
+      available.map((def) => h("option", { value: def.key, selected: def.key === State.currentKey }, def.label))
     );
 
     select.addEventListener("change", (e) => {
@@ -281,18 +281,25 @@
       if (labelLower.includes("wettkämpfe")) {
         infoNode = h("div", { class: "ath-top10-info" }, ["Hinweis:", h("br"), "Es werden nur Pool-Einzel Wettkämpfe gezählt."]);
       }
-      if (labelLower.includes("lsc") && labelLower.includes("aktuell")) {
+      if (labelLower.includes("lsc") && labelLower.includes("aktuell") && !labelLower.includes("junioren")) {
         infoNode = h("div", { class: "ath-top10-info" }, [
           "Hinweis:",
           h("br"),
           "Es werden nur Sportler berücksichtigt, die in den letzten 2 Jahren an Pool-Einzel Wettkämpfen teilgenommen haben."
         ]);
       }
+      if (labelLower.includes("junioren") && labelLower.includes("lsc") && labelLower.includes("aktuell")) {
+        infoNode = h("div", { class: "ath-top10-info" }, [
+          "Hinweis:",
+          h("br"),
+          "Es werden nur Junioren berücksichtigt (jahrgangsbasiert < 19 Jahre) und nur der jeweils aktuellste LifesavingScore der letzten 2 Jahre."
+        ]);
+      }
       if (labelLower.includes("aktive") && labelLower.includes("jahre")) {
         infoNode = h("div", { class: "ath-top10-info" }, [
           "Hinweis:",
           h("br"),
-          "Es werden nur Jahre gezählt, inden man Pool-Einzel Wettkämpfe geschwommen ist."
+          "Es werden nur Jahre gezählt, in denen man Pool-Einzel Wettkämpfe geschwommen ist."
         ]);
       }
     }
