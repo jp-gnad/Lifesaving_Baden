@@ -124,7 +124,6 @@ main#content{
   max-height: 0;
   opacity: 0;
   transform: translateY(14px);
-  
   overflow: hidden;
   transition: opacity 750ms ease, transform 750ms ease, max-height 750ms ease;
 }
@@ -182,19 +181,16 @@ main#content{
   height: 100%;
 }
 
-
 .wide-carousel__slide{
   position: absolute;
-  inset: 0;                 /* top/right/bottom/left = 0 */
+  inset: 0;
   width: 100%;
   height: 100%;
-
+  overflow: hidden;
   background-size: cover;
   background-repeat: no-repeat;
   background-position: 50% var(--bg-y, 50%);
-
   color: #fff;
-
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--fade-ms, 1000ms) ease;
@@ -208,15 +204,12 @@ main#content{
   z-index: 1;
 }
 
-
 .wide-carousel__slide::before{
   content:"";
   position:absolute;
   inset:0;
   pointer-events:none;
   z-index: 1;
-
-  /* dunkel kommt von unten + links, "Abfall" wirkt exponential-ähnlich */
   background:
     linear-gradient(to top,
       rgba(15,15,18,1) 0%,
@@ -236,17 +229,24 @@ main#content{
 }
 
 .wide-carousel__content{
+  max-width: 980px;
+  margin: 0 auto;
+  padding: clamp(26px, 5vw, 64px);
+  padding-bottom: calc(clamp(26px, 5vw, 64px) + var(--controls-safe));
+  overflow: hidden;
+  box-sizing: border-box;
+  color: white;
+  position: relative;
+  z-index: 2;
   transition: opacity 1000ms ease, transform 1000ms ease;
   opacity: 0;
   transform: translateY(10px);
-  z-index: 2;
 }
 
 .wide-carousel__slide.is-active .wide-carousel__content{
   opacity: 1;
   transform: translateY(0);
 }
-
 
 .wide-carousel__content h2{
   margin: 0 0 12px;
@@ -303,21 +303,16 @@ main#content{
 .wide-carousel__cta{
   display: inline-block;
   margin-top: clamp(14px, 2.2vw, 22px);
-
   padding: clamp(10px, 1.8vw, 14px) clamp(14px, 2.6vw, 22px);
   border-radius: 10px;
-
   background: rgb(255, 237, 0);
   color: rgb(0, 0, 0);
   font-weight: 700;
-
   font-size: clamp(0.95rem, 2.6vw, 1.2rem);
   line-height: 1;
-
   text-decoration: none;
   transition: transform 750ms ease, filter 750ms ease;
 }
-
 
 .wide-carousel__cta:hover{
   filter: brightness(0.9);
@@ -327,7 +322,6 @@ main#content{
   outline: 3px solid rgba(227, 6, 19, 0.45);
   outline-offset: 3px;
 }
-
 
 @media (max-width: 1024px){
   .home-cards{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -367,57 +361,53 @@ main#content{
   .wide-carousel__content{
     transition: none;
   }
+  .wide-carousel__yt{
+    transition: none;
+  }
+  .wide-carousel__video{
+    transition: none;
+  }
 }
-
 
 .wide-carousel__nav{
   position: absolute;
   top: 0;
-  bottom: 0;                 /* volle Höhe */
+  bottom: 0;
   width: clamp(44px, 12%, 140px);
   border: 0;
   padding: 0;
   margin: 0;
-  background: transparent;   /* unsichtbar */
+  background: transparent;
   cursor: pointer;
-  z-index: 2;                /* über Slides */
+  z-index: 4;
 }
 
 .wide-carousel__nav--prev{ left: 0; }
 .wide-carousel__nav--next{ right: 0; }
 
-/* Dots über den Nav-Zonen halten (damit sie sicher klickbar bleiben) */
-.wide-carousel__dots{
-  z-index: 3;
-}
-
-/* Optional: sichtbarer Fokus für Tastatur-Nutzung */
 .wide-carousel__nav:focus-visible{
   outline: 2px solid currentColor;
   outline-offset: -2px;
 }
 
-/* erlaubt vertikales Scrollen, Swipe-Handling bleibt zuverlässig */
 .wide-carousel__viewport{
   touch-action: pan-y;
 }
 
-
 .wide-carousel__yt{
   position: absolute;
   inset: 0;
-  z-index: 0;                 /* unter Overlay/Text */
-  opacity: 0;                 /* startet unsichtbar */
-  transition: opacity 1200ms ease; /* Fade-Dauer fürs Video */
-  pointer-events: none;       /* keine Interaktion */
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 1200ms ease;
+  pointer-events: none;
   overflow: hidden;
 }
 
 .wide-carousel__slide.is-video-on .wide-carousel__yt{
-  opacity: 1; /* nach ~2s sichtbar */
+  opacity: 1;
 }
 
-/* iframe auf "cover" */
 .wide-carousel__yt iframe{
   position: absolute;
   top: 50%;
@@ -428,3 +418,23 @@ main#content{
   border: 0;
 }
 
+.wide-carousel__video{
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 1200ms ease;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.wide-carousel__slide.is-video-on .wide-carousel__video{
+  opacity: 1;
+}
+
+.wide-carousel__video video{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}

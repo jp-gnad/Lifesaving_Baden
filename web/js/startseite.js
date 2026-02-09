@@ -1,6 +1,3 @@
-// ------------------------
-// DATA
-// ------------------------
 const WIDE_SLIDES = [
   {
     title: "Rettungssport",
@@ -36,38 +33,16 @@ const WIDE_SLIDES = [
     title: "Lifesaving World Championships",
     text: "Die LWC finden 2026 vom 25. Nov bis 13. Dec in Port Elizabeth / Südafrika statt. Du hast Interesse aber keine Ahnung wie das Abläuft? Frag bei uns nach! Wir versuchen zusammen als Baden etwas zu organisieren.",
     img: "./png/karussel/bild6.JPG",
-    // YouTube Background (Video-ID aus https://www.youtube.com/watch?v=bm8cO1HoZGk)
-    yt: { id: "bm8cO1HoZGk", start: 0, delayMs: 2000 },
+    video: {
+      src: "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/MP4/LWC_2024.mp4",
+      type: "video/quicktime",
+      delayMs: 2000,
+    },
     cta: { label: "Mehr Infos!", href: "https://lifesaving2026.com/" },
     bgY: "35%",
   },
 ];
 
-// ------------------------
-// YouTube IFrame API Loader
-// ------------------------
-let ytApiPromise = null;
-
-function loadYouTubeAPI() {
-  if (ytApiPromise) return ytApiPromise;
-
-  ytApiPromise = new Promise((resolve) => {
-    if (window.YT && window.YT.Player) {
-      resolve(window.YT);
-      return;
-    }
-    const tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.head.appendChild(tag);
-    window.onYouTubeIframeAPIReady = () => resolve(window.YT);
-  });
-
-  return ytApiPromise;
-}
-
-// ------------------------
-// RENDER
-// ------------------------
 document.addEventListener("DOMContentLoaded", () => {
   const main = document.getElementById("content");
   if (!main) return;
@@ -84,12 +59,18 @@ document.addEventListener("DOMContentLoaded", () => {
               aria-roledescription="Folie"
               aria-label="${i + 1} von ${WIDE_SLIDES.length}"
               aria-hidden="${i === 0 ? "false" : "true"}"
-              data-has-yt="${s.yt ? "1" : "0"}"
-              data-yt-id="${s.yt?.id ?? ""}"
-              data-yt-start="${s.yt?.start ?? 0}"
-              data-yt-delay="${s.yt?.delayMs ?? 2000}"
+              data-has-video="${s.video ? "1" : "0"}"
+              data-video-src="${s.video?.src ?? ""}"
+              data-video-type="${s.video?.type ?? ""}"
+              data-video-delay="${s.video?.delayMs ?? 2000}"
             >
-              ${s.yt ? `<div class="wide-carousel__yt" aria-hidden="true"></div>` : ``}
+              ${s.video ? `
+                <div class="wide-carousel__video" aria-hidden="true">
+                  <video muted playsinline preload="metadata" loop>
+                    <source src="${s.video.src}" type="${s.video.type}">
+                  </video>
+                </div>
+              ` : ``}
 
               <div class="wide-carousel__content">
                 <h2>${s.title}</h2>
@@ -188,26 +169,18 @@ document.addEventListener("DOMContentLoaded", () => {
   initWideCarousel();
 });
 
-// ------------------------
-// CAROUSEL LOGIC
-// ------------------------
 function initWideCarousel() {
   const root = document.querySelector("[data-wide-carousel]");
   if (!root) return;
 
   const slides = Array.from(root.querySelectorAll(".wide-carousel__slide"));
   const dots = Array.from(root.querySelectorAll(".wide-carousel__dot"));
-  const count = dots.length;
-
   const prevBtn = root.querySelector(".wide-carousel__nav--prev");
   const nextBtn = root.querySelector(".wide-carousel__nav--next");
+  const count = slides.length;
 
   let index = 0;
   let autoTimer = null;
-  let resizeTimer = null;
-
-  // --- YouTube per slide ---
-  const ytState = new WeakMap(); // slideEl -> { player, ready, start }
   let videoTimer = null;
 
   const stopAuto = () => {
@@ -229,7 +202,6 @@ function initWideCarousel() {
   const fitHeight = () => {
     const active = slides[index];
     if (!active) return;
-
     const content = active.querySelector(".wide-carousel__content");
     if (!content) return;
 
@@ -242,105 +214,44 @@ function initWideCarousel() {
     });
   };
 
-  async function ensureYT(slideEl) {
-    const has = slideEl.dataset.hasYt === "1";
-    if (!has) return null;
-
-    let state = ytState.get(slideEl);
-    if (state) return state;
-
-    const holder = slideEl.querySelector(".wide-carousel__yt");
-    if (!holder) return null;
-
-    const videoId = slideEl.dataset.ytId;
-    const start = parseInt(slideEl.dataset.ytStart || "0", 10) || 0;
-
-    // eindeutige ID für YT.Player
-    if (!holder.id) holder.id = `ytbg-${Math.random().toString(36).slice(2)}`;
-
-    const YT = await loadYouTubeAPI();
-
-    let readyResolve;
-    const ready = new Promise((r) => (readyResolve = r));
-
-    const player = new YT.Player(holder.id, {
-      host: "https://www.youtube-nocookie.com",
-      videoId,
-      playerVars: {
-        autoplay: 0,
-        controls: 0,
-        disablekb: 1,
-        fs: 0,
-        iv_load_policy: 3,
-        modestbranding: 1,
-        playsinline: 1,
-        rel: 0,
-        loop: 1,
-        playlist: videoId,
-        start,
-        origin: window.location.origin,
-      },
-      events: {
-        onReady: (e) => {
-          try {
-            e.target.mute();      // Autoplay i.d.R. nur stumm
-            e.target.pauseVideo();
-          } catch {}
-          readyResolve();
-        },
-      },
-    });
-
-    state = { player, ready, start };
-    ytState.set(slideEl, state);
-    return state;
-  }
-
-  async function playYT(slideEl) {
-    const state = await ensureYT(slideEl);
-    if (!state) return;
-
-    await state.ready;
-    try {
-      state.player.mute();
-      state.player.seekTo(state.start, true);
-      state.player.playVideo();
-      slideEl.classList.add("is-video-on"); // Video sichtbar machen (CSS opacity)
-    } catch {
-      // wenn Autoplay blockiert bleibt Bild sichtbar
-    }
-  }
-
-  function stopYT(slideEl) {
-    slideEl.classList.remove("is-video-on");
-    const state = ytState.get(slideEl);
-    if (!state) return;
-    try {
-      state.player.pauseVideo();
-    } catch {}
-  }
-
-  function updateVideoForActiveSlide() {
-    if (videoTimer) clearTimeout(videoTimer);
-
-    // alle nicht aktiven Videos stoppen
+  const stopNonActiveVideos = (activeIdx) => {
     slides.forEach((s, i) => {
-      if (i !== index) stopYT(s);
+      if (i === activeIdx) return;
+      s.classList.remove("is-video-on");
+      const v = s.querySelector(".wide-carousel__video video");
+      if (!v) return;
+      try { v.pause(); } catch {}
+      try { v.currentTime = 0; } catch {}
     });
+  };
+
+  const startVideoForActive = () => {
+    if (videoTimer) clearTimeout(videoTimer);
 
     const active = slides[index];
     if (!active) return;
 
-    if (active.dataset.hasYt === "1") {
-      const delay = parseInt(active.dataset.ytDelay || "2000", 10) || 2000;
+    stopNonActiveVideos(index);
 
-      // im Hintergrund laden
-      ensureYT(active);
+    if (active.dataset.hasVideo !== "1") return;
 
-      // nach Delay einblenden + starten
-      videoTimer = setTimeout(() => playYT(active), delay);
-    }
-  }
+    const delay = parseInt(active.dataset.videoDelay || "2000", 10) || 2000;
+    const wrap = active.querySelector(".wide-carousel__video");
+    const v = active.querySelector(".wide-carousel__video video");
+    if (!wrap || !v) return;
+
+    try { v.load(); } catch {}
+
+    videoTimer = setTimeout(async () => {
+      try {
+        const p = v.play();
+        if (p && typeof p.then === "function") await p;
+        active.classList.add("is-video-on");
+      } catch {
+        active.classList.remove("is-video-on");
+      }
+    }, delay);
+  };
 
   const update = () => {
     slides.forEach((s, i) => {
@@ -356,7 +267,7 @@ function initWideCarousel() {
     });
 
     fitHeight();
-    updateVideoForActiveSlide();
+    startVideoForActive();
   };
 
   const goTo = (i) => {
@@ -369,7 +280,6 @@ function initWideCarousel() {
     startAuto();
   };
 
-  // Dots click
   root.querySelector(".wide-carousel__dots")?.addEventListener("click", (e) => {
     const btn = e.target.closest(".wide-carousel__dot");
     if (!btn) return;
@@ -379,59 +289,9 @@ function initWideCarousel() {
     startAuto();
   });
 
-  // Swipe (Touch)
-  let startX = 0;
-  let startY = 0;
-  let touching = false;
-
-  const swipeThresholdPx = () => Math.max(50, Math.round(root.clientWidth * 0.15));
-
-  root.addEventListener(
-    "touchstart",
-    (e) => {
-      if (e.touches.length !== 1) return;
-      const t = e.touches[0];
-      touching = true;
-      startX = t.clientX;
-      startY = t.clientY;
-      stopAuto();
-    },
-    { passive: true }
-  );
-
-  root.addEventListener(
-    "touchend",
-    (e) => {
-      const t = e.changedTouches && e.changedTouches[0];
-      if (!t || !touching) return;
-      touching = false;
-
-      const dx = t.clientX - startX;
-      const dy = t.clientY - startY;
-
-      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) >= swipeThresholdPx()) {
-        manualGo(dx < 0 ? +1 : -1);
-      } else {
-        startAuto();
-      }
-    },
-    { passive: true }
-  );
-
-  root.addEventListener(
-    "touchcancel",
-    () => {
-      touching = false;
-      startAuto();
-    },
-    { passive: true }
-  );
-
-  // Prev/Next zones
   prevBtn?.addEventListener("click", () => manualGo(-1));
   nextBtn?.addEventListener("click", () => manualGo(+1));
 
-  // Keyboard
   root.setAttribute("tabindex", "0");
   root.addEventListener("keydown", (e) => {
     if (e.key === "ArrowLeft") {
@@ -443,13 +303,47 @@ function initWideCarousel() {
     }
   });
 
-  // Resize
+  let startX = 0;
+  let startY = 0;
+  let touching = false;
+
+  const swipeThresholdPx = () => Math.max(50, Math.round(root.clientWidth * 0.15));
+
+  root.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    touching = true;
+    startX = t.clientX;
+    startY = t.clientY;
+    stopAuto();
+  }, { passive: true });
+
+  root.addEventListener("touchend", (e) => {
+    const t = e.changedTouches && e.changedTouches[0];
+    if (!t || !touching) return;
+    touching = false;
+
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) >= swipeThresholdPx()) {
+      manualGo(dx < 0 ? +1 : -1);
+    } else {
+      startAuto();
+    }
+  }, { passive: true });
+
+  root.addEventListener("touchcancel", () => {
+    touching = false;
+    startAuto();
+  }, { passive: true });
+
+  let resizeTimer;
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(fitHeight, 80);
   });
 
-  // Pause autoplay on hover/focus
   root.addEventListener("mouseenter", stopAuto);
   root.addEventListener("mouseleave", startAuto);
   root.addEventListener("focusin", stopAuto);
