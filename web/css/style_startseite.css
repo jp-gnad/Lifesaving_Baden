@@ -1,5 +1,6 @@
 main#content{
   margin: 0 auto;
+  background-color: rgb(15, 15, 18);
 }
 
 .container{
@@ -14,7 +15,7 @@ main#content{
 .intro h2{
   text-align: center;
   margin: 2.5rem 0 2rem;
-  color: rgb(227, 6, 19);
+  color: rgb(255, 236, 0);
   font-size: 2rem;
 }
 
@@ -163,8 +164,8 @@ main#content{
 }
 
 .wide-carousel__viewport{
-  --wide-min-h: 400px;
-  --wide-max-h: 560px;
+  --wide-min-h: 600px;
+  --wide-max-h: 860px;
   --controls-safe: calc(88px + env(safe-area-inset-bottom, 0px));
   position: relative;
   width: 100%;
@@ -176,49 +177,76 @@ main#content{
 }
 
 .wide-carousel__slides{
-  display: flex;
+  position: relative;
   width: 100%;
   height: 100%;
-  transform: translate3d(0,0,0);
-  transition: transform 650ms ease;
-  will-change: transform;
 }
 
+
 .wide-carousel__slide{
-  flex: 0 0 100%;
+  position: absolute;
+  inset: 0;                 /* top/right/bottom/left = 0 */
+  width: 100%;
   height: 100%;
+
   background-size: cover;
   background-repeat: no-repeat;
   background-position: 50% var(--bg-y, 50%);
-  position: relative;
+
   color: #fff;
+
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--fade-ms, 1000ms) ease;
+  will-change: opacity;
+  z-index: 0;
 }
 
+.wide-carousel__slide.is-active{
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 1;
+}
+
+
 .wide-carousel__slide::before{
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.4) 0%,
-    rgba(0,0,0,0.5) 45%,
-    rgba(0, 0, 0, 0.75) 72%,
-    rgba(0, 0, 0, 0.85) 100%
-  );
-  pointer-events: none;
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index: 1;
+
+  /* dunkel kommt von unten + links, "Abfall" wirkt exponential-ähnlich */
+  background:
+    linear-gradient(to top,
+      rgba(15,15,18,1) 0%,
+      rgba(15,15,18,.85) 22%,
+      rgba(15,15,18,.55) 45%,
+      rgba(15,15,18,.25) 70%,
+      rgba(15,15,18,.08) 88%,
+      rgba(15,15,18,0) 100%
+    ),
+    linear-gradient(to right,
+      rgba(15,15,18,1) 0%,
+      rgba(15,15,18,.75) 18%,
+      rgba(15,15,18,.40) 42%,
+      rgba(15,15,18,.15) 68%,
+      rgba(15,15,18,0) 100%
+    );
 }
 
 .wide-carousel__content{
-  max-width: 980px;
-  margin: 0 auto;
-  padding: clamp(26px, 5vw, 64px);
-  padding-bottom: calc(clamp(26px, 5vw, 64px) + var(--controls-safe));
-  overflow: hidden;
-  box-sizing: border-box;
-  color: white;
-  position: relative;
-  z-index: 1;
+  transition: opacity 1000ms ease, transform 1000ms ease;
+  opacity: 0;
+  transform: translateY(10px);
+  z-index: 2;
 }
+
+.wide-carousel__slide.is-active .wide-carousel__content{
+  opacity: 1;
+  transform: translateY(0);
+}
+
 
 .wide-carousel__content h2{
   margin: 0 0 12px;
@@ -237,7 +265,7 @@ main#content{
 .wide-carousel__dots{
   position: absolute;
   left: 50%;
-  bottom: 22px;
+  bottom: 85px;
   transform: translateX(-50%);
   display: flex;
   gap: 10px;
@@ -308,7 +336,7 @@ main#content{
 @media (max-width: 720px){
   .home-links .container{ padding: 0 12px; }
   .wide-carousel__viewport{
-    --wide-min-h: 240px;
+    --wide-min-h: 500px;
     --wide-max-h: 720px;
     --controls-safe: calc(30px + env(safe-area-inset-bottom, 0px));
   }
@@ -333,6 +361,10 @@ main#content{
     transition: none;
   }
   .wide-carousel__viewport{
+    transition: none;
+  }
+  .wide-carousel__slide,
+  .wide-carousel__content{
     transition: none;
   }
 }
@@ -369,3 +401,30 @@ main#content{
 .wide-carousel__viewport{
   touch-action: pan-y;
 }
+
+
+.wide-carousel__yt{
+  position: absolute;
+  inset: 0;
+  z-index: 0;                 /* unter Overlay/Text */
+  opacity: 0;                 /* startet unsichtbar */
+  transition: opacity 1200ms ease; /* Fade-Dauer fürs Video */
+  pointer-events: none;       /* keine Interaktion */
+  overflow: hidden;
+}
+
+.wide-carousel__slide.is-video-on .wide-carousel__yt{
+  opacity: 1; /* nach ~2s sichtbar */
+}
+
+/* iframe auf "cover" */
+.wide-carousel__yt iframe{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120%;
+  height: 120%;
+  transform: translate(-50%, -50%);
+  border: 0;
+}
+
