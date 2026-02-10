@@ -9,14 +9,14 @@ const WIDE_SLIDES = [
     title: "Kalender",
     text: "Aktueller Jahresplan vom Landeskader Baden",
     img: "./png/karussel/bild3.jpg",
-    cta: { label: "Mehr Infos!", href: "./kalender.html" },
+    cta: { label: "Mehr Informationen", href: "./kalender.html" },
     bgY: "50%",
   },
   {
     title: "Infoschreiben",
     text: "Aktuelles Jahres Infoschreiben vom Landeskader Baden",
     img: "./png/karussel/bild5.JPG",
-    cta: { label: "Mehr Infos!", href: "./info.html" },
+    cta: { label: "Mehr Informationen", href: "./info.html" },
     bgY: "50%",
   },
   {
@@ -24,7 +24,7 @@ const WIDE_SLIDES = [
     text: "Auch in der DLRG wird Leistungssport betrieben und obwohl die Rettungssportler ihren Sport als Amateure ausüben, unterliegen sie den Anti-Doping-Regeln der NADA (Nationale Antidoping Agentur) und der WADA (Welt Antidoping Agentur).",
     img: "./png/karussel/bild4.jpg",
     cta: {
-      label: "Mehr Infos!",
+      label: "Mehr Informationen",
       href: "https://www.dlrg.de/mitmachen/rettungssport/kader/dopingpraevention/",
     },
     bgY: "50%",
@@ -35,10 +35,9 @@ const WIDE_SLIDES = [
     img: "./png/karussel/bild6.JPG",
     video: {
       src: "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/MP4/LWC_2024.mp4",
-      type: "video/quicktime",
       delayMs: 2000,
     },
-    cta: { label: "Mehr Infos!", href: "https://lifesaving2026.com/" },
+    cta: { label: "Mehr Informationen", href: "https://lifesaving2026.com/" },
     bgY: "35%",
   },
 ];
@@ -60,14 +59,12 @@ document.addEventListener("DOMContentLoaded", () => {
               aria-label="${i + 1} von ${WIDE_SLIDES.length}"
               aria-hidden="${i === 0 ? "false" : "true"}"
               data-has-video="${s.video ? "1" : "0"}"
-              data-video-src="${s.video?.src ?? ""}"
-              data-video-type="${s.video?.type ?? ""}"
               data-video-delay="${s.video?.delayMs ?? 2000}"
             >
               ${s.video ? `
                 <div class="wide-carousel__video" aria-hidden="true">
-                  <video muted playsinline preload="metadata" loop>
-                    <source src="${s.video.src}" type="${s.video.type}">
+                  <video muted playsinline preload="auto" crossorigin="anonymous">
+                    <source src="${s.video.src}" type="video/mp4">
                   </video>
                 </div>
               ` : ``}
@@ -183,14 +180,18 @@ function initWideCarousel() {
   let autoTimer = null;
   let videoTimer = null;
 
+  const videoReady = new WeakMap();
+
   const stopAuto = () => {
-    if (autoTimer) clearInterval(autoTimer);
+    if (autoTimer) clearTimeout(autoTimer);
     autoTimer = null;
   };
 
-  const startAuto = () => {
+  const scheduleAuto = () => {
     stopAuto();
-    autoTimer = setInterval(() => goTo(index + 1), 10000);
+    const active = slides[index];
+    if (active && active.dataset.hasVideo === "1") return;
+    autoTimer = setTimeout(() => goTo(index + 1), 10000);
   };
 
   const readPxVar = (name, fallback) => {
@@ -214,6 +215,45 @@ function initWideCarousel() {
     });
   };
 
+  const videoBound = new WeakSet();
+
+  const prepareVideo = (slideEl) => {
+    const v = slideEl.querySelector(".wide-carousel__video video");
+    if (!v) return null;
+
+    v.muted = true;
+    v.loop = false;
+    v.playsInline = true;
+
+    if (!videoBound.has(v)) {
+      v.addEventListener("ended", () => {
+        if (!slideEl.classList.contains("is-active")) return;
+        stopAuto();
+        setTimeout(() => {
+          if (!slideEl.classList.contains("is-active")) return;
+          goTo(index + 1);
+          scheduleAuto();
+        }, 2000);
+      });
+      videoBound.add(v);
+    }
+
+    if (!videoReady.has(v)) {
+      const p = new Promise((resolve) => {
+        const ok = () => resolve(true);
+        const bad = () => resolve(false);
+        v.addEventListener("loadeddata", ok, { once: true });
+        v.addEventListener("canplay", ok, { once: true });
+        v.addEventListener("error", bad, { once: true });
+        try { v.load(); } catch {}
+      });
+      videoReady.set(v, p);
+    }
+
+    return v;
+  };
+
+
   const stopNonActiveVideos = (activeIdx) => {
     slides.forEach((s, i) => {
       if (i === activeIdx) return;
@@ -235,23 +275,23 @@ function initWideCarousel() {
 
     if (active.dataset.hasVideo !== "1") return;
 
-    const delay = parseInt(active.dataset.videoDelay || "2000", 10) || 2000;
-    const wrap = active.querySelector(".wide-carousel__video");
-    const v = active.querySelector(".wide-carousel__video video");
-    if (!wrap || !v) return;
+    stopAuto();
 
-    try { v.load(); } catch {}
+    const delay = parseInt(active.dataset.videoDelay || "2000", 10) || 2000;
+    const v = prepareVideo(active);
+    if (!v) return;
 
     videoTimer = setTimeout(async () => {
-      try {
-        const p = v.play();
-        if (p && typeof p.then === "function") await p;
-        active.classList.add("is-video-on");
-      } catch {
-        active.classList.remove("is-video-on");
-      }
+      active.classList.add("is-video-on");
+
+      const ready = videoReady.get(v);
+      if (ready) await ready;
+
+      try { v.currentTime = 0; } catch {}
+      try { await v.play(); } catch {}
     }, delay);
   };
+
 
   const update = () => {
     slides.forEach((s, i) => {
@@ -268,7 +308,9 @@ function initWideCarousel() {
 
     fitHeight();
     startVideoForActive();
+    scheduleAuto();
   };
+
 
   const goTo = (i) => {
     index = (i + count) % count;
@@ -344,11 +386,10 @@ function initWideCarousel() {
     resizeTimer = setTimeout(fitHeight, 80);
   });
 
+  root.addEventListener("mouseleave", scheduleAuto);
+  root.addEventListener("focusout", scheduleAuto);
   root.addEventListener("mouseenter", stopAuto);
-  root.addEventListener("mouseleave", startAuto);
   root.addEventListener("focusin", stopAuto);
-  root.addEventListener("focusout", startAuto);
 
-  startAuto();
   update();
 }

@@ -23,7 +23,7 @@
   --dlrg_red: rgb(227,6,19);
   --dlrg_yellow: rgb(255,237,0);
   --black: rgb(15,15,18);
-  --hdr-h: 80px;
+  --hdr-h: 65px;
 }
 
 *{box-sizing:border-box}
@@ -63,7 +63,7 @@ body{
   font-weight:800;
   text-decoration:none;
   color:var(--dlrg_yellow);
-  font-size:2.2em;
+  font-size:2.0em;
   display:inline-flex;
   align-items:center;
   gap:1rem;
@@ -115,12 +115,12 @@ body{
 .nav{
   display:flex;
   align-items:center;
-  gap:.5rem;
+  gap:.4rem;
   padding:0 .5rem;
   list-style:none;
   flex-wrap:nowrap;
   white-space:nowrap;
-  font-size:1.25em;
+  font-size:1.1em;
   margin-left:20px;
   margin-right:50px;
 }

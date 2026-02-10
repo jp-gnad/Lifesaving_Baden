@@ -10,7 +10,7 @@ main#content{
 }
 
 .intro{
-  padding: 2rem 0 1.25rem;
+  padding: 0 0 1.25rem;
 }
 .intro h2{
   text-align: center;
@@ -221,16 +221,23 @@ main#content{
     ),
     linear-gradient(to right,
       rgba(15,15,18,1) 0%,
-      rgba(15,15,18,.75) 18%,
-      rgba(15,15,18,.40) 42%,
+      rgba(15,15,18,.85) 18%,
+      rgba(15,15,18,.35) 42%,
       rgba(15,15,18,.15) 68%,
       rgba(15,15,18,0) 100%
     );
 }
 
+.wide-carousel__viewport{
+  --content-delay: 400ms;
+}
+
+
 .wide-carousel__content{
-  max-width: 980px;
+  max-width: 850px;
   margin: 0 auto;
+  margin-left: 0;
+  margin-top: 100px;
   padding: clamp(26px, 5vw, 64px);
   padding-bottom: calc(clamp(26px, 5vw, 64px) + var(--controls-safe));
   overflow: hidden;
@@ -238,25 +245,30 @@ main#content{
   color: white;
   position: relative;
   z-index: 2;
-  transition: opacity 1000ms ease, transform 1000ms ease;
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateX(-15px);
+  transition:
+    opacity var(--fade-ms, 1000ms) ease,
+    transform 0ms linear var(--fade-ms, 1000ms);
 }
 
 .wide-carousel__slide.is-active .wide-carousel__content{
   opacity: 1;
   transform: translateY(0);
+  transition:
+    opacity var(--fade-ms, 1000ms) ease var(--content-delay, 400ms),
+    transform var(--fade-ms, 1000ms) ease var(--content-delay, 400ms);
 }
 
 .wide-carousel__content h2{
   margin: 0 0 12px;
-  font-size: clamp(1.8rem, 3.4vw, 3.0rem);
+  font-size: clamp(1.5rem, 2.4vw, 2.5rem);
   font-weight: 700;
 }
 
 .wide-carousel__content p{
   margin: 0;
-  font-size: clamp(1.0rem, 1.4vw, 1.35rem);
+  font-size: clamp(.9rem, 1.25vw, 1.35rem);
   line-height: 1.6;
   display: block;
   overflow: hidden;
@@ -291,24 +303,16 @@ main#content{
   outline-offset: 2px;
 }
 
-.wide-carousel__slide--center .wide-carousel__content{
-  text-align: center;
-}
-
-.wide-carousel__slide--center .wide-carousel__content p{
-  margin: 0 auto;
-  max-width: 900px;
-}
 
 .wide-carousel__cta{
   display: inline-block;
   margin-top: clamp(14px, 2.2vw, 22px);
-  padding: clamp(10px, 1.8vw, 14px) clamp(14px, 2.6vw, 22px);
-  border-radius: 10px;
-  background: rgb(255, 237, 0);
-  color: rgb(0, 0, 0);
-  font-weight: 700;
-  font-size: clamp(0.95rem, 2.6vw, 1.2rem);
+  padding: clamp(8px, 1.8vw, 10px) clamp(12px, 2.6vw, 18px);
+  border-radius: 999px;
+  background: rgba(63, 63, 63, 0.401);
+  color: rgb(255, 237, 0);
+  font-weight: 500;
+  font-size: clamp(0.8rem, 1.4vw, 1rem);
   line-height: 1;
   text-decoration: none;
   transition: transform 750ms ease, filter 750ms ease;
@@ -334,9 +338,11 @@ main#content{
     --wide-max-h: 720px;
     --controls-safe: calc(30px + env(safe-area-inset-bottom, 0px));
   }
+  .wide-carousel__content{
+    margin-top: 20px;
+  }
   .intro h2{
     font-size: 1.5rem;
-    margin-top: 0rem;
     margin-bottom: 0rem;
   }
 }
