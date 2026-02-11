@@ -189,33 +189,33 @@ body{
   margin:0;
   padding:0;
   list-style:none;
-  background:#fff;
-  border-top:1px solid var(--border);
+  background: rgba(15, 15, 18, 0.98);
   box-shadow:0 12px 28px rgba(0,0,0,.12);
   z-index:1500;
 }
 
 .subnav li{
-  border-top:1px solid #e5e7eb;
+  
 }
 
 .subnav li:first-child{
-  border-top:0;
+  border-top:1px solid rgba(255, 255, 255, 0.2);
 }
 
 .subnav a{
   display:block;
   max-width:1100px;
   margin:0 auto;
-  padding:1rem 1.25rem;
-  font-size:1.15rem;
-  color:var(--fg);
+  padding:1.25rem 1.25rem;
+  font-size:1.1rem;
+  color: rgba(255, 255, 255, 0.98);
   text-decoration:none;
   border-radius:0;
+  border-top:1px solid rgba(255, 255, 255, 0.2);
 }
 
 .subnav a:hover{
-  background:#f9fafb;
+  color: rgba(255, 237, 0, 1);
   text-decoration:none;
 }
 
@@ -244,7 +244,7 @@ body{
 .menu-toggle:focus-visible{outline:2px solid #000; outline-offset:2px}
 
 @media (max-width:1000px){
-  :root{ --hdr-h: 70px; }
+  :root{ --hdr-h: 62px; }
 
   .menu-toggle{
     display:inline-flex;
@@ -273,7 +273,7 @@ body{
     right:0;
     width:100vw;
     display:block !important;
-    background:var(--bg);
+    background: transparent;
     border:0;
     border-radius:0;
     box-shadow:0 12px 28px rgba(0,0,0,.12);
@@ -286,8 +286,8 @@ body{
 
   .hdr-nav.open .nav li{
     list-style:none;
-    border-top:1px solid #e5e7eb;
-    background:#fff;
+    border-top:1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(15, 15, 18, 0.98);
   }
 
   .hdr-nav.open .nav li:first-child{ border-top:0; }
@@ -297,7 +297,7 @@ body{
     align-items:center;
     justify-content:flex-start;
     gap:.75rem;
-    padding:1rem 1.25rem;
+    padding:1.25rem 1.25rem;
     font-size:1.35rem;
     color:var(--fg);
     text-decoration:none;
@@ -319,30 +319,24 @@ body{
     border:0;
   }
 
-  .hdr-nav.open .nav a:hover,
-  .hdr-nav.open .nav button:hover{
-    background:#f9fafb;
-    text-decoration:none;
-  }
-
   .hdr-nav.open .nav li.nav-back{
-    background:#e6e6e6;
+    background: rgba(25, 25, 31, 0.98);
     border-top:0;
-    border-bottom:1px solid #cfcfcf;
+    border-bottom:1px solid rgba(255, 255, 255, 0.2);
   }
 
   .hdr-nav.open .nav button.nav-back-btn{
     font-weight:800;
-    color:var(--fg);
+    color: rgba(255, 255, 255, 0.98);
     background:transparent;
     justify-content:flex-start;
-    padding: .65rem 1.25rem;
+    padding: .9rem 1.25rem;
   }
 
   .hdr-nav.open .nav button.nav-back-btn::before{
     content:"‹";
     font-weight:800;
-    color:var(--fg);
+    color: rgba(255, 237, 0, 1);
   }
 
   .hdr-nav.open .nav button.nav-back-btn::after{ content:""; }
@@ -361,7 +355,7 @@ body{
   .hdr-nav.open .nav a.active::after,
   .hdr-nav.open .nav button.active::after,
   .hdr-nav.open .nav button.active-parent::after{
-    color:var(--dlrg_red);
+    color:var(--dlrg_yellow);
   }
 
   .subnav{ display:none !important; }
@@ -377,9 +371,9 @@ body{
     display:flex;
     align-items:center;
     justify-content:flex-start;
-    padding:1rem 1.25rem;
-    font-size:1.2rem;
-    color:var(--fg);
+    padding:1.25rem 1.25rem;
+    font-size:1.1rem;
+    color: rgba(255, 255, 255, 0.98);
     text-decoration:none;
     white-space:nowrap;
   }
@@ -395,11 +389,11 @@ body{
     justify-content:center;
     width:100%;
     background:transparent;
-    border-left:1px solid #e5e7eb;
+    border-left:1px solid rgba(255, 255, 255, 0.15);
     font:inherit;
     font-size:2.2rem;
     line-height:1;
-    color:var(--accent);
+    color:var(--dlrg_yellow);
     cursor:pointer;
     padding:0;
     transform: translateX(-8px)
@@ -407,20 +401,21 @@ body{
 
   .hdr-nav.open .nav a.nav-mainlink:hover,
   .hdr-nav.open .nav button.nav-arrow:hover{
-    background:#f9fafb;
+    color: var(--dlrg_yellow);
     text-decoration:none;
   }
 
-  .hdr-nav.open .nav a.nav-mainlink.active{ color:var(--dlrg_red); }
+  .hdr-nav.open .nav a.nav-mainlink.active{ color:var(--dlrg_yellow); }
 
   .hdr-nav.open .nav button.nav-arrow.active,
   .hdr-nav.open .nav button.nav-arrow.active-parent{
-    color:var(--dlrg_red);
+    color:var(--dlrg_yellow);
   }
 
   @media (max-width:1000px){
     .hdr-nav.open .nav[data-level="sub"] a.nav-mainlink{
-      font-size: 1.1rem;
+      font-size: 1.0rem;
+      padding:1.25rem 1.25rem;
     }
   }
 
