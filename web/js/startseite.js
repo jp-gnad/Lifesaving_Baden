@@ -1,12 +1,15 @@
 const WIDE_SLIDES = [
   {
-    title: "Rettungssport",
+    title: "Willkommen beim Lifesaving Team Baden",
+    meta: "DLRG ・ Landeskader Baden ・ Leistungssport",
     text: "Willkommen auf der inoffiziellen Internetseite des Lifesaving Team Badens. Hier findest du nützliche Informationen rund um den Rettungssport in Baden.",
+    icon: { src: "./png/icons/Baden2.png", href: "https://baden.dlrg.de/mitmachen/rettungssport/", alt: "DLRG Rettungssport" },
     img: "./png/hintergrund1.JPG",
     bgY: "50%",
   },
   {
     title: "Kalender",
+    meta: "DLRG ・ Wettkämpfe ・ Landeskader ・ Bundeskader",
     text: "Aktueller Jahresplan vom Landeskader Baden",
     img: "./png/karussel/bild3.jpg",
     cta: { label: "Mehr Informationen", href: "./kalender.html" },
@@ -14,6 +17,7 @@ const WIDE_SLIDES = [
   },
   {
     title: "Infoschreiben",
+    meta: "DLRG ・ Neuigkeiten ・ Landeskader ・ Rettungssport",
     text: "Aktuelles Jahres Infoschreiben vom Landeskader Baden",
     img: "./png/karussel/bild5.JPG",
     cta: { label: "Mehr Informationen", href: "./info.html" },
@@ -21,8 +25,10 @@ const WIDE_SLIDES = [
   },
   {
     title: "Dopingprävention",
+    meta: "NADA ・ WADA ・ Sport ・ Sicher & Sauber",
     text: "Auch in der DLRG wird Leistungssport betrieben und obwohl die Rettungssportler ihren Sport als Amateure ausüben, unterliegen sie den Anti-Doping-Regeln der NADA (Nationale Antidoping Agentur) und der WADA (Welt Antidoping Agentur).",
     img: "./png/karussel/bild4.jpg",
+    icon: { src: "./png/icons/nada.png", href: "https://lifesaving2026.com/", alt: "DLRG Rettungssport" },
     cta: {
       label: "Mehr Informationen",
       href: "https://www.dlrg.de/mitmachen/rettungssport/kader/dopingpraevention/",
@@ -31,12 +37,14 @@ const WIDE_SLIDES = [
   },
   {
     title: "Lifesaving World Championships",
-    text: "Die LWC finden 2026 vom 25. Nov bis 13. Dec in Port Elizabeth / Südafrika statt. Du hast Interesse aber keine Ahnung wie das Abläuft? Frag bei uns nach! Wir versuchen zusammen als Baden etwas zu organisieren.",
+    meta: "ILS ・ Weltmeisterschaft ・ Lifesaving Sport ・ 2026",
+    text: "Die LWC finden 2026 vom 25. Nov bis 13. Dec in Port Elizabeth / Südafrika statt. Das größte Highlight im Jahr. Auch du kannst mitmachen!",
     img: "./png/karussel/bild6.JPG",
     video: {
       src: "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/MP4/LWC_2024.mp4",
       delayMs: 2000,
     },
+    icon: { src: "./svg/events/LWC_big - 2026.svg", href: "https://lifesaving2026.com/", alt: "DLRG Rettungssport" },
     cta: { label: "Mehr Informationen", href: "https://lifesaving2026.com/" },
     bgY: "35%",
   },
@@ -70,8 +78,18 @@ document.addEventListener("DOMContentLoaded", () => {
               ` : ``}
 
               <div class="wide-carousel__content">
+                ${s.icon ? `
+                  <a class="wide-carousel__iconlink" href="${s.icon.href}" aria-label="${s.icon.alt ?? s.title}">
+                    <img class="wide-carousel__icon" src="${s.icon.src}" alt="${s.icon.alt ?? ""}" loading="lazy" decoding="async">
+                  </a>
+                ` : ``}
+
                 <h2>${s.title}</h2>
+
+                ${s.meta ? `<div class="wide-carousel__meta">${s.meta}</div>` : ``}
+
                 <p>${s.text}</p>
+
                 ${s.cta ? `<a class="wide-carousel__cta" href="${s.cta.href}">${s.cta.label}</a>` : ``}
               </div>
             </article>
