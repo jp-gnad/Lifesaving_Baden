@@ -9,21 +9,9 @@ main#content{
   padding: 0 16px;
 }
 
-.intro{
-  padding: 0 0 1.25rem;
-}
-.intro h2{
-  text-align: center;
-  color: rgb(255, 236, 0);
-  font-size: 2rem;
-}
-
-.home-links{
-  padding: 1rem 0 2.75rem;
-}
 .home-links .container{
   max-width: 1400px;
-  padding: 0 8px;
+  padding: 0 20px;
 }
 
 .home-cards{
@@ -40,7 +28,7 @@ main#content{
   text-decoration: none;
   color: inherit;
   background: #eee;
-  aspect-ratio: 4.5 / 5;
+  aspect-ratio: 4.5 / 3;
 }
 
 .home-card__img{
@@ -88,11 +76,12 @@ main#content{
 .home-card__kicker{
   justify-self: start;
   display: inline-block;
-  background: #000;
+  border-radius: 8px;
+  background: rgba(15, 15, 18, 0.95);
   color: rgb(255, 237, 0);
   font-weight: 700;
   padding: 10px 14px;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   line-height: 1.1;
 }
 
@@ -103,10 +92,11 @@ main#content{
 }
 
 .home-card__box--main{
-  background: rgba(255, 255, 255, 0.96);
-  color: #111;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  color: rgb(15, 15, 18);
   padding: 14px 16px;
-  font-size: 1.15rem;
+  font-size: 1.0rem;
   line-height: 1.25;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -118,8 +108,8 @@ main#content{
   background: transparent;
   color: #fff;
   padding: 0;
-  font-size: 1.1rem;
-  line-height: 1.5;
+  font-size: 0.95rem;
+  line-height: 1.4;
   max-height: 0;
   opacity: 0;
   transform: translateY(14px);
@@ -213,10 +203,10 @@ main#content{
   background:
     linear-gradient(to top,
       rgba(15,15,18,1) 0%,
-      rgba(15,15,18,.85) 22%,
-      rgba(15,15,18,.55) 45%,
-      rgba(15,15,18,.25) 70%,
-      rgba(15,15,18,.08) 88%,
+      rgba(15,15,18,.85) 20%,
+      rgba(15,15,18,.50) 45%,
+      rgba(15,15,18,.20) 70%,
+      rgba(15,15,18,.08) 80%,
       rgba(15,15,18,0) 100%
     ),
     linear-gradient(to right,
@@ -307,7 +297,7 @@ main#content{
 .wide-carousel__dots{
   position: absolute;
   left: 50%;
-  bottom: 85px;
+  bottom: 75px;
   transform: translateX(-50%);
   display: flex;
   gap: 10px;
@@ -339,8 +329,9 @@ main#content{
   margin-top: clamp(14px, 2.2vw, 22px);
   padding: clamp(8px, 1.8vw, 10px) clamp(12px, 2.6vw, 18px);
   border-radius: 999px;
-  background: rgba(63, 63, 63, 0.401);
-  color: rgb(255, 237, 0);
+  background: rgba(105, 105, 105, 0.329);
+  backdrop-filter: blur(5px);
+  color: rgb(255, 255, 255);
   font-weight: 500;
   font-size: clamp(0.8rem, 1.4vw, 1rem);
   line-height: 1;
@@ -349,7 +340,8 @@ main#content{
 }
 
 .wide-carousel__cta:hover{
-  filter: brightness(0.9);
+  filter: brightness(1.2);
+  color: rgb(255, 237, 0);
 }
 
 .wide-carousel__cta:focus-visible{
@@ -435,7 +427,7 @@ main#content{
   width: auto;
   height: auto;
   text-decoration: none;
-  margin: 0 0 25px;
+  margin: -10px 0 25px;
   background: transparent;
 }
 
@@ -446,20 +438,16 @@ main#content{
   display: block;
 }
 
-.wide-carousel__iconlink:hover{
-  filter: brightness(1.05);
-}
-
 .wide-carousel__iconlink:focus-visible{
-  outline: 3px solid rgba(227, 6, 19, 0.45);
-  outline-offset: 3px;
+  outline: none;
 }
 
 .wide-carousel__meta{
   margin: 20px 0 20px;
-  font-size: clamp(0.85rem, 1.2vw, 1.3rem);
+  font-size: clamp(0.8rem, 1.0vw, 1.2rem);
   line-height: 1.25;
   opacity: 0.9;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 
@@ -477,9 +465,6 @@ main#content{
   }
   .wide-carousel__content{
     margin-top: 20px;
-  }
-  .intro h2{
-    font-size: 1.5rem;
   }
 
   .wide-carousel__icon{

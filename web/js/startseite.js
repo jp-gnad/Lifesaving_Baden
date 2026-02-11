@@ -111,12 +111,6 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     </section>
 
-    <section class="intro">
-      <div class="container">
-        <h2>Willkommen beim Lifesaving Team Baden</h2>
-      </div>
-    </section>
-
     <section class="home-links" aria-label="Athletenprofile">
       <div class="container">
         <div class="home-cards">
