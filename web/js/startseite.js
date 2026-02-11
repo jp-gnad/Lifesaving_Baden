@@ -116,58 +116,27 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="home-cards">
 
           <a class="home-card" href="./athleten.html" aria-label="Dein Athletenprofil">
-            <img class="home-card__img" src="./png/hintergrund4.JPG" alt="" loading="lazy" decoding="async">
-            <div class="home-card__overlay">
-              <div class="home-card__kicker">Dein Athletenprofil</div>
-              <div class="home-card__box home-card__box--main">Infos aus Wettkämpfen</div>
-              <div class="home-card__box home-card__box--more">
-                Bestzeiten, Informationen und deine Entwicklung – kompakt auf einen Blick.
-              </div>
-            </div>
+            <img class="home-card__img" src="./png/Bild2.png" alt="" loading="lazy" decoding="async">
           </a>
 
           <a class="home-card" href="./punkterechner.html" aria-label="DLRG Punkterechner">
-            <img class="home-card__img" src="./png/hintergrund5.JPG" alt="" loading="lazy" decoding="async">
-            <div class="home-card__overlay">
-              <div class="home-card__kicker">DLRG Punkterechner</div>
-              <div class="home-card__box home-card__box--main">National und internationale Punkte</div>
-              <div class="home-card__box home-card__box--more">
-                Errechne dir deine Punkte aus Zeiten – national (deutscher Rekord) oder international (Weltrekord).
-              </div>
-            </div>
+            <img class="home-card__img" src="./png/Bild4.png" alt="" loading="lazy" decoding="async">
+            
           </a>
 
           <a class="home-card" href="./nominierung.html" aria-label="Wettkämpfe und Nominierung">
-            <img class="home-card__img" src="./png/karussel/bild2.jpg" alt="" loading="lazy" decoding="async">
-            <div class="home-card__overlay">
-              <div class="home-card__kicker">Wettkämpfe &amp; Nominierung</div>
-              <div class="home-card__box home-card__box--main">Aktuelle Nominierungslisten und Richtlinien</div>
-              <div class="home-card__box home-card__box--more">
-                Niminierungsrichtlinien & Listen für DP, JRP, BP, sowie Pflichtzeiten für die DEM.
-              </div>
-            </div>
+            <img class="home-card__img" src="./png/Bild1.png" alt="" loading="lazy" decoding="async">
+           
           </a>
 
           <a class="home-card" href="./landeskader.html" aria-label="Landeskader">
-            <img class="home-card__img" src="./png/hintergrund2.jpg" alt="" loading="lazy" decoding="async">
-            <div class="home-card__overlay">
-              <div class="home-card__kicker">Landeskader</div>
-              <div class="home-card__box home-card__box--main">Der Landeskader auf einen Blick</div>
-              <div class="home-card__box home-card__box--more">
-                Liste aktueller Landeskaderathleten, Kriterien und Prüfung deines Status.
-              </div>
-            </div>
+            <img class="home-card__img" src="./png/Bild5.png" alt="" loading="lazy" decoding="async">
+            
           </a>
 
           <a class="home-card" href="./rekorde.html" aria-label="Rekorde und Bestenlisten">
-            <img class="home-card__img" src="./png/hintergrund3.jpg" alt="" loading="lazy" decoding="async">
-            <div class="home-card__overlay">
-              <div class="home-card__kicker">Rekorde &amp; Bestenlisten</div>
-              <div class="home-card__box home-card__box--main">Landesverbände, Bezirke und Ortsgruppen</div>
-              <div class="home-card__box home-card__box--more">
-                Analysen und Bestenlisten für deine Gliederungen – individuell erstellbar.
-              </div>
-            </div>
+            <img class="home-card__img" src="./png/Bild3.png" alt="" loading="lazy" decoding="async">
+            
           </a>
 
         </div>
