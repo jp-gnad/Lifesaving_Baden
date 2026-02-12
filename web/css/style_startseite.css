@@ -3,16 +3,6 @@ main#content{
   background-color: rgb(15, 15, 18);
 }
 
-html, body {margin: 0;}
-
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background-color: rgb(15, 15, 18);
-  z-index: -1;
-}
-
 .container{
   max-width: 1100px;
   margin: 0 auto;
