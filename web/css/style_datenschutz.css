@@ -1,3 +1,7 @@
+html, body {
+  background: white;
+}
+
 main#content {
   max-width: 900px;
   margin: 0 auto;

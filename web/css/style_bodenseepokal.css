@@ -18,6 +18,10 @@ main#content {
   margin: 0 auto;
 }
 
+body, html {
+  background: white;
+}
+
 .container {
   max-width: 1100px;
   margin: 0 auto;
