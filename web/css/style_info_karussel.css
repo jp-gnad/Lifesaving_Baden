@@ -4,7 +4,7 @@
   width: 100%;
   box-sizing: border-box;
   padding: 28px 64px 80px 64px;
-  background: #ffffff;
+  background: rgb(15, 15, 18);
 }
 
 .info-viewport {
@@ -35,15 +35,15 @@
 .info-card {
   border-radius: 10px;
   overflow: hidden;
-  background: #ebebeb;
+  background: rgba(235, 235, 235, 0.9);
   min-height: 350px;
   display: flex;
   flex-direction: column;
 }
 
 .info-card-header {
-  background: #cacaca;
-  color: #575756;
+  background: rgba(15, 15, 18, 0.5);
+  color: rgba(15, 15, 18, 0.75);
   font-size: 1.25rem;
   font-weight: 600;
   line-height: 1.8rem;
@@ -56,7 +56,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: #ebebeb;
+  background: rgba(235, 235, 235, 0.05);
   padding: 20px 18px 18px 18px;
   box-sizing: border-box;
 }
@@ -108,7 +108,7 @@
   justify-content: center;
   border: 0;
   border-radius: 10px;
-  background: #000000;
+  background: rgb(15, 15, 18);
   color: #ffed00;
   font-size: 1rem;
   font-weight: 700;
@@ -167,7 +167,7 @@
 }
 
 .info-dot.is-active {
-  background: #e30613;
+  background: rgb(255, 237, 0);
 }
 
 .info-page {
