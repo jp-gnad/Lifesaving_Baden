@@ -581,7 +581,7 @@
     if (hasWord("wm") || name.includes("weltmeisterschaft")) return "WM";
     if (hasWord("em") || name.includes("europameisterschaft")) return "EM";
     if (hasWord("jrp")) return "JRP";
-    if (hasWord("dp") || name.includes("deutsche meisterschaft")) return "DP";
+    if (hasWord("dp") || hasWord("dt")) return "DP";
 
     return null;
   }

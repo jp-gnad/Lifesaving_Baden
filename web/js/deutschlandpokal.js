@@ -1410,6 +1410,22 @@ const DP_SLIDE_SETTINGS = {
     text: "LV-Gesamtwertung: 11. Platz",
     bgPos: "center 15%",
   },
+  "1997": {
+    text: "Team Baden",
+    bgPos: "center 50%",
+  },
+  "1996": {
+    text: "ausgefallen: 2. Deutschland Treffen",
+    bgPos: "center 50%",
+  },
+  "1995": {
+    text: "Team Baden",
+    bgPos: "center 50%",
+  },
+  "1994": {
+    text: "Team Baden",
+    bgPos: "center 50%",
+  },
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
