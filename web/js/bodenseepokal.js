@@ -1348,7 +1348,7 @@ const DP_SLIDE_SETTINGS = {
       label: "Mehr Infos!",
       href: "https://malsch.dlrg.de/fileadmin/groups/1070080/Informer/Informer_2007-08.pdf",
     },
-    bgPos: "center 50%",
+    bgPos: "center 30%",
   },
 };
 
