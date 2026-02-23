@@ -1329,7 +1329,7 @@ function dpBadgeUrlFromSlideImg(slideImgPath) {
 }
 
 const DP_FOLDER = "./png/BP-Team/";
-const DP_MIN_YEAR = 2000;
+const DP_MIN_YEAR = 2007;
 const DP_MAX_YEAR = new Date().getFullYear() + 1;
 const DP_EXTS = [".jpg"];
 
@@ -1341,6 +1341,14 @@ const DP_SLIDE_SETTINGS = {
       href: "https://baden.dlrg.de/mitmachen/rettungssport/news-detail/bodensee-pokal-feiert-revival-131606-n/",
     },
     bgPos: "center 55%",
+  },
+  "2007": {
+    text: "LV-Gesamtwertung: 2. Platz",
+    cta: {
+      label: "Mehr Infos!",
+      href: "https://malsch.dlrg.de/fileadmin/groups/1070080/Informer/Informer_2007-08.pdf",
+    },
+    bgPos: "center 50%",
   },
 };
 

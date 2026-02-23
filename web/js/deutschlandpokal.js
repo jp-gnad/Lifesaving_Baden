@@ -1322,7 +1322,7 @@ function dpBadgeUrlFromSlideImg(slideImgPath) {
 }
 
 const DP_FOLDER = "./png/DP-Team/";
-const DP_MIN_YEAR = 2000;
+const DP_MIN_YEAR = 1994;
 const DP_MAX_YEAR = new Date().getFullYear() + 1;
 const DP_EXTS = [".jpg"];
 
