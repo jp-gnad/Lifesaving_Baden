@@ -1416,15 +1416,15 @@ const DP_SLIDE_SETTINGS = {
   },
   "1996": {
     text: "ausgefallen: 2. Deutschland Treffen",
-    bgPos: "center 50%",
+    bgPos: "center 20%",
   },
   "1995": {
     text: "Team Baden",
-    bgPos: "center 50%",
+    bgPos: "center 30%",
   },
   "1994": {
     text: "Team Baden",
-    bgPos: "center 50%",
+    bgPos: "center 30%",
   },
 };
 
