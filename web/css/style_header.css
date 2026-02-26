@@ -229,7 +229,10 @@ body{
 }
 
 .subnav a.active{
-  color: var(--dlrg_red);
+  color: var(--dlrg_yellow);
+}
+.subnav a.active:hover{
+  color: var(--dlrg_yellow);
 }
 
 @media (min-width:1001px){
@@ -353,7 +356,7 @@ body{
   .hdr-nav.open .nav a.active,
   .hdr-nav.open .nav button.active,
   .hdr-nav.open .nav button.active-parent{
-    color:var(--dlrg_red);
+    color:var(--dlrg_yellow);
   }
 
   .hdr-nav.open .nav a,

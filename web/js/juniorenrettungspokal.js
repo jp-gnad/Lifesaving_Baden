@@ -1,16 +1,8 @@
-const DP_BADGE_FOLDER = "./png/events/";
-
-function dpBadgeUrlFromSlideImg(slideImgPath) {
-  const m = String(slideImgPath).match(/(\d{4})/);
-  if (!m) return null;
-  const year = m[1];
-  return DP_BADGE_FOLDER + encodeURIComponent(`JRP - ${year}.png`);
-}
-
 const DP_FOLDER = "./png/JRP-Team/";
 const DP_MIN_YEAR = 2000;
 const DP_MAX_YEAR = new Date().getFullYear() + 1;
 const DP_EXTS = [".jpg"];
+const PICTURE_KARUSSEL_SRC = "/juniorenrettungspokal/picture_karussel.js";
 
 const DP_SLIDE_SETTINGS = {
   "2025": {
@@ -126,7 +118,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderShell(main);
 
   try {
-    await bootstrapDpCarousel();
+    await ensurePictureKarusselScript();
+    await window.initPictureKarussel({
+      rootSelector: "[data-wide-carousel]",
+      folder: DP_FOLDER,
+      minYear: DP_MIN_YEAR,
+      maxYear: DP_MAX_YEAR,
+      exts: DP_EXTS,
+      slideSettings: DP_SLIDE_SETTINGS,
+    });
   } catch (e) {
     console.error(e);
     main.innerHTML = `
@@ -140,7 +140,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  loadLatestDpPdfAndRenderCard();
   initDpNominationListTables();
 });
 
@@ -172,15 +171,9 @@ function renderShell(main) {
     </section>
 
     <section class="info-wrap" aria-label="Nominierungen">
-      <section class="info-section" aria-labelledby="dp-guidelines-title">
-        <h2 id="dp-guidelines-title">Aktuelle Nominierungsrichtlinien</h2>
-        <div id="dp-guidelines" class="info-links">
-          <p class="info-status">Lade Nominierungsrichtlinien…</p>
-        </div>
-      </section>
-
       <section class="info-section" aria-labelledby="dp-list-title">
         <h2 id="dp-list-title">Aktuelle Nominierungsliste</h2>
+        <p class="info-status">Die Live-Nominierungen können Fehler enthalten und sind nicht ausschlaggebend für die finale Nominierung.</p>
         <div id="dp-list" class="info-links">
           <div id="pflichtzeiten-root" class="pz-root">
             <p id="pflichtzeiten-status" class="pz-statusline">Lade Pflichtzeiten aus Excel …</p>
@@ -191,489 +184,31 @@ function renderShell(main) {
   `;
 }
 
-async function bootstrapDpCarousel() {
-  const viewport = document.querySelector("[data-wide-carousel]");
-  const track = viewport?.querySelector(".wide-carousel__slides");
-  if (!viewport || !track) throw new Error("carousel_missing");
+function ensurePictureKarusselScript() {
+  if (typeof window.initPictureKarussel === "function") return Promise.resolve();
 
-  const first = await findLatestDpSlide();
-  if (!first) throw new Error("no_slides");
-
-  track.innerHTML = slideToHtml(first, true);
-
-  initWideCarousel();
-  initDpSlideLazyLoading();
-
-  loadRemainingDpSlides(first.year - 1).catch(console.error);
-}
-
-function buildSlideObj(year, imgUrl) {
-  const key = String(year);
-  const cfg = DP_SLIDE_SETTINGS[key] || {};
-  return {
-    year,
-    title: cfg.title ?? `Junioren Rettungspokal ${year}`,
-    text: cfg.text ?? "",
-    img: imgUrl,
-    cta: cfg.cta ?? null,
-    bgPos: cfg.bgPos ?? "center center",
-    h: cfg.h ?? null,
-    textPos: cfg.textPos ?? "bottom",
-    textAlign: cfg.textAlign ?? "center",
-    contentBottom: cfg.contentBottom ?? null,
-  };
-}
-
-async function findLatestDpSlide() {
-  for (let year = DP_MAX_YEAR; year >= DP_MIN_YEAR; year--) {
-    const imgUrl = await firstExistingUrl(DP_FOLDER, year, DP_EXTS);
-    if (!imgUrl) continue;
-    return buildSlideObj(year, imgUrl);
-  }
-  return null;
-}
-
-async function loadRemainingDpSlides(startYear) {
-  const viewport = document.querySelector("[data-wide-carousel]");
-  const track = viewport?.querySelector(".wide-carousel__slides");
-  if (!track) return;
-
-  for (let year = startYear; year >= DP_MIN_YEAR; year--) {
-    const imgUrl = await firstExistingUrl(DP_FOLDER, year, DP_EXTS);
-    if (imgUrl) {
-      const s = buildSlideObj(year, imgUrl);
-      track.insertAdjacentHTML("beforeend", slideToHtml(s, false));
-      viewport.dispatchEvent(new CustomEvent("dp-slides-updated"));
-    }
-    await sleep(25);
-  }
-}
-
-function slideToHtml(s, eager) {
-  const justify = s.textPos === "top" ? "flex-start" : s.textPos === "center" ? "center" : "flex-end";
-  const contentBottomVar = s.contentBottom ? String(s.contentBottom) : "";
-  const badge = dpBadgeUrlFromSlideImg(s.img);
-
-  const baseStyle = `
-    background-position:${s.bgPos || "center center"};
-    background-size:cover;
-    background-repeat:no-repeat;
-    --dp-justify:${justify};
-    --dp-text-align:${s.textAlign || "center"};
-    ${contentBottomVar ? `--content-bottom:${contentBottomVar};` : ""}
-  `.trim();
-
-  const bgStyle = eager ? `background-image:url('${s.img}');` : `background:#111;`;
-  const dataBg = eager ? "" : `data-bg="${s.img}"`;
-
-  return `
-    <article
-      class="wide-carousel__slide ${eager ? "wide-carousel__slide--center" : ""}"
-      style="${bgStyle} ${baseStyle}"
-      ${s.h ? `data-h="${s.h}"` : ""}
-      ${dataBg}
-      role="group"
-      aria-roledescription="Folie"
-    >
-      ${
-        badge
-          ? `<img class="wide-carousel__badge" src="${badge}" alt="" loading="lazy" decoding="async">`
-          : ``
-      }
-      <div class="wide-carousel__content">
-        <h2>${escapeHtml(s.title)}</h2>
-        ${s.text ? `<p>${escapeHtml(s.text)}</p>` : ``}
-        ${s.cta ? `<a class="wide-carousel__cta" href="${s.cta.href}">${escapeHtml(s.cta.label)}</a>` : ``}
-      </div>
-    </article>
-  `;
-}
-
-function initWideCarousel() {
-  const root = document.querySelector("[data-wide-carousel]");
-  if (!root) return;
-
-  const track = root.querySelector(".wide-carousel__slides");
-  const prevBtn = root.querySelector(".wide-carousel__arrow--prev");
-  const nextBtn = root.querySelector(".wide-carousel__arrow--next");
-
-  let index = 0;
-  let autoTimer = null;
-
-  const getSlides = () => Array.from(root.querySelectorAll(".wide-carousel__slide"));
-  const getCount = () => getSlides().length;
-
-  const startAuto = () => {
-    stopAuto();
-    if (getCount() <= 1) return;
-    autoTimer = setInterval(() => goTo(index + 1), 10000);
-  };
-
-  const stopAuto = () => {
-    if (autoTimer) clearInterval(autoTimer);
-    autoTimer = null;
-  };
-
-  const readPxVar = (name, fallback) => {
-    const v = getComputedStyle(root).getPropertyValue(name).trim();
-    const num = parseFloat(v);
-    return Number.isFinite(num) ? num : fallback;
-  };
-
-  const fitHeight = () => {
-    const slides = getSlides();
-    const active = slides[index];
-    if (!active) return;
-
-    const fixedH = parseFloat(active.dataset.h);
-    if (Number.isFinite(fixedH)) {
-      root.style.height = `${fixedH}px`;
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[data-picture-karussel="${PICTURE_KARUSSEL_SRC}"]`);
+    if (existing) {
+      existing.addEventListener("load", () => {
+        if (typeof window.initPictureKarussel === "function") resolve();
+        else reject(new Error("picture_karussel_init_missing"));
+      });
+      existing.addEventListener("error", () => reject(new Error("picture_karussel_load_failed")));
       return;
     }
 
-    const content = active.querySelector(".wide-carousel__content");
-    if (!content) return;
-
-    requestAnimationFrame(() => {
-      const minH = readPxVar("--wide-min-h", 260);
-      const maxH = readPxVar("--wide-max-h", 560);
-      const desired = content.scrollHeight;
-      const h = Math.max(minH, Math.min(maxH, desired));
-      root.style.height = `${h}px`;
-    });
-  };
-
-  const update = () => {
-    const slides = getSlides();
-    const count = slides.length;
-    if (!count) return;
-
-    track.style.transform = `translate3d(${-index * 100}%, 0, 0)`;
-
-    slides.forEach((s, i) => {
-      s.classList.toggle("wide-carousel__slide--center", i === index);
-      s.setAttribute("aria-label", `${i + 1} von ${count}`);
-    });
-
-    const many = count > 1;
-    if (prevBtn) prevBtn.style.display = many ? "" : "none";
-    if (nextBtn) nextBtn.style.display = many ? "" : "none";
-
-    fitHeight();
-    root.dispatchEvent(new CustomEvent("dp-slide-change", { detail: { index } }));
-  };
-
-  const goTo = (i) => {
-    const count = getCount();
-    if (!count) return;
-    index = (i + count) % count;
-    update();
-    startAuto();
-  };
-
-  prevBtn?.addEventListener("click", () => goTo(index - 1));
-  nextBtn?.addEventListener("click", () => goTo(index + 1));
-
-  root.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      goTo(index - 1);
-    } else if (e.key === "ArrowRight") {
-      e.preventDefault();
-      goTo(index + 1);
-    }
-  });
-
-  let resizeTimer;
-  window.addEventListener("resize", () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(fitHeight, 80);
-  });
-
-  root.addEventListener("mouseenter", stopAuto);
-  root.addEventListener("mouseleave", startAuto);
-  root.addEventListener("focusin", stopAuto);
-  root.addEventListener("focusout", startAuto);
-
-  root.addEventListener("dp-slides-updated", () => {
-    const count = getCount();
-    if (index >= count) index = Math.max(0, count - 1);
-    update();
-    startAuto();
-  });
-
-  startAuto();
-  update();
-}
-
-function initDpSlideLazyLoading() {
-  const viewport = document.querySelector("[data-wide-carousel]");
-  const track = viewport?.querySelector(".wide-carousel__slides");
-  if (!viewport || !track) return;
-
-  const ensureLoaded = (slide) => {
-    const url = slide?.dataset?.bg;
-    if (!url) return;
-
-    slide.dataset.bg = "";
-
-    const img = new Image();
-    img.decoding = "async";
-    img.onload = () => {
-      slide.style.backgroundImage = `url('${url}')`;
+    const script = document.createElement("script");
+    script.src = PICTURE_KARUSSEL_SRC;
+    script.defer = true;
+    script.dataset.pictureKarussel = PICTURE_KARUSSEL_SRC;
+    script.onload = () => {
+      if (typeof window.initPictureKarussel === "function") resolve();
+      else reject(new Error("picture_karussel_init_missing"));
     };
-    img.onerror = () => {
-      slide.style.background = "#111";
-    };
-    img.src = url;
-  };
-
-  const io = new IntersectionObserver(
-    (entries) => {
-      for (const e of entries) {
-        if (!e.isIntersecting) continue;
-        ensureLoaded(e.target);
-        io.unobserve(e.target);
-      }
-    },
-    { root: viewport, threshold: 0.35 }
-  );
-
-  const observeSlide = (el) => {
-    if (el?.classList?.contains("wide-carousel__slide") && el.dataset?.bg) io.observe(el);
-  };
-
-  track.querySelectorAll(".wide-carousel__slide").forEach(observeSlide);
-
-  const mo = new MutationObserver((muts) => {
-    for (const m of muts) {
-      for (const n of m.addedNodes) {
-        if (!(n instanceof Element)) continue;
-        if (n.classList.contains("wide-carousel__slide")) observeSlide(n);
-        n.querySelectorAll?.(".wide-carousel__slide").forEach(observeSlide);
-      }
-    }
+    script.onerror = () => reject(new Error("picture_karussel_load_failed"));
+    document.head.appendChild(script);
   });
-
-  mo.observe(track, { childList: true });
-
-  viewport.addEventListener("dp-slide-change", (ev) => {
-    const idx = ev?.detail?.index ?? 0;
-    const slides = Array.from(track.querySelectorAll(".wide-carousel__slide"));
-    if (!slides.length) return;
-
-    const cur = slides[idx];
-    const next = slides[(idx + 1) % slides.length];
-    const prev = slides[(idx - 1 + slides.length) % slides.length];
-
-    ensureLoaded(cur);
-    setTimeout(() => ensureLoaded(next), 120);
-    setTimeout(() => ensureLoaded(prev), 180);
-  });
-
-  setTimeout(() => {
-    const saveData = !!navigator.connection?.saveData;
-    if (saveData) return;
-
-    const idle = (cb) => {
-      if ("requestIdleCallback" in window) window.requestIdleCallback(cb, { timeout: 1500 });
-      else setTimeout(cb, 600);
-    };
-
-    const nextLazy = () =>
-      Array.from(track.querySelectorAll(".wide-carousel__slide")).find((s) => s.dataset?.bg);
-
-    const step = () => {
-      const s = nextLazy();
-      if (!s) return;
-      ensureLoaded(s);
-      idle(step);
-    };
-
-    idle(step);
-  }, 900);
-}
-
-async function firstExistingUrl(folder, year, exts) {
-  for (const ext of exts) {
-    const url = `${folder}${year}${ext}`;
-    if (await urlExists(url)) return url;
-  }
-  return null;
-}
-
-async function urlExists(url) {
-  try {
-    const res = await fetch(url, { method: "HEAD", cache: "no-cache" });
-    return res.ok;
-  } catch {
-    return await probeByImage(url, 3500);
-  }
-}
-
-function probeByImage(url, timeoutMs) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    let done = false;
-
-    const t = window.setTimeout(() => {
-      if (done) return;
-      done = true;
-      img.src = "";
-      resolve(false);
-    }, timeoutMs);
-
-    img.onload = () => {
-      if (done) return;
-      done = true;
-      window.clearTimeout(t);
-      resolve(true);
-    };
-
-    img.onerror = () => {
-      if (done) return;
-      done = true;
-      window.clearTimeout(t);
-      resolve(false);
-    };
-
-    img.src = url;
-  });
-}
-
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-async function loadLatestDpPdfAndRenderCard() {
-  const mount = document.getElementById("dp-guidelines");
-  if (!mount) return;
-
-  const cfg = {
-    owner: "jp-gnad",
-    repo: "Lifesaving_Baden",
-    branch: "main",
-    dirCandidates: ["nominierungsrichtlinien", "web/nominierungsrichtlinien"],
-    cacheKey: "lsb_jrp_latest_pdf_v1",
-    cacheTtlMs: 10 * 60 * 1000,
-  };
-
-  const cached = readCache(cfg.cacheKey, cfg.cacheTtlMs);
-  if (cached?.year && cached?.fileName) {
-    mount.innerHTML = renderDpPdfBriefCard(cached.year, cached.fileName);
-    return;
-  }
-
-  try {
-    const found = await fetchLatestDpPdfFromGitHub(cfg);
-    writeCache(cfg.cacheKey, found);
-    mount.innerHTML = renderDpPdfBriefCard(found.year, found.fileName);
-  } catch (e) {
-    const stale = readCache(cfg.cacheKey, Number.MAX_SAFE_INTEGER);
-    if (stale?.year && stale?.fileName) {
-      mount.innerHTML = renderDpPdfBriefCard(stale.year, stale.fileName);
-      return;
-    }
-    mount.innerHTML = `<p class="info-status info-error">Nominierungsrichtlinien konnten nicht geladen werden.</p>`;
-  }
-}
-
-async function fetchLatestDpPdfFromGitHub(cfg) {
-  let items = null;
-
-  for (const dirPath of cfg.dirCandidates) {
-    const apiUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${encodeURIComponent(
-      dirPath
-    )}?ref=${encodeURIComponent(cfg.branch)}`;
-
-    const res = await fetchWithTimeout(apiUrl, 9000, {
-      headers: { Accept: "application/vnd.github+json" },
-      cache: "no-store",
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        items = data;
-        break;
-      }
-    } else {
-      const remaining = res.headers.get("X-RateLimit-Remaining");
-      if (res.status === 403 && remaining === "0") throw new Error("rate_limit");
-    }
-  }
-
-  if (!items) throw new Error("no_dir");
-
-  const re = /^junioren rettungspokal\s*(?:-|–)?\s*(19\d{2}|20\d{2})\.pdf$/i;
-
-  let best = null;
-  for (const it of items) {
-    if (!it || it.type !== "file" || typeof it.name !== "string") continue;
-    const m = it.name.match(re);
-    if (!m) continue;
-    const year = parseInt(m[1], 10);
-    if (!Number.isFinite(year)) continue;
-    if (!best || year > best.year) best = { year, fileName: it.name };
-  }
-
-  if (!best) throw new Error("no_match");
-  return best;
-}
-
-async function fetchWithTimeout(url, ms, options) {
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), ms);
-  try {
-    return await fetch(url, { ...options, signal: ctrl.signal });
-  } finally {
-    clearTimeout(t);
-  }
-}
-
-function renderDpPdfBriefCard(year, fileName) {
-  const href = `../nominierungsrichtlinien/${encodeURIComponent(fileName)}`;
-
-  return `
-    <a class="info-brief" href="${href}" target="_blank" rel="noopener noreferrer"
-       aria-label="Junioren Rettungspokal Nominierungsrichtlinien ${escapeHtml(year)} öffnen">
-      <img class="info-brief__img" src="./png/icons/brief.png" alt="" loading="lazy" decoding="async" />
-      <div class="info-brief__overlay" aria-hidden="true">
-        <div class="info-brief__t1">Junioren Rettungspokal</div>
-        <div class="info-brief__t2">Nominierungsrichtlinien ${escapeHtml(year)}</div>
-        <div class="info-brief__spacer"></div>
-        <div class="info-brief__t3">Landesverband Baden</div>
-      </div>
-    </a>
-  `;
-}
-
-function readCache(key, ttlMs) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const obj = JSON.parse(raw);
-    if (!obj || typeof obj !== "object") return null;
-    if (!obj.ts || Date.now() - obj.ts > ttlMs) return null;
-    return obj.data || null;
-  } catch {
-    return null;
-  }
-}
-
-function writeCache(key, data) {
-  try {
-    localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
-  } catch {}
-}
-
-function escapeHtml(s) {
-  return String(s)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
 }
 
 function initDpNominationListTables() {

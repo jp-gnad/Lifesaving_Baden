@@ -1,6 +1,5 @@
 /* Footer (komplett) */
 #site-footer {
-  margin-top: 3rem;
   background: #EBEBEB;
   color: #575756;
 }
@@ -65,7 +64,7 @@
 
 /* BAND (schwarz) */
 #site-footer .footer-band {
-  background: #000;
+  background: rgb(15, 15, 18);
 }
 
 #site-footer .footer-band-inner {
