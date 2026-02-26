@@ -12,10 +12,10 @@ main#content {
 .hero {
   position: relative;
   background: url("../png/hintergrund9.jpg") center/cover no-repeat;
-  background-position: center 40%;
-  height: 300px;
+  background-position: center 00%;
+  height: 500px;
   text-align: center;
-  padding-top: 125px;
+  padding-top: 325px;
   color: white;
 }
 
@@ -31,6 +31,7 @@ main#content {
   position: relative;
   font-size: 2.75em;
   z-index: 1;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .updates {
@@ -90,12 +91,12 @@ main#content {
 
 @media (max-width: 720px) {
   .hero h1 {
-    font-size: 2em;
+    font-size: 1.75em;
   }
 
   .hero {
     height: 200px;
-    padding-top: 45px;
+    padding-top: 80px;
   }
 
   .updates h2 {
