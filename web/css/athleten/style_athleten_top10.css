@@ -1,0 +1,1171 @@
+:root {
+  --ath10-dark: rgb(15, 15, 18);
+  --ath10-white: rgb(255, 255, 255);
+  --ath10-yellow: rgb(255, 237, 0);
+  --ath10-red: rgb(227, 6, 19);
+  --ath10-gold: #FDD374;
+  --ath10-silver: #DDDEDE;
+  --ath10-bronze: #C7B78E;
+  --ath10-text: rgb(87, 87, 86);
+  --ath10-text-2: rgba(87, 87, 86, 0.78);
+  --ath10-text-3: rgba(87, 87, 86, 0.54);
+  --ath10-line: rgba(87, 87, 86, 0.14);
+  --ath10-line-strong: rgba(87, 87, 86, 0.22);
+  --ath10-shadow-sm: 0 1px 3px rgba(15, 15, 18, 0.04);
+  --ath10-shadow-md: 0 3px 10px rgba(15, 15, 18, 0.05);
+  --ath10-radius-sm: 8px;
+  --ath10-radius-md: 12px;
+  --ath10-radius-lg: 16px;
+  --ath10-radius-xl: 12px;
+}
+
+.ath10-root {
+  color: var(--ath10-text);
+  width: min(100%, 980px);
+  margin: 0 auto;
+}
+
+.ath10-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 78px;
+  padding: 12px 14px;
+  border-radius: var(--ath10-radius-lg);
+  border: 1px solid rgba(87, 87, 86, 0.1);
+  background: var(--ath10-white);
+  box-shadow: none;
+  color: var(--ath10-text-2);
+  font-size: 0.93rem;
+  text-align: center;
+}
+
+.ath10-status--error {
+  border-color: rgba(227, 6, 19, 0.12);
+  background: rgba(227, 6, 19, 0.02);
+}
+
+.ath10-shell {
+  display: grid;
+  gap: 12px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.ath10-header {
+  display: grid;
+  gap: 10px;
+}
+
+.ath10-header-text {
+  display: grid;
+  gap: 3px;
+}
+
+.ath10-kicker {
+  font-size: 1.0rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ath10-red);
+  text-align: center;
+  margin-top: 20px;
+}
+
+.ath10-title {
+  margin: 0;
+  font-size: clamp(1.5rem, 1.3vw + 0.95rem, 2.45rem);
+  line-height: 1.15;
+  font-weight: 750;
+  color: var(--ath10-red);
+  letter-spacing: -0.01em;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.ath10-subtitle {
+  margin: 0;
+  color: var(--ath10-text-2);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.ath10-toolbar {
+  display: grid;
+  gap: 8px;
+}
+
+.ath10-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(87, 87, 86, 0.18) transparent;
+}
+
+.ath10-tabs::-webkit-scrollbar {
+  height: 7px;
+}
+
+.ath10-tabs::-webkit-scrollbar-thumb {
+  background: rgba(87, 87, 86, 0.16);
+  border-radius: 999px;
+}
+
+.ath10-tab {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--ath10-text-2);
+  border-radius: 999px;
+  height: 34px;
+  padding: 0 10px;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: none;
+  transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
+}
+
+.ath10-tab:hover {
+  background: rgba(87, 87, 86, 0.04);
+  color: var(--ath10-text);
+}
+
+.ath10-tab:focus-visible {
+  outline: none;
+  outline: 1px solid rgba(87, 87, 86, 0.2);
+  outline-offset: 0;
+}
+
+.ath10-tab.is-active {
+  color: var(--ath10-text);
+  background: rgba(255, 237, 0, 0.5);
+}
+
+.ath10-select-wrap {
+  display: none;
+}
+
+.ath10-select {
+  width: 100%;
+  appearance: none;
+  border: 1px solid rgba(87, 87, 86, 0.16);
+  border-radius: 10px;
+  background: var(--ath10-white);
+  color: var(--ath10-text);
+  height: 38px;
+  padding: 0 34px 0 11px;
+  cursor: pointer;
+  box-shadow: none;
+  background-image: linear-gradient(45deg, transparent 50%, rgba(87, 87, 86, 0.68) 50%), linear-gradient(135deg, rgba(87, 87, 86, 0.68) 50%, transparent 50%);
+  background-position: calc(100% - 15px) 16px, calc(100% - 10px) 16px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.ath10-select:focus-visible {
+  outline: none;
+  border-color: rgba(87, 87, 86, 0.32);
+}
+
+.ath10-panel {
+  border: 1px solid rgba(87, 87, 86, 0.1);
+  border-radius: var(--ath10-radius-xl);
+  background: var(--ath10-white);
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.ath10-panel-head {
+  padding-left: 14px;
+  padding-right: 14px;
+  padding-top: 16px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid rgba(87, 87, 86, 0.08);
+  background: var(--ath10-white);
+}
+
+.ath10-panel-kicker {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ath10-text-3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ath10-panel-title {
+  margin: 2px 0 0;
+  font-size: 1rem;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--ath10-text);
+  letter-spacing: -0.01em;
+}
+
+.ath10-podium-section {
+  padding: 12px 14px 8px;
+}
+
+.ath10-podium-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 8px;
+}
+
+.ath10-podium-slot {
+  display: grid;
+  align-content: end;
+  min-width: 0;
+}
+
+.ath10-podium-slot--pos2 {
+  order: 1;
+}
+
+.ath10-podium-slot--pos1 {
+  order: 2;
+}
+
+.ath10-podium-slot--pos3 {
+  order: 3;
+}
+
+.ath10-podium-card {
+  display: grid;
+  gap: 7px;
+  padding: 8px;
+  border-radius: 8px 8px 0 0;
+  border: none;
+  background: rgba(87, 87, 86, 0.015);
+  box-shadow: none;
+  min-width: 0;
+}
+
+.ath10-podium-card[role="button"] {
+  cursor: pointer;
+  transition: background-color 20ms ease, border-color 20ms ease;
+}
+
+.ath10-podium-card[role="button"]:hover {
+  background: rgba(87, 87, 86, 0.05);
+}
+
+.ath10-podium-card[role="button"]:focus-visible {
+  outline: 1px solid rgba(87, 87, 86, 0.2);
+  outline-offset: 0;
+}
+
+.ath10-podium-card--place1 {
+  border-top: 4px solid rgba(253, 211, 116, 0.85);
+}
+
+.ath10-podium-card--place2 {
+  border-top: 4px solid rgba(221, 222, 222, 1);
+}
+
+.ath10-podium-card--place3 {
+  border-top: 4px solid rgba(199, 183, 142, 0.9);
+}
+
+.ath10-podium-card--placeX {
+  border-top: 4px solid rgba(87, 87, 86, 0.1);
+}
+
+.ath10-podium-card--empty {
+  min-height: 90px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ath10-podium-athlete {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  min-width: 0;
+  text-align: center;
+}
+
+.ath10-podium-meta {
+  min-width: 0;
+  width: 100%;
+}
+
+.ath10-podium-name {
+  color: var(--ath10-text);
+  font-weight: 700;
+  font-size: 0.88rem;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ath10-podium-og {
+  margin-top: 2px;
+  color: var(--ath10-text-2);
+  font-size: 0.76rem;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ath10-podium-score {
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  padding-top: 6px;
+  border-top: 1px solid rgba(87, 87, 86, 0.1);
+}
+
+.ath10-podium-rank {
+  color: var(--ath10-text-2);
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.ath10-podium-score-value {
+  color: var(--ath10-text);
+  font-size: 0.94rem;
+  font-weight: 700;
+}
+
+.ath10-podium-score-label {
+  color: var(--ath10-text-3);
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ath10-podium-base {
+  position: relative;
+  border-radius: 0 0 4px 4%;
+  border: none;
+  background: var(--ath10-white);
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.ath10-podium-base::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 5px;
+  background: rgba(87, 87, 86, 0.08);
+}
+
+.ath10-podium-base--place1 {
+  min-height: 74px;
+  background: rgba(253, 211, 116, 0.8);
+}
+
+.ath10-podium-base--place2 {
+  min-height: 58px;
+  background: rgba(221, 222, 222, 0.8);
+}
+
+.ath10-podium-base--place3 {
+  min-height: 46px;
+  background: rgba(199, 183, 142, 0.8);
+}
+
+.ath10-podium-base--placeX {
+  min-height: 42px;
+  background: rgba(87, 87, 86, 0.8);
+}
+
+.ath10-podium-base-rank {
+  position: absolute;
+  inset: auto 0 7px 0;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.86rem;
+  color: var(--ath10-text);
+}
+
+.ath10-podium-slot.is-empty .ath10-podium-base {
+  opacity: 0;
+}
+
+.ath10-cap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  overflow: hidden;
+  border: none;
+  background: rgba(87, 87, 86, 0.03);
+  box-shadow: none;
+}
+
+.ath10-cap--md {
+  width: 34px;
+  height: 34px;
+}
+
+.ath10-cap--lg {
+  width: 40px;
+  height: 40px;
+}
+
+.ath10-cap-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ath10-rest-section {
+  padding: 8px 14px 14px;
+}
+
+.ath10-rest-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.ath10-rest-title {
+  color: var(--ath10-text);
+  font-weight: 700;
+  font-size: 0.93rem;
+}
+
+.ath10-table-wrap {
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ath10-table {
+  width: 100%;
+  border: none;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  background: transparent;
+}
+
+.ath10-th {
+  height: 40px;
+  padding: 9px 11px;
+  text-align: left;
+  font-size: 0.73rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: rgba(87, 87, 86, 0.56);
+  background: transparent;
+  border-bottom: 1px solid rgba(87, 87, 86, 0.1);
+}
+
+.ath10-th-rank {
+  width: 56px;
+  padding-right: 6px;
+}
+
+.ath10-td-rank {
+  width: 56px;
+  padding-right: 6px;
+  white-space: nowrap;
+}
+
+.ath10-th-value {
+  width: 118px;
+  text-align: right;
+}
+
+.ath10-td-value {
+  text-align: right;
+}
+
+.ath10-td-athlete,
+.ath10-th-athlete {
+  min-width: 0;
+}
+
+.ath10-row {
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.ath10-row:hover {
+  background: rgba(87, 87, 86, 0.05);
+}
+
+.ath10-row:focus-visible {
+  outline: none;
+  background: rgba(87, 87, 86, 0.03);
+  box-shadow: inset 2px 0 0 rgba(227, 6, 19, 0.25);
+}
+
+.ath10-row:not(:last-child) .ath10-td {
+  border-bottom: 1px solid rgba(87, 87, 86, 0.07);
+}
+
+.ath10-td {
+  padding: 10px 11px;
+  vertical-align: middle;
+}
+
+.ath10-rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: rgb(87, 87, 86);
+  border-radius: 0;
+  box-shadow: none;
+  font-weight: 700;
+  font-size: 0.84rem;
+  line-height: 1.2;
+}
+
+.ath10-athlete {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.ath10-athlete-meta {
+  min-width: 0;
+}
+
+.ath10-athlete-name {
+  color: var(--ath10-text);
+  font-weight: 650;
+  font-size: 0.91rem;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ath10-athlete-og {
+  margin-top: 3px;
+  color: var(--ath10-text-2);
+  font-size: 0.79rem;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ath10-value-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: auto;
+  min-width: 0;
+  padding: 0;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  color: rgb(87, 87, 86);
+  font-weight: 700;
+  font-size: 0.88rem;
+  box-shadow: none;
+}
+
+.ath10-row:hover .ath10-value-pill,
+.ath10-row:focus-visible .ath10-value-pill {
+  border: none;
+  background: transparent;
+}
+
+.ath10-note {
+  border: none;
+  border-left: 2px solid rgba(227, 6, 19, 0.18);
+  border-radius: 0;
+  background: rgba(227, 6, 19, 0.02);
+  padding: 10px 12px;
+  box-shadow: none;
+}
+
+.ath10-note-title {
+  color: var(--ath10-text);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.ath10-note-text {
+  color: var(--ath10-text-2);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 760px) {
+  .ath10-tabs {
+    display: none;
+  }
+
+  .ath10-select-wrap {
+    display: block;
+  }
+
+  .ath10-subtitle {
+    font-size: 0.86rem;
+  }
+
+  .ath10-podium-grid {
+    gap: 6px;
+  }
+
+  .ath10-podium-card {
+    padding: 7px;
+    gap: 6px;
+  }
+
+  .ath10-podium-name {
+    font-size: 0.8rem;
+  }
+
+  .ath10-podium-og {
+    font-size: 0.7rem;
+  }
+
+  .ath10-podium-rank {
+    font-size: 0.68rem;
+  }
+
+  .ath10-podium-score-value {
+    font-size: 0.86rem;
+  }
+
+  .ath10-podium-score-label {
+    font-size: 0.64rem;
+  }
+
+  .ath10-podium-base--place1 {
+    min-height: 60px;
+  }
+
+  .ath10-podium-base--place2 {
+    min-height: 48px;
+  }
+
+  .ath10-podium-base--place3 {
+    min-height: 38px;
+  }
+
+  .ath10-podium-base--placeX {
+    min-height: 34px;
+  }
+
+  .ath10-th-rank,
+  .ath10-td-rank {
+    width: 50px;
+  }
+
+  .ath10-th-value {
+    width: 100px;
+  }
+
+  .ath10-cap--md {
+    width: 30px;
+    height: 30px;
+  }
+
+  .ath10-cap--lg {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+@media (max-width: 520px) {
+  .ath10-panel {
+    border-radius: 14px;
+  }
+
+  .ath10-panel-head {
+    padding: 10px 11px;
+  }
+
+  .ath10-podium-section {
+    padding: 10px 11px 6px;
+  }
+
+  .ath10-rest-section {
+    padding: 6px 11px 11px;
+  }
+
+  .ath10-podium-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .ath10-podium-card {
+    padding: 5px;
+    border-radius: 10px;
+  }
+
+  .ath10-podium-athlete {
+    gap: 5px;
+  }
+
+  .ath10-podium-name {
+    font-size: 0.74rem;
+  }
+
+  .ath10-podium-og {
+    font-size: 0.64rem;
+    margin-top: 1px;
+  }
+
+  .ath10-podium-score {
+    gap: 1px;
+    padding-top: 5px;
+  }
+
+  .ath10-podium-rank {
+    font-size: 0.62rem;
+  }
+
+  .ath10-podium-score-value {
+    font-size: 0.78rem;
+  }
+
+  .ath10-podium-score-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.02em;
+  }
+
+  .ath10-podium-base--place1 {
+    min-height: 46px;
+  }
+
+  .ath10-podium-base--place2 {
+    min-height: 36px;
+  }
+
+  .ath10-podium-base--place3 {
+    min-height: 29px;
+  }
+
+  .ath10-podium-base--placeX {
+    min-height: 26px;
+  }
+
+  .ath10-podium-base-rank {
+    bottom: 5px;
+    font-size: 0.74rem;
+  }
+
+  .ath10-th,
+  .ath10-td {
+    padding-left: 9px;
+    padding-right: 9px;
+  }
+
+  .ath10-th-rank,
+  .ath10-td-rank {
+    width: 46px;
+    padding-right: 4px;
+  }
+
+  .ath10-th-value {
+    width: 92px;
+  }
+
+  .ath10-th {
+    font-size: 0.69rem;
+  }
+
+  .ath10-athlete-name {
+    font-size: 0.86rem;
+  }
+
+  .ath10-athlete-og {
+    font-size: 0.75rem;
+  }
+
+  .ath10-value-pill {
+    font-size: 0.82rem;
+  }
+
+  .ath10-rank-badge {
+    font-size: 0.78rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ath10-tab,
+  .ath10-row,
+  .ath10-podium-card {
+    transition: none;
+  }
+}
+
+.ath10-th-value,
+.ath10-td-value {
+  width: 60px;
+  max-width: 60px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ath10-select-wrap--panel { display: block; }
+
+
+.ath10-panel-head {
+  display: block;
+}
+
+.ath10-panel-title-wrap {
+  display: grid;
+  gap: 8px;
+}
+
+.ath10-panel-tabs-wrap .ath10-toolbar {
+  display: block;
+  gap: 0;
+}
+
+.ath10-panel-tabs-wrap .ath10-tabs {
+  display: flex;
+}
+
+.ath10-select-wrap--panel {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .ath10-panel-tabs-wrap .ath10-tabs {
+    display: none;
+  }
+
+  .ath10-select-wrap--panel {
+    display: block;
+  }
+}
+
+.ath10-podium-card--place1 .ath10-podium-name {
+  font-size: 1.1rem;
+  font-weight: 750;
+}
+
+.ath10-podium-card--place1 .ath10-podium-score-value {
+  font-size: 1.25rem;
+  font-weight: 750;
+}
+
+@media (max-width: 520px) {
+  .ath10-podium-card--place1 .ath10-podium-name {
+    font-size: 0.80rem;
+  }
+
+  .ath10-podium-card--place1 .ath10-podium-score-value {
+    font-size: 0.84rem;
+  }
+}
+/*
+@media (prefers-color-scheme: dark) {
+  .ath10-root {
+    --ath10-text: rgba(255, 255, 255, 0.88);
+    --ath10-text-2: rgba(255, 255, 255, 0.72);
+    --ath10-text-3: rgba(255, 255, 255, 0.52);
+    --ath10-line: rgba(255, 255, 255, 0.10);
+    --ath10-line-strong: rgba(255, 255, 255, 0.18);
+  }
+
+  .ath10-root,
+  .ath10-shell {
+    color: var(--ath10-text);
+  }
+
+  .ath10-panel,
+  .ath10-status,
+  .ath10-note {
+    background: rgb(15, 15, 18);
+  }
+
+  .ath10-panel {
+    border-color: rgba(255, 255, 255, 0.10);
+  }
+
+  .ath10-panel-head {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .ath10-status {
+    border-color: rgba(255, 255, 255, 0.10);
+    color: var(--ath10-text-2);
+  }
+
+  .ath10-status--error {
+    border-color: rgba(227, 6, 19, 0.25);
+    background: rgba(227, 6, 19, 0.08);
+  }
+
+  .ath10-tab {
+    color: var(--ath10-text-2);
+  }
+
+  .ath10-tab:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--ath10-text);
+  }
+
+  .ath10-tab.is-active {
+    background: rgba(255, 237, 0, 0.12);
+    color: var(--ath10-text);
+  }
+
+  .ath10-select {
+    background: rgb(22, 22, 26);
+    border-color: rgba(255, 255, 255, 0.16);
+    color: var(--ath10-text);
+    background-image:
+      linear-gradient(45deg, transparent 50%, rgba(255,255,255,0.70) 50%),
+      linear-gradient(135deg, rgba(255,255,255,0.70) 50%, transparent 50%);
+  }
+
+  .ath10-kicker,
+  .ath10-panel-kicker,
+  .ath10-note-title {
+    color: var(--ath10-text-3);
+  }
+
+  .ath10-subtitle,
+  .ath10-note-text {
+    color: var(--ath10-text-2);
+  }
+
+  .ath10-podium-card {
+    background: rgb(22, 22, 26);
+  }
+
+  .ath10-podium-card[role="button"]:hover {
+    background: rgb(28, 28, 33);
+  }
+
+  .ath10-podium-score {
+    border-top-color: rgba(255, 255, 255, 0.10);
+  }
+
+  .ath10-podium-name,
+  .ath10-podium-score-value,
+  .ath10-podium-base-rank,
+  .ath10-athlete-name,
+  .ath10-value-pill,
+  .ath10-rank-badge {
+    color: var(--ath10-text);
+  }
+
+  .ath10-podium-og,
+  .ath10-athlete-og {
+    color: var(--ath10-text-2);
+  }
+
+  .ath10-podium-base {
+    background: rgb(15, 15, 18);
+  }
+
+  .ath10-podium-base::before {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .ath10-podium-base--place1 {
+    background: rgba(253, 211, 116, 0.8);
+  }
+  .ath10-podium-base--place2 {
+    background: rgba(221, 222, 222, 0.8);
+  }
+  .ath10-podium-base--place3 {
+    background: rgba(199, 183, 142, 0.8);
+  }
+  .ath10-podium-base--placeX {
+    background: rgba(255, 255, 255, 0.8);
+  }
+
+  .ath10-cap {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .ath10-th {
+    color: var(--ath10-text-3);
+    border-bottom-color: rgba(255, 255, 255, 0.10);
+  }
+
+  .ath10-row:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .ath10-row:not(:last-child) .ath10-td {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .ath10-row:focus-visible {
+    background: rgba(255, 255, 255, 0.07);
+    box-shadow: inset 2px 0 0 rgba(227, 6, 19, 0.35);
+  }
+
+  .ath10-note {
+    border-left-color: rgba(227, 6, 19, 0.28);
+    background: rgba(227, 6, 19, 0.06);
+  }
+}
+
+.ath10-root.theme-dark {
+  --ath10-text: rgba(255, 255, 255, 0.88);
+  --ath10-text-2: rgba(255, 255, 255, 0.72);
+  --ath10-text-3: rgba(255, 255, 255, 0.52);
+  --ath10-line: rgba(255, 255, 255, 0.10);
+  --ath10-line-strong: rgba(255, 255, 255, 0.18);
+}
+
+.ath10-root.theme-dark,
+.ath10-root.theme-dark .ath10-shell {
+  color: var(--ath10-text);
+}
+
+.ath10-root.theme-dark .ath10-panel,
+.ath10-root.theme-dark .ath10-status,
+.ath10-root.theme-dark .ath10-note {
+  background: rgb(15, 15, 18);
+}
+
+.ath10-root.theme-dark .ath10-panel {
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+.ath10-root.theme-dark .ath10-panel-head {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.ath10-root.theme-dark .ath10-status {
+  border-color: rgba(255, 255, 255, 0.10);
+  color: var(--ath10-text-2);
+}
+
+.ath10-root.theme-dark .ath10-status--error {
+  border-color: rgba(227, 6, 19, 0.25);
+  background: rgba(227, 6, 19, 0.08);
+}
+
+.ath10-root.theme-dark .ath10-tab {
+  color: var(--ath10-text-2);
+}
+
+.ath10-root.theme-dark .ath10-tab:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ath10-text);
+}
+
+.ath10-root.theme-dark .ath10-tab.is-active {
+  background: rgba(255, 237, 0, 0.12);
+  color: var(--ath10-text);
+}
+
+.ath10-root.theme-dark .ath10-select {
+  background: rgb(22, 22, 26);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: var(--ath10-text);
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(255,255,255,0.70) 50%),
+    linear-gradient(135deg, rgba(255,255,255,0.70) 50%, transparent 50%);
+}
+
+.ath10-root.theme-dark .ath10-kicker,
+.ath10-root.theme-dark .ath10-panel-kicker,
+.ath10-root.theme-dark .ath10-note-title {
+  color: var(--ath10-text-3);
+}
+
+.ath10-root.theme-dark .ath10-subtitle,
+.ath10-root.theme-dark .ath10-note-text {
+  color: var(--ath10-text-2);
+}
+
+.ath10-root.theme-dark .ath10-podium-card {
+  background: rgb(22, 22, 26);
+}
+
+.ath10-root.theme-dark .ath10-podium-card[role="button"]:hover {
+  background: rgb(28, 28, 33);
+}
+
+.ath10-root.theme-dark .ath10-podium-score {
+  border-top-color: rgba(255, 255, 255, 0.10);
+}
+
+.ath10-root.theme-dark .ath10-podium-name,
+.ath10-root.theme-dark .ath10-podium-score-value,
+.ath10-root.theme-dark .ath10-podium-base-rank,
+.ath10-root.theme-dark .ath10-athlete-name,
+.ath10-root.theme-dark .ath10-value-pill,
+.ath10-root.theme-dark .ath10-rank-badge {
+  color: var(--ath10-text);
+}
+
+.ath10-root.theme-dark .ath10-podium-og,
+.ath10-root.theme-dark .ath10-athlete-og {
+  color: var(--ath10-text-2);
+}
+
+.ath10-root.theme-dark .ath10-podium-base {
+  background: rgb(15, 15, 18);
+}
+
+.ath10-root.theme-dark .ath10-podium-base::before {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ath10-root.theme-dark .ath10-podium-base--place1 {
+  background: rgba(253, 211, 116, 0.14);
+}
+.ath10-root.theme-dark .ath10-podium-base--place2 {
+  background: rgba(221, 222, 222, 0.10);
+}
+.ath10-root.theme-dark .ath10-podium-base--place3 {
+  background: rgba(199, 183, 142, 0.12);
+}
+.ath10-root.theme-dark .ath10-podium-base--placeX {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ath10-root.theme-dark .ath10-cap {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ath10-root.theme-dark .ath10-th {
+  color: var(--ath10-text-3);
+  border-bottom-color: rgba(255, 255, 255, 0.10);
+}
+
+.ath10-root.theme-dark .ath10-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ath10-root.theme-dark .ath10-row:not(:last-child) .ath10-td {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.ath10-root.theme-dark .ath10-row:focus-visible {
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 2px 0 0 rgba(227, 6, 19, 0.35);
+}
+
+.ath10-root.theme-dark .ath10-note {
+  border-left-color: rgba(227, 6, 19, 0.28);
+  background: rgba(227, 6, 19, 0.06);
+}
+
+*/
