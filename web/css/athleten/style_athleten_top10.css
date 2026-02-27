@@ -63,7 +63,7 @@
 }
 
 .ath10-kicker {
-  font-size: 1.0rem;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -184,6 +184,7 @@
   padding-bottom: 30px;
   border-bottom: 1px solid rgba(87, 87, 86, 0.08);
   background: var(--ath10-white);
+  display: block;
 }
 
 .ath10-panel-kicker {
@@ -201,6 +202,24 @@
   font-weight: 700;
   color: var(--ath10-text);
   letter-spacing: -0.01em;
+}
+
+.ath10-panel-title-wrap {
+  display: grid;
+  gap: 8px;
+}
+
+.ath10-panel-tabs-wrap .ath10-toolbar {
+  display: block;
+  gap: 0;
+}
+
+.ath10-panel-tabs-wrap .ath10-tabs {
+  display: flex;
+}
+
+.ath10-select-wrap--panel {
+  display: none;
 }
 
 .ath10-podium-section {
@@ -222,14 +241,41 @@
 
 .ath10-podium-slot--pos2 {
   order: 1;
+  border-radius: 8px 8px 4px 4px;
 }
 
 .ath10-podium-slot--pos1 {
   order: 2;
+  border-radius: 8px 8px 4px 4px;
 }
 
 .ath10-podium-slot--pos3 {
   order: 3;
+  border-radius: 8px 8px 4px 4px;
+}
+
+.ath10-podium-slot:has(.ath10-podium-card--place1) {
+  background-color: color-mix(in srgb, var(--ath10-gold) 25%, transparent);
+  border-radius: 8px 8px 4px 4px;
+}
+
+.ath10-podium-slot:has(.ath10-podium-card--place2) {
+  background-color: color-mix(in srgb, var(--ath10-silver) 25%, transparent);
+  border-radius: 8px 8px 4px 4px;
+}
+
+.ath10-podium-slot:has(.ath10-podium-card--place3) {
+  background-color: color-mix(in srgb, var(--ath10-bronze) 25%, transparent);
+  border-radius: 8px 8px 4px 4px;
+}
+
+.ath10-podium-slot:has(.ath10-podium-card--placeX) {
+  background-color: rgba(87, 87, 86, 0.03);
+  border-radius: 8px 8px 4px 4px;
+}
+
+.ath10-podium-slot.is-empty {
+  background-color: transparent;
 }
 
 .ath10-podium-card {
@@ -277,6 +323,18 @@
   min-height: 90px;
   opacity: 0;
   pointer-events: none;
+}
+
+.ath10-podium-medal-icon-wrap {
+  display: flex;
+  justify-content: left;
+  margin-bottom: -8px;
+}
+
+.ath10-podium-medal-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 .ath10-podium-athlete {
@@ -359,17 +417,17 @@
 }
 
 .ath10-podium-base--place1 {
-  min-height: 74px;
+  min-height: 70px;
   background: rgba(253, 211, 116, 0.8);
 }
 
 .ath10-podium-base--place2 {
-  min-height: 58px;
+  min-height: 50px;
   background: rgba(221, 222, 222, 0.8);
 }
 
 .ath10-podium-base--place3 {
-  min-height: 46px;
+  min-height: 35px;
   background: rgba(199, 183, 142, 0.8);
 }
 
@@ -478,13 +536,12 @@
   white-space: nowrap;
 }
 
-.ath10-th-value {
-  width: 118px;
-  text-align: right;
-}
-
+.ath10-th-value,
 .ath10-td-value {
+  width: 60px;
+  max-width: 60px;
   text-align: right;
+  white-space: nowrap;
 }
 
 .ath10-td-athlete,
@@ -611,7 +668,23 @@
   line-height: 1.4;
 }
 
+.ath10-podium-card--place1 .ath10-podium-name {
+  font-size: 1.1rem;
+  font-weight: 750;
+}
+
+.ath10-podium-card--place1 .ath10-podium-score-value {
+  font-size: 1.25rem;
+  font-weight: 750;
+}
+
 @media (max-width: 760px) {
+  .ath10-panel {
+    border: none;
+    border-top: solid 1px rgba(87, 87, 86, 0.08);
+    border-radius: 0 !important;
+  }
+
   .ath10-tabs {
     display: none;
   }
@@ -622,6 +695,14 @@
 
   .ath10-subtitle {
     font-size: 0.86rem;
+  }
+
+  .ath10-panel-tabs-wrap .ath10-tabs {
+    display: none;
+  }
+
+  .ath10-select-wrap--panel {
+    display: block;
   }
 
   .ath10-podium-grid {
@@ -674,8 +755,10 @@
     width: 50px;
   }
 
-  .ath10-th-value {
-    width: 100px;
+  .ath10-th-value,
+  .ath10-td-value {
+    width: 60px;
+    max-width: 60px;
   }
 
   .ath10-cap--md {
@@ -699,11 +782,11 @@
   }
 
   .ath10-podium-section {
-    padding: 10px 11px 6px;
+    padding: 30px 0 6px;
   }
 
   .ath10-rest-section {
-    padding: 6px 11px 11px;
+    padding: 6px 0 11px;
   }
 
   .ath10-podium-grid {
@@ -713,7 +796,7 @@
 
   .ath10-podium-card {
     padding: 5px;
-    border-radius: 10px;
+    border-radius: 8px 8px 0 0;
   }
 
   .ath10-podium-athlete {
@@ -780,8 +863,10 @@
     padding-right: 4px;
   }
 
-  .ath10-th-value {
-    width: 92px;
+  .ath10-th-value,
+  .ath10-td-value {
+    width: 60px;
+    max-width: 60px;
   }
 
   .ath10-th {
@@ -803,6 +888,14 @@
   .ath10-rank-badge {
     font-size: 0.78rem;
   }
+
+  .ath10-podium-card--place1 .ath10-podium-name {
+    font-size: 0.8rem;
+  }
+
+  .ath10-podium-card--place1 .ath10-podium-score-value {
+    font-size: 0.84rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -813,68 +906,6 @@
   }
 }
 
-.ath10-th-value,
-.ath10-td-value {
-  width: 60px;
-  max-width: 60px;
-  text-align: right;
-  white-space: nowrap;
-}
-
-.ath10-select-wrap--panel { display: block; }
-
-
-.ath10-panel-head {
-  display: block;
-}
-
-.ath10-panel-title-wrap {
-  display: grid;
-  gap: 8px;
-}
-
-.ath10-panel-tabs-wrap .ath10-toolbar {
-  display: block;
-  gap: 0;
-}
-
-.ath10-panel-tabs-wrap .ath10-tabs {
-  display: flex;
-}
-
-.ath10-select-wrap--panel {
-  display: none;
-}
-
-@media (max-width: 760px) {
-  .ath10-panel-tabs-wrap .ath10-tabs {
-    display: none;
-  }
-
-  .ath10-select-wrap--panel {
-    display: block;
-  }
-}
-
-.ath10-podium-card--place1 .ath10-podium-name {
-  font-size: 1.1rem;
-  font-weight: 750;
-}
-
-.ath10-podium-card--place1 .ath10-podium-score-value {
-  font-size: 1.25rem;
-  font-weight: 750;
-}
-
-@media (max-width: 520px) {
-  .ath10-podium-card--place1 .ath10-podium-name {
-    font-size: 0.80rem;
-  }
-
-  .ath10-podium-card--place1 .ath10-podium-score-value {
-    font-size: 0.84rem;
-  }
-}
 /*
 @media (prefers-color-scheme: dark) {
   .ath10-root {
