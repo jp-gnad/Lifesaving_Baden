@@ -130,6 +130,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       maxYear: DP_MAX_YEAR,
       exts: DP_EXTS,
       slideSettings: DP_SLIDE_SETTINGS,
+      titleBase: "Deutschlandpokal",
     });
   } catch (e) {
     console.error(e);

@@ -13,6 +13,9 @@
       maxYear: Number.isFinite(options.maxYear) ? options.maxYear : new Date().getFullYear() + 1,
       exts: Array.isArray(options.exts) && options.exts.length ? options.exts : [".jpg"],
       slideSettings: options.slideSettings || {},
+      titleBase: typeof options.titleBase === "string" && options.titleBase.trim()
+        ? options.titleBase.trim()
+        : "Junioren Rettungspokal",
     };
 
     const first = await findLatestSlide(cfg);
@@ -26,12 +29,12 @@
     loadRemainingSlides(root, cfg, first.year - 1).catch(console.error);
   };
 
-  function buildSlideObj(year, imgUrl, slideSettings) {
+  function buildSlideObj(year, imgUrl, cfgAll) {
     const key = String(year);
-    const cfg = slideSettings[key] || {};
+    const cfg = cfgAll.slideSettings[key] || {};
     return {
       year,
-      title: cfg.title ?? `Junioren Rettungspokal ${year}`,
+      title: cfg.title ?? `${cfgAll.titleBase} ${year}`,
       text: cfg.text ?? "",
       img: imgUrl,
       cta: cfg.cta ?? null,
@@ -47,7 +50,7 @@
     for (let year = cfg.maxYear; year >= cfg.minYear; year--) {
       const imgUrl = await firstExistingUrl(cfg.folder, year, cfg.exts);
       if (!imgUrl) continue;
-      return buildSlideObj(year, imgUrl, cfg.slideSettings);
+      return buildSlideObj(year, imgUrl, cfg);
     }
     return null;
   }
@@ -59,7 +62,7 @@
     for (let year = startYear; year >= cfg.minYear; year--) {
       const imgUrl = await firstExistingUrl(cfg.folder, year, cfg.exts);
       if (imgUrl) {
-        const s = buildSlideObj(year, imgUrl, cfg.slideSettings);
+        const s = buildSlideObj(year, imgUrl, cfg);
         track.insertAdjacentHTML("beforeend", slideToHtml(s, false));
         root.dispatchEvent(new CustomEvent("dp-slides-updated"));
       }
