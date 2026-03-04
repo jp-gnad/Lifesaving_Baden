@@ -20,12 +20,14 @@
   opacity: 0;
   transition: opacity 0.6s ease;
   pointer-events: none;
+  touch-action: pan-y;
   z-index: 30;
 }
 
 .ath-search-wrap:focus-within::before,
 .ath-search-wrap.is-open::before {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .ath-search-panel {
@@ -63,7 +65,7 @@
   border: 1px solid transparent;
   border-radius: 0px;
   font-size: 1rem;
-  color: white;
+  color: rgba(255, 255, 255, 0.8);
   outline: none;
   background-color: transparent;
   max-height: 60px;
@@ -90,6 +92,8 @@
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   touch-action: pan-y;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .ath-suggest-empty {
@@ -107,7 +111,7 @@
   cursor: pointer;
   min-height: 65px;
   transition: background 0.12s ease;
-  border-bottom: 1px solid rgb(30, 30, 32);
+  border-bottom: 1px solid rgb(40, 40, 42);
   touch-action: pan-y;
 }
 
@@ -136,16 +140,18 @@
 
 .ath-suggest-name {
   font-weight: 500;
-  color: rgb(220, 220, 220);
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 700;
 }
 
 .ath-suggest-name mark {
-  background: rgba(255, 237, 0, 0.9);
-  padding: 0 0.05em;
+  color: rgba(255, 255, 255, 0.75);
+  background: transparent;
+  font-weight: 400
 }
 
 .ath-year {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: rgb(140, 140, 140);
 }
 
@@ -189,8 +195,48 @@
   inset: -1px;
   background: rgba(15, 15, 13, 0.71);
   border-radius: 999px;
-  border: 1px solid rgba(15, 15, 18, 0.7);
+  border: 1px solid rgba(15, 15, 18, 0.2);
   pointer-events: none;
+}
+
+.ath-input-wrap {
+  position: relative;
+  width: 100%;
+  flex: 1 1 auto;
+}
+
+.ath-input {
+  padding-right: 2.4rem;
+}
+
+.ath-clear-btn {
+  position: absolute;
+  top: 50%;
+  right: 0.35rem;
+  transform: translateY(-50%);
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 0;
+  z-index: 2;
+}
+
+
+.ath-clear-btn:active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.ath-clear-btn:focus-visible {
+  outline: 1px solid rgba(255, 237, 0, 0.7);
+  outline-offset: 1px;
 }
 
 @media (max-width: 720px) {
@@ -209,5 +255,17 @@
 
   .ath-suggest-item {
     min-height: 40px;
+  }
+
+  .ath-clear-btn {
+    right: 0.25rem;
+    width: 1.7rem;
+    height: 1.7rem;
+    font-size: 1.2rem;
+    margin-right: 1rem;
+  }
+
+  .ath-input {
+    padding-right: 2.1rem;
   }
 }

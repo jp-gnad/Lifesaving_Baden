@@ -37,7 +37,8 @@
     searchWrap: null,
     input: null,
     suggest: null,
-    openProfile: null
+    openProfile: null,
+    clearBtn: null
   };
 
   const normalize = (s) =>
@@ -164,6 +165,14 @@
     return s ? "DLRG " + s : "DLRG";
   }
 
+  function formatYearShort(yearRaw) {
+    const s = String(yearRaw ?? "").trim();
+    if (!s) return "";
+    const digits = s.replace(/\D/g, "");
+    if (!digits) return s;
+    return digits.slice(-2).padStart(2, "0");
+  }
+
   function renderCapAvatar(a, size = "xl", extraClass = "") {
     const wrap = h("div", { class: `ath-avatar ${size} ${extraClass}` });
 
@@ -220,6 +229,21 @@
     openProfile(hit);
   }
 
+  function updateClearButton() {
+    if (!refs.clearBtn || !refs.input) return;
+    const hasValue = String(refs.input.value || "").trim().length > 0;
+    refs.clearBtn.classList.toggle("hidden", !hasValue);
+  }
+
+  function clearSearch() {
+    if (!refs.input) return;
+    refs.input.value = "";
+    state.query = "";
+    hideSuggestions();
+    updateClearButton();
+    refs.input.focus();
+  }
+
   function setSearchOpen(isOpen) {
     refs.searchWrap?.classList.toggle("is-open", !!isOpen);
   }
@@ -228,10 +252,28 @@
     const wrap = h("div", { class: "ath-search-wrap" });
     refs.searchWrap = wrap;
 
+    let suppressBlurHideUntil = 0;
+
+    wrap.addEventListener(
+      "pointerdown",
+      (e) => {
+        const isSecondaryMouseAction =
+          e.pointerType === "mouse" &&
+          (e.button !== 0 || e.ctrlKey || e.metaKey);
+
+        if (!isSecondaryMouseAction) return;
+        if (!wrap.contains(e.target)) return;
+
+        suppressBlurHideUntil = performance.now() + 700;
+      },
+      true
+    );
+
     wrap.addEventListener("focusout", () => {
       if (IS_COARSE_POINTER) return;
 
       setTimeout(() => {
+        if (performance.now() < suppressBlurHideUntil) return;
         if (!wrap.matches(":focus-within")) {
           hideSuggestions();
         }
@@ -252,7 +294,27 @@
     });
     refs.input = input;
 
-    const searchRow = h("div", { class: "ath-ui-search", role: "search" }, input);
+    const clearBtn = h(
+      "button",
+      {
+        class: "ath-clear-btn hidden",
+        type: "button",
+        "aria-label": "Suche löschen",
+        title: "Löschen",
+        onpointerdown: (ev) => {
+          if (ev.pointerType === "mouse" && ev.button !== 0) return;
+          ev.preventDefault();
+          ev.stopPropagation();
+          clearSearch();
+        },
+      },
+      "✕"
+    );
+    refs.clearBtn = clearBtn;
+
+    const inputWrap = h("div", { class: "ath-input-wrap" }, input, clearBtn);
+
+    const searchRow = h("div", { class: "ath-ui-search", role: "search" }, inputWrap);
     const searchPanel = h("div", { class: "ath-search-panel" }, searchRow);
 
     wrap.appendChild(searchPanel);
@@ -261,56 +323,60 @@
     refs.suggest = suggest;
     wrap.appendChild(suggest);
 
-    let outsidePointerId = null;
-    let outsideStartX = 0;
-    let outsideStartY = 0;
-    let outsideStartTime = 0;
-    let outsideMoved = false;
+    let backdropPointerId = null;
+    let backdropStartX = 0;
+    let backdropStartY = 0;
+    let backdropStartTime = 0;
+    let backdropMoved = false;
 
-    document.addEventListener("pointerdown", (e) => {
-      if (wrap.contains(e.target)) return;
+    const BACKDROP_TAP_MAX_MOVE = 14;
+    const BACKDROP_TAP_MAX_DURATION = 600;
 
-      if (e.pointerType === "mouse") {
-        hideSuggestions();
-        return;
-      }
+    wrap.addEventListener("pointerdown", (e) => {
+      if (e.target !== wrap) return;
 
-      outsidePointerId = e.pointerId;
-      outsideStartX = e.clientX;
-      outsideStartY = e.clientY;
-      outsideStartTime = performance.now();
-      outsideMoved = false;
+      backdropPointerId = e.pointerId;
+      backdropStartX = e.clientX;
+      backdropStartY = e.clientY;
+      backdropStartTime = performance.now();
+      backdropMoved = false;
+
+      e.stopPropagation();
     });
 
-    document.addEventListener("pointermove", (e) => {
-      if (outsidePointerId == null || e.pointerId !== outsidePointerId) return;
+    wrap.addEventListener("pointermove", (e) => {
+      if (e.target !== wrap) return;
+      if (backdropPointerId == null || e.pointerId !== backdropPointerId) return;
 
-      const dx = e.clientX - outsideStartX;
-      const dy = e.clientY - outsideStartY;
+      const dx = e.clientX - backdropStartX;
+      const dy = e.clientY - backdropStartY;
 
-      if (Math.abs(dx) > OUTSIDE_TAP_MAX_MOVE || Math.abs(dy) > OUTSIDE_TAP_MAX_MOVE) {
-        outsideMoved = true;
+      if (Math.abs(dx) > BACKDROP_TAP_MAX_MOVE || Math.abs(dy) > BACKDROP_TAP_MAX_MOVE) {
+        backdropMoved = true;
       }
     });
 
-    document.addEventListener("pointerup", (e) => {
-      if (outsidePointerId == null || e.pointerId !== outsidePointerId) return;
+    wrap.addEventListener("pointerup", (e) => {
+      if (e.target !== wrap) return;
+      if (backdropPointerId == null || e.pointerId !== backdropPointerId) return;
 
-      const duration = performance.now() - outsideStartTime;
-      const isTap = !outsideMoved && duration <= OUTSIDE_TAP_MAX_DURATION;
+      const duration = performance.now() - backdropStartTime;
+      const isTap = !backdropMoved && duration <= BACKDROP_TAP_MAX_DURATION;
 
-      outsidePointerId = null;
+      backdropPointerId = null;
+
+      e.preventDefault();
+      e.stopPropagation();
 
       if (!isTap) return;
-      if (wrap.contains(e.target)) return;
 
       hideSuggestions();
     });
 
-    document.addEventListener("pointercancel", (e) => {
-      if (outsidePointerId == null || e.pointerId !== outsidePointerId) return;
-      outsidePointerId = null;
-      outsideMoved = false;
+    wrap.addEventListener("pointercancel", (e) => {
+      if (backdropPointerId == null || e.pointerId !== backdropPointerId) return;
+      backdropPointerId = null;
+      backdropMoved = false;
     });
 
     return wrap;
@@ -318,11 +384,13 @@
 
   function onQueryChange(e) {
     state.query = e.target.value || "";
+    updateClearButton();
     updateSuggestions();
   }
 
   function onSearchFocus(e) {
     state.query = e.target.value || "";
+    updateClearButton();
     updateSuggestions();
   }
 
@@ -420,6 +488,13 @@
 
         onpointerdown: (ev) => {
           if (ev.pointerType === "mouse") {
+            const isSecondaryLikeClick = ev.button !== 0 || ev.ctrlKey || ev.metaKey;
+
+            if (isSecondaryLikeClick) {
+              ev.stopPropagation();
+              return;
+            }
+
             ev.preventDefault();
             ev.stopPropagation();
             openProfile(a);
@@ -434,16 +509,19 @@
         },
 
         onpointermove: (ev) => {
+          if (ev.pointerType === "mouse") return;
           if (touchPointerId == null || ev.pointerId !== touchPointerId) return;
 
           const dx = ev.clientX - touchStartX;
           const dy = ev.clientY - touchStartY;
+
           if (Math.abs(dx) > TAP_MAX_MOVE || Math.abs(dy) > TAP_MAX_MOVE) {
             touchMoved = true;
           }
         },
 
         onpointerup: (ev) => {
+          if (ev.pointerType === "mouse") return;
           if (touchPointerId == null || ev.pointerId !== touchPointerId) return;
 
           const duration = performance.now() - touchStartTime;
@@ -461,6 +539,14 @@
         onpointercancel: () => {
           touchPointerId = null;
           touchMoved = false;
+        },
+
+        onauxclick: (ev) => {
+          ev.stopPropagation();
+        },
+
+        oncontextmenu: (ev) => {
+          ev.stopPropagation();
         },
 
         onpointerenter: () => {
@@ -481,7 +567,7 @@
       item.appendChild(renderCapAvatar(a, "sm", "ath-suggest-avatar"));
 
       const nameEl = h("div", { class: "ath-suggest-name" });
-      nameEl.innerHTML = `${highlight(a.name, q)} <span class="ath-year">(${a.jahrgang})</span>`;
+      nameEl.innerHTML = `${highlight(a.name, q)} <span class="ath-year">(${formatYearShort(a.jahrgang)})</span>`;
 
       const sub = h("div", { class: "ath-suggest-sub" }, formatOrtsgruppe(a.ortsgruppe || ""));
 
@@ -502,6 +588,7 @@
     refs.openProfile = typeof options.openProfile === "function" ? options.openProfile : defaultOpenProfile;
     el.innerHTML = "";
     el.appendChild(renderSearch());
+    updateClearButton();
   }
 
   function setAthletes(list) {
