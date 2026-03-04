@@ -23,7 +23,8 @@
   z-index: 30;
 }
 
-.ath-search-wrap:focus-within::before {
+.ath-search-wrap:focus-within::before,
+.ath-search-wrap.is-open::before {
   opacity: 1;
 }
 

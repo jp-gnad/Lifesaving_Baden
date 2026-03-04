@@ -70,6 +70,7 @@
   text-transform: uppercase;
   color: var(--ath10-yellow);
   text-align: center;
+  margin-top: 5rem;
 }
 
 .ath10-title {

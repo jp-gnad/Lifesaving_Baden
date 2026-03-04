@@ -218,6 +218,10 @@
     openProfile(hit);
   }
 
+  function setSearchOpen(isOpen) {
+    refs.searchWrap?.classList.toggle("is-open", !!isOpen);
+  }
+
   function renderSearch() {
     const wrap = h("div", { class: "ath-search-wrap" });
     refs.searchWrap = wrap;
@@ -325,6 +329,8 @@
     state.suggestions = [];
     state.activeIndex = -1;
 
+    setSearchOpen(false);
+
     if (!refs.suggest) return;
     refs.suggest.classList.add("hidden");
     refs.suggest.innerHTML = "";
@@ -346,6 +352,7 @@
         )
       );
       box.classList.remove("hidden");
+      setSearchOpen(true);
       return;
     }
 
@@ -435,6 +442,7 @@
     });
 
     box.classList.remove("hidden");
+    setSearchOpen(true);
   }
 
   function mount(mountEl, options = {}) {
