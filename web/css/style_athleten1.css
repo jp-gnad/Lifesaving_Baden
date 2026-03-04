@@ -93,7 +93,7 @@ main#content {
   font-size: 1.2rem;
   line-height: 1.5;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 1);
   margin-left: 0;
 }
 
@@ -166,15 +166,15 @@ main#content {
 
   .hero-meta {
     margin-left: 0;
-    margin-top: 1.4rem;
-    margin-bottom: 0.5rem;
+    margin-top: 2.75rem;
+    margin-bottom: 0.25rem;
     font-size: 0.75rem;
   }
 
   .hero-info {
     margin-left: 0;
     max-width: 100%;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     line-height: 1.4;
   }
 

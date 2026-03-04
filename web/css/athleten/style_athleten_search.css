@@ -86,6 +86,9 @@
   max-height: 60rem;
   overflow-y: auto;
   z-index: 40;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 .ath-suggest-empty {
@@ -104,6 +107,7 @@
   min-height: 65px;
   transition: background 0.12s ease;
   border-bottom: 1px solid rgb(30, 30, 32);
+  touch-action: pan-y;
 }
 
 .ath-suggest-item,
@@ -200,5 +204,9 @@
 
   .ath-suggest {
     width: min(100%, var(--ath-search-max));
+  }
+
+  .ath-suggest-item {
+    min-height: 40px;
   }
 }

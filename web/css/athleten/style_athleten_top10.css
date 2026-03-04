@@ -6,7 +6,7 @@
   --ath10-gold: #FDD374;
   --ath10-silver: #DDDEDE;
   --ath10-bronze: #C7B78E;
-  --ath10-text: rgba(255, 255, 255, 0.9);
+  --ath10-text: rgba(255, 255, 255, 0.95);
   --ath10-text-2: rgba(124, 124, 123, 0.78);
   --ath10-text-3: rgba(104, 104, 104, 0.54);
   --ath10-text-dlrg: rgba(87, 87, 86, 1);
@@ -74,7 +74,7 @@
 
 .ath10-title {
   margin: 0;
-  font-size: clamp(1.5rem, 1.3vw + 0.95rem, 2.45rem);
+  font-size: clamp(1.6rem, 1.3vw + 0.95rem, 2.45rem);
   line-height: 1.15;
   font-weight: 750;
   color: var(--ath10-yellow);
@@ -162,6 +162,7 @@
   background-position: calc(100% - 15px) 16px, calc(100% - 10px) 16px;
   background-size: 5px 5px, 5px 5px;
   background-repeat: no-repeat;
+  font-size: 1rem;
 }
 
 .ath10-select:focus-visible {

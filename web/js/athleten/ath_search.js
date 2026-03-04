@@ -2,6 +2,10 @@
   const MIN_QUERY_LEN = 3;
   const FLAG_BASE_URL = "./svg";
 
+  const IS_COARSE_POINTER = window.matchMedia?.("(pointer: coarse)").matches ?? false;
+  const TAP_MAX_MOVE = 10;
+  const TAP_MAX_DURATION = 500;
+
   const $ = (s, r = document) => r.querySelector(s);
 
   const h = (tag, props = {}, ...children) => {
@@ -219,6 +223,8 @@
     refs.searchWrap = wrap;
 
     wrap.addEventListener("focusout", () => {
+      if (IS_COARSE_POINTER) return;
+
       setTimeout(() => {
         if (!wrap.matches(":focus-within")) {
           hideSuggestions();
@@ -249,8 +255,8 @@
     refs.suggest = suggest;
     wrap.appendChild(suggest);
 
-    document.addEventListener("click", (e) => {
-      if (!wrap.contains(e.target) && !suggest.contains(e.target)) hideSuggestions();
+    document.addEventListener("pointerdown", (e) => {
+      if (!wrap.contains(e.target)) hideSuggestions();
     });
 
     return wrap;
@@ -344,21 +350,69 @@
     }
 
     state.suggestions.forEach((a, idx) => {
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchStartTime = 0;
+      let touchPointerId = null;
+      let touchMoved = false;
+
       const item = h("div", {
         class: "ath-suggest-item" + (idx === state.activeIndex ? " active" : ""),
         role: "option",
         "aria-selected": idx === state.activeIndex ? "true" : "false",
+
         onpointerdown: (ev) => {
+          if (ev.pointerType === "mouse") {
+            ev.preventDefault();
+            ev.stopPropagation();
+            openProfile(a);
+            return;
+          }
+
+          touchPointerId = ev.pointerId;
+          touchStartX = ev.clientX;
+          touchStartY = ev.clientY;
+          touchStartTime = performance.now();
+          touchMoved = false;
+        },
+
+        onpointermove: (ev) => {
+          if (touchPointerId == null || ev.pointerId !== touchPointerId) return;
+
+          const dx = ev.clientX - touchStartX;
+          const dy = ev.clientY - touchStartY;
+          if (Math.abs(dx) > TAP_MAX_MOVE || Math.abs(dy) > TAP_MAX_MOVE) {
+            touchMoved = true;
+          }
+        },
+
+        onpointerup: (ev) => {
+          if (touchPointerId == null || ev.pointerId !== touchPointerId) return;
+
+          const duration = performance.now() - touchStartTime;
+          const isTap = !touchMoved && duration <= TAP_MAX_DURATION;
+
+          touchPointerId = null;
+
+          if (!isTap) return;
+
           ev.preventDefault();
           ev.stopPropagation();
           openProfile(a);
         },
+
+        onpointercancel: () => {
+          touchPointerId = null;
+          touchMoved = false;
+        },
+
         onpointerenter: () => {
           if (state.activeIndex === idx) return;
           box.querySelector(".ath-suggest-item.active")?.classList.remove("active");
           item.classList.add("active");
           state.activeIndex = idx;
         },
+
         onmouseenter: () => {
           if (state.activeIndex === idx) return;
           box.querySelector(".ath-suggest-item.active")?.classList.remove("active");
