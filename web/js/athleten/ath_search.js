@@ -1,9 +1,6 @@
 (function () {
   const MIN_QUERY_LEN = 3;
-
   const FLAG_BASE_URL = "./svg";
-  const CAP_FALLBACK_FILE = "Cap-Baden_light.svg";
-  const CAP_FALLBACK_URL = `${FLAG_BASE_URL}/${encodeURIComponent(CAP_FALLBACK_FILE)}`;
 
   const $ = (s, r = document) => r.querySelector(s);
 
@@ -93,54 +90,47 @@
     const ogKey = String(a?.ortsgruppe || "").trim();
     const lvCode = String(a?.LV_state ?? a?.lv_state ?? "").trim().toUpperCase();
     const bvCode = normalizeBVCode(a?.BV_natio ?? a?.BV_nation ?? "");
-    const startrecht = String(a?.Startrecht ?? a?.startrecht ?? "").trim().toUpperCase();
-    return { ogKey, lvCode, bvCode, startrecht, label: ogKey };
+    return { ogKey, lvCode, bvCode };
   }
 
   function capCandidatesAvatar(aff) {
-    const ogKey = String(aff?.ogKey || "").trim();
-    const lvCode = String(aff?.lvCode || "").trim();
-    const bvCode = String(aff?.bvCode || "").trim();
-    const sr = String(aff?.startrecht || "").trim().toUpperCase();
-
     const out = [];
-    if (ogKey) out.push({ key: ogKey, overlay: false });
+    const seen = new Set();
 
-    const pushOverlay = (key) => {
+    const push = (key, overlay) => {
       const k = String(key || "").trim();
-      if (k) out.push({ key: k, overlay: true });
+      if (!k || seen.has(k)) return;
+      seen.add(k);
+      out.push({ key: k, overlay: !!overlay });
     };
 
-    if (sr === "BV") {
-      pushOverlay(bvCode);
-      pushOverlay(lvCode);
-    } else {
-      pushOverlay(lvCode);
-      pushOverlay(bvCode);
-    }
+    push(aff?.ogKey, false);
+    push(aff?.lvCode, true);
+    push(aff?.bvCode, true);
 
     return out;
   }
 
-  function applyCapFallback(
-    img,
-    hostEl,
-    seq,
-    { overlayClass = "cap-overlay", noneSrc = `${FLAG_BASE_URL}/Cap-None.svg` } = {}
-  ) {
+  function applyCapFallback(img, hostEl, seq, overlayClass = "cap-overlay") {
     if (!seq || !seq.length) {
       hostEl.classList.remove(overlayClass);
       img.onerror = null;
-      img.src = noneSrc;
+      img.onload = null;
+      img.remove();
       return;
     }
 
     let i = 0;
+    img.style.visibility = "hidden";
 
     const load = () => {
       const entry = seq[i];
       hostEl.classList.toggle(overlayClass, !!entry.overlay);
       img.src = `${FLAG_BASE_URL}/Cap-${encodeURIComponent(entry.key)}.svg`;
+    };
+
+    img.onload = () => {
+      img.style.visibility = "visible";
     };
 
     img.onerror = () => {
@@ -150,6 +140,7 @@
       } else {
         hostEl.classList.remove(overlayClass);
         img.onerror = null;
+        img.onload = null;
         img.remove();
       }
     };
@@ -164,7 +155,7 @@
       .split(/\s+/)
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
       .join(" ");
-    return "DLRG " + s;
+    return s ? "DLRG " + s : "DLRG";
   }
 
   function renderCapAvatar(a, size = "xl", extraClass = "") {
@@ -181,9 +172,9 @@
       fetchpriority: size === "xl" ? "high" : "low"
     });
 
-    applyCapFallback(img, wrap, capCandidatesAvatar(aff), { overlayClass: "cap-overlay" });
-
     wrap.appendChild(img);
+    applyCapFallback(img, wrap, capCandidatesAvatar(aff));
+
     return wrap;
   }
 
@@ -227,32 +218,32 @@
     const wrap = h("div", { class: "ath-search-wrap" });
     refs.searchWrap = wrap;
 
+    wrap.addEventListener("focusout", () => {
+      setTimeout(() => {
+        if (!wrap.matches(":focus-within")) {
+          hideSuggestions();
+        }
+      }, 120);
+    });
+
     const input = h("input", {
       class: "ath-input",
-      type: "search",
-      placeholder: "Name suchen …",
+      type: "text",
+      placeholder: "Suche nach Athleten …",
       role: "searchbox",
       "aria-label": "Athleten suchen",
       autocomplete: "off",
       oninput: onQueryChange,
-      onkeydown: onSearchKeyDown
+      onkeydown: onSearchKeyDown,
+      onfocus: onSearchFocus,
+      onclick: onSearchFocus
     });
     refs.input = input;
 
-    const searchBtn = h(
-      "button",
-      {
-        class: "ath-btn primary",
-        type: "button",
-        title: "Ersten Treffer öffnen",
-        onclick: () => {
-          if (state.suggestions.length > 0) openProfile(state.suggestions[0]);
-        }
-      },
-      "Öffnen"
-    );
+    const searchRow = h("div", { class: "ath-ui-search", role: "search" }, input);
+    const searchPanel = h("div", { class: "ath-search-panel" }, searchRow);
 
-    wrap.appendChild(h("div", { class: "ath-ui-search", role: "search" }, input, searchBtn));
+    wrap.appendChild(searchPanel);
 
     const suggest = h("div", { class: "ath-suggest hidden", role: "listbox", id: "ath-suggest" });
     refs.suggest = suggest;
@@ -266,6 +257,11 @@
   }
 
   function onQueryChange(e) {
+    state.query = e.target.value || "";
+    updateSuggestions();
+  }
+
+  function onSearchFocus(e) {
     state.query = e.target.value || "";
     updateSuggestions();
   }
@@ -320,6 +316,9 @@
   }
 
   function hideSuggestions() {
+    state.suggestions = [];
+    state.activeIndex = -1;
+
     if (!refs.suggest) return;
     refs.suggest.classList.add("hidden");
     refs.suggest.innerHTML = "";
@@ -349,7 +348,7 @@
         class: "ath-suggest-item" + (idx === state.activeIndex ? " active" : ""),
         role: "option",
         "aria-selected": idx === state.activeIndex ? "true" : "false",
-        onclick: (ev) => {
+        onpointerdown: (ev) => {
           ev.preventDefault();
           ev.stopPropagation();
           openProfile(a);

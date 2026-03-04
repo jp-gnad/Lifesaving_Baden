@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
     {
       href: "./deutschlandpokal.html",
       kicker: "int. Deutschlandpokal (DP)",
-      main: "Nominierungsrichtlinien & Liste",
+      main: "Live Nominierungslisten",
       more: "Du möchtest einemal teil der Badischen Auswahlmannschaft für den Deutschlandpokal sein? Versuche die Kriterien zu erfüllen und dich in der Liste hoch zu schwimmen!",
       aria: "Deutschland Pokal",
       rotator: {
@@ -81,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
     {
       href: "./bodenseepokal.html",
       kicker: "Bodensee Pokal (BP)",
-      main: "Nominierungsrichtlinien & Liste",
+      main: "Live Nominierungslisten",
       more: "Du möchtest einemal teil der Badischen Auswahlmannschaft für den Bodensee Pokal sein? Versuche die Kriterien zu erfüllen und dich in der Liste hoch zu schwimmen!",
       aria: "Junioren Rettungspokal",
 
@@ -95,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
     {
       href: "./juniorenrettungspokal.html",
       kicker: "Junioren Rettungspokal (JRP)",
-      main: "Nominierungsrichtlinien & Liste",
+      main: "Live Nominierungslisten",
       more: "Du möchtest einemal teil der Badischen Auswahlmannschaft für den Junioren Rettungspokal sein? Versuche die Kriterien zu erfüllen und dich in der Liste hoch zu schwimmen!",
       aria: "Junioren Rettungspokal",
 
