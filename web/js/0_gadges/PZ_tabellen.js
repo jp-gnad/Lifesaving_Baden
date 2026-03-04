@@ -639,7 +639,7 @@
 
         for (let i = 0; i < DISCIPLINES.length; i++) {
           const colIdx = DISCIPLINES[i].dataCol;
-          updateBest(rec, i, row[colIdx], compName);
+          updateBest(rec, i, row[colIdx], compName, wkDate, rowIdx);
         }
 
         dict.set(key, rec);
@@ -666,6 +666,37 @@
       }
 
       return people;
+    }
+
+    function getQualifiedPerformancesForDiscipline(rec, cfg, dIdx) {
+      const dKey = DISCIPLINES[dIdx]?.key;
+      const src = Array.isArray(rec?.times?.[dIdx]) ? rec.times[dIdx] : [];
+      const out = [];
+
+      for (const item of src) {
+        const centi = Number(item?.centi);
+        const level = disciplineLevelFromConfigCenti(centi, cfg, dKey);
+        if (level !== "PZ1" && level !== "PZ2") continue;
+
+        out.push({
+          centi,
+          text: String(item?.text ?? centiToTimeText(centi)),
+          comp: String(item?.comp ?? ""),
+          date: item?.date instanceof Date ? item.date : null,
+          rowIdx: Number.isFinite(item?.rowIdx) ? item.rowIdx : -1,
+          level,
+        });
+      }
+
+      out.sort((a, b) => {
+        if (a.centi !== b.centi) return a.centi - b.centi;
+        const ad = a.date instanceof Date ? a.date.getTime() : 0;
+        const bd = b.date instanceof Date ? b.date.getTime() : 0;
+        if (ad !== bd) return bd - ad;
+        return (b.rowIdx ?? -1) - (a.rowIdx ?? -1);
+      });
+
+      return out;
     }
 
     function buildTableBlock(cfg, fullList) {
@@ -812,6 +843,8 @@
           mainRow.appendChild(tdRight);
 
           const detailRow = document.createElement("tr");
+          detailRow.className = "pz-detail";
+
           if (rec.pz1Count > 0) {
             mainRow.classList.add("has-pz1");
             detailRow.classList.add("has-pz1");
@@ -829,10 +862,12 @@
 
           const reached = [];
           for (let i = 0; i < DISCIPLINES.length; i++) {
-            const best = rec.best[i];
-            const level = disciplineLevelFromConfig(best, rec._cfg, DISCIPLINES[i].key);
-            if (level === "PZ1" || level === "PZ2") reached.push({ i, level, best });
+            const hits = getQualifiedPerformancesForDiscipline(rec, rec._cfg, i);
+            if (!hits.length) continue;
+            reached.push({ i, level: hits[0].level, hits });
           }
+
+
 
           const prio = { PZ1: 0, PZ2: 1 };
           reached.sort((a, b) => {
@@ -842,10 +877,12 @@
             return a.i - b.i;
           });
 
+          const detailResetFns = [];
+
           for (const item of reached) {
             const i = item.i;
-            const best = item.best;
-            const level = item.level;
+            const hits = item.hits;
+            let hitIdx = 0;
 
             const line = document.createElement("div");
             line.className = "pz-detail-line";
@@ -859,20 +896,80 @@
 
             const meta = document.createElement("div");
             meta.className = "pz-detail-meta";
-            meta.textContent = `${best.text}  |  ${best.comp || "—"}`;
 
             left.appendChild(disc);
             left.appendChild(meta);
 
             const right = document.createElement("div");
-            right.className = "pz-detail-right";
+              right.className = "pz-detail-right";
 
-            const badge = document.createElement("span");
-            badge.className = "pz-badge";
-            badge.textContent = level;
-            badge.classList.add(level === "PZ1" ? "is-pz1" : "is-pz2");
+              let prevBtn = null;
+              let nextBtn = null;
+              let badge = null;
 
-            right.appendChild(badge);
+              if (hits.length > 1) {
+                const switcher = document.createElement("div");
+                switcher.className = "pz-detail-switch";
+
+                prevBtn = document.createElement("button");
+                prevBtn.type = "button";
+                prevBtn.className = "pz-detail-switch__btn";
+                prevBtn.textContent = "‹";
+
+                badge = document.createElement("span");
+                badge.className = "pz-badge pz-detail-switch__badge";
+
+                nextBtn = document.createElement("button");
+                nextBtn.type = "button";
+                nextBtn.className = "pz-detail-switch__btn";
+                nextBtn.textContent = "›";
+
+                switcher.appendChild(prevBtn);
+                switcher.appendChild(badge);
+                switcher.appendChild(nextBtn);
+
+                right.appendChild(switcher);
+              } else {
+                badge = document.createElement("span");
+                badge.className = "pz-badge";
+                right.appendChild(badge);
+              }
+
+            const renderHit = () => {
+              const h = hits[hitIdx];
+              meta.textContent = `${h.text}  |  ${h.comp || "—"}`;
+              badge.textContent = h.level;
+              badge.classList.remove("is-pz1", "is-pz2");
+              badge.classList.add(h.level === "PZ1" ? "is-pz1" : "is-pz2");
+
+              if (prevBtn) prevBtn.disabled = hitIdx <= 0;
+              if (nextBtn) nextBtn.disabled = hitIdx >= hits.length - 1;
+            };
+
+            if (prevBtn && nextBtn) {
+              prevBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (hitIdx <= 0) return;
+                hitIdx -= 1;
+                renderHit();
+              });
+
+              nextBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (hitIdx >= hits.length - 1) return;
+                hitIdx += 1;
+                renderHit();
+              });
+
+              const resetHit = () => {
+                hitIdx = 0;
+                renderHit();
+              };
+
+              detailResetFns.push(resetHit);
+            }
+
+            renderHit();
 
             line.appendChild(left);
             line.appendChild(right);
@@ -888,6 +985,8 @@
           detailTd.appendChild(detailInner);
           detailRow.appendChild(detailTd);
 
+
+
           const toggle = () => {
             const detailInner = detailRow.querySelector(".pz-detail-inner");
             if (!detailInner) return;
@@ -895,6 +994,8 @@
             const isCurrentlyOpen = detailRow.classList.contains("is-open");
 
             if (!isCurrentlyOpen) {
+              for (const reset of detailResetFns) reset();
+
               mainRow.classList.add("is-open");
               detailRow.classList.add("is-open");
               mainRow.setAttribute("aria-expanded", "true");
@@ -1053,23 +1154,43 @@
         _cfg: null,
         lastStartDate: null,
         lastStartComp: "",
+        times: Array.from({ length: DISCIPLINES.length }, () => []),
         best: Array.from({ length: DISCIPLINES.length }, () => ({
           centi: 99999999,
           text: "",
           comp: "",
+          date: null,
+          rowIdx: -1,
         })),
       };
     }
 
-    function updateBest(rec, dIdx, timeVal, compName) {
-      const t = String(timeVal ?? "").trim();
-      if (!t) return;
+    function updateBest(rec, dIdx, timeVal, compName, wkDate, rowIdx) {
+      const centi = parseExcelTimeToCentiOrNull(timeVal);
+      if (!Number.isFinite(centi) || centi <= 0) return;
 
-      const centi = timeTextToCenti(t);
-      if (centi <= 0) return;
+      let text = String(timeVal ?? "").trim();
+      if (!text || timeTextToCenti(text) <= 0) text = centiToTimeText(centi);
 
-      if (centi < rec.best[dIdx].centi) {
-        rec.best[dIdx] = { centi, text: t, comp: compName || "" };
+      const entry = {
+        centi,
+        text,
+        comp: compName || "",
+        date: wkDate instanceof Date && !isNaN(wkDate.getTime()) ? new Date(wkDate.getTime()) : null,
+        rowIdx: Number.isFinite(rowIdx) ? rowIdx : -1,
+      };
+
+      if (Array.isArray(rec.times?.[dIdx])) rec.times[dIdx].push(entry);
+
+      const cur = rec.best[dIdx];
+      const curDate = cur?.date instanceof Date ? cur.date.getTime() : 0;
+      const newDate = entry.date instanceof Date ? entry.date.getTime() : 0;
+
+      if (
+        centi < cur.centi ||
+        (centi === cur.centi && (newDate > curDate || (newDate === curDate && entry.rowIdx > (cur.rowIdx ?? -1))))
+      ) {
+        rec.best[dIdx] = entry;
       }
     }
 
@@ -1100,16 +1221,21 @@
       return { pz1Count, pz2Count, qualifies };
     }
 
-    function disciplineLevelFromConfig(best, cfg, dKey) {
-      if (!cfg || !best || !(best.centi < 99999999)) return "—";
+    function disciplineLevelFromConfigCenti(centi, cfg, dKey) {
+      if (!cfg || !Number.isFinite(centi) || !(centi < 99999999)) return "—";
 
       const t1 = cfg.pz1?.[dKey];
       const t2 = cfg.pz2?.[dKey];
 
       if (!Number.isFinite(t2)) return "—";
-      if (Number.isFinite(t1) && best.centi <= t1) return "PZ1";
-      if (best.centi <= t2) return "PZ2";
+      if (Number.isFinite(t1) && centi <= t1) return "PZ1";
+      if (centi <= t2) return "PZ2";
       return "—";
+    }
+
+    function disciplineLevelFromConfig(best, cfg, dKey) {
+      if (!best) return "—";
+      return disciplineLevelFromConfigCenti(best.centi, cfg, dKey);
     }
 
     function capSrcFromOrtsgruppe(ortsgruppe) {

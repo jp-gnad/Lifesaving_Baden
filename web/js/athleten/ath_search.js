@@ -1,9 +1,12 @@
 (function () {
   const MIN_QUERY_LEN = 3;
-
   const FLAG_BASE_URL = "./svg";
-  const CAP_FALLBACK_FILE = "Cap-Baden_light.svg";
-  const CAP_FALLBACK_URL = `${FLAG_BASE_URL}/${encodeURIComponent(CAP_FALLBACK_FILE)}`;
+
+  const IS_COARSE_POINTER = window.matchMedia?.("(pointer: coarse)").matches ?? false;
+  const TAP_MAX_MOVE = 10;
+  const TAP_MAX_DURATION = 500;
+  const OUTSIDE_TAP_MAX_MOVE = 14;
+  const OUTSIDE_TAP_MAX_DURATION = 600;
 
   const $ = (s, r = document) => r.querySelector(s);
 
@@ -34,7 +37,8 @@
     searchWrap: null,
     input: null,
     suggest: null,
-    openProfile: null
+    openProfile: null,
+    clearBtn: null
   };
 
   const normalize = (s) =>
@@ -93,54 +97,47 @@
     const ogKey = String(a?.ortsgruppe || "").trim();
     const lvCode = String(a?.LV_state ?? a?.lv_state ?? "").trim().toUpperCase();
     const bvCode = normalizeBVCode(a?.BV_natio ?? a?.BV_nation ?? "");
-    const startrecht = String(a?.Startrecht ?? a?.startrecht ?? "").trim().toUpperCase();
-    return { ogKey, lvCode, bvCode, startrecht, label: ogKey };
+    return { ogKey, lvCode, bvCode };
   }
 
   function capCandidatesAvatar(aff) {
-    const ogKey = String(aff?.ogKey || "").trim();
-    const lvCode = String(aff?.lvCode || "").trim();
-    const bvCode = String(aff?.bvCode || "").trim();
-    const sr = String(aff?.startrecht || "").trim().toUpperCase();
-
     const out = [];
-    if (ogKey) out.push({ key: ogKey, overlay: false });
+    const seen = new Set();
 
-    const pushOverlay = (key) => {
+    const push = (key, overlay) => {
       const k = String(key || "").trim();
-      if (k) out.push({ key: k, overlay: true });
+      if (!k || seen.has(k)) return;
+      seen.add(k);
+      out.push({ key: k, overlay: !!overlay });
     };
 
-    if (sr === "BV") {
-      pushOverlay(bvCode);
-      pushOverlay(lvCode);
-    } else {
-      pushOverlay(lvCode);
-      pushOverlay(bvCode);
-    }
+    push(aff?.ogKey, false);
+    push(aff?.lvCode, true);
+    push(aff?.bvCode, true);
 
     return out;
   }
 
-  function applyCapFallback(
-    img,
-    hostEl,
-    seq,
-    { overlayClass = "cap-overlay", noneSrc = `${FLAG_BASE_URL}/Cap-None.svg` } = {}
-  ) {
+  function applyCapFallback(img, hostEl, seq, overlayClass = "cap-overlay") {
     if (!seq || !seq.length) {
       hostEl.classList.remove(overlayClass);
       img.onerror = null;
-      img.src = noneSrc;
+      img.onload = null;
+      img.remove();
       return;
     }
 
     let i = 0;
+    img.style.visibility = "hidden";
 
     const load = () => {
       const entry = seq[i];
       hostEl.classList.toggle(overlayClass, !!entry.overlay);
       img.src = `${FLAG_BASE_URL}/Cap-${encodeURIComponent(entry.key)}.svg`;
+    };
+
+    img.onload = () => {
+      img.style.visibility = "visible";
     };
 
     img.onerror = () => {
@@ -150,6 +147,7 @@
       } else {
         hostEl.classList.remove(overlayClass);
         img.onerror = null;
+        img.onload = null;
         img.remove();
       }
     };
@@ -164,7 +162,15 @@
       .split(/\s+/)
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
       .join(" ");
-    return "DLRG " + s;
+    return s ? "DLRG " + s : "DLRG";
+  }
+
+  function formatYearShort(yearRaw) {
+    const s = String(yearRaw ?? "").trim();
+    if (!s) return "";
+    const digits = s.replace(/\D/g, "");
+    if (!digits) return s;
+    return digits.slice(-2).padStart(2, "0");
   }
 
   function renderCapAvatar(a, size = "xl", extraClass = "") {
@@ -181,9 +187,9 @@
       fetchpriority: size === "xl" ? "high" : "low"
     });
 
-    applyCapFallback(img, wrap, capCandidatesAvatar(aff), { overlayClass: "cap-overlay" });
-
     wrap.appendChild(img);
+    applyCapFallback(img, wrap, capCandidatesAvatar(aff));
+
     return wrap;
   }
 
@@ -223,43 +229,154 @@
     openProfile(hit);
   }
 
+  function updateClearButton() {
+    if (!refs.clearBtn || !refs.input) return;
+    const hasValue = String(refs.input.value || "").trim().length > 0;
+    refs.clearBtn.classList.toggle("hidden", !hasValue);
+  }
+
+  function clearSearch() {
+    if (!refs.input) return;
+    refs.input.value = "";
+    state.query = "";
+    hideSuggestions();
+    updateClearButton();
+    refs.input.focus();
+  }
+
+  function setSearchOpen(isOpen) {
+    refs.searchWrap?.classList.toggle("is-open", !!isOpen);
+  }
+
   function renderSearch() {
     const wrap = h("div", { class: "ath-search-wrap" });
     refs.searchWrap = wrap;
 
+    let suppressBlurHideUntil = 0;
+
+    wrap.addEventListener(
+      "pointerdown",
+      (e) => {
+        const isSecondaryMouseAction =
+          e.pointerType === "mouse" &&
+          (e.button !== 0 || e.ctrlKey || e.metaKey);
+
+        if (!isSecondaryMouseAction) return;
+        if (!wrap.contains(e.target)) return;
+
+        suppressBlurHideUntil = performance.now() + 700;
+      },
+      true
+    );
+
+    wrap.addEventListener("focusout", () => {
+      if (IS_COARSE_POINTER) return;
+
+      setTimeout(() => {
+        if (performance.now() < suppressBlurHideUntil) return;
+        if (!wrap.matches(":focus-within")) {
+          hideSuggestions();
+        }
+      }, 120);
+    });
+
     const input = h("input", {
       class: "ath-input",
-      type: "search",
-      placeholder: "Name suchen …",
+      type: "text",
+      placeholder: "Suche nach Athleten …",
       role: "searchbox",
       "aria-label": "Athleten suchen",
       autocomplete: "off",
       oninput: onQueryChange,
-      onkeydown: onSearchKeyDown
+      onkeydown: onSearchKeyDown,
+      onfocus: onSearchFocus,
+      onclick: onSearchFocus
     });
     refs.input = input;
 
-    const searchBtn = h(
+    const clearBtn = h(
       "button",
       {
-        class: "ath-btn primary",
+        class: "ath-clear-btn hidden",
         type: "button",
-        title: "Ersten Treffer öffnen",
-        onclick: () => {
-          if (state.suggestions.length > 0) openProfile(state.suggestions[0]);
-        }
+        "aria-label": "Suche löschen",
+        title: "Löschen",
+        onpointerdown: (ev) => {
+          if (ev.pointerType === "mouse" && ev.button !== 0) return;
+          ev.preventDefault();
+          ev.stopPropagation();
+          clearSearch();
+        },
       },
-      "Öffnen"
+      "✕"
     );
+    refs.clearBtn = clearBtn;
 
-    wrap.appendChild(h("div", { class: "ath-ui-search", role: "search" }, input, searchBtn));
+    const inputWrap = h("div", { class: "ath-input-wrap" }, input, clearBtn);
+
+    const searchRow = h("div", { class: "ath-ui-search", role: "search" }, inputWrap);
+    const searchPanel = h("div", { class: "ath-search-panel" }, searchRow);
+
+    wrap.appendChild(searchPanel);
 
     const suggest = h("div", { class: "ath-suggest hidden", role: "listbox", id: "ath-suggest" });
     refs.suggest = suggest;
     wrap.appendChild(suggest);
 
-    document.addEventListener("click", (e) => {
-      if (!wrap.contains(e.target) && !suggest.contains(e.target)) hideSuggestions();
+    let backdropPointerId = null;
+    let backdropStartX = 0;
+    let backdropStartY = 0;
+    let backdropStartTime = 0;
+    let backdropMoved = false;
+
+    const BACKDROP_TAP_MAX_MOVE = 14;
+    const BACKDROP_TAP_MAX_DURATION = 600;
+
+    wrap.addEventListener("pointerdown", (e) => {
+      if (e.target !== wrap) return;
+
+      backdropPointerId = e.pointerId;
+      backdropStartX = e.clientX;
+      backdropStartY = e.clientY;
+      backdropStartTime = performance.now();
+      backdropMoved = false;
+
+      e.stopPropagation();
+    });
+
+    wrap.addEventListener("pointermove", (e) => {
+      if (e.target !== wrap) return;
+      if (backdropPointerId == null || e.pointerId !== backdropPointerId) return;
+
+      const dx = e.clientX - backdropStartX;
+      const dy = e.clientY - backdropStartY;
+
+      if (Math.abs(dx) > BACKDROP_TAP_MAX_MOVE || Math.abs(dy) > BACKDROP_TAP_MAX_MOVE) {
+        backdropMoved = true;
+      }
+    });
+
+    wrap.addEventListener("pointerup", (e) => {
+      if (e.target !== wrap) return;
+      if (backdropPointerId == null || e.pointerId !== backdropPointerId) return;
+
+      const duration = performance.now() - backdropStartTime;
+      const isTap = !backdropMoved && duration <= BACKDROP_TAP_MAX_DURATION;
+
+      backdropPointerId = null;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!isTap) return;
+
+      hideSuggestions();
+    });
+
+    wrap.addEventListener("pointercancel", (e) => {
+      if (backdropPointerId == null || e.pointerId !== backdropPointerId) return;
+      backdropPointerId = null;
+      backdropMoved = false;
     });
 
     return wrap;
@@ -267,6 +384,13 @@
 
   function onQueryChange(e) {
     state.query = e.target.value || "";
+    updateClearButton();
+    updateSuggestions();
+  }
+
+  function onSearchFocus(e) {
+    state.query = e.target.value || "";
+    updateClearButton();
     updateSuggestions();
   }
 
@@ -320,6 +444,11 @@
   }
 
   function hideSuggestions() {
+    state.suggestions = [];
+    state.activeIndex = -1;
+
+    setSearchOpen(false);
+
     if (!refs.suggest) return;
     refs.suggest.classList.add("hidden");
     refs.suggest.innerHTML = "";
@@ -341,25 +470,92 @@
         )
       );
       box.classList.remove("hidden");
+      setSearchOpen(true);
       return;
     }
 
     state.suggestions.forEach((a, idx) => {
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchStartTime = 0;
+      let touchPointerId = null;
+      let touchMoved = false;
+
       const item = h("div", {
         class: "ath-suggest-item" + (idx === state.activeIndex ? " active" : ""),
         role: "option",
         "aria-selected": idx === state.activeIndex ? "true" : "false",
-        onclick: (ev) => {
+
+        onpointerdown: (ev) => {
+          if (ev.pointerType === "mouse") {
+            const isSecondaryLikeClick = ev.button !== 0 || ev.ctrlKey || ev.metaKey;
+
+            if (isSecondaryLikeClick) {
+              ev.stopPropagation();
+              return;
+            }
+
+            ev.preventDefault();
+            ev.stopPropagation();
+            openProfile(a);
+            return;
+          }
+
+          touchPointerId = ev.pointerId;
+          touchStartX = ev.clientX;
+          touchStartY = ev.clientY;
+          touchStartTime = performance.now();
+          touchMoved = false;
+        },
+
+        onpointermove: (ev) => {
+          if (ev.pointerType === "mouse") return;
+          if (touchPointerId == null || ev.pointerId !== touchPointerId) return;
+
+          const dx = ev.clientX - touchStartX;
+          const dy = ev.clientY - touchStartY;
+
+          if (Math.abs(dx) > TAP_MAX_MOVE || Math.abs(dy) > TAP_MAX_MOVE) {
+            touchMoved = true;
+          }
+        },
+
+        onpointerup: (ev) => {
+          if (ev.pointerType === "mouse") return;
+          if (touchPointerId == null || ev.pointerId !== touchPointerId) return;
+
+          const duration = performance.now() - touchStartTime;
+          const isTap = !touchMoved && duration <= TAP_MAX_DURATION;
+
+          touchPointerId = null;
+
+          if (!isTap) return;
+
           ev.preventDefault();
           ev.stopPropagation();
           openProfile(a);
         },
+
+        onpointercancel: () => {
+          touchPointerId = null;
+          touchMoved = false;
+        },
+
+        onauxclick: (ev) => {
+          ev.stopPropagation();
+        },
+
+        oncontextmenu: (ev) => {
+          ev.stopPropagation();
+        },
+
         onpointerenter: () => {
           if (state.activeIndex === idx) return;
           box.querySelector(".ath-suggest-item.active")?.classList.remove("active");
           item.classList.add("active");
           state.activeIndex = idx;
         },
+
         onmouseenter: () => {
           if (state.activeIndex === idx) return;
           box.querySelector(".ath-suggest-item.active")?.classList.remove("active");
@@ -371,7 +567,7 @@
       item.appendChild(renderCapAvatar(a, "sm", "ath-suggest-avatar"));
 
       const nameEl = h("div", { class: "ath-suggest-name" });
-      nameEl.innerHTML = `${highlight(a.name, q)} <span class="ath-year">(${a.jahrgang})</span>`;
+      nameEl.innerHTML = `${highlight(a.name, q)} <span class="ath-year">(${formatYearShort(a.jahrgang)})</span>`;
 
       const sub = h("div", { class: "ath-suggest-sub" }, formatOrtsgruppe(a.ortsgruppe || ""));
 
@@ -382,6 +578,7 @@
     });
 
     box.classList.remove("hidden");
+    setSearchOpen(true);
   }
 
   function mount(mountEl, options = {}) {
@@ -391,6 +588,7 @@
     refs.openProfile = typeof options.openProfile === "function" ? options.openProfile : defaultOpenProfile;
     el.innerHTML = "";
     el.appendChild(renderSearch());
+    updateClearButton();
   }
 
   function setAthletes(list) {

@@ -219,6 +219,7 @@ main#content{
   outline-offset: 2px;
 }
 
+
 /* Responsive */
 @media (max-width: 1024px){
   .home-cards{ grid-template-columns: repeat(2, minmax(0, 1fr)); }

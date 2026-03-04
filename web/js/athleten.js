@@ -4,7 +4,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   main.innerHTML = `
     <section class="hero">
-      <h1>Athleten</h1>
+      <div class="container hero-content">
+        <div id="ath-search-mount"></div>
+        <h1>Athleten</h1>
+        <p class="hero-meta">Athletenprofile ・ Top 10 Listen ・ Leistungsprofile</p>
+        <p class="hero-info">Professionelle Athletenprofile aus dem Rettungssport. Es werden derzeit nur Einzelwettkämpfe und Pool-Wettkämpfe berücksichtigt.</p>
+      </div>
     </section>
 
     <section id="athleten-container-section">
@@ -15,18 +20,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
 (function () {
   const $ = (s, r = document) => r.querySelector(s);
+
   const h = (tag, props = {}, ...children) => {
     const el = document.createElement(tag);
+
     for (const [k, v] of Object.entries(props || {})) {
       if (k === "class") el.className = v;
       else if (k === "dataset") Object.assign(el.dataset, v);
       else if (k.startsWith("on") && typeof v === "function") el.addEventListener(k.slice(2), v);
       else if (v !== false && v != null) el.setAttribute(k, v === true ? "" : v);
     }
+
     for (const c of children.flat()) {
       if (c == null) continue;
       el.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
     }
+
     return el;
   };
 
@@ -44,12 +53,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!mount) return;
 
     mount.innerHTML = "";
-    const ui = h("section", { class: "ath-ui", role: "region", "aria-label": "Athletenbereich" });
 
-    const searchMount = h("div", { id: "ath-search-mount" });
-    ui.appendChild(searchMount);
+    const ui = h("section", {
+      class: "ath-ui",
+      role: "region",
+      "aria-label": "Athletenbereich"
+    });
 
-    if (window.AthSearch && typeof window.AthSearch.mount === "function") {
+    const searchMount = $("#ath-search-mount");
+    if (searchMount && window.AthSearch && typeof window.AthSearch.mount === "function") {
+      searchMount.innerHTML = "";
       window.AthSearch.mount(searchMount, { openProfile });
     }
 

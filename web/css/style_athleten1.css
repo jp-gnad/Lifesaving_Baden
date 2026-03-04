@@ -1,0 +1,188 @@
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+
+  background:
+    radial-gradient(
+      circle at left bottom,
+      rgba(255, 237, 0, 0.9) 0%,
+      rgba(255, 237, 0, 0.45) 17.5%,
+      rgba(255, 237, 0, 0.15) 32%,
+      rgba(255, 237, 0, 0.00) 45%
+    ),
+    rgb(15, 15, 18);
+}
+
+body {
+  color: rgb(220, 220, 220);
+}
+
+main#content {
+  margin: 0 auto;
+  min-height: 1000px;
+}
+
+.container {
+  width: min(1200px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+.hero {
+  position: relative;
+  background: url("../png/hintergrund4.JPG") center/cover no-repeat;
+  background-position: center 50%;
+  height: 600px;
+  color: white;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
+  display: flex;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      to right,
+      rgba(15, 15, 18, 0.65) 0%,
+      rgba(15, 15, 18, 0.35) 22%,
+      rgba(15, 15, 18, 0.12) 42%,
+      rgba(15, 15, 18, 0) 60%
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(15, 15, 18, 0) 30%,
+      rgba(15, 15, 18, 0.2) 55%,
+      rgba(15, 15, 18, 0.9) 90%,
+      rgba(15, 15, 18, 1) 100%
+    );
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.hero h1 {
+  margin-top: 5.5rem;
+  margin-bottom: 0;
+  font-size: 4em;
+  line-height: 1.05;
+  margin-left: 0;
+}
+
+.hero-meta {
+  margin-top: 1.6rem;
+  margin-bottom: 3rem;
+  font-size: 1rem;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 400;
+  margin-left: 0;
+}
+
+.hero-info {
+  max-width: 780px;
+  font-size: 1.2rem;
+  line-height: 1.5;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 1);
+  margin-left: 0;
+}
+
+#ath-search-mount {
+  width: 100vw;
+  min-height: 52px;
+  margin-left: calc(50% - 50vw);
+}
+
+.updates h2 {
+  margin-top: 1.5rem;
+  color: white;
+}
+
+.ath-ui {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+#athleten-container h1,
+#athleten-container h2,
+#athleten-container h3 {
+  color: rgb(220, 220, 220);
+  margin-top: 0;
+}
+
+.ath-ui-section,
+.ath-ranking,
+.ath-top10 {
+  color: rgb(220, 220, 220);
+}
+
+
+@media (max-width: 900px) {
+  .hero h1,
+  .hero-meta,
+  .hero-info {
+    margin-left: 0;
+  }
+
+  .hero h1 {
+    margin-top: 4.5rem;
+  }
+
+  .hero-info {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .hero {
+    height: 320px;
+    background-position: center 40%;
+  }
+
+  .ath-ui {
+    padding: 0 0.75rem 2rem;
+  }
+
+  .hero h1 {
+    margin-left: 0;
+    margin-top: 2.5rem;
+    font-size: 2em;
+    line-height: 1.1;
+  }
+
+  .hero-meta {
+    margin-left: 0;
+    margin-top: 2.75rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  .hero-info {
+    margin-left: 0;
+    max-width: 100%;
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+
+  .container {
+    width: calc(100% - 1rem);
+  }
+
+  #ath-search-mount {
+    min-height: 44px;
+  }
+}
