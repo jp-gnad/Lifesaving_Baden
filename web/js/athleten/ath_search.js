@@ -5,6 +5,8 @@
   const IS_COARSE_POINTER = window.matchMedia?.("(pointer: coarse)").matches ?? false;
   const TAP_MAX_MOVE = 10;
   const TAP_MAX_DURATION = 500;
+  const OUTSIDE_TAP_MAX_MOVE = 14;
+  const OUTSIDE_TAP_MAX_DURATION = 600;
 
   const $ = (s, r = document) => r.querySelector(s);
 
@@ -259,8 +261,56 @@
     refs.suggest = suggest;
     wrap.appendChild(suggest);
 
+    let outsidePointerId = null;
+    let outsideStartX = 0;
+    let outsideStartY = 0;
+    let outsideStartTime = 0;
+    let outsideMoved = false;
+
     document.addEventListener("pointerdown", (e) => {
-      if (!wrap.contains(e.target)) hideSuggestions();
+      if (wrap.contains(e.target)) return;
+
+      if (e.pointerType === "mouse") {
+        hideSuggestions();
+        return;
+      }
+
+      outsidePointerId = e.pointerId;
+      outsideStartX = e.clientX;
+      outsideStartY = e.clientY;
+      outsideStartTime = performance.now();
+      outsideMoved = false;
+    });
+
+    document.addEventListener("pointermove", (e) => {
+      if (outsidePointerId == null || e.pointerId !== outsidePointerId) return;
+
+      const dx = e.clientX - outsideStartX;
+      const dy = e.clientY - outsideStartY;
+
+      if (Math.abs(dx) > OUTSIDE_TAP_MAX_MOVE || Math.abs(dy) > OUTSIDE_TAP_MAX_MOVE) {
+        outsideMoved = true;
+      }
+    });
+
+    document.addEventListener("pointerup", (e) => {
+      if (outsidePointerId == null || e.pointerId !== outsidePointerId) return;
+
+      const duration = performance.now() - outsideStartTime;
+      const isTap = !outsideMoved && duration <= OUTSIDE_TAP_MAX_DURATION;
+
+      outsidePointerId = null;
+
+      if (!isTap) return;
+      if (wrap.contains(e.target)) return;
+
+      hideSuggestions();
+    });
+
+    document.addEventListener("pointercancel", (e) => {
+      if (outsidePointerId == null || e.pointerId !== outsidePointerId) return;
+      outsidePointerId = null;
+      outsideMoved = false;
     });
 
     return wrap;
