@@ -379,6 +379,12 @@
         const rulebook = normalizeRulebook(getCell(r, col, "Regelwerk"));
 
         const pageSize = parseIntSafe(getCell(r, col, "Seiten Anzahl"));
+
+        const minReachedNormsRaw = parseIntSafe(getCell(r, col, "mind. erreichte Normen"));
+        const minReachedNorms = Number.isFinite(minReachedNormsRaw)
+          ? clamp(minReachedNormsRaw, 1, DISCIPLINES.length)
+          : 1;
+
         const seasonYear = qualiEnd.getFullYear();
 
         const pz1 = {};
@@ -409,6 +415,7 @@
           rulebook,
           pageSize: Number.isFinite(pageSize) ? pageSize : 5,
           seasonYear,
+          minReachedNorms,
           pz1,
           pz2,
         });
@@ -1199,7 +1206,6 @@
     function computePZCountsFromConfig(rec, cfg) {
       let pz1Count = 0;
       let pz2Count = 0;
-      let qualifies = false;
 
       for (let i = 0; i < DISCIPLINES.length; i++) {
         const dKey = DISCIPLINES[i].key;
@@ -1216,15 +1222,22 @@
 
         if (hasPZ1 && best.centi <= t1) {
           pz1Count += 1;
-          qualifies = true;
           continue;
         }
 
         if (hasPZ2 && best.centi <= t2) {
           pz2Count += 1;
-          qualifies = true;
         }
       }
+
+      const totalReached = pz1Count + pz2Count;
+
+      const minRequiredRaw = Number(cfg?.minReachedNorms);
+      const minRequired = Number.isFinite(minRequiredRaw)
+        ? clamp(Math.trunc(minRequiredRaw), 1, DISCIPLINES.length)
+        : 1;
+
+      const qualifies = totalReached >= minRequired;
 
       return { pz1Count, pz2Count, qualifies };
     }
