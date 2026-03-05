@@ -1,373 +1,113 @@
+:root {
+  --pz-hero-grad-top: rgba(0, 0, 0, 0.257);
+  --pz-hero-grad-bot: rgba(0, 0, 0, 0.825);
+  --pz-red: #cc0000;
+}
 
-/* Seiteninhalt Startseite */
 main#content {
   margin: 0 auto;
+  background-color: white;
 }
 
 .hero {
   position: relative;
-  background: url("../png/hintergrund8.jpg") center/cover no-repeat;  background-position: center 50%;
-  height: 300px;
+  background: url("../png/hintergrund9.jpg") center/cover no-repeat;
+  background-position: center 00%;
+  height: 500px;
   text-align: center;
-  padding-top: 125px;
+  padding-top: 325px;
   color: white;
 }
-.hero::before{
+
+.hero::before {
   content: "";
   position: absolute;
-  inset: 0;                  /* über die ganze Fläche */
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.257), rgba(0, 0, 0, 0.825));
-  pointer-events: none;      /* klicks gehen durch */
+  inset: 0;
+  background: linear-gradient(to bottom, var(--pz-hero-grad-top), var(--pz-hero-grad-bot));
+  pointer-events: none;
 }
 
 .hero h1 {
   position: relative;
   font-size: 2.75em;
   z-index: 1;
+  color: rgba(255, 255, 255, 0.9);
 }
 
-
-@media (max-width:720px){
-  .hero h1 {font-size: 2.0em; }
-  .hero {height: 200px; padding-top: 80px;}
+.updates {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 16px 24px 16px;
 }
 
-/* ================================
-   Grundlayout
-   ================================ */
-
-body {
-  color: #222;
-  line-height: 1.5;
-}
-
-/* ================================
-   Kader-Tabellen: Container & Grid
-   ================================ */
-
-#kader-container {
-  max-width: 95%;
-  margin: 0 auto 3rem;
-  padding: 0.5rem;
-}
-
-/* Gruppe Offener Kader / Juniorenkader */
-
-.kader-group-section {
-  max-width: 95%;
-  margin: 2rem auto 0;
-}
-
-.kader-group-heading {
-  margin: 0 0 0.75rem;
-  text-align: center;
-  font-size: 2.2rem;
-  font-weight: 700;
-  color: black;   /* Blau wie im Screenshot */
-}
-
-
-/* 2x2-Grid für vier Teil-Tabellen (Desktop) */
-.kader-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-}
-
-.kader-box {
-  background: #ffffff;
-  border-radius: 8px;
-  border: 1px solid #e1e4e8;
-  padding: 0.75rem 0.75rem 0.5rem;
-}
-
-@media (max-width:720px){
-  #kader-container {max-width: 100%;}
-  .kader-box {padding: 0;}
-}
-
-.kader-box h3 {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-/* ================================
-   Tabellen-Styling
-   ================================ */
-
-#kader-container table {
-  width: 100%;
-  border-collapse: collapse;
-  border-spacing: 0;
-  font-size: 0.95rem;
-  background: #fff;
-}
-
-#kader-container thead tr {
-  background: #f0f2f5;
-}
-
-#kader-container th,
-#kader-container td {
-  padding: 0.55rem 0.75rem;
-  text-align: left;
-  border-bottom: 1px solid #e1e4e8;
-  vertical-align: middle;
-}
-
-#kader-container th {
-  font-weight: 600;
-  font-size: 0.9rem;
-  white-space: nowrap;
-}
-
-/* Cap-Spalte etwas schmaler */
-#kader-container td:first-child,
-#kader-container th:first-child {
-  width: 52px;
-}
-
-/* Name-Spalte */
-#kader-container td:nth-child(2) {
-  min-width: 220px;
-}
-
-/* Kriterien-Spalten mittig */
-#kader-container td.criteria-cell {
+.updates h2 {
+  margin-top: 1.5rem;
+  font-size: 2rem;
+  color: var(--pz-red);
+  font-weight: 800;
   text-align: center;
 }
 
-/* Status-Spalte */
-.status-cell {
+.updates p {
+  margin: 0.75rem auto 0 auto;
+  margin-bottom: 4rem;
+  max-width: 700px;
   text-align: center;
-  white-space: nowrap;
+  line-height: 1.6;
+  color: rgb(87, 87, 86);
+  font-size: 1.2rem;
 }
 
-.status-wrapper {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
+.updates ul {
+  margin: 0.75rem auto 0 auto;
+  padding-left: 1.2rem;
+  max-width: 560px;
 }
 
-.status-icon {
-  cursor: pointer;
+.updates li {
+  margin: 0.35rem 0;
 }
 
-/* Icons in Tabellen */
-#kader-container img {
-  display: inline-block;
+.updates a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(227, 6, 19, 0.55);
+  transition: color 200ms ease, text-decoration-color 200ms ease;
 }
 
-/* Hover-Effekt auf Desktop */
-#kader-container tbody tr.athlete-row:hover {
-  background: #eef3fb;
+.updates a:hover,
+.updates a:focus-visible {
+  color: rgb(227, 6, 19);
+  text-decoration-color: rgb(227, 6, 19);
 }
 
-/* Zebra-Streifen (werden via JS gesetzt) */
-#kader-container tbody tr.athlete-row.even {
-  background: #fafbfc;
+.updates a:focus-visible {
+  outline: 2px solid rgba(227, 6, 19, 0.45);
+  outline-offset: 3px;
+  border-radius: 6px;
 }
 
-#kader-container tbody tr.athlete-row.odd {
-  background: #ffffff;
-}
-
-/* ================================
-   Tooltip für Status-Icon
-   ================================ */
-
-.status-tooltip {
-  position: fixed;
-  z-index: 9999;
-  max-width: 260px;
-  background: #24292e;
-  color: #fff;
-  padding: 0.45rem 0.7rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  line-height: 1.3;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
-  opacity: 0;
-  transform: translateY(-4px);
-  pointer-events: none;
-  transition: opacity 0.12s ease-out, transform 0.12s ease-out;
-}
-
-.status-tooltip.is-visible {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-
-/* Pfeil rechts neben Icon (Standardfall) */
-.status-tooltip::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: 100%;
-  transform: translateY(-50%);
-  border-width: 6px;
-  border-style: solid;
-  border-color: transparent #24292e transparent transparent;
-}
-
-/* Wenn Tooltip links vom Icon steht */
-.status-tooltip.left::after {
-  right: auto;
-  left: 100%;
-  border-color: transparent transparent transparent #24292e;
-}
-
-/* ================================
-   Details-Zeilen (Mobile-Kriterien)
-   ================================ */
-
-.details-row {
-  display: none;          /* Standard: ausgeblendet */
-  background: #f7f9fc;
-}
-
-.details-row td {
-  padding-top: 0.25rem;
-  padding-bottom: 0.6rem;
-}
-
-.criteria-detail {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.8rem 1.4rem;
-  align-items: center;
-}
-
-.criteria-detail-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.8rem;
-  color: #555;
-}
-
-/* ================================
-   Responsive
-   ================================ */
-
-@media (max-width: 900px) {
-  .kader-grid {
-    grid-template-columns: 1fr; /* alle Tabellen untereinander */
+@media (max-width: 720px) {
+  .hero h1 {
+    font-size: 1.75em;
   }
 
-  #kader-container table {
-    font-size: 0.9rem;
+  .hero {
+    height: 200px;
+    padding-top: 80px;
   }
 
-  #kader-container th,
-  #kader-container td {
-    padding: 0.45rem 0.55rem;
+  .updates h2 {
+    font-size: 1.5rem;
   }
 
-  /* Kriterien-Spalten und -Header ausblenden */
-  #kader-container th.criteria-cell,
-  #kader-container td.criteria-cell {
-    display: none;
-  }
-
-  /* Athlete-Row klickbar machen (für Details) */
-  #kader-container tbody tr.athlete-row {
-    cursor: pointer;
-  }
-
-  /* Details-Zeilen werden über Klasse .is-open eingeblendet */
-  .details-row {
-    display: none;
-  }
-
-  .details-row.is-open {
-    display: table-row;
-  }
-
-  /* Hover-Farbe auf Mobile weniger stark auffällig */
-  #kader-container tbody tr.athlete-row:hover {
-    background: #f3f6fb;
-  }
-}
-
-
-/* ================================
-   Passwort-Schutz Kaderstatus
-   ================================ */
-
-.kader-password {
-  max-width: 420px;
-  margin: 2.5rem auto 3rem;
-  padding: 1.5rem 1.75rem;
-  background: #f6f8fa;
-  border-radius: 8px;
-  border: 1px solid #e1e4e8;
-}
-
-.kader-password h1 {
-  margin-top: 0;
-  margin-bottom: 0.75rem;
-  text-align: center;
-}
-
-.pw-info {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  font-size: 0.95rem;
-}
-
-.pw-input-row {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
-}
-
-.pw-input-row input[type="password"] {
-  flex: 1;
-  padding: 0.4rem 0.5rem;
-  border-radius: 4px;
-  border: 1px solid #d1d5da;
-  font-size: 0.95rem;
-}
-
-.pw-input-row button {
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
-  border: 1px solid #0366d6;
-  background: #0366d6;
-  color: #fff;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-
-.pw-input-row button:hover {
-  background: #0256b3;
-  border-color: #0256b3;
-}
-
-.pw-error {
-  min-height: 1.2em;
-  margin-top: 0.5rem;
-  color: #c0392b;
-  font-size: 0.85rem;
-}
-
-@media (max-width: 480px) {
-  .kader-password {
-    margin: 1.5rem 0.75rem 2rem;
-    padding: 1.25rem 1rem;
-  }
-
-  .pw-input-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .pw-input-row button {
-    width: 100%;
+  .updates p {
+    margin: 0.75rem auto 0 auto;
+    margin-bottom: 3rem;
+    text-align: center;
+    line-height: 1.5;
+    font-size: 1rem;
   }
 }
