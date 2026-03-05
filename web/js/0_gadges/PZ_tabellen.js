@@ -745,21 +745,6 @@
       const table = document.createElement("table");
       table.className = "pz-table";
 
-      const thead = document.createElement("thead");
-      const trh = document.createElement("tr");
-
-      const th1 = document.createElement("th");
-      th1.textContent = "Name / Gliederung";
-
-      const th2 = document.createElement("th");
-      th2.textContent = "Status";
-      th2.className = "pz-th-status";
-
-      trh.appendChild(th1);
-      trh.appendChild(th2);
-      thead.appendChild(trh);
-      table.appendChild(thead);
-
       const tbody = document.createElement("tbody");
 
       const pageSize = Math.max(1, Number(cfg.pageSize || 5));
@@ -770,12 +755,29 @@
       const start = (currentPage - 1) * pageSize;
       const list = fullList.slice(start, start + pageSize);
 
+      if (list.length > 0) {
+        const thead = document.createElement("thead");
+        const trh = document.createElement("tr");
+
+        const th1 = document.createElement("th");
+        th1.textContent = "Name / Gliederung";
+
+        const th2 = document.createElement("th");
+        th2.textContent = "Status";
+        th2.className = "pz-th-status";
+
+        trh.appendChild(th1);
+        trh.appendChild(th2);
+        thead.appendChild(trh);
+        table.appendChild(thead);
+      }
+
       if (list.length === 0) {
         const trEmpty = document.createElement("tr");
         const tdEmpty = document.createElement("td");
         tdEmpty.colSpan = 2;
         tdEmpty.className = "pz-empty";
-        tdEmpty.textContent = "Keine Einträge.";
+        tdEmpty.textContent = "Noch keine Pflichtzeit erreicht.";
         trEmpty.appendChild(tdEmpty);
         tbody.appendChild(trEmpty);
       } else {

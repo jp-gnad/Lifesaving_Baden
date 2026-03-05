@@ -9,7 +9,7 @@ const PICTURE_KARUSSEL_SRC = "/juniorenrettungspokal/picture_karussel.js";
 const PUNKTE_TABELLE_SRC = "/bodenseepokal/Punkte_tabelle.js";
 
 const DP_FOLDER = "./png/BP-Team/";
-const DP_MIN_YEAR = 2007;
+const DP_MIN_YEAR = 1995;
 const DP_MAX_YEAR = new Date().getFullYear() + 1;
 const DP_EXTS = [".jpg"];
 
@@ -28,6 +28,18 @@ const DP_SLIDE_SETTINGS = {
       label: "Mehr Infos!",
       href: "https://malsch.dlrg.de/fileadmin/groups/1070080/Informer/Informer_2007-08.pdf",
     },
+    bgPos: "center 30%",
+  },
+  "2004": {
+    text: "LV-Gesamtwertung: 2. Platz",
+    bgPos: "center 50%",
+  },
+  "1996": {
+    text: "LV-Gesamtwertung: Damen & Herren 2. Platz",
+    bgPos: "center 50%",
+  },
+  "1995": {
+    text: "Herrenmannschaft Baden 1",
     bgPos: "center 30%",
   },
 };
