@@ -312,7 +312,15 @@
     );
     refs.clearBtn = clearBtn;
 
-    const inputWrap = h("div", { class: "ath-input-wrap" }, input, clearBtn);
+    const searchIcon = h("img", {
+      class: "ath-search-deco-icon",
+      src: "./svg/icon_lupe.svg",
+      alt: "",
+      "aria-hidden": "true",
+      draggable: "false"
+    });
+
+    const inputWrap = h("div", { class: "ath-input-wrap" }, searchIcon, input, clearBtn);
 
     const searchRow = h("div", { class: "ath-ui-search", role: "search" }, inputWrap);
     const searchPanel = h("div", { class: "ath-search-panel" }, searchRow);
