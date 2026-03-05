@@ -1207,12 +1207,18 @@
         const t1 = cfg.pz1?.[dKey];
         const t2 = cfg.pz2?.[dKey];
 
-        if (!Number.isFinite(t2)) continue;
+        const hasPZ1 = Number.isFinite(t1);
+        const hasPZ2 = Number.isFinite(t2);
 
-        if (Number.isFinite(t1) && best.centi <= t1) {
+        if (!hasPZ1 && !hasPZ2) continue;
+
+        if (hasPZ1 && best.centi <= t1) {
           pz1Count += 1;
           qualifies = true;
-        } else if (best.centi <= t2) {
+          continue;
+        }
+
+        if (hasPZ2 && best.centi <= t2) {
           pz2Count += 1;
           qualifies = true;
         }
@@ -1227,15 +1233,16 @@
       const t1 = cfg.pz1?.[dKey];
       const t2 = cfg.pz2?.[dKey];
 
-      if (!Number.isFinite(t2)) return "—";
-      if (Number.isFinite(t1) && centi <= t1) return "PZ1";
-      if (centi <= t2) return "PZ2";
-      return "—";
-    }
+      const hasPZ1 = Number.isFinite(t1);
+      const hasPZ2 = Number.isFinite(t2);
 
-    function disciplineLevelFromConfig(best, cfg, dKey) {
-      if (!best) return "—";
-      return disciplineLevelFromConfigCenti(best.centi, cfg, dKey);
+      if (!hasPZ1 && !hasPZ2) return "—";
+
+      if (hasPZ1 && centi <= t1) return "PZ1";
+
+      if (hasPZ2 && centi <= t2) return "PZ2";
+
+      return "—";
     }
 
     function capSrcFromOrtsgruppe(ortsgruppe) {
