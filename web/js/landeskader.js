@@ -10,10 +10,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const KADER_CARDS = [
     {
       href: "./kaderstatus.html",
-      img: "./png/hintergrund8.jpg",
-      kicker: "Aktuelle Kaderliste",
-      main: "Wie ist dein Kaderstatus?",
-      more: "Liste aktueller Landeskaderathleten und diejenige, die die Kriterien erfüllt haben",
+      img: "./png/hintergrund15.jpg",
+      kicker: "Kader-Qualifikationen",
+      main: "Live Kadernormen fürs kommende Jahr.",
+      more: "Liste aller Athleten mit erbrachten Landes-/Bundeskadernormen für die kommende Saison",
       aria: "Dein Athletenprofil",
     },
     {

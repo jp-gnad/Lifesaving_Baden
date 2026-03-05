@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const stage0 = () => {
     root.innerHTML = `
       <section class="hero">
-        <h1>Qualifikation Landeskader</h1>
+        <h1>Kader-Quallifikationen</h1>
       </section>
 
       <section class="updates">
@@ -44,12 +44,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const stage1 = () => {
     root.innerHTML = `
       <section class="hero">
-        <h1>Qualifikation Landeskader</h1>
+        <h1>Kader-Quallifikationen</h1>
       </section>
 
       <section class="updates">
-        <h2>Alle erreichten Kadernormen</h2>
-        <p>Alle offiziellen Pflichtzeiten, Ausschreibung und weitere Infos zu den DEM findest du auf der <a href="https://www.dlrg.de/mitmachen/rettungssport/nationale-und-internationale-wettkaempfe/" target="_blank" rel="noopener noreferrer">Homepage</a> der DLRG.</p>
+        <h2>Erreichten Kadernormen 2026 für 2027</h2>
+        <p>Die Listen berücksichtigen derzeit nur erbrachte Normen über Pflichtzeiten. Keine Platzierungen! Diese Liste ist nicht offiziell und kann fehlerhaft sein. Über die folgenden Links finden Sie offizielle Informationen zum <a href="https://baden.dlrg.de/mitmachen/rettungssport/kader/" target="_blank" rel="noopener noreferrer">Landeskader</a> und <a href="https://www.dlrg.de/mitmachen/rettungssport/kader/" target="_blank" rel="noopener noreferrer">Bundeskader</a>.</p>
         <div id="pflichtzeiten-root" class="pz-root">
           <p id="pflichtzeiten-status" class="pz-statusline">Lade Pflichtzeiten aus Excel …</p>
         </div>
@@ -102,7 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     } catch (e) {
       console.error(e);
-      if (line) line.textContent = "Fehler beim Starten der Tabellen.";
+      if (line) line.textContent = "Fehler beim Erstellen der Tabellen.";
     }
   };
 
@@ -117,7 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const ref = String(tick());
 
       if (seal(raw) !== seal(ref)) {
-        line.textContent = "Code ungültig.";
+        line.textContent = "Eingabe ungültig.";
         input.value = "";
         input.focus();
         return;

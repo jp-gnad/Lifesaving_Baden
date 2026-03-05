@@ -11,11 +11,11 @@ main#content {
 
 .hero {
   position: relative;
-  background: url("../png/hintergrund9.jpg") center/cover no-repeat;
-  background-position: center 00%;
+  background: url("../png/hintergrund15.jpg") center/cover no-repeat;
+  background-position: center 20%;
   height: 500px;
   text-align: center;
-  padding-top: 325px;
+  padding-top: 200px;
   color: white;
 }
 
@@ -42,7 +42,7 @@ main#content {
 }
 
 .updates h2 {
-  margin-top: 1.5rem;
+  margin-top: 2.5rem;
   font-size: 2rem;
   color: var(--pz-red);
   font-weight: 800;
