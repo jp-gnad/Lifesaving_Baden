@@ -405,7 +405,7 @@
 .pz-range-toggle {
   width: 100%;
   border: 0;
-  padding: 8px 10px;
+  padding: 8px 10px 8px 4px;
   cursor: pointer;
   color: #575756;
   display: flex;
