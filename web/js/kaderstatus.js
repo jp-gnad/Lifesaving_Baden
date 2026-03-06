@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       <section class="updates">
         <h2>Erreichten Kadernormen 2026 für 2027</h2>
-        <p>Die Listen berücksichtigen derzeit nur erbrachte Normen über Normzeiten. Keine Platzierungen! Diese Liste ist nicht offiziell und kann fehlerhaft sein. Über die folgenden Links finden Sie offizielle Informationen zum <a href="https://baden.dlrg.de/mitmachen/rettungssport/kader/" target="_blank" rel="noopener noreferrer">Landeskader</a> und <a href="https://www.dlrg.de/mitmachen/rettungssport/kader/" target="_blank" rel="noopener noreferrer">Bundeskader</a>.</p>
+        <p>Die Listen berücksichtigen derzeit nur erbrachte Leistungen über Normzeiten. Keine Platzierungen! Diese Liste ist nicht offiziell und kann fehlerhaft sein. Über die folgenden Links finden Sie offizielle Informationen zum <a href="https://baden.dlrg.de/mitmachen/rettungssport/kader/" target="_blank" rel="noopener noreferrer">Landeskader</a> und <a href="https://www.dlrg.de/mitmachen/rettungssport/kader/" target="_blank" rel="noopener noreferrer">Bundeskader</a>.</p>
         <div id="Normzeiten-root" class="pz-root">
           <p id="Normzeiten-status" class="pz-statusline">Lade Normzeiten aus Excel …</p>
         </div>

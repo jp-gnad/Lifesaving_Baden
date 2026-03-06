@@ -1,9 +1,6 @@
 :root {
   --pz-green: #008800;
   --pz-green-bar: #008800;
-  --pz-yellow: #ffbf00;
-  --pz-yellow-bar: #ffc107;
-  --pz-gray-dot: rgba(0, 0, 0, 0.18);
   --pz-head: #5b5b5b;
   --pz-white: #fff;
   --pz-detail-bg: #ffffff;
@@ -11,8 +8,6 @@
   --pz-border: rgba(0, 0, 0, 0.1);
   --pz-border-soft: rgba(0, 0, 0, 0.08);
   --pz-badge-pz1: #008800;
-  --pz-badge-pz2: #ffd24c;
-  --pz-badge-none: rgba(0, 0, 0, 0.06);
 }
 
 .pz-root {
@@ -130,10 +125,6 @@
 
 .pz-row.has-pz1 td:first-child::before {
   background: var(--pz-green-bar);
-}
-
-.pz-row.has-pz2 td:first-child::before {
-  background: var(--pz-yellow-bar);
 }
 
 .pz-person {
@@ -277,15 +268,6 @@
 .pz-badge.is-pz1 {
   background: var(--pz-badge-pz1);
   color: white;
-}
-
-.pz-badge.is-pz2 {
-  background: var(--pz-badge-pz2);
-}
-
-.pz-badge.is-none {
-  background: var(--pz-badge-none);
-  opacity: 0.85;
 }
 
 .pz-detail-switch {
@@ -467,9 +449,7 @@
 }
 
 .pz-info-table td:nth-child(2),
-.pz-info-table td:nth-child(3),
-.pz-info-table th:nth-child(2),
-.pz-info-table th:nth-child(3) {
+.pz-info-table th:nth-child(2) {
   text-align: right;
   white-space: nowrap;
 }
