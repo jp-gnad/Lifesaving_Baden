@@ -1,19 +1,6 @@
-/* PZ_tabellen.js
- * Tabellen-Engine für Pflichtzeiten/Nominierungslisten.
- *
- * Nutzung (ohne Module, klassisch):
- *   <script src=".../xlsx.full.min.js"></script>
- *   <script src="PZ_tabellen.js"></script>
- *   <script src="juniorenkader.js"></script>
- *
- * In juniorenkader.js dann:
- *   initPflichtzeitenTabellen("JRP", "JRP_konfig");
- */
-
 (function (global) {
   "use strict";
 
-  // ======= DEFAULTS (können bei Bedarf via opts überschrieben werden) =======
   const DEFAULT_DATA_EXCEL_URL =
     "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test%20(1).xlsx";
   const DEFAULT_DATA_SHEET = "Tabelle2";
@@ -21,7 +8,6 @@
   const DEFAULT_CONFIG_EXCEL_URL =
     "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx";
 
-  // ======= DATA-Layout =======
   const DATA_COLS = {
     gender: 0,
     name: 1,
@@ -50,55 +36,31 @@
   ];
 
   const PZ_COLS = {
-    pz1: {
-      ret50: "PZ1 - 50m Retten",
-      ret100: "PZ1 - 100m Retten",
-      kombi100: "PZ1 - 100m Kombi",
-      life100: "PZ1 - 100m Lifesaver",
-      super200: "PZ1 - 200m Super-Lifesaver",
-      hind200: "PZ1 - 200m Hindernis",
-    },
-    pz2: {
-      ret50: "PZ2 - 50m Retten",
-      ret100: "PZ2 - 100m Retten",
-      kombi100: "PZ2 - 100m Kombi",
-      life100: "PZ2 - 100m Lifesaver",
-      super200: "PZ2 - 200m Super-Lifesaver",
-      hind200: "PZ2 - 200m Hindernis",
-    },
+    ret50: "PZ - 50m Retten",
+    ret100: "PZ - 100m Retten",
+    kombi100: "PZ - 100m Kombi",
+    life100: "PZ - 100m Lifesaver",
+    super200: "PZ - 200m Super-Lifesaver",
+    hind200: "PZ - 200m Hindernis",
   };
 
-
-  /**
-   * Initialisiert die Pflichtzeiten-Tabellen.
-   *
-   * @param {string} configSheet
-   * @param {string} configTableName
-   * @param {object} [opts]
-   * @param {string} [opts.mountId="pflichtzeiten-root"]
-   * @param {string} [opts.statusId="pflichtzeiten-status"]
-   * @param {string} [opts.dataExcelUrl=DEFAULT_DATA_EXCEL_URL]
-   * @param {string} [opts.dataSheet=DEFAULT_DATA_SHEET]
-   * @param {string} [opts.configExcelUrl=DEFAULT_CONFIG_EXCEL_URL]
-   */
-
-  function initPflichtzeitenTabellen(configSheet, configTableName, opts = {}) {
+  function initNormzeitenTabellen(configSheet, configTableName, opts = {}) {
     const instance = createInstance(configSheet, configTableName, opts);
     instance.init();
     return instance;
   }
 
-  global.initPflichtzeitenTabellen = initPflichtzeitenTabellen;
+  global.initNormzeitenTabellen = initNormzeitenTabellen;
   global.PZTabellen = global.PZTabellen || {};
-  global.PZTabellen.initPflichtzeitenTabellen = initPflichtzeitenTabellen;
+  global.PZTabellen.initNormzeitenTabellen = initNormzeitenTabellen;
 
   function createInstance(configSheet, configTableName, opts) {
     const state = {
       configSheet: String(configSheet || "").trim(),
       configTableName: String(configTableName || "").trim(),
 
-      mountId: opts.mountId || "pflichtzeiten-root",
-      statusId: opts.statusId || "pflichtzeiten-status",
+      mountId: opts.mountId || "Normzeiten-root",
+      statusId: opts.statusId || "Normzeiten-status",
 
       dataExcelUrl: opts.dataExcelUrl || DEFAULT_DATA_EXCEL_URL,
       dataSheet: opts.dataSheet || DEFAULT_DATA_SHEET,
@@ -124,7 +86,7 @@
       if (!state.mount) return;
 
       const status = document.getElementById(state.statusId);
-      if (status) status.textContent = "Lade Pflichtzeiten aus Excel …";
+      if (status) status.textContent = "Lade Normzeiten aus Excel …";
 
       try {
         await renderAllFromExcel();
@@ -387,15 +349,11 @@
 
         const seasonYear = qualiEnd.getFullYear();
 
-        const pz1 = {};
-        const pz2 = {};
+        const pz = {};
         for (const d of DISCIPLINES) {
-          const h1 = PZ_COLS.pz1[d.key];
-          const h2 = PZ_COLS.pz2[d.key];
-          const v1 = getCellRaw(r, col, h1);
-          const v2 = getCellRaw(r, col, h2);
-          pz1[d.key] = parseExcelTimeToCentiOrNull(v1);
-          pz2[d.key] = parseExcelTimeToCentiOrNull(v2);
+          const h = PZ_COLS[d.key];
+          const v = getCellRaw(r, col, h);
+          pz[d.key] = parseExcelTimeToCentiOrNull(v);
         }
 
         const id = `cfg-${out.length + 1}-${slug(String(tableName))}-${gender}`;
@@ -416,8 +374,7 @@
           pageSize: Number.isFinite(pageSize) ? pageSize : 5,
           seasonYear,
           minReachedNorms,
-          pz1,
-          pz2,
+          pz,
         });
       }
 
@@ -476,13 +433,9 @@
     }
 
     function isBetterRec(a, b) {
-      const a1 = a.pz1Count ?? 0,
-        b1 = b.pz1Count ?? 0;
+      const a1 = a.pzCount ?? 0,
+        b1 = b.pzCount ?? 0;
       if (a1 !== b1) return a1 > b1;
-
-      const a2 = a.pz2Count ?? 0,
-        b2 = b.pz2Count ?? 0;
-      if (a2 !== b2) return a2 > b2;
 
       const ad = a.lastStartDate instanceof Date ? a.lastStartDate.getTime() : 0;
       const bd = b.lastStartDate instanceof Date ? b.lastStartDate.getTime() : 0;
@@ -662,11 +615,10 @@
           if (!rec.lastStartDate || rec.lastStartDate.getTime() < cfg.lastActive.getTime()) continue;
         }
 
-        const { pz1Count, pz2Count, qualifies } = computePZCountsFromConfig(rec, cfg);
+        const { pzCount, qualifies } = computePZCountsFromConfig(rec, cfg);
         if (!qualifies) continue;
 
-        rec.pz1Count = pz1Count;
-        rec.pz2Count = pz2Count;
+        rec.pzCount = pzCount;
         rec._cfg = cfg;
 
         people.push(rec);
@@ -683,7 +635,7 @@
       for (const item of src) {
         const centi = Number(item?.centi);
         const level = disciplineLevelFromConfigCenti(centi, cfg, dKey);
-        if (level !== "PZ1" && level !== "PZ2") continue;
+        if (level !== "PZ") continue;
 
         out.push({
           centi,
@@ -731,8 +683,8 @@
       icon.height = 18;
 
       infoBtn.appendChild(icon);
-      infoBtn.title = "Pflichtzeiten anzeigen";
-      infoBtn.setAttribute("aria-label", "Pflichtzeiten anzeigen");
+      infoBtn.title = "Normzeiten anzeigen";
+      infoBtn.setAttribute("aria-label", "Normzeiten anzeigen");
 
       const infoId = `pz-info-${safeDomId(cfg.id)}`;
       infoBtn.setAttribute("aria-controls", infoId);
@@ -744,7 +696,7 @@
       head.appendChild(infoBtn);
       wrap.appendChild(head);
 
-      const infoBox = buildPflichtzeitenInfoBox(cfg);
+      const infoBox = buildNormzeitenInfoBox(cfg);
       infoBox.id = infoId;
       wrap.appendChild(infoBox);
       initCollapsible(infoBox, isInfoOpen);
@@ -789,7 +741,7 @@
         const tdEmpty = document.createElement("td");
         tdEmpty.colSpan = 3;
         tdEmpty.className = "pz-empty";
-        tdEmpty.textContent = "Keine Pflichtzeit erreicht.";
+        tdEmpty.textContent = "Keine Normzeit / Platzierung erreicht.";
         trEmpty.appendChild(tdEmpty);
         tbody.appendChild(trEmpty);
       } else {
@@ -861,12 +813,9 @@
           const detailRow = document.createElement("tr");
           detailRow.className = "pz-detail";
 
-          if (rec.pz1Count > 0) {
+          if (rec.pzCount > 0) {
             mainRow.classList.add("has-pz1");
             detailRow.classList.add("has-pz1");
-          } else if (rec.pz2Count > 0) {
-            mainRow.classList.add("has-pz2");
-            detailRow.classList.add("has-pz2");
           }
 
           detailRow.className = "pz-detail";
@@ -883,15 +832,7 @@
             reached.push({ i, level: hits[0].level, hits });
           }
 
-
-
-          const prio = { PZ1: 0, PZ2: 1 };
-          reached.sort((a, b) => {
-            const pa = prio[a.level] ?? 9;
-            const pb = prio[b.level] ?? 9;
-            if (pa !== pb) return pa - pb;
-            return a.i - b.i;
-          });
+          reached.sort((a, b) => a.i - b.i);
 
           const detailResetFns = [];
 
@@ -917,48 +858,46 @@
             left.appendChild(meta);
 
             const right = document.createElement("div");
-              right.className = "pz-detail-right";
+            right.className = "pz-detail-right";
 
-              let prevBtn = null;
-              let nextBtn = null;
-              let badge = null;
+            let prevBtn = null;
+            let nextBtn = null;
+            let badge = null;
 
-              if (hits.length > 1) {
-                const switcher = document.createElement("div");
-                switcher.className = "pz-detail-switch";
+            if (hits.length > 1) {
+              const switcher = document.createElement("div");
+              switcher.className = "pz-detail-switch";
 
-                prevBtn = document.createElement("button");
-                prevBtn.type = "button";
-                prevBtn.className = "pz-detail-switch__btn";
-                prevBtn.textContent = "‹";
+              prevBtn = document.createElement("button");
+              prevBtn.type = "button";
+              prevBtn.className = "pz-detail-switch__btn";
+              prevBtn.textContent = "‹";
 
-                badge = document.createElement("span");
-                badge.className = "pz-badge pz-detail-switch__badge";
+              badge = document.createElement("span");
+              badge.className = "pz-badge pz-detail-switch__badge";
 
-                nextBtn = document.createElement("button");
-                nextBtn.type = "button";
-                nextBtn.className = "pz-detail-switch__btn";
-                nextBtn.textContent = "›";
+              nextBtn = document.createElement("button");
+              nextBtn.type = "button";
+              nextBtn.className = "pz-detail-switch__btn";
+              nextBtn.textContent = "›";
 
-                switcher.appendChild(prevBtn);
-                switcher.appendChild(badge);
-                switcher.appendChild(nextBtn);
+              switcher.appendChild(prevBtn);
+              switcher.appendChild(badge);
+              switcher.appendChild(nextBtn);
 
-                right.appendChild(switcher);
-              } else {
-                badge = document.createElement("span");
-                badge.className = "pz-badge";
-                right.appendChild(badge);
-              }
+              right.appendChild(switcher);
+            } else {
+              badge = document.createElement("span");
+              badge.className = "pz-badge";
+              right.appendChild(badge);
+            }
 
             const renderHit = () => {
               const h = hits[hitIdx];
               meta.textContent = `${h.text}  |  ${h.comp || "—"}`;
-              const showPZ2ForCfg = variantNeedsPZ2(rec._cfg);
-
-              badge.textContent = !showPZ2ForCfg && h.level === "PZ1" ? "PZ" : h.level;
-              badge.classList.remove("is-pz1", "is-pz2");
-              badge.classList.add(h.level === "PZ1" ? "is-pz1" : "is-pz2");
+              badge.textContent = h.level;
+              badge.classList.remove("is-pz1");
+              badge.classList.add("is-pz1");
 
               if (prevBtn) prevBtn.disabled = hitIdx <= 0;
               if (nextBtn) nextBtn.disabled = hitIdx >= hits.length - 1;
@@ -1002,8 +941,6 @@
           detailInner.appendChild(detailWrap);
           detailTd.appendChild(detailInner);
           detailRow.appendChild(detailTd);
-
-
 
           const toggle = () => {
             const detailInner = detailRow.querySelector(".pz-detail-inner");
@@ -1147,8 +1084,7 @@
     }
 
     function personSort(a, b) {
-      if ((b.pz1Count ?? 0) !== (a.pz1Count ?? 0)) return (b.pz1Count ?? 0) - (a.pz1Count ?? 0);
-      if ((b.pz2Count ?? 0) !== (a.pz2Count ?? 0)) return (b.pz2Count ?? 0) - (a.pz2Count ?? 0);
+      if ((b.pzCount ?? 0) !== (a.pzCount ?? 0)) return (b.pzCount ?? 0) - (a.pzCount ?? 0);
 
       const nameCmp = (a.name || "").localeCompare(b.name || "", "de");
       if (nameCmp !== 0) return nameCmp;
@@ -1167,8 +1103,7 @@
         ogInt: "",
         ogIntDate: null,
         ogIntRow: -1,
-        pz1Count: 0,
-        pz2Count: 0,
+        pzCount: 0,
         _cfg: null,
         lastStartDate: null,
         lastStartComp: "",
@@ -1213,58 +1148,42 @@
     }
 
     function computePZCountsFromConfig(rec, cfg) {
-      let pz1Count = 0;
-      let pz2Count = 0;
+      let pzCount = 0;
 
       for (let i = 0; i < DISCIPLINES.length; i++) {
         const dKey = DISCIPLINES[i].key;
         const best = rec.best[i];
         if (!(best.centi < 99999999)) continue;
 
-        const t1 = cfg.pz1?.[dKey];
-        const t2 = cfg.pz2?.[dKey];
+        const t = cfg.pz?.[dKey];
+        const hasPZ = Number.isFinite(t);
 
-        const hasPZ1 = Number.isFinite(t1);
-        const hasPZ2 = Number.isFinite(t2);
+        if (!hasPZ) continue;
 
-        if (!hasPZ1 && !hasPZ2) continue;
-
-        if (hasPZ1 && best.centi <= t1) {
-          pz1Count += 1;
-          continue;
-        }
-
-        if (hasPZ2 && best.centi <= t2) {
-          pz2Count += 1;
+        if (best.centi <= t) {
+          pzCount += 1;
         }
       }
-
-      const totalReached = pz1Count + pz2Count;
 
       const minRequiredRaw = Number(cfg?.minReachedNorms);
       const minRequired = Number.isFinite(minRequiredRaw)
         ? clamp(Math.trunc(minRequiredRaw), 1, DISCIPLINES.length)
         : 1;
 
-      const qualifies = totalReached >= minRequired;
+      const qualifies = pzCount >= minRequired;
 
-      return { pz1Count, pz2Count, qualifies };
+      return { pzCount, qualifies };
     }
 
     function disciplineLevelFromConfigCenti(centi, cfg, dKey) {
       if (!cfg || !Number.isFinite(centi) || !(centi < 99999999)) return "—";
 
-      const t1 = cfg.pz1?.[dKey];
-      const t2 = cfg.pz2?.[dKey];
+      const t = cfg.pz?.[dKey];
+      const hasPZ = Number.isFinite(t);
 
-      const hasPZ1 = Number.isFinite(t1);
-      const hasPZ2 = Number.isFinite(t2);
+      if (!hasPZ) return "—";
 
-      if (!hasPZ1 && !hasPZ2) return "—";
-
-      if (hasPZ1 && centi <= t1) return "PZ1";
-
-      if (hasPZ2 && centi <= t2) return "PZ2";
+      if (centi <= t) return "PZ";
 
       return "—";
     }
@@ -1418,7 +1337,7 @@
       return String(birthYear % 100).padStart(2, "0");
     }
 
-    function buildPflichtzeitenInfoBox(cfgGroup) {
+    function buildNormzeitenInfoBox(cfgGroup) {
       const box = document.createElement("div");
       box.className = "pz-info pz-collapsible";
       box.dataset.table = cfgGroup.id;
@@ -1446,8 +1365,6 @@
 
         const range = calcBirthYearRange(v);
         const label = rangeLabel(range);
-
-        const showPZ2 = variantNeedsPZ2(v);
         const rangeInnerId = `pz-range-${safeDomId(cfgGroup.id)}-${idx}`;
 
         if (multi) {
@@ -1460,7 +1377,7 @@
 
           const top = document.createElement("span");
           top.className = "pz-range-title";
-          top.textContent = `Pflichtzeiten: ${label}`;
+          top.textContent = `Normzeiten: ${label}`;
           top.style.color = genderColor(cfgGroup.gender);
 
           const meta = document.createElement("span");
@@ -1488,7 +1405,7 @@
 
           const rInner = document.createElement("div");
           rInner.className = "pz-collapsible__inner pz-range__inner";
-          rInner.appendChild(buildPflichtzeitenTable(v, showPZ2));
+          rInner.appendChild(buildNormzeitenTable(v));
           rangeWrap.appendChild(rInner);
 
           sec.appendChild(rangeWrap);
@@ -1497,7 +1414,7 @@
         } else {
           const title = document.createElement("div");
           title.className = "pz-info-range";
-          title.textContent = `Pflichtzeiten: ${label}`;
+          title.textContent = `Normzeiten: ${label}`;
           title.style.color = genderColor(cfgGroup.gender);
           sec.appendChild(title);
 
@@ -1506,7 +1423,7 @@
           meta.textContent = buildQualiMetaText(v);
           sec.appendChild(meta);
 
-          sec.appendChild(buildPflichtzeitenTable(v, showPZ2));
+          sec.appendChild(buildNormzeitenTable(v));
         }
 
         inner.appendChild(sec);
@@ -1516,7 +1433,7 @@
       return box;
     }
 
-    function buildPflichtzeitenTable(cfg, showPZ2) {
+    function buildNormzeitenTable(cfg) {
       const table = document.createElement("table");
       table.className = "pz-info-table";
 
@@ -1528,14 +1445,8 @@
       trh.appendChild(thDisc);
 
       const th1 = document.createElement("th");
-      th1.textContent = showPZ2 ? "PZ1" : "PZ";
+      th1.textContent = "PZ";
       trh.appendChild(th1);
-
-      if (showPZ2) {
-        const th2 = document.createElement("th");
-        th2.textContent = "PZ2";
-        trh.appendChild(th2);
-      }
 
       thead.appendChild(trh);
       table.appendChild(thead);
@@ -1549,23 +1460,10 @@
         tdDisc.textContent = d.label;
         tr.appendChild(tdDisc);
 
-        const t1 = cfg.pz1?.[d.key];
-        const t2 = cfg.pz2?.[d.key];
-
-        if (!showPZ2) {
-          const val = Number.isFinite(t1) ? t1 : t2;
-          const td1 = document.createElement("td");
-          td1.textContent = centiToTimeText(val);
-          tr.appendChild(td1);
-        } else {
-          const td1 = document.createElement("td");
-          td1.textContent = centiToTimeText(t1);
-          tr.appendChild(td1);
-
-          const td2 = document.createElement("td");
-          td2.textContent = centiToTimeText(t2);
-          tr.appendChild(td2);
-        }
+        const t = cfg.pz?.[d.key];
+        const td1 = document.createElement("td");
+        td1.textContent = centiToTimeText(t);
+        tr.appendChild(td1);
 
         tbody.appendChild(tr);
       }
@@ -1595,15 +1493,6 @@
       return `${r.low}-${r.high}`;
     }
 
-    function variantNeedsPZ2(cfg) {
-      for (const d of DISCIPLINES) {
-        const t1 = cfg.pz1?.[d.key];
-        const t2 = cfg.pz2?.[d.key];
-        if (Number.isFinite(t1) && Number.isFinite(t2) && t1 !== t2) return true;
-      }
-      return false;
-    }
-
     function centiToTimeText(centi) {
       if (!Number.isFinite(centi)) return "—";
       const c = Math.max(0, Math.trunc(centi));
@@ -1614,93 +1503,92 @@
       return `${mm}:${pad2(ss)},${pad2(cc)}`;
     }
 
-  function safeDomId(s) {
-    return String(s ?? "").replace(/[^a-zA-Z0-9_-]/g, "-");
-  }
-
-  function initCollapsible(wrap, open) {
-    const inner = wrap?.querySelector(":scope > .pz-collapsible__inner");
-    if (!inner) return;
-
-    if (open) {
-      wrap.classList.add("is-open");
-      inner.style.maxHeight = "none";
-      inner.style.opacity = "1";
-    } else {
-      wrap.classList.remove("is-open");
-      inner.style.maxHeight = "0px";
-      inner.style.opacity = "0";
+    function safeDomId(s) {
+      return String(s ?? "").replace(/[^a-zA-Z0-9_-]/g, "-");
     }
-  }
 
-  function setCollapsibleOpen(wrap, open) {
-    const inner = wrap?.querySelector(":scope > .pz-collapsible__inner");
-    if (!inner) return;
+    function initCollapsible(wrap, open) {
+      const inner = wrap?.querySelector(":scope > .pz-collapsible__inner");
+      if (!inner) return;
 
-    if (open) {
-      wrap.classList.add("is-open");
-      inner.style.maxHeight = "0px";
-      inner.style.opacity = "0";
-
-      requestAnimationFrame(() => {
-        inner.style.maxHeight = inner.scrollHeight + "px";
-        inner.style.opacity = "1";
-      });
-
-      const onEnd = (e) => {
-        if (e.propertyName !== "max-height") return;
+      if (open) {
+        wrap.classList.add("is-open");
         inner.style.maxHeight = "none";
-        inner.removeEventListener("transitionend", onEnd);
-      };
-      inner.addEventListener("transitionend", onEnd);
-    } else {
-      inner.style.maxHeight = inner.scrollHeight + "px";
-      inner.style.opacity = "1";
-
-      requestAnimationFrame(() => {
+        inner.style.opacity = "1";
+      } else {
+        wrap.classList.remove("is-open");
         inner.style.maxHeight = "0px";
         inner.style.opacity = "0";
-      });
-
-      const onEnd = (e) => {
-        if (e.propertyName !== "max-height") return;
-        wrap.classList.remove("is-open");
-        inner.removeEventListener("transitionend", onEnd);
-      };
-      inner.addEventListener("transitionend", onEnd);
+      }
     }
-  }
 
-  function fmtDateDE(d) {
-    if (!(d instanceof Date) || isNaN(d.getTime())) return "—";
-    return `${pad2(d.getDate())}.${pad2(d.getMonth() + 1)}.${d.getFullYear()}`;
-  }
+    function setCollapsibleOpen(wrap, open) {
+      const inner = wrap?.querySelector(":scope > .pz-collapsible__inner");
+      if (!inner) return;
 
-  function buildQualiMetaText(cfg) {
-    const a = fmtDateDE(cfg?.qualiStart);
-    const b = fmtDateDE(cfg?.qualiEnd);
+      if (open) {
+        wrap.classList.add("is-open");
+        inner.style.maxHeight = "0px";
+        inner.style.opacity = "0";
 
-    const plRaw = String(cfg?.poolLength ?? "").trim();
-    let pl = "25m/50m";
-    if (plRaw === "25") pl = "25m";
-    else if (plRaw === "50") pl = "50m";
+        requestAnimationFrame(() => {
+          inner.style.maxHeight = inner.scrollHeight + "px";
+          inner.style.opacity = "1";
+        });
 
-    const rw = String(cfg?.rulebook ?? "").trim();
+        const onEnd = (e) => {
+          if (e.propertyName !== "max-height") return;
+          inner.style.maxHeight = "none";
+          inner.removeEventListener("transitionend", onEnd);
+        };
+        inner.addEventListener("transitionend", onEnd);
+      } else {
+        inner.style.maxHeight = inner.scrollHeight + "px";
+        inner.style.opacity = "1";
 
-    if (rw) return `${a}-${b}  |  ${pl}  |  ${rw}`;
-    return `${a}-${b}  |  ${pl}`;
-  }
+        requestAnimationFrame(() => {
+          inner.style.maxHeight = "0px";
+          inner.style.opacity = "0";
+        });
 
-  global.PZTabellen = global.PZTabellen || {};
-  global.PZTabellen.safeDomId = safeDomId;
-  global.PZTabellen.initCollapsible = initCollapsible;
-  global.PZTabellen.setCollapsibleOpen = setCollapsibleOpen;
-  global.PZTabellen.fmtDateDE = fmtDateDE;
-  global.PZTabellen.buildQualiMetaText = buildQualiMetaText;
+        const onEnd = (e) => {
+          if (e.propertyName !== "max-height") return;
+          wrap.classList.remove("is-open");
+          inner.removeEventListener("transitionend", onEnd);
+        };
+        inner.addEventListener("transitionend", onEnd);
+      }
+    }
+
+    function fmtDateDE(d) {
+      if (!(d instanceof Date) || isNaN(d.getTime())) return "—";
+      return `${pad2(d.getDate())}.${pad2(d.getMonth() + 1)}.${d.getFullYear()}`;
+    }
+
+    function buildQualiMetaText(cfg) {
+      const a = fmtDateDE(cfg?.qualiStart);
+      const b = fmtDateDE(cfg?.qualiEnd);
+
+      const plRaw = String(cfg?.poolLength ?? "").trim();
+      let pl = "25m/50m";
+      if (plRaw === "25") pl = "25m";
+      else if (plRaw === "50") pl = "50m";
+
+      const rw = String(cfg?.rulebook ?? "").trim();
+
+      if (rw) return `${a}-${b}  |  ${pl}  |  ${rw}`;
+      return `${a}-${b}  |  ${pl}`;
+    }
+
+    global.PZTabellen = global.PZTabellen || {};
+    global.PZTabellen.safeDomId = safeDomId;
+    global.PZTabellen.initCollapsible = initCollapsible;
+    global.PZTabellen.setCollapsibleOpen = setCollapsibleOpen;
+    global.PZTabellen.fmtDateDE = fmtDateDE;
+    global.PZTabellen.buildQualiMetaText = buildQualiMetaText;
 
     return {
       init,
     };
   }
-
 })(typeof window !== "undefined" ? window : globalThis);

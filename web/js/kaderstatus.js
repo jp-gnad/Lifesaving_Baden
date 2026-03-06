@@ -7,7 +7,7 @@ const CONFIG_EXCEL_URL =
 const CONFIG_SHEET = "LK";
 const CONFIG_TABLE_NAME = "LK_konfig";
 
-const BRIDGE_URL = "PZ_tabellen.js";
+const BRIDGE_URL = "Qualli_tabellen.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   const root = document.getElementById("content");
@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const stage0 = () => {
     root.innerHTML = `
       <section class="hero">
-        <h1>Kader-Quallifikationen</h1>
+        <h1>Live Kader-Quallifikationen</h1>
       </section>
 
       <section class="updates">
@@ -44,14 +44,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const stage1 = () => {
     root.innerHTML = `
       <section class="hero">
-        <h1>Kader-Quallifikationen</h1>
+        <h1>Live Kader-Quallifikationen</h1>
       </section>
 
       <section class="updates">
         <h2>Erreichten Kadernormen 2026 für 2027</h2>
-        <p>Die Listen berücksichtigen derzeit nur erbrachte Normen über Pflichtzeiten. Keine Platzierungen! Diese Liste ist nicht offiziell und kann fehlerhaft sein. Über die folgenden Links finden Sie offizielle Informationen zum <a href="https://baden.dlrg.de/mitmachen/rettungssport/kader/" target="_blank" rel="noopener noreferrer">Landeskader</a> und <a href="https://www.dlrg.de/mitmachen/rettungssport/kader/" target="_blank" rel="noopener noreferrer">Bundeskader</a>.</p>
-        <div id="pflichtzeiten-root" class="pz-root">
-          <p id="pflichtzeiten-status" class="pz-statusline">Lade Pflichtzeiten aus Excel …</p>
+        <p>Die Listen berücksichtigen derzeit nur erbrachte Normen über Normzeiten. Keine Platzierungen! Diese Liste ist nicht offiziell und kann fehlerhaft sein. Über die folgenden Links finden Sie offizielle Informationen zum <a href="https://baden.dlrg.de/mitmachen/rettungssport/kader/" target="_blank" rel="noopener noreferrer">Landeskader</a> und <a href="https://www.dlrg.de/mitmachen/rettungssport/kader/" target="_blank" rel="noopener noreferrer">Bundeskader</a>.</p>
+        <div id="Normzeiten-root" class="pz-root">
+          <p id="Normzeiten-status" class="pz-statusline">Lade Normzeiten aus Excel …</p>
         </div>
       </section>
     `;
@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const sync0 = () =>
     new Promise((ok, no) => {
-      if (typeof initPflichtzeitenTabellen === "function") {
+      if (typeof initNormzeitenTabellen === "function") {
         ok();
         return;
       }
@@ -69,7 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
       s.async = true;
 
       s.onload = () => {
-        if (typeof initPflichtzeitenTabellen === "function") {
+        if (typeof initNormzeitenTabellen === "function") {
           ok();
         } else {
           no(new Error("Engine fehlt"));
@@ -82,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const boot0 = async () => {
     stage1();
-    const line = document.getElementById("pflichtzeiten-status");
+    const line = document.getElementById("Normzeiten-status");
 
     try {
       await sync0();
@@ -93,9 +93,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      initPflichtzeitenTabellen(CONFIG_SHEET, CONFIG_TABLE_NAME, {
-        mountId: "pflichtzeiten-root",
-        statusId: "pflichtzeiten-status",
+      initNormzeitenTabellen(CONFIG_SHEET, CONFIG_TABLE_NAME, {
+        mountId: "Normzeiten-root",
+        statusId: "Normzeiten-status",
         dataExcelUrl: DATA_EXCEL_URL,
         dataSheet: DATA_SHEET,
         configExcelUrl: CONFIG_EXCEL_URL,
