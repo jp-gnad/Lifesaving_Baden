@@ -489,6 +489,14 @@
   color: rgba(87, 87, 86, 0.6);
 }
 
+.pz-place-dot {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #D1D1D1;
+}
+
 @media (max-width: 1080px) {
   .pz-grid {
     grid-template-columns: 1fr;

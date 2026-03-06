@@ -838,15 +838,25 @@
           hook.className = "pz-hook";
           hook.src = "./svg/icon_hook.svg";
           hook.alt = "Zeitkriterium erfüllt";
-          hook.width = 18;
-          hook.height = 18;
+          hook.width = 20;
+          hook.height = 20;
           hook.loading = "lazy";
           hook.decoding = "async";
 
           tdRight.appendChild(hook);
 
+          const tdPlace = document.createElement("td");
+          tdPlace.className = "pz-platz";
+
+          const placeDot = document.createElement("span");
+          placeDot.className = "pz-place-dot";
+          placeDot.setAttribute("aria-hidden", "true");
+
+          tdPlace.appendChild(placeDot);
+
           mainRow.appendChild(tdLeft);
           mainRow.appendChild(tdRight);
+          mainRow.appendChild(tdPlace);
 
           const detailRow = document.createElement("tr");
           detailRow.className = "pz-detail";
@@ -861,7 +871,7 @@
 
           detailRow.className = "pz-detail";
           const detailTd = document.createElement("td");
-          detailTd.colSpan = 2;
+          detailTd.colSpan = 3;
 
           const detailWrap = document.createElement("div");
           detailWrap.className = "pz-detail-wrap";
