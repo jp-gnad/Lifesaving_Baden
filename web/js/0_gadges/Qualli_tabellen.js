@@ -770,11 +770,16 @@
         th1.textContent = "Name / Gliederung";
 
         const th2 = document.createElement("th");
-        th2.textContent = "Status";
+        th2.textContent = "Zeit";
         th2.className = "pz-th-status";
+
+        const th3 = document.createElement("th");
+        th3.textContent = "Platz";
+        th3.className = "pz-th-platz";
 
         trh.appendChild(th1);
         trh.appendChild(th2);
+        trh.appendChild(th3);
         thead.appendChild(trh);
         table.appendChild(thead);
       }
@@ -782,7 +787,7 @@
       if (list.length === 0) {
         const trEmpty = document.createElement("tr");
         const tdEmpty = document.createElement("td");
-        tdEmpty.colSpan = 2;
+        tdEmpty.colSpan = 3;
         tdEmpty.className = "pz-empty";
         tdEmpty.textContent = "Keine Pflichtzeit erreicht.";
         trEmpty.appendChild(tdEmpty);
@@ -829,24 +834,16 @@
           const tdRight = document.createElement("td");
           tdRight.className = "pz-status";
 
-          const dots = document.createElement("div");
-          dots.className = "pz-dots";
-          dots.setAttribute("aria-label", `Status: ${rec.pz1Count}x PZ1, ${rec.pz2Count}x PZ2`);
+          const hook = document.createElement("img");
+          hook.className = "pz-hook";
+          hook.src = "./svg/icon_hook.svg";
+          hook.alt = "Zeitkriterium erfüllt";
+          hook.width = 18;
+          hook.height = 18;
+          hook.loading = "lazy";
+          hook.decoding = "async";
 
-          const total = DISCIPLINES.length;
-          const pz1 = Math.max(0, Math.min(rec.pz1Count || 0, total));
-          const pz2 = Math.max(0, Math.min(rec.pz2Count || 0, total - pz1));
-
-          for (let i = 0; i < total; i++) {
-            const dot = document.createElement("span");
-            dot.className = "pz-dot";
-            if (i < pz1) dot.classList.add("is-pz1");
-            else if (i < pz1 + pz2) dot.classList.add("is-pz2");
-            else dot.classList.add("is-none");
-            dots.appendChild(dot);
-          }
-
-          tdRight.appendChild(dots);
+          tdRight.appendChild(hook);
 
           mainRow.appendChild(tdLeft);
           mainRow.appendChild(tdRight);
@@ -947,7 +944,9 @@
             const renderHit = () => {
               const h = hits[hitIdx];
               meta.textContent = `${h.text}  |  ${h.comp || "—"}`;
-              badge.textContent = h.level;
+              const showPZ2ForCfg = variantNeedsPZ2(rec._cfg);
+
+              badge.textContent = !showPZ2ForCfg && h.level === "PZ1" ? "PZ" : h.level;
               badge.classList.remove("is-pz1", "is-pz2");
               badge.classList.add(h.level === "PZ1" ? "is-pz1" : "is-pz2");
 
@@ -1519,7 +1518,7 @@
       trh.appendChild(thDisc);
 
       const th1 = document.createElement("th");
-      th1.textContent = "PZ1";
+      th1.textContent = showPZ2 ? "PZ1" : "PZ";
       trh.appendChild(th1);
 
       if (showPZ2) {
