@@ -202,8 +202,23 @@
     window.location.href = url;
   }
 
+  function resetSearchUi() {
+    if (refs.input) {
+      refs.input.value = "";
+      refs.input.blur();
+    }
+
+    state.query = "";
+    state.suggestions = [];
+    state.activeIndex = -1;
+
+    updateClearButton();
+    hideSuggestions();
+  }
+
   function openProfile(a) {
     if (!a) return;
+    resetSearchUi();
     (refs.openProfile || defaultOpenProfile)(a);
   }
 
