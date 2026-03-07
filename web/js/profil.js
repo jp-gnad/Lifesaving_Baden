@@ -4,7 +4,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   main.innerHTML = `
     <section class="hero">
-      <h1>Athleten</h1>
+      <div class="container hero-content">
+        <div id="ath-search-mount"></div>
+        <h1>Athleten</h1>
+      </div>
     </section>
 
     <section id="athleten-container-section">
@@ -15,6 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 (function () {
   const $ = (s, r = document) => r.querySelector(s);
+
   const h = (tag, props = {}, ...children) => {
     const el = document.createElement(tag);
     for (const [k, v] of Object.entries(props || {})) {
@@ -31,8 +35,6 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const PAGE_MODE = "profil";
-  const MIN_QUERY_LEN = 3;
-
   const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test (1).xlsx";
 
   let AllMeetsByAthleteId = new Map();
@@ -47,10 +49,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function openFromUrlIfPossible() {
     const id = getAthleteIdFromUrl();
     if (!id) return;
-
     if (!Array.isArray(AppState.athletes) || !AppState.athletes.length) return;
 
-    const hit = AppState.athletes.find(a => String(a.id) === id);
+    const hit = AppState.athletes.find((a) => String(a.id) === id);
     if (!hit) return;
 
     openProfile(hit);
@@ -58,8 +59,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function dismissKeyboard() {
     try {
-      Refs.input?.blur();
-
       const ae = document.activeElement;
       if (ae && typeof ae.blur === "function") ae.blur();
 
@@ -77,6 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
         trap.style.width = "0";
         document.body.appendChild(trap);
       }
+
       trap.focus({ preventScroll: true });
       trap.blur();
     } catch (e) {}
@@ -179,12 +179,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function normalizePool(v) {
-    return (String(v).trim() === "25" || String(v).trim() === "50") ? String(v).trim() : "";
+    return String(v).trim() === "25" || String(v).trim() === "50" ? String(v).trim() : "";
   }
 
   function normalizeStartrecht(s) {
     const t = String(s || "").trim().toUpperCase();
-    return (t === "OG" || t === "LV" || t === "BV" || t === "BZ") ? t : "";
+    return t === "OG" || t === "LV" || t === "BV" || t === "BZ" ? t : "";
   }
 
   function toNumOrBlank(v) {
@@ -208,7 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
       .replace(/\p{Diacritic}/gu, "")
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9\-]/g, "");
-    const g = (String(gender || "").toLowerCase().startsWith("w")) ? "w" : "m";
+    const g = String(gender || "").toLowerCase().startsWith("w") ? "w" : "m";
     return `ath_${base}_${birthYear || "x"}_${g}`;
   }
 
@@ -221,17 +221,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const og = String(row[COLS.ortsgruppe] || "").trim();
 
     return {
-      id: makeAthleteId(name, gender, by),
-      name,
-      jahrgang: by,
-      geschlecht: gender,
-      ortsgruppe: og
-    };
+    id: makeAthleteId(name, gender, by),
+    name,
+    jahrgang: by,
+    geschlecht: gender,
+    ortsgruppe: og,
+    LV_state: String(row[COLS.LV_state] ?? "").trim().toUpperCase(),
+    BV_natio: String(row[COLS.BV_natio] ?? "").trim()
+  };
   }
 
   function mapRowToMeet(row) {
     const iso = excelSerialToISO(row[COLS.excelDate]);
-    const meet = {
+    return {
       meet_name: String(row[COLS.meet_name] || "").trim(),
       date: iso,
       pool: normalizePool(row[COLS.pool]),
@@ -258,7 +260,6 @@ document.addEventListener("DOMContentLoaded", () => {
       "200m_Hindernis_Zeit": String(row[COLS.z_200h] ?? "").trim(),
       "200m_Hindernis_Platz": toNumOrBlank(row[COLS.p_200h])
     };
-    return meet;
   }
 
   function buildIndicesFromRows(rows) {
@@ -284,13 +285,18 @@ document.addEventListener("DOMContentLoaded", () => {
     for (const [id, min] of minimalById.entries()) {
       const list = meetsById.get(id) || [];
       let lastOG = String(min.ortsgruppe || "").trim();
+
       if (list.length) {
         const sorted = list.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
         for (const m of sorted) {
           const og = String(m?.Ortsgruppe ?? "").trim();
-          if (og) { lastOG = og; break; }
+          if (og) {
+            lastOG = og;
+            break;
+          }
         }
       }
+
       minimalById.set(id, { ...min, ortsgruppe: lastOG });
     }
 
@@ -301,34 +307,16 @@ document.addEventListener("DOMContentLoaded", () => {
     return athletesLight;
   }
 
-  const REF_YEAR = new Date().getFullYear();
-
-  const normalize = (s) =>
-    (s || "").toString().toLowerCase().normalize("NFKD").replace(/\p{Diacritic}/gu, "").replace(/\s+/g, " ").trim();
-
-  const highlight = (text, query) => {
-    const nText = normalize(text);
-    const nQuery = normalize(query);
-    const idx = nText.indexOf(nQuery);
-    if (idx < 0 || !query) return text;
-    return text.slice(0, idx) + "<mark>" + text.slice(idx, idx + nQuery.length) + "</mark>" + text.slice(idx + nQuery.length);
-  };
-
   const AppState = {
-    query: "",
-    suggestions: [],
-    activeIndex: -1,
     selectedAthleteId: null,
     poolLen: "50",
     top10Tables: [],
-    currentTop10Index: 0
+    currentTop10Index: 0,
+    athletes: []
   };
 
   const Refs = {
-    input: null,
-    suggest: null,
     profileMount: null,
-    searchWrap: null,
     bestGrid: null,
     bestBtn50: null,
     bestBtn25: null,
@@ -340,20 +328,21 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!mount) return;
 
     mount.innerHTML = "";
-    const ui = h("section", { class: "ath-ui", role: "region", "aria-label": "Athletenbereich" });
 
-    ui.appendChild(renderSearch());
+    const ui = h("section", {
+      class: "ath-ui",
+      role: "region",
+      "aria-label": "Athletenbereich"
+    });
 
-    const top10 = h("div", { id: "ath-top10", class: "ath-top10" });
+    const searchMount = $("#ath-search-mount");
+    if (searchMount && window.AthSearch && typeof window.AthSearch.mount === "function") {
+      searchMount.innerHTML = "";
+      window.AthSearch.mount(searchMount, { openProfile });
+    }
 
     const profile = h("div", { id: "ath-profile" });
     Refs.profileMount = profile;
-
-    if (PAGE_MODE === "athleten") {
-      ui.appendChild(top10);
-    } else {
-      top10.style.display = "none";
-    }
 
     if (PAGE_MODE === "profil") {
       ui.appendChild(profile);
@@ -362,197 +351,14 @@ document.addEventListener("DOMContentLoaded", () => {
     mount.appendChild(ui);
   }
 
-  function renderSearch() {
-    const wrap = h("div", { class: "ath-search-wrap" });
-    Refs.searchWrap = wrap;
-
-    const input = h("input", {
-      class: "ath-input",
-      type: "search",
-      placeholder: "Name suchen …",
-      role: "searchbox",
-      "aria-label": "Athleten suchen",
-      autocomplete: "off",
-      oninput: onQueryChange,
-      onkeydown: onSearchKeyDown
-    });
-    Refs.input = input;
-
-    const searchBtn = h("button", {
-      class: "ath-btn primary",
-      type: "button",
-      title: "Ersten Treffer öffnen",
-      onclick: () => { if (AppState.suggestions.length > 0) openProfile(AppState.suggestions[0]); }
-    }, "Öffnen");
-
-    wrap.appendChild(h("div", { class: "ath-ui-search", role: "search" }, input, searchBtn));
-
-    const suggest = h("div", { class: "ath-suggest hidden", role: "listbox", id: "ath-suggest" });
-    Refs.suggest = suggest;
-    wrap.appendChild(suggest);
-
-    document.addEventListener("click", (e) => {
-      if (!Refs.searchWrap.contains(e.target) && !suggest.contains(e.target)) {
-        hideSuggestions();
-      }
-    });
-
-    return wrap;
-  }
-
-  function onQueryChange(e) {
-    AppState.query = e.target.value || "";
-    updateSuggestions();
-  }
-
-  function onSearchKeyDown(e) {
-    const { suggestions, activeIndex } = AppState;
-    if (e.key === "ArrowDown") {
-      if (!suggestions.length) return;
-      e.preventDefault();
-      AppState.activeIndex = (activeIndex + 1) % suggestions.length;
-      paintSuggestions();
-    } else if (e.key === "ArrowUp") {
-      if (!suggestions.length) return;
-      e.preventDefault();
-      AppState.activeIndex = (activeIndex - 1 + suggestions.length) % suggestions.length;
-      paintSuggestions();
-    } else if (e.key === "Enter") {
-      if (!suggestions.length) return;
-      e.preventDefault();
-      openProfile(suggestions[activeIndex >= 0 ? activeIndex : 0]);
-    } else if (e.key === "Escape") {
-      hideSuggestions();
-    }
-  }
-
-  function updateSuggestions() {
-    const q = AppState.query.trim();
-    if (q.length < MIN_QUERY_LEN) {
-      AppState.suggestions = [];
-      AppState.activeIndex = -1;
-      hideSuggestions();
-      return;
-    }
-    const nq = normalize(q);
-    let list = AppState.athletes
-      .map(a => ({ a, nName: normalize(a.name) }))
-      .filter(({ nName }) => nName.includes(nq));
-
-    list.sort((l, r) => {
-      const aStart = l.nName.startsWith(nq) ? 0 : 1;
-      const bStart = r.nName.startsWith(nq) ? 0 : 1;
-      if (aStart !== bStart) return aStart - bStart;
-      return l.nName.localeCompare(r.nName);
-    });
-
-    AppState.suggestions = list.map(x => x.a).slice(0, 8);
-    AppState.activeIndex = AppState.suggestions.length ? 0 : -1;
-    paintSuggestions();
-  }
-
-  function hideSuggestions() {
-    if (Refs.suggest) {
-      Refs.suggest.classList.add("hidden");
-      Refs.suggest.innerHTML = "";
-    }
-  }
-
-  function renderSuggestAvatar(a) {
-    const wrap = h("div", { class: "ath-avatar sm ath-suggest-avatar" });
-    const img = h("img", {
-      class: "avatar-img",
-      alt: "Vereinskappe",
-      loading: "lazy",
-      decoding: "async"
-    });
-
-    const og = String(a?.ortsgruppe || "").trim();
-    const fallback = "svg/Cap-Baden_light.svg";
-    let triedFallback = false;
-
-    img.onerror = () => {
-      if (!triedFallback) {
-        triedFallback = true;
-        img.src = fallback;
-      } else {
-        img.remove();
-      }
-    };
-
-    if (og) img.src = `svg/Cap-${encodeURIComponent(og)}.svg`;
-    else img.src = fallback;
-
-    wrap.appendChild(img);
-    return wrap;
-  }
-
-  function paintSuggestions() {
-    const box = Refs.suggest;
-    if (!box) return;
-
-    const q = AppState.query.trim();
-    box.innerHTML = "";
-
-    if (!q || !AppState.suggestions.length) {
-      box.appendChild(
-        h("div", { class: "ath-suggest-empty" },
-          q.length < MIN_QUERY_LEN ? `Mind. ${MIN_QUERY_LEN} Zeichen eingeben` : "Keine Treffer"
-        )
-      );
-      box.classList.remove("hidden");
-      return;
-    }
-
-    AppState.suggestions.forEach((a, idx) => {
-      const item = h("div", {
-        class: "ath-suggest-item" + (idx === AppState.activeIndex ? " active" : ""),
-        role: "option",
-        "aria-selected": idx === AppState.activeIndex ? "true" : "false",
-        onclick: (ev) => {
-          ev.preventDefault();
-          ev.stopPropagation();
-          openProfile(a);
-        },
-        onpointerenter: () => {
-          if (AppState.activeIndex === idx) return;
-          box.querySelector('.ath-suggest-item.active')?.classList.remove('active');
-          item.classList.add('active');
-          AppState.activeIndex = idx;
-        },
-        onmouseenter: () => {
-          if (AppState.activeIndex === idx) return;
-          box.querySelector('.ath-suggest-item.active')?.classList.remove('active');
-          item.classList.add('active');
-          AppState.activeIndex = idx;
-        }
-      });
-
-      const av = renderSuggestAvatar(a);
-      item.appendChild(av);
-
-      const nameEl = h("div", { class: "ath-suggest-name" });
-      nameEl.innerHTML = `${highlight(a.name, q)} <span class="ath-year">(${a.jahrgang})</span>`;
-
-      const og = String(a.ortsgruppe || "").trim();
-      const sub = h("div", { class: "ath-suggest-sub" }, og ? ("DLRG " + og) : "DLRG —");
-
-      const text = h("div", { class: "ath-suggest-text" }, nameEl, sub);
-      item.appendChild(text);
-
-      box.appendChild(item);
-    });
-
-    box.classList.remove("hidden");
-    requestAnimationFrame(() => {});
-  }
-
   function openProfile(a) {
     if (!a) return;
 
     if (PAGE_MODE === "athleten") {
       const id = a.id ? String(a.id) : "";
-      const url = id ? `./profil.html?ath=${encodeURIComponent(id)}` : `./profil.html?name=${encodeURIComponent(String(a.name || "").trim())}`;
+      const url = id
+        ? `./profil.html?ath=${encodeURIComponent(id)}`
+        : `./profil.html?name=${encodeURIComponent(String(a.name || "").trim())}`;
       window.location.href = url;
       return;
     }
@@ -560,36 +366,37 @@ document.addEventListener("DOMContentLoaded", () => {
     if (window.ProfileHead && typeof window.ProfileHead.setAllMeetsByAthleteId === "function") {
       window.ProfileHead.setAllMeetsByAthleteId(AllMeetsByAthleteId);
     }
+
     if (window.ProfileTabs && typeof window.ProfileTabs.setAllMeetsByAthleteId === "function") {
       window.ProfileTabs.setAllMeetsByAthleteId(AllMeetsByAthleteId);
     }
+
     if (window.ProfileTabs && typeof window.ProfileTabs.setAthletes === "function") {
       window.ProfileTabs.setAthletes(AppState.athletes || []);
     }
 
-    const ax = (window.ProfileTabs && typeof window.ProfileTabs.hydrateAthleteForTabs === "function")
+    const ax = window.ProfileTabs && typeof window.ProfileTabs.hydrateAthleteForTabs === "function"
       ? window.ProfileTabs.hydrateAthleteForTabs(a)
       : a;
 
     AppState.selectedAthleteId = ax?.id || null;
 
     dismissKeyboard();
-    hideSuggestions();
 
     const mount = Refs.profileMount;
     if (!mount) return;
 
     mount.innerHTML = "";
 
-    const head = (window.ProfileHead && typeof window.ProfileHead.createAthProfileHead === "function")
+    const head = window.ProfileHead && typeof window.ProfileHead.createAthProfileHead === "function"
       ? window.ProfileHead.createAthProfileHead(ax)
       : h("div", { class: "ath-profile-head" });
 
-    const tabsWrap = (window.ProfileTabs && typeof window.ProfileTabs.createAthTabsWrap === "function")
+    const tabsWrap = window.ProfileTabs && typeof window.ProfileTabs.createAthTabsWrap === "function"
       ? window.ProfileTabs.createAthTabsWrap(ax)
       : h("div", { class: "ath-tabs-wrap" });
 
-    const note = (window.ProfileNote && typeof window.ProfileNote.createAthProfileNote === "function")
+    const note = window.ProfileNote && typeof window.ProfileNote.createAthProfileNote === "function"
       ? window.ProfileNote.createAthProfileNote()
       : h("div", { class: "ath-profile-section muted" });
 
@@ -598,17 +405,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (window.ProfileHead && typeof window.ProfileHead.installNameFitHandlerOnce === "function") {
       window.ProfileHead.installNameFitHandlerOnce();
     }
+
     requestAnimationFrame(() => {
       if (window.ProfileHead && typeof window.ProfileHead.fitProfileName === "function") {
         window.ProfileHead.fitProfileName();
       }
     });
-
-    if (Refs.input) Refs.input.value = "";
-    AppState.query = "";
-    AppState.suggestions = [];
-    AppState.activeIndex = -1;
-    hideSuggestions();
 
     if (ax?.id) {
       const u = new URL(window.location.href);
@@ -620,7 +422,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.addEventListener("DOMContentLoaded", async () => {
     renderApp();
-
     await new Promise(requestAnimationFrame);
 
     try {
@@ -628,12 +429,18 @@ document.addEventListener("DOMContentLoaded", () => {
       const light = buildIndicesFromRows(rows);
       AppState.athletes = light;
 
+      if (window.AthSearch && typeof window.AthSearch.setAthletes === "function") {
+        window.AthSearch.setAthletes(light);
+      }
+
       if (window.ProfileHead && typeof window.ProfileHead.setAllMeetsByAthleteId === "function") {
         window.ProfileHead.setAllMeetsByAthleteId(AllMeetsByAthleteId);
       }
+
       if (window.ProfileTabs && typeof window.ProfileTabs.setAllMeetsByAthleteId === "function") {
         window.ProfileTabs.setAllMeetsByAthleteId(AllMeetsByAthleteId);
       }
+
       if (window.ProfileTabs && typeof window.ProfileTabs.setAthletes === "function") {
         window.ProfileTabs.setAthletes(AppState.athletes || []);
       }
@@ -641,13 +448,15 @@ document.addEventListener("DOMContentLoaded", () => {
       if (PAGE_MODE === "profil") {
         openFromUrlIfPossible();
       }
-
-      hideSuggestions();
     } catch (err) {
       console.error("Boot-Fehler:", err);
-      if (Refs.suggest) {
-        Refs.suggest.classList.remove("hidden");
-        Refs.suggest.innerHTML = '<div class="ath-suggest-empty">Fehler beim Laden der Daten.</div>';
+
+      if (window.AthSearch && typeof window.AthSearch.showError === "function") {
+        window.AthSearch.showError("Fehler beim Laden der Daten.");
+      }
+
+      if (Refs.profileMount) {
+        Refs.profileMount.innerHTML = '<div class="ath-profile-section muted">Fehler beim Laden der Daten.</div>';
       }
     }
   });
