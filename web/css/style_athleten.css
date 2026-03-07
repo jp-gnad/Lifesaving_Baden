@@ -2181,9 +2181,3 @@ main#content {
     height: 0.95rem;
   }
 }
-
-@media (max-width: 480px) {
-  .og-item {
-    font-size: 3rem;
-  }
-}
