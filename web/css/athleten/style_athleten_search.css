@@ -30,6 +30,15 @@
   pointer-events: auto;
 }
 
+.ath-search-wrap.is-closing::before {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.ath-search-wrap.is-closing .ath-suggest {
+  display: none !important;
+}
+
 .ath-search-panel {
   width: 100%;
   min-height: 55px;

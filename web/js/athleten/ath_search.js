@@ -84,6 +84,76 @@
     return LAND_TO_ISO3[String(landName || "").trim()] || "";
   }
 
+  function forceDismissSearchFocus() {
+  try {
+    refs.input?.blur();
+
+    const ae = document.activeElement;
+    if (ae && typeof ae.blur === "function") ae.blur();
+
+    let trap = document.getElementById("ath-search-blur-trap");
+    if (!trap) {
+      trap = document.createElement("input");
+      trap.type = "text";
+      trap.id = "ath-search-blur-trap";
+      trap.tabIndex = -1;
+      trap.autocomplete = "off";
+      trap.setAttribute("aria-hidden", "true");
+      trap.style.position = "fixed";
+      trap.style.opacity = "0";
+      trap.style.pointerEvents = "none";
+      trap.style.height = "0";
+      trap.style.width = "0";
+      trap.style.left = "-9999px";
+      trap.style.top = "0";
+      document.body.appendChild(trap);
+    }
+
+    trap.focus({ preventScroll: true });
+    trap.blur();
+  } catch (e) {}
+}
+
+  function resetSearchUi() {
+    state.query = "";
+    state.suggestions = [];
+    state.activeIndex = -1;
+
+    if (refs.input) {
+      refs.input.value = "";
+    }
+
+    updateClearButton();
+
+    if (refs.suggest) {
+      refs.suggest.classList.add("hidden");
+      refs.suggest.innerHTML = "";
+    }
+
+    setSearchOpen(false);
+    refs.searchWrap?.classList.add("is-closing");
+
+    forceDismissSearchFocus();
+
+    requestAnimationFrame(() => {
+      forceDismissSearchFocus();
+    });
+
+    setTimeout(() => {
+      refs.searchWrap?.classList.remove("is-closing");
+    }, 250);
+  }
+
+  function openProfile(a) {
+    if (!a) return;
+
+    resetSearchUi();
+
+    requestAnimationFrame(() => {
+      (refs.openProfile || defaultOpenProfile)(a);
+    });
+  }
+
   function normalizeBVCode(bvRaw) {
     const s = String(bvRaw ?? "").trim();
     if (!s) return "";
