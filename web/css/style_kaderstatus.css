@@ -90,6 +90,10 @@ main#content {
   border-radius: 6px;
 }
 
+#pflichtzeiten-root {
+  min-height: 84px;
+}
+
 @media (max-width: 720px) {
   .hero h1 {
     font-size: 1.75em;
@@ -111,114 +115,9 @@ main#content {
     line-height: 1.5;
     font-size: 1rem;
   }
-}
 
-.pz-gate {
-  width: auto;
-  max-width: 450px;
-  box-sizing: border-box;
-  margin: 1rem auto 0 auto;
-  padding: 1rem 1rem 1.25rem 1rem;
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 14px;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.06);
-}
-
-.updates p.pz-statusline {
-  margin: 1.5rem 0 1rem 0;
-  max-width: none;
-  text-align: center;
-  line-height: 1.45;
-  color: rgb(87, 87, 86);
-  font-size: 1rem;
-}
-
-.pz-gate > div {
-  justify-content: center;
-}
-
-#field-a {
-  border: 1px solid rgb(227, 6, 19);
-  border-radius: 8px 0 0 8px;
-  background: #fff;
-  color: rgb(87, 87, 86);
-  font-size: 1rem;
-  line-height: 1.2;
-  transition: border-color 180ms ease, box-shadow 180ms ease;
-  margin: 0.5rem 0 1.5rem 0;
-}
-
-#field-a::placeholder {
-  color: #9a9a9a;
-}
-
-#field-a:focus {
-  outline: none;
-}
-
-#act-a {
-  border: 1px solid #b00000;
-  border-radius: 0 8px 8px 0  ;
-  background: linear-gradient(180deg, #d40000 0%, #b40000 100%);
-  color: #fff;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  transition: transform 120ms ease, box-shadow 180ms ease, filter 180ms ease;
-  margin: 0.5rem 0 1.5rem 0;
-}
-
-#field-a,
-#act-a {
-  box-sizing: border-box;
-  height: 40px;
-  font-size: 1rem;
-  line-height: 1.2;
-}
-
-#act-a:hover {
-  filter: brightness(1.05);
-}
-
-#act-a:active {
-   filter: brightness(1.0);
-}
-
-#act-a:focus-visible {
-  outline: 2px solid rgba(227, 6, 19, 0.35);
-  outline-offset: 2px;
-}
-
-#act-a:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-#pflichtzeiten-root {
-  min-height: 84px;
-}
-
-@media (max-width: 720px) {
   .pz-root {
     border-radius: 12px;
     padding: 0.9rem;
-  }
-
-  .updates p.pz-statusline {
-    font-size: 0.95rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .pz-root > div {
-    flex-direction: column;
-    align-items: stretch;
-    max-width: 320px;
-    margin: 0 auto;
-  }
-
-  #field-a,
-  #act-a {
-    width: 100%;
   }
 }

@@ -13,32 +13,34 @@ document.addEventListener("DOMContentLoaded", () => {
   const root = document.getElementById("content");
   if (!root) return;
 
-  const seal = (v) =>
-    Array.from(String(v))
-      .map((c, i) => String.fromCharCode(c.charCodeAt(0) + ((i % 3) + 1)))
-      .join("");
-
-  const tick = () =>
-    Number(new Intl.DateTimeFormat("de-DE", { year: "numeric" }).format(new Date()));
-
   const stage0 = () => {
-    root.innerHTML = `
-      <section class="hero">
-        <h1>Live Kader-Quallifikationen</h1>
-      </section>
+    if (!window.PWGate || typeof window.PWGate.open !== "function") {
+      root.innerHTML = `
+        <section class="hero">
+          <h1>Live Kader-Quallifikationen</h1>
+        </section>
+        <section class="updates">
+          <h2>Zugang</h2>
+          <p class="pz-statusline">Fehler: PW.js konnte nicht geladen werden.</p>
+        </section>
+      `;
+      return;
+    }
 
-      <section class="updates">
-        <h2>Zugang</h2>
-        <div class="pz-gate">  
-          <p id="line-a" class="pz-statusline">Bitte Freigabecode eingeben.</p>
-          <div style="display:flex;flex-wrap:wrap;align-items:center;">
-            <input id="field-a" type="password" inputmode="numeric" autocomplete="off" placeholder="Eingabe..." style="padding:.5rem .75rem;min-width:140px;">
-            <button id="act-a" type="button" style="padding:.5rem .75rem;cursor:pointer;">Öffnen</button>
-          </div>
-        </div>
-      </section>
-    `;
-    wire0();
+    window.PWGate.open({
+      mount: root,
+      heroHtml: `
+        <section class="hero">
+          <h1>Live Kader-Quallifikationen</h1>
+        </section>
+      `,
+      message: "Bitte Freigabecode eingeben.",
+      placeholder: "Eingabe...",
+      buttonText: "Öffnen",
+      invalidText: "Eingabe ungültig.",
+      grantedText: "Freigabe erteilt …",
+      onSuccess: boot0
+    });
   };
 
   const stage1 = () => {
@@ -46,7 +48,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <section class="hero">
         <h1>Live Kader-Quallifikationen</h1>
       </section>
-
       <section class="updates">
         <h2>Erreichten Kadernormen 2026 für 2027</h2>
         <p>Die Listen berücksichtigen derzeit nur erbrachte Leistungen über Normzeiten. Keine Platzierungen! Diese Liste ist nicht offiziell und kann fehlerhaft sein. Über die folgenden Links finden Sie offizielle Informationen zum <a href="https://baden.dlrg.de/mitmachen/rettungssport/kader/" target="_blank" rel="noopener noreferrer">Landeskader</a> und <a href="https://www.dlrg.de/mitmachen/rettungssport/kader/" target="_blank" rel="noopener noreferrer">Bundeskader</a>.</p>
@@ -98,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
         statusId: "Normzeiten-status",
         dataExcelUrl: DATA_EXCEL_URL,
         dataSheet: DATA_SHEET,
-        configExcelUrl: CONFIG_EXCEL_URL,
+        configExcelUrl: CONFIG_EXCEL_URL
       });
     } catch (e) {
       console.error(e);
@@ -106,35 +107,5 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  const wire0 = () => {
-    const input = document.getElementById("field-a");
-    const btn = document.getElementById("act-a");
-    const line = document.getElementById("line-a");
-    if (!input || !btn || !line) return;
-
-    const go = async () => {
-      const raw = String(input.value || "").trim();
-      const ref = String(tick());
-
-      if (seal(raw) !== seal(ref)) {
-        line.textContent = "Eingabe ungültig.";
-        input.value = "";
-        input.focus();
-        return;
-      }
-
-      line.textContent = "Freigabe erteilt …";
-      btn.disabled = true;
-      input.disabled = true;
-      await boot0();
-    };
-
-    btn.addEventListener("click", go);
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") go();
-    });
-    input.focus();
-  };
-
   stage0();
-});
+}); 

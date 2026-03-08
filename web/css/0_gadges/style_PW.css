@@ -1,0 +1,132 @@
+.pz-gate {
+  width: auto;
+  max-width: 450px;
+  box-sizing: border-box;
+  margin: 1rem auto 0 auto;
+  padding: 1rem 1rem 1.25rem 1rem;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.06);
+}
+
+.updates h2 {
+  margin-top: 2.5rem;
+  font-size: 2rem;
+  color: #cc0000;
+  font-weight: 800;
+  text-align: center;
+}
+
+.updates > p {
+  margin: 0.75rem auto 0 auto;
+  margin-bottom: 1.5rem;
+  max-width: 700px;
+  text-align: center;
+  line-height: 1.6;
+  color: rgb(87, 87, 86);
+  font-size: 1.2rem;
+}
+
+.updates p.pz-statusline {
+  margin: 1.5rem 0 1rem 0;
+  max-width: none;
+  text-align: center;
+  line-height: 1.45;
+  color: rgb(87, 87, 86);
+  font-size: 1rem;
+}
+
+.pz-gate > div {
+  justify-content: center;
+  gap: 0;
+}
+
+.pz-gate > div > input {
+  border: 1px solid rgb(227, 6, 19);
+  border-radius: 8px 0 0 8px;
+  background: #fff;
+  color: rgb(87, 87, 86);
+  font-size: 1rem;
+  line-height: 1.2;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+  margin: 0.5rem 0 1.5rem 0;
+}
+
+.pz-gate > div > input::placeholder {
+  color: #9a9a9a;
+}
+
+.pz-gate > div > input:focus {
+  outline: none;
+}
+
+.pz-gate > div > button {
+  border: 1px solid #b00000;
+  border-radius: 0 8px 8px 0;
+  background: linear-gradient(180deg, #d40000 0%, #b40000 100%);
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: transform 120ms ease, box-shadow 180ms ease, filter 180ms ease;
+  margin: 0.5rem 0 1.5rem 0;
+}
+
+.pz-gate > div > input,
+.pz-gate > div > button {
+  box-sizing: border-box;
+  height: 40px;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.pz-gate > div > button:hover {
+  filter: brightness(1.05);
+}
+
+.pz-gate > div > button:active {
+  filter: brightness(1);
+}
+
+.pz-gate > div > button:focus-visible {
+  outline: 2px solid rgba(227, 6, 19, 0.35);
+  outline-offset: 2px;
+}
+
+.pz-gate > div > button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+@media (max-width: 720px) {
+  .updates h2 {
+    font-size: 1.5rem;
+  }
+
+  .updates > p {
+    margin: 0.75rem auto 0 auto;
+    margin-bottom: 1.25rem;
+    text-align: center;
+    line-height: 1.5;
+    font-size: 1rem;
+  }
+
+  .updates p.pz-statusline {
+    font-size: 0.95rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .pz-gate > div {
+    flex-direction: column;
+    align-items: stretch;
+    max-width: 320px;
+    margin: 0 auto;
+  }
+
+  .pz-gate > div > input,
+  .pz-gate > div > button {
+    width: 100%;
+    border-radius: 8px;
+  }
+}

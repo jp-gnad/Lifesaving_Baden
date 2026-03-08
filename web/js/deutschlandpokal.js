@@ -145,23 +145,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  try {
-    await ensurePunkteTabelleScript();
-    await window.initBodenseePunkteTabelle({
-      mountId: "dp-list",
-      configExcelUrl: CONFIG_EXCEL_URL,
-      configSheet: CONFIG_SHEET,
-      configTableName: CONFIG_TABLE_NAME,
-      dataExcelUrl: DATA_EXCEL_URL,
-      dataSheet: DATA_SHEET,
-    });
-  } catch (e) {
-    console.error(e);
-    const mount = document.getElementById("dp-list");
-    if (mount) {
-      mount.innerHTML = `<p class="info-status info-error">Nominierungsliste konnte nicht geladen werden.</p>`;
-    }
-  }
+  initProtectedArea();
 });
 
 function renderShell(main) {
@@ -191,6 +175,63 @@ function renderShell(main) {
       </div>
     </section>
 
+    <div id="dp-protected"></div>
+  `;
+}
+
+function initProtectedArea() {
+  const mount = document.getElementById("dp-protected");
+  if (!mount) return;
+
+  if (!window.PWGate || typeof window.PWGate.open !== "function") {
+    mount.innerHTML = `
+      <section class="info-wrap" aria-label="Nominierungen">
+        <section class="info-section">
+          <p class="info-status info-error">PW.js konnte nicht geladen werden.</p>
+        </section>
+      </section>
+    `;
+    return;
+  }
+
+  window.PWGate.open({
+    mountId: "dp-protected",
+    message: "Bitte Freigabecode eingeben.",
+    placeholder: "Eingabe...",
+    buttonText: "Öffnen",
+    invalidText: "Eingabe ungültig.",
+    grantedText: "Freigabe erteilt …",
+    onSuccess: bootProtectedContent,
+  });
+}
+
+async function bootProtectedContent() {
+  renderProtectedContent();
+
+  try {
+    await ensurePunkteTabelleScript();
+    await window.initBodenseePunkteTabelle({
+      mountId: "dp-list",
+      configExcelUrl: CONFIG_EXCEL_URL,
+      configSheet: CONFIG_SHEET,
+      configTableName: CONFIG_TABLE_NAME,
+      dataExcelUrl: DATA_EXCEL_URL,
+      dataSheet: DATA_SHEET,
+    });
+  } catch (e) {
+    console.error(e);
+    const mount = document.getElementById("dp-list");
+    if (mount) {
+      mount.innerHTML = `<p class="info-status info-error">Nominierungsliste konnte nicht geladen werden.</p>`;
+    }
+  }
+}
+
+function renderProtectedContent() {
+  const mount = document.getElementById("dp-protected");
+  if (!mount) return;
+
+  mount.innerHTML = `
     <section class="info-wrap" aria-label="Nominierungen">
       <section class="info-section" aria-labelledby="dp-list-title">
         <h2 id="dp-list-title">Aktuelle Nominierungsliste</h2>

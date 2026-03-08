@@ -237,12 +237,7 @@ tr.athlete-details td {
 }
 
 .detail-row.noncount td {
-  color: rgba(0, 0, 0, 0.45);
   font-weight: 400;
-}
-
-.detail-row.counted td {
-  color: rgba(0, 0, 0, 0.95);
 }
 
 .nom-details-table tr.detail-row > td {
@@ -252,7 +247,6 @@ tr.athlete-details td {
 .nom-details-empty {
   padding: 10px;
   font-size: 12px;
-  color: rgba(0, 0, 0, 0.6);
 }
 
 .d-main {
@@ -278,12 +272,10 @@ tr.athlete-details td {
 
 .d-sep {
   margin: 0 8px;
-  color: rgba(0, 0, 0, 0.45);
 }
 
 .d-meet {
   font-size: 12px;
-  color: rgba(0, 0, 0, 0.65);
 }
 
 .nom-pager {
@@ -297,7 +289,6 @@ tr.athlete-details td {
 
 .nom-stand {
   font-size: 12px;
-  color: rgba(0, 0, 0, 0.45);
   white-space: nowrap;
 }
 
@@ -348,7 +339,6 @@ tr.athlete-details td {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(0, 0, 0, 0.55);
   background: #fff;
   border-right: 1px solid rgba(0, 0, 0, 0.14);
 }
