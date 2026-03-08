@@ -1,3 +1,5 @@
+const ENABLE_PW_GATE = true;
+
 const CONFIG_EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx";
 const CONFIG_SHEET = "BP";
 const CONFIG_TABLE_NAME = "BP_konfig";
@@ -74,22 +76,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  try {
-    await ensurePunkteTabelleScript();
-    await window.initBodenseePunkteTabelle({
-      mountId: "bp-list",
-      configExcelUrl: CONFIG_EXCEL_URL,
-      configSheet: CONFIG_SHEET,
-      configTableName: CONFIG_TABLE_NAME,
-      dataExcelUrl: DATA_EXCEL_URL,
-      dataSheet: DATA_SHEET,
-    });
-  } catch (e) {
-    console.error(e);
-    const mount = document.getElementById("bp-list");
-    if (mount) {
-      mount.innerHTML = `<p class="info-status info-error">Nominierungsliste konnte nicht geladen werden.</p>`;
-    }
+  if (ENABLE_PW_GATE) {
+    initProtectedArea();
+  } else {
+    bootProtectedContent();
   }
 });
 
@@ -120,6 +110,63 @@ function renderShell(main) {
       </div>
     </section>
 
+    <div id="bp-protected"></div>
+  `;
+}
+
+function initProtectedArea() {
+  const mount = document.getElementById("bp-protected");
+  if (!mount) return;
+
+  if (!window.PWGate || typeof window.PWGate.open !== "function") {
+    mount.innerHTML = `
+      <section class="info-wrap" aria-label="Nominierungen">
+        <section class="info-section">
+          <p class="info-status info-error">PW.js konnte nicht geladen werden.</p>
+        </section>
+      </section>
+    `;
+    return;
+  }
+
+  window.PWGate.open({
+    mountId: "bp-protected",
+    message: "Bitte Freigabecode eingeben.",
+    placeholder: "Eingabe...",
+    buttonText: "Öffnen",
+    invalidText: "Eingabe ungültig.",
+    grantedText: "Freigabe erteilt …",
+    onSuccess: bootProtectedContent,
+  });
+}
+
+async function bootProtectedContent() {
+  renderProtectedContent();
+
+  try {
+    await ensurePunkteTabelleScript();
+    await window.initBodenseePunkteTabelle({
+      mountId: "bp-list",
+      configExcelUrl: CONFIG_EXCEL_URL,
+      configSheet: CONFIG_SHEET,
+      configTableName: CONFIG_TABLE_NAME,
+      dataExcelUrl: DATA_EXCEL_URL,
+      dataSheet: DATA_SHEET,
+    });
+  } catch (e) {
+    console.error(e);
+    const mount = document.getElementById("bp-list");
+    if (mount) {
+      mount.innerHTML = `<p class="info-status info-error">Nominierungsliste konnte nicht geladen werden.</p>`;
+    }
+  }
+}
+
+function renderProtectedContent() {
+  const mount = document.getElementById("bp-protected");
+  if (!mount) return;
+
+  mount.innerHTML = `
     <section class="info-wrap" aria-label="Nominierungen">
       <section class="info-section" aria-labelledby="bp-list-title">
         <h2 id="bp-list-title">Aktuelle Nominierungsliste</h2>

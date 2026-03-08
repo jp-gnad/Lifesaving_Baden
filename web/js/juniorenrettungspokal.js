@@ -1,3 +1,5 @@
+const ENABLE_PW_GATE = true;
+
 const DP_FOLDER = "./png/JRP-Team/";
 const DP_MIN_YEAR = 2000;
 const DP_MAX_YEAR = new Date().getFullYear() + 1;
@@ -141,7 +143,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  initDpNominationListTables();
+  if (ENABLE_PW_GATE) {
+    initProtectedArea();
+  } else {
+    bootProtectedContent();
+  }
 });
 
 function renderShell(main) {
@@ -171,6 +177,46 @@ function renderShell(main) {
       </div>
     </section>
 
+    <div id="jrp-protected"></div>
+  `;
+}
+
+function initProtectedArea() {
+  const mount = document.getElementById("jrp-protected");
+  if (!mount) return;
+
+  if (!window.PWGate || typeof window.PWGate.open !== "function") {
+    mount.innerHTML = `
+      <section class="info-wrap" aria-label="Nominierungen">
+        <section class="info-section">
+          <p class="info-status info-error">PW.js konnte nicht geladen werden.</p>
+        </section>
+      </section>
+    `;
+    return;
+  }
+
+  window.PWGate.open({
+    mountId: "jrp-protected",
+    message: "Bitte Freigabecode eingeben.",
+    placeholder: "Eingabe...",
+    buttonText: "Öffnen",
+    invalidText: "Eingabe ungültig.",
+    grantedText: "Freigabe erteilt …",
+    onSuccess: bootProtectedContent,
+  });
+}
+
+function bootProtectedContent() {
+  renderProtectedContent();
+  initDpNominationListTables();
+}
+
+function renderProtectedContent() {
+  const mount = document.getElementById("jrp-protected");
+  if (!mount) return;
+
+  mount.innerHTML = `
     <section class="info-wrap" aria-label="Nominierungen">
       <section class="info-section" aria-labelledby="dp-list-title">
         <h2 id="dp-list-title">Aktuelle Nominierungsliste</h2>
@@ -215,6 +261,10 @@ function ensurePictureKarusselScript() {
 function initDpNominationListTables() {
   if (typeof initPflichtzeitenTabellen !== "function") {
     console.error("PZ_tabellen.js ist nicht geladen oder initPflichtzeitenTabellen fehlt.");
+    const status = document.getElementById("pflichtzeiten-status");
+    if (status) {
+      status.textContent = "Pflichtzeiten konnten nicht geladen werden.";
+    }
     return;
   }
 

@@ -20,6 +20,15 @@
     return mount;
   };
 
+  const safeFocus = (el) => {
+    if (!el) return;
+    try {
+      el.focus({ preventScroll: true });
+    } catch {
+      el.focus();
+    }
+  };
+
   const open = (options = {}) => {
     const {
       mount,
@@ -29,7 +38,7 @@
       gateClass = "pz-gate",
       lineClass = "pz-statusline",
       title = "Zugang",
-      introText = "Der Inhalt dieser Website ist noch nicht öffentlich verfügbar und wird in kürze freigeschaltet.",
+      introText = "Der Inhalt ist noch nicht öffentlich verfügbar und wird in kürze freigeschaltet.",
       message = "Bitte Freigabecode eingeben.",
       placeholder = "Eingabe...",
       buttonText = "Öffnen",
@@ -88,7 +97,7 @@
       if (!isValid(raw)) {
         line.textContent = invalidText;
         input.value = "";
-        input.focus();
+        safeFocus(input);
         if (typeof onInvalid === "function") onInvalid({ root, input, button, line, value: raw });
         return;
       }
@@ -106,7 +115,7 @@
         line.textContent = errorText;
         button.disabled = false;
         input.disabled = false;
-        input.focus();
+        safeFocus(input);
         if (typeof onError === "function") onError(err, { root, input, button, line, value: raw });
       }
     };
@@ -115,7 +124,7 @@
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") go();
     });
-    input.focus();
+    safeFocus(input);
 
     return { root, input, button, line, go };
   };

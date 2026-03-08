@@ -1,3 +1,5 @@
+const ENABLE_PW_GATE = false;
+
 const CONFIG_EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx";
 const CONFIG_SHEET = "DP";
 const CONFIG_TABLE_NAME = "DP_konfig";
@@ -145,7 +147,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  initProtectedArea();
+  if (ENABLE_PW_GATE) {
+    initProtectedArea();
+  } else {
+    bootProtectedContent();
+  }
 });
 
 function renderShell(main) {
