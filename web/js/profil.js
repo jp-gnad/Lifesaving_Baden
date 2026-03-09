@@ -69,28 +69,34 @@ document.addEventListener("DOMContentLoaded", () => {
     const baseName = heroBaseNameFromAthlete(a);
     if (!baseName) return null;
 
+    const exts = ["png", "PNG", "jpg", "JPG"];
+
     for (let pos = 0; pos <= 100; pos++) {
-      const fileName = `${baseName} - ${pos}.jpg`;
-      const url = `${HERO_PORTRAIT_BASE_URL}/${encodeURIComponent(fileName)}`;
+      for (const ext of exts) {
+        const fileName = `${baseName} - ${pos}.${ext}`;
+        const url = `${HERO_PORTRAIT_BASE_URL}/${fileName}`;
+        const exists = await probeImageExists(url);
+
+        if (exists) {
+          return {
+            url,
+            position: `center ${pos}%`
+          };
+        }
+      }
+    }
+
+    for (const ext of exts) {
+      const fileName = `${baseName}.${ext}`;
+      const url = `${HERO_PORTRAIT_BASE_URL}/${fileName}`;
       const exists = await probeImageExists(url);
 
       if (exists) {
         return {
           url,
-          position: `center ${pos}%`
+          position: "center 50%"
         };
       }
-    }
-
-    const fallbackFileName = `${baseName}.jpg`;
-    const fallbackUrl = `${HERO_PORTRAIT_BASE_URL}/${encodeURIComponent(fallbackFileName)}`;
-    const fallbackExists = await probeImageExists(fallbackUrl);
-
-    if (fallbackExists) {
-      return {
-        url: fallbackUrl,
-        position: "center 50%"
-      };
     }
 
     return null;

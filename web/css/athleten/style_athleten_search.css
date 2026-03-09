@@ -199,7 +199,7 @@
   backface-visibility: hidden;
 }
 
-.ath-avatar.cap-overlay::after {
+.ath-avatar.search-cap-overlay::after {
   content: "";
   position: absolute;
   inset: -1px;

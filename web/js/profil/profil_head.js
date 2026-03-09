@@ -141,25 +141,58 @@
     return p;
   }
 
-  function setCapWithCache(imgEl, capFileOrFiles) {
-    const candidates = uniqueNonEmpty(
-      Array.isArray(capFileOrFiles) ? capFileOrFiles : [capFileOrFiles]
-    ).filter((file) => file !== CAP_FALLBACK_FILE);
+  function setCapWithCache(imgEl, hostEl, capCandidates) {
+    const candidates = (Array.isArray(capCandidates) ? capCandidates : [])
+      .map((x) => ({
+        file: String(x?.file || "").trim(),
+        toned: !!x?.toned
+      }))
+      .filter((x) => x.file && x.file !== CAP_FALLBACK_FILE);
 
-    imgEl.classList.add("is-cap-fallback");
+    hostEl?.classList.remove("cap-overlay");
     imgEl.src = CAP_FALLBACK_URL;
 
-    if (!candidates.length) return;
+    if (!candidates.length) {
+      hostEl?.classList.add("cap-overlay");
+      return;
+    }
 
     (async () => {
-      for (const file of candidates) {
-        const ok = await probeCapFileExists(file);
+      for (const candidate of candidates) {
+        const ok = await probeCapFileExists(candidate.file);
         if (!ok) continue;
 
-        imgEl.classList.remove("is-cap-fallback");
+        hostEl?.classList.toggle("cap-overlay", candidate.toned);
+        imgEl.src = `${FLAG_BASE_URL}/${encodeURIComponent(candidate.file)}`;
+        return;
+      }
+
+      hostEl?.classList.add("cap-overlay");
+    })();
+  }
+
+  function setSingleCapWithFallback(imgEl, hostEl, capFile) {
+    const file = String(capFile || "").trim();
+
+    hostEl?.classList.remove("cap-overlay");
+    imgEl.src = CAP_FALLBACK_URL;
+
+    if (!file || file === CAP_FALLBACK_FILE) {
+      hostEl?.classList.add("cap-overlay");
+      return;
+    }
+
+    (async () => {
+      const ok = await probeCapFileExists(file);
+
+      if (ok) {
+        hostEl?.classList.remove("cap-overlay");
         imgEl.src = `${FLAG_BASE_URL}/${encodeURIComponent(file)}`;
         return;
       }
+
+      hostEl?.classList.add("cap-overlay");
+      imgEl.src = CAP_FALLBACK_URL;
     })();
   }
 
@@ -612,11 +645,11 @@
     const aff = deriveAffiliation(a);
     const ogNow = aff.ogKey || String(a?.ortsgruppe || "").trim();
 
-    const candidates = uniqueNonEmpty([
-      capFileFromOrtsgruppe(aff.ogKey || ogNow),
-      capFileFromLVCode(aff.lvCode),
-      capFileFromBVCode(aff.bvCode),
-    ]);
+    const candidates = [
+      { file: capFileFromOrtsgruppe(aff.ogKey || ogNow), toned: false },
+      { file: capFileFromLVCode(aff.lvCode), toned: true },
+      { file: capFileFromBVCode(aff.bvCode), toned: true }
+    ].filter((x) => String(x.file || "").trim());
 
     const wrap = h("div", { class: "ath-avatar xl ath-profile-cap" });
     const img = h("img", {
@@ -627,7 +660,7 @@
       fetchpriority: "high",
     });
 
-    setCapWithCache(img, candidates);
+    setCapWithCache(img, wrap, candidates);
     wrap.appendChild(img);
 
     return wrap;
@@ -675,11 +708,23 @@
         if (!ogName) return;
 
         const capFile = capFileFromOrtsgruppe(ogName);
-        const capImg = h("img", { class: "og-cap-img", alt: `Cap ${ogName}`, loading: "lazy", decoding: "async" });
+        const capWrap = h("span", { class: "og-cap" });
+        const capImg = h("img", {
+          class: "og-cap-img",
+          alt: `Cap ${ogName}`,
+          loading: "lazy",
+          decoding: "async"
+        });
 
-        setCapWithCache(capImg, capFile);
+        setSingleCapWithFallback(capImg, capWrap, capFile);
+        capWrap.appendChild(capImg);
 
-        const row = h("div", { class: "og-item" }, h("span", { class: "og-cap" }, capImg), h("span", { class: "og-item-label" }, ogName));
+        const row = h(
+          "div",
+          { class: "og-item" },
+          capWrap,
+          h("span", { class: "og-item-label" }, ogName)
+        );
         moreBox.appendChild(row);
       });
 

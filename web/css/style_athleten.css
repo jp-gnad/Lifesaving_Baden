@@ -172,9 +172,10 @@ main#content {
   backface-visibility: hidden;
 }
 
-.avatar-img.is-cap-fallback {
-  opacity: 0.55;
-  filter: brightness(0.55);
+.m-ogcap-cell.ogcap-overlay,
+.ath-avatar.cap-overlay .avatar-img,
+.og-cap.cap-overlay .og-cap-img {
+  opacity: 0.35;
 }
 
 .ath-avatar.xl {
@@ -1814,7 +1815,6 @@ main#content {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.75);
   border-radius: 999px;
   pointer-events: none;
 }

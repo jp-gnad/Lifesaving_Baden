@@ -188,7 +188,7 @@
     return out;
   }
 
-  function applyCapFallback(img, hostEl, seq, overlayClass = "cap-overlay") {
+  function applyCapFallback(img, hostEl, seq, overlayClass = "search-cap-overlay") {
     if (!seq || !seq.length) {
       hostEl.classList.remove(overlayClass);
       img.onerror = null;
@@ -198,7 +198,6 @@
     }
 
     let i = 0;
-    img.style.visibility = "hidden";
 
     const load = () => {
       const entry = seq[i];
@@ -222,6 +221,7 @@
       }
     };
 
+    img.style.visibility = "visible";
     load();
   }
 
@@ -252,9 +252,8 @@
     const img = h("img", {
       class: "avatar-img",
       alt: ogNow ? `Vereinskappe ${formatOrtsgruppe(ogNow)}` : "Vereinskappe",
-      loading: size === "xl" ? "eager" : "lazy",
-      decoding: "async",
-      fetchpriority: size === "xl" ? "high" : "low"
+      loading: "eager",
+      decoding: "sync"
     });
 
     wrap.appendChild(img);
