@@ -531,7 +531,7 @@
       return l.nName.localeCompare(r.nName);
     });
 
-    state.suggestions = list.map((x) => x.a).slice(0, 8);
+    state.suggestions = list.map((x) => x.a).slice(0, 10);
     state.activeIndex = state.suggestions.length ? 0 : -1;
     paintSuggestions();
   }

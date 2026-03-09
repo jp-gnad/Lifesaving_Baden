@@ -48,7 +48,7 @@
   };
 
   const FLAG_BASE_URL = "./svg";
-  const CAP_FALLBACK_FILE = "Cap-Baden_light.svg";
+  const CAP_FALLBACK_FILE = "Cap-Ba.svg";
   const CAP_FALLBACK_URL = `${FLAG_BASE_URL}/${encodeURIComponent(CAP_FALLBACK_FILE)}`;
 
   const $ = (s, r = document) => r.querySelector(s);
@@ -96,14 +96,6 @@
 
     CapProbe.set(capFile, p);
     return p;
-  }
-
-  function setCapWithCache(imgEl, capFile) {
-    imgEl.src = CAP_FALLBACK_URL;
-    probeCapFileExists(capFile).then((ok) => {
-      if (!ok) return;
-      imgEl.src = `${FLAG_BASE_URL}/${encodeURIComponent(capFile)}`;
-    });
   }
 
   function capFileFromOrtsgruppe(rawOG) {
@@ -231,8 +223,30 @@
     return out;
   }
 
+  function setFallbackTransparency(imgEl, isFallback) {
+    if (!imgEl) return;
+    imgEl.classList.toggle("is-fallback", !!isFallback);
+  }
+
+  function setCapWithCache(imgEl, capFile, wrapperEl) {
+    imgEl.src = CAP_FALLBACK_URL;
+    setFallbackTransparency(imgEl, true);
+
+    probeCapFileExists(capFile).then((ok) => {
+      if (!ok) return;
+
+      imgEl.src = `${FLAG_BASE_URL}/${encodeURIComponent(capFile)}`;
+      setFallbackTransparency(imgEl, false);
+    });
+  }
+
   function renderCap(rawOG, size = "md") {
     const og = String(rawOG || "").trim();
+
+    const wrapper = h("span", {
+      class: `ath10-cap ath10-cap--${size}`,
+      "aria-hidden": "true"
+    });
 
     const img = h("img", {
       class: "ath10-cap-img",
@@ -241,13 +255,10 @@
       decoding: "async"
     });
 
-    setCapWithCache(img, capFileFromOrtsgruppe(og));
+    wrapper.appendChild(img);
+    setCapWithCache(img, capFileFromOrtsgruppe(og), wrapper);
 
-    return h(
-      "span",
-      { class: `ath10-cap ath10-cap--${size}`, "aria-hidden": "true" },
-      img
-    );
+    return wrapper;
   }
 
   function renderMedalIcon(place) {

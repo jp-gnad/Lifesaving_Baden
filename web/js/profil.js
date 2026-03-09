@@ -3,10 +3,11 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!main) return;
 
   main.innerHTML = `
+    <div id="ath-search-layer"></div>
+
     <section class="hero">
       <div class="container hero-content">
-        <div id="ath-search-mount"></div>
-        <h1>Athleten</h1>
+        <div class="hero-search-spacer" aria-hidden="true"></div>
       </div>
     </section>
 
@@ -335,7 +336,7 @@ document.addEventListener("DOMContentLoaded", () => {
       "aria-label": "Athletenbereich"
     });
 
-    const searchMount = $("#ath-search-mount");
+    const searchMount = $("#ath-search-layer");
     if (searchMount && window.AthSearch && typeof window.AthSearch.mount === "function") {
       searchMount.innerHTML = "";
       window.AthSearch.mount(searchMount, { openProfile });

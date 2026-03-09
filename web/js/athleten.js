@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="container hero-content">
         <div id="ath-search-mount"></div>
         <h1>Athleten</h1>
-        <p class="hero-meta">Athletenprofile ・ Top 10 Listen ・ Leistungsprofile</p>
+        <p class="hero-meta">Athletenprofile ・ Top 10 Listen ・ Leistungsstatistik</p>
         <p class="hero-info">Professionelle Athletenprofile aus dem Rettungssport. Es werden derzeit nur Einzelwettkämpfe und Pool-Wettkämpfe berücksichtigt.</p>
       </div>
     </section>

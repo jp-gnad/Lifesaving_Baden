@@ -19,7 +19,7 @@
   };
 
   const FLAG_BASE_URL = "./svg";
-  const CAP_FALLBACK_FILE = "Cap-Baden_light.svg";
+  const CAP_FALLBACK_FILE = "Cap-Ba.svg";
   const CAP_FALLBACK_URL = `${FLAG_BASE_URL}/${encodeURIComponent(CAP_FALLBACK_FILE)}`;
 
   let AllMeetsByAthleteId = new Map();
@@ -40,8 +40,9 @@
   function alignCapToName() {
     const head = document.querySelector(".ath-profile-head");
     if (!head) return;
-    const cap = head.querySelector(".cap-flip");
-    const h2 = head.querySelector(".ath-profile-title h2");
+
+    const cap = head.querySelector(".ath-profile-cap");
+    const h2 = head.querySelector(".ath-profile-name h2");
     if (!cap || !h2) return;
 
     cap.style.setProperty("--cap-offset-y", "0px");
@@ -57,7 +58,7 @@
   }
 
   function fitProfileName() {
-    const h2 = document.querySelector(".ath-profile-title h2");
+    const h2 = document.querySelector(".ath-profile-name h2");
     if (!h2) {
       alignCapToName();
       return;
@@ -88,11 +89,6 @@
         sizePx -= step;
       }
 
-      alignCapToName();
-      return;
-    }
-
-    if (vw > 720) {
       alignCapToName();
       return;
     }
@@ -145,12 +141,26 @@
     return p;
   }
 
-  function setCapWithCache(imgEl, capFile) {
+  function setCapWithCache(imgEl, capFileOrFiles) {
+    const candidates = uniqueNonEmpty(
+      Array.isArray(capFileOrFiles) ? capFileOrFiles : [capFileOrFiles]
+    ).filter((file) => file !== CAP_FALLBACK_FILE);
+
+    imgEl.classList.add("is-cap-fallback");
     imgEl.src = CAP_FALLBACK_URL;
-    probeCapFileExists(capFile).then((ok) => {
-      if (!ok) return;
-      imgEl.src = `${FLAG_BASE_URL}/${encodeURIComponent(capFile)}`;
-    });
+
+    if (!candidates.length) return;
+
+    (async () => {
+      for (const file of candidates) {
+        const ok = await probeCapFileExists(file);
+        if (!ok) continue;
+
+        imgEl.classList.remove("is-cap-fallback");
+        imgEl.src = `${FLAG_BASE_URL}/${encodeURIComponent(file)}`;
+        return;
+      }
+    })();
   }
 
   const LAND_TO_ISO3 = {
@@ -218,140 +228,13 @@
     return s.toUpperCase();
   }
 
-  function pickBasisMeetPreferNat(meets, { staleNationalDays = 365 } = {}) {
-    const list = Array.isArray(meets) ? meets : [];
-
-    let bestNat = null;
-    let bestInt = null;
-    let bestAny = null;
-
-    const isNewer = (d, idx, best) => !best || d > best.d || (d.getTime() === best.d.getTime() && idx > best.idx);
-
-    for (let i = 0; i < list.length; i++) {
-      const m = list[i];
-      if (!m) continue;
-
-      const dStr = String(m.date || "").slice(0, 10);
-      const d = new Date(dStr);
-      if (isNaN(d.getTime())) continue;
-
-      const rw = String(m.Regelwerk || "").toLowerCase().trim();
-      const isNat = rw.startsWith("nat") || rw.startsWith("national");
-      const isInt = rw.startsWith("int") || rw.startsWith("international");
-      const kind = isNat ? "nat" : isInt ? "int" : "other";
-
-      if (isNewer(d, i, bestAny)) bestAny = { d, idx: i, kind, m };
-
-      const og = String(m.Ortsgruppe ?? m.ortsgruppe ?? "").trim();
-      const lv = String(m.LV_state ?? m.lv_state ?? "").trim().toUpperCase();
-      const bv = String(m.BV_natio ?? m.BV_nation ?? "").trim();
-
-      const hasAff = !!(og || lv || bv);
-      if (!hasAff) continue;
-
-      if (isNat) {
-        if (isNewer(d, i, bestNat)) bestNat = { d, idx: i, m };
-      } else if (isInt) {
-        if (isNewer(d, i, bestInt)) bestInt = { d, idx: i, m };
-      }
-    }
-
-    if (!bestNat && !bestInt) return null;
-    if (!bestNat) return bestInt.m;
-    if (!bestInt) return bestNat.m;
-
-    if (bestAny?.kind === "int") {
-      const staleMs = staleNationalDays * 24 * 60 * 60 * 1000;
-      const diffMs = bestAny.d.getTime() - bestNat.d.getTime();
-      if (diffMs >= staleMs) return bestInt.m;
-    }
-
-    return bestNat.m;
-  }
 
   function deriveAffiliation(a) {
-    const meets =
-      Array.isArray(a?.meets) && a.meets.length ? a.meets : AllMeetsByAthleteId.get(a?.id) || [];
+    const ogKey = String(a?.ortsgruppe || "").trim();
+    const lvCode = String(a?.LV_state ?? a?.lv_state ?? "").trim().toUpperCase();
+    const bvCode = normalizeBVCode(a?.BV_natio ?? a?.BV_nation ?? "");
 
-    const basis = pickBasisMeetPreferNat(meets);
-
-    const ogKey = String(basis?.Ortsgruppe ?? basis?.ortsgruppe ?? a?.ortsgruppe ?? "").trim();
-    const lvCode = String(basis?.LV_state ?? a?.LV_state ?? a?.lv_state ?? "").trim().toUpperCase();
-    const bvCode = normalizeBVCode(basis?.BV_natio ?? a?.BV_natio ?? a?.BV_nation ?? "");
-    const startrecht = String(basis?.Startrecht ?? "").trim().toUpperCase();
-
-    let label = ogKey;
-
-    if (startrecht === "LV" && lvCode) {
-      label = LV_STATE_LABEL[lvCode] || lvCode;
-    } else if (startrecht === "BV" && bvCode) {
-      label = ISO3_TO_EN[bvCode] || bvCode;
-    }
-
-    return { ogKey, lvCode, bvCode, startrecht, label };
-  }
-
-  function capCandidates(aff) {
-    const ogKey = String(aff?.ogKey || "").trim();
-    const lvCode = String(aff?.lvCode || "").trim();
-    const bvCode = String(aff?.bvCode || "").trim();
-    const startrecht = String(aff?.startrecht || "").trim().toUpperCase();
-
-    let seq;
-
-    if (startrecht === "OG") {
-      seq = [
-        { key: ogKey, overlay: false },
-        { key: lvCode, overlay: true },
-        { key: bvCode, overlay: true },
-      ];
-    } else if (startrecht === "LV") {
-      seq = [
-        { key: lvCode, overlay: false },
-        { key: ogKey, overlay: true },
-        { key: bvCode, overlay: true },
-      ];
-    } else if (startrecht === "BV") {
-      seq = [
-        { key: bvCode, overlay: false },
-        { key: ogKey, overlay: true },
-        { key: lvCode, overlay: true },
-      ];
-    } else {
-      seq = [
-        { key: ogKey, overlay: false },
-        { key: lvCode, overlay: true },
-        { key: bvCode, overlay: true },
-      ];
-    }
-
-    return seq.filter((x) => x.key && String(x.key).trim() !== "");
-  }
-
-  function capCandidatesAvatar(aff) {
-    const ogKey = String(aff?.ogKey || "").trim();
-    const lvCode = String(aff?.lvCode || "").trim();
-    const bvCode = String(aff?.bvCode || "").trim();
-    const sr = String(aff?.startrecht || "").trim().toUpperCase();
-
-    const out = [];
-
-    if (ogKey) out.push({ key: ogKey, overlay: false });
-
-    const pushOverlay = (key) => {
-      const k = String(key || "").trim();
-      if (k) out.push({ key: k, overlay: true });
-    };
-
-    if (sr === "BV") {
-      pushOverlay(bvCode);
-      pushOverlay(lvCode);
-    } else {
-      pushOverlay(lvCode);
-      pushOverlay(bvCode);
-    }
-
-    return out;
+    return { ogKey, lvCode, bvCode };
   }
 
   function formatOrtsgruppe(raw) {
@@ -361,151 +244,7 @@
       .split(/\s+/)
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
       .join(" ");
-    return "DLRG " + s;
-  }
-
-  function applyCapFallback(img, hostEl, seq, { overlayClass = "cap-overlay", noneSrc = "svg/Cap-None.svg" } = {}) {
-    if (!seq || !seq.length) {
-      hostEl.classList.remove(overlayClass);
-      img.onerror = null;
-      img.src = noneSrc;
-      return;
-    }
-
-    let i = 0;
-    const load = () => {
-      const entry = seq[i];
-      hostEl.classList.toggle(overlayClass, !!entry.overlay);
-      img.src = `svg/Cap-${encodeURIComponent(entry.key)}.svg`;
-    };
-
-    img.onerror = () => {
-      if (i + 1 < seq.length) {
-        i++;
-        load();
-      } else {
-        hostEl.classList.remove(overlayClass);
-        img.onerror = null;
-        img.remove();
-      }
-    };
-
-    load();
-  }
-
-  function renderCapAvatar(a, size = "xl", extraClass = "") {
-    const wrap = h("div", { class: `ath-avatar ${size} ${extraClass}` });
-
-    const aff = deriveAffiliation(a);
-    const ogNow = aff.ogKey || String(a?.ortsgruppe || "").trim();
-
-    const img = h("img", {
-      class: "avatar-img",
-      alt: ogNow ? `Vereinskappe ${formatOrtsgruppe(ogNow)}` : "Vereinskappe",
-      loading: size === "xl" ? "eager" : "lazy",
-      decoding: "async",
-      fetchpriority: size === "xl" ? "high" : "low",
-    });
-
-    applyCapFallback(img, wrap, capCandidatesAvatar(aff), { overlayClass: "cap-overlay" });
-
-    wrap.appendChild(img);
-    return wrap;
-  }
-
-  function renderCapAvatarProfile(a) {
-    const frontCap = renderCapAvatar(a);
-    if (!frontCap) return null;
-
-    const name = String(a?.name || "").trim();
-
-    const wrap = h("div", {
-      class: "cap-flip",
-      role: "button",
-      tabindex: "0",
-      "aria-pressed": "false",
-      "aria-label": name ? `Profilansicht für ${name} umdrehen` : "Profilansicht umdrehen",
-    });
-
-    const inner = h("div", { class: "cap-inner" });
-    const front = h("div", { class: "cap-face cap-front" }, frontCap);
-    const back = h("div", { class: "cap-face cap-back" });
-
-    inner.appendChild(front);
-    inner.appendChild(back);
-    wrap.appendChild(inner);
-
-    const toggle = () => {
-      const locked = wrap.classList.toggle("is-flipped");
-      wrap.setAttribute("aria-pressed", locked ? "true" : "false");
-    };
-
-    if ("onpointerdown" in window) {
-      wrap.addEventListener("pointerdown", toggle);
-    } else {
-      wrap.addEventListener("click", toggle);
-      wrap.addEventListener("touchstart", toggle, { passive: true });
-    }
-
-    wrap.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        toggle();
-      }
-    });
-
-    let introDone = false;
-    function runIntroFlip() {
-      if (introDone) return;
-      introDone = true;
-      if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          toggle();
-          setTimeout(() => toggle(), 550);
-        }, 200);
-      });
-    }
-
-    function attachFallbackSvg() {
-      back.innerHTML = "";
-      const backCap = renderCapAvatar(a);
-      if (backCap) back.appendChild(backCap);
-      wrap.dataset.hasBack = "1";
-      wrap.classList.add("has-back", "fallback-back");
-      wrap.classList.remove("no-back");
-      runIntroFlip();
-    }
-
-    if (!name) {
-      attachFallbackSvg();
-      return wrap;
-    }
-
-    const baseName = name.replace(/\s+/g, "");
-    const fileName = baseName + ".png";
-    const imgPath = "png/pp/" + fileName;
-
-    const img = document.createElement("img");
-    img.alt = `Portrait von ${name}`;
-    img.loading = "lazy";
-
-    back.appendChild(img);
-    img.src = imgPath;
-
-    img.addEventListener("load", () => {
-      wrap.dataset.hasBack = "1";
-      wrap.classList.add("has-back");
-      wrap.classList.remove("no-back");
-      runIntroFlip();
-    });
-
-    img.addEventListener("error", () => {
-      if (img.parentNode === back) back.removeChild(img);
-      attachFallbackSvg();
-    });
-
-    return wrap;
+    return s ? "DLRG " + s : "DLRG";
   }
 
   const SUPPORTED_FLAGS_DE = new Set([
@@ -848,9 +587,50 @@
 
   function capFileFromOrtsgruppe(rawOG) {
     const og = String(rawOG || "").trim();
-    if (!og) return "Cap-Baden_light.svg";
+    if (!og) return CAP_FALLBACK_FILE;
     if (og === "Nieder-Olm/Wörrstadt") return "Cap-Nieder-OlmWörrstadt.svg";
     return `Cap-${og}.svg`;
+  }
+
+  function capFileFromLVCode(rawCode) {
+    const code = String(rawCode || "").trim().toUpperCase();
+    if (!code) return "";
+    return `Cap-${code}.svg`;
+  }
+
+  function capFileFromBVCode(rawCode) {
+    const code = String(rawCode || "").trim().toUpperCase();
+    if (!code) return "";
+    return `Cap-${code}.svg`;
+  }
+
+  function uniqueNonEmpty(list) {
+    return [...new Set((Array.isArray(list) ? list : []).map((x) => String(x || "").trim()).filter(Boolean))];
+  }
+
+  function renderProfileCap(a) {
+    const aff = deriveAffiliation(a);
+    const ogNow = aff.ogKey || String(a?.ortsgruppe || "").trim();
+
+    const candidates = uniqueNonEmpty([
+      capFileFromOrtsgruppe(aff.ogKey || ogNow),
+      capFileFromLVCode(aff.lvCode),
+      capFileFromBVCode(aff.bvCode),
+    ]);
+
+    const wrap = h("div", { class: "ath-avatar xl ath-profile-cap" });
+    const img = h("img", {
+      class: "avatar-img",
+      alt: ogNow ? `Vereinskappe ${formatOrtsgruppe(ogNow)}` : "Vereinskappe",
+      loading: "eager",
+      decoding: "async",
+      fetchpriority: "high",
+    });
+
+    setCapWithCache(img, candidates);
+    wrap.appendChild(img);
+
+    return wrap;
   }
 
   function collectOrtsgruppenForAthlete(ax) {
@@ -937,15 +717,21 @@
 
     const bar = (cls, label, value) => {
       const hpx = Math.round((value / max) * H);
-      return h("div", { class: `med-col ${cls}` },
+      return h(
+        "div",
+        { class: `med-col ${cls}` },
         h("div", { class: "med-count" }, String(value)),
         h("div", { class: "med-barWrap" }, h("div", { class: "med-bar", style: `height:${hpx}px` })),
         h("div", { class: "med-label" }, label)
       );
     };
 
-    return h("aside", { class: "med-card", "aria-label": "Medaillen" },
-      h("div", { class: "med-head" },
+    return h(
+      "aside",
+      { class: "med-card", "aria-label": "Medaillen" },
+      h(
+        "div",
+        { class: "med-head" },
         h("div", { class: "med-title" }, m.title || "Medaillen"),
         h("div", { class: "med-total" }, String(total))
       ),
@@ -979,41 +765,49 @@
     const band = age != null && age <= 18 ? "youth" : "open";
     const srIcons = renderStartrechtIcons(ax);
 
+    const cap = renderProfileCap(ax);
+
+    const nameBlock = h(
+      "div",
+      { class: "ath-profile-name" },
+      h("h2", {}, ...renderAthleteName(ax.name))
+    );
+
+    const titleMeta = h(
+      "div",
+      { class: "ath-profile-title" },
+      h(
+        "div",
+        { class: "gender-row" },
+        h("span", { class: `gender-chip ${gt.cls}`, title: gt.full, "aria-label": `Geschlecht: ${gt.full}` }, gt.full),
+        h("span", { class: `ak-chip ${band}`, title: `Altersklasse ${ak}`, "aria-label": `Altersklasse ${ak}` }, ak),
+        h(
+          "span",
+          {
+            class: `status-chip ${act.key}`,
+            title: `Letzter Wettkampf: ${lastStr}`,
+            "aria-label": `Aktivitätsstatus: ${act.label}. Letzter Wettkampf: ${lastStr}`,
+          },
+          h("span", { class: "status-dot" }),
+          act.label
+        ),
+        srIcons
+      ),
+      h(
+        "div",
+        { class: "ath-profile-meta" },
+        renderOrtsgruppeMeta(ax),
+        KV("Jahrgang", String(ax.jahrgang)),
+        KV("Länderpins", renderCountryFlagsInline(ax) || "—"),
+        KV("Historie", renderhistorieInline(ax) || "—")
+      )
+    );
+
     return h(
       "div",
       { class: "ath-profile-head" },
-      renderCapAvatarProfile(ax),
-      h(
-        "div",
-        { class: "ath-profile-title" },
-        h("h2", {}, ...renderAthleteName(ax.name)),
-        h(
-          "div",
-          { class: "gender-row" },
-          h("span", { class: `gender-chip ${gt.cls}`, title: gt.full, "aria-label": `Geschlecht: ${gt.full}` }, gt.full),
-          h("span", { class: `ak-chip ${band}`, title: `Altersklasse ${ak}`, "aria-label": `Altersklasse ${ak}` }, ak),
-          h(
-            "span",
-            {
-              class: `status-chip ${act.key}`,
-              title: `Letzter Wettkampf: ${lastStr}`,
-              "aria-label": `Aktivitätsstatus: ${act.label}. Letzter Wettkampf: ${lastStr}`,
-            },
-            h("span", { class: "status-dot" }),
-            act.label
-          ),
-          srIcons
-        ),
-        h(
-          "div",
-          { class: "ath-profile-meta" },
-          renderOrtsgruppeMeta(ax),
-          KV("Jahrgang", String(ax.jahrgang)),
-          KV("Länderpins", renderCountryFlagsInline(ax) || "—"),
-          KV("Historie", renderhistorieInline(ax) || "—")
-        )
-      ),
-      renderMedalStats(ax)
+      h("div", { class: "ath-profile-top" }, cap, nameBlock),
+      h("div", { class: "ath-profile-bottom" }, titleMeta, renderMedalStats(ax))
     );
   }
 

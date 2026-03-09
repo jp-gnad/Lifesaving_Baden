@@ -46,6 +46,13 @@ main#content {
   align-items: flex-start;
   text-align: left;
   padding-top: 0;
+  z-index: 10;
+}
+
+#athleten-container-section,
+.ath-ui {
+  position: relative;
+  z-index: 20;
 }
 
 .hero::before {
@@ -72,7 +79,7 @@ main#content {
 
 .hero-content {
   position: relative;
-  z-index: 1;
+  z-index: 21;
   width: 100%;
   padding-top: 0;
 }
@@ -80,7 +87,7 @@ main#content {
 .hero h1 {
   margin-top: 5.5rem;
   margin-bottom: 0;
-  margin-left: 0;
+  margin-left: 8rem;
   font-size: 4em;
   line-height: 1.05;
 }
@@ -104,12 +111,23 @@ main#content {
   color: rgba(255, 255, 255, 1);
 }
 
-#ath-search-mount {
-  width: 100vw;
-  min-height: 52px;
-  margin-left: calc(50% - 50vw);
-  margin-top: 0;
-  margin-bottom: 0;
+main#content {
+  margin: 0 auto;
+  min-height: 1000px;
+  position: relative;
+}
+
+#ath-search-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 100;
+}
+
+.hero-search-spacer {
+  width: 100%;
+  min-height: 55px;
 }
 
 .updates h2 {
@@ -120,11 +138,13 @@ main#content {
 .ath-ui {
   max-width: 1400px;
   margin: 0 auto;
-  margin-top: 20px;
+  margin-top: -140px;
   padding: 0 1.5rem 4rem;
   display: flex;
   flex-direction: column;
   gap: 1.75rem;
+  position: relative;
+  z-index: 20;
 }
 
 #athleten-container h1,
@@ -146,11 +166,15 @@ main#content {
 
 .ath-avatar {
   position: relative;
-  inset: -1px;
   border-radius: 999px;
   isolation: isolate;
   transform: translateZ(0);
   backface-visibility: hidden;
+}
+
+.avatar-img.is-cap-fallback {
+  opacity: 0.55;
+  filter: brightness(0.55);
 }
 
 .ath-avatar.xl {
@@ -167,24 +191,6 @@ main#content {
   width: 100%;
   height: 100%;
   object-fit: contain;
-}
-
-.ath-avatar.cap-flip-on-open {
-  transform-origin: center center;
-  transform-style: preserve-3d;
-  animation: cap-flip-on-open 0.9s ease-out;
-}
-
-@keyframes cap-flip-on-open {
-  0% {
-    transform: rotateY(0deg);
-  }
-  50% {
-    transform: rotateY(180deg);
-  }
-  100% {
-    transform: rotateY(360deg);
-  }
 }
 
 .sr-icons {
@@ -231,115 +237,47 @@ main#content {
   margin-top: 7px;
 }
 
-.cap-flip {
-  position: relative;
-  display: inline-block;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  perspective: 1000px;
-  cursor: pointer;
-  grid-area: cap;
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
-}
-
-.cap-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
-  transition: transform 0.6s ease;
-}
-
-.cap-flip.is-flipped .cap-inner {
-  transform: rotateY(180deg);
-}
-
-.cap-face {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  overflow: hidden;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transform: translateZ(0);
-}
-
-.cap-front {
-  width: 100%;
-  height: 100%;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.cap-back {
-  transform: rotateY(180deg);
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.cap-back img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.cap-flip.no-back .cap-back {
-  background: transparent;
-}
-
-.cap-flip.has-back .cap-back {
-  background: transparent;
-}
-
-.cap-front > * {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-.cap-back > * {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-.cap-front img,
-.cap-front svg {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover;
-}
-
 .ath-avatar.cap-overlay {
   position: relative;
 }
 
 .ath-profile-head {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.ath-profile-top {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ath-profile-name {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.ath-profile-name h2 {
+  margin: 0;
+  font-size: 3.7rem;
+  letter-spacing: 0.02em;
+}
+
+.ath-profile-bottom {
   display: grid;
-  grid-template-columns: auto minmax(0, 1.3fr) minmax(0, 0.9fr);
+  grid-template-columns: minmax(0, 1fr) auto;
   column-gap: 1rem;
-  row-gap: 0.75rem;
-  grid-template-areas: "cap title medal";
+  row-gap: 1rem;
   align-items: flex-start;
+  margin-top: 20px;
 }
 
 .ath-profile-title {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  grid-area: title;
-}
-
-.ath-profile-title h2 {
-  margin: 0;
-  font-size: 3.7rem;
-  letter-spacing: 0.02em;
+  min-width: 0;
 }
 
 .gender-row {
@@ -568,10 +506,10 @@ main#content {
 
 .med-card {
   background: transparent;
-  padding: 10px 12px;
   display: grid;
+  grid-template-rows: auto 1fr;
+  align-content: start;
   gap: 8px;
-  margin-bottom: 20px;
   height: 250px;
   width: auto;
 }
@@ -666,9 +604,7 @@ main#content {
 }
 
 .ath-profile-head .med-card {
-  margin-right: 20px;
-  justify-self: end;
-  grid-area: medal;
+  justify-self: stretch;
 }
 
 .ath-tabs-wrap {
@@ -1883,9 +1819,10 @@ main#content {
   pointer-events: none;
 }
 
-.ath-profile-title h2 .name-first,
-.ath-profile-title h2 .name-rest {
+.ath-profile-name h2 .name-first,
+.ath-profile-name h2 .name-rest {
   display: inline;
+  color: rgba(255, 255, 255, 0.95);
 }
 
 @supports not (backface-visibility: hidden) {
@@ -1903,25 +1840,6 @@ main#content {
 
   .flip-card.is-flipped .flip-card-back {
     display: block;
-  }
-}
-
-@media (hover: hover) {
-  .cap-flip.is-flipped:hover .cap-inner {
-    --flip-rot: 180deg;
-  }
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .best-tile:hover .tile-inner,
-  .info-tile.flip:hover .tile-inner {
-    transform: rotateY(180deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ath-avatar.cap-flip-on-open {
-    animation: none;
   }
 }
 
@@ -2036,6 +1954,7 @@ main#content {
 
   .ath-ui {
     padding: 0 0.75rem 2rem;
+    margin-top: -100px;
   }
 
   .hero h1 {
@@ -2059,28 +1978,14 @@ main#content {
     line-height: 1.4;
   }
 
-  .cap-flip {
-    width: 80px;
-    height: 80px;
-    transform: translateY(var(--cap-offset-y, 0));
-  }
-
-  .ath-profile-title h2 {
+  .ath-profile-name h2 {
     font-size: 2em;
   }
 
-  .ath-profile-title h2 .name-rest {
+  .ath-profile-name h2 .name-rest {
     display: block;
     white-space: nowrap;
     font-weight: 900;
-  }
-
-  .gender-row {
-    margin-left: -100px;
-  }
-
-  .ath-profile-meta .k {
-    margin-left: -95px;
   }
 
   .meets-list {
@@ -2094,8 +1999,8 @@ main#content {
   }
 
   .og-cap-img {
-    width: 14px;
-    height: 14px;
+    width: 15px;
+    height: 15px;
     margin-right: 4px;
     transform: translateY(2px);
   }
@@ -2120,16 +2025,22 @@ main#content {
     margin-left: -0.45rem;
   }
 
-  .ath-profile-head {
-    grid-template-columns: auto minmax(0, 1fr);
-    grid-template-areas:
-      "cap title"
-      "medal medal";
-    align-items: flex-start;
+  .ath-profile-top {
+    align-items: center;
+  }
+
+  .ath-avatar.xl {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .ath-profile-bottom {
+    grid-template-columns: 1fr;
   }
 
   .ath-profile-head .med-card {
-    margin-top: 35px;
+    margin-top: 1rem;
+    margin-right: 0;
     justify-self: stretch;
   }
 
