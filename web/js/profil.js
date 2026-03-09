@@ -70,8 +70,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!baseName) return null;
 
     const exts = ["png", "PNG", "jpg", "JPG"];
+    const positions = [50, 60, 40, 70, 30, 80, 20, 90, 10, 100, 0];
 
-    for (let pos = 0; pos <= 100; pos++) {
+    for (const pos of positions) {
       for (const ext of exts) {
         const fileName = `${baseName} - ${pos}.${ext}`;
         const url = `${HERO_PORTRAIT_BASE_URL}/${fileName}`;
