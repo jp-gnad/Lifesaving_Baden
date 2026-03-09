@@ -37,8 +37,82 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const PAGE_MODE = "profil";
   const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test (1).xlsx";
+  const HERO_DEFAULT_BG_URL = "./png/hintergrund4.JPG";
+  const HERO_PORTRAIT_BASE_URL = "./png/pp";
 
   let AllMeetsByAthleteId = new Map();
+  let heroBgRequestId = 0;
+
+  function getHeroEl() {
+    return document.querySelector(".hero");
+  }
+
+  function heroBaseNameFromAthlete(a) {
+    const name = String(a?.name || "").trim();
+    const year = String(a?.jahrgang || "").trim();
+    if (!name || !year) return "";
+
+    const compactName = name.replace(/\s+/g, "");
+    return `${compactName}${year}`;
+  }
+
+  function probeImageExists(url) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = url;
+    });
+  }
+
+  async function findHeroPortraitCandidate(a) {
+    const baseName = heroBaseNameFromAthlete(a);
+    if (!baseName) return null;
+
+    for (let pos = 0; pos <= 100; pos++) {
+      const fileName = `${baseName} - ${pos}.jpg`;
+      const url = `${HERO_PORTRAIT_BASE_URL}/${encodeURIComponent(fileName)}`;
+      const exists = await probeImageExists(url);
+
+      if (exists) {
+        return {
+          url,
+          position: `center ${pos}%`
+        };
+      }
+    }
+
+    const fallbackFileName = `${baseName}.jpg`;
+    const fallbackUrl = `${HERO_PORTRAIT_BASE_URL}/${encodeURIComponent(fallbackFileName)}`;
+    const fallbackExists = await probeImageExists(fallbackUrl);
+
+    if (fallbackExists) {
+      return {
+        url: fallbackUrl,
+        position: "center 50%"
+      };
+    }
+
+    return null;
+  }
+
+  async function updateHeroBackgroundForAthlete(a) {
+    const hero = getHeroEl();
+    if (!hero) return;
+
+    const reqId = ++heroBgRequestId;
+
+    hero.style.backgroundImage = `url("${HERO_DEFAULT_BG_URL}")`;
+    hero.style.backgroundPosition = "center 50%";
+
+    const hit = await findHeroPortraitCandidate(a);
+
+    if (reqId !== heroBgRequestId) return;
+    if (!hit) return;
+
+    hero.style.backgroundImage = `url("${hit.url}")`;
+    hero.style.backgroundPosition = hit.position;
+  }
 
   function getAthleteIdFromUrl() {
     const sp = new URLSearchParams(window.location.search);
@@ -222,14 +296,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const og = String(row[COLS.ortsgruppe] || "").trim();
 
     return {
-    id: makeAthleteId(name, gender, by),
-    name,
-    jahrgang: by,
-    geschlecht: gender,
-    ortsgruppe: og,
-    LV_state: String(row[COLS.LV_state] ?? "").trim().toUpperCase(),
-    BV_natio: String(row[COLS.BV_natio] ?? "").trim()
-  };
+      id: makeAthleteId(name, gender, by),
+      name,
+      jahrgang: by,
+      geschlecht: gender,
+      ortsgruppe: og,
+      LV_state: String(row[COLS.LV_state] ?? "").trim().toUpperCase(),
+      BV_natio: String(row[COLS.BV_natio] ?? "").trim()
+    };
   }
 
   function mapRowToMeet(row) {
@@ -382,6 +456,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     AppState.selectedAthleteId = ax?.id || null;
 
+    updateHeroBackgroundForAthlete(ax);
     dismissKeyboard();
 
     const mount = Refs.profileMount;
