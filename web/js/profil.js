@@ -69,21 +69,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const baseName = heroBaseNameFromAthlete(a);
     if (!baseName) return null;
 
-    const exts = ["png", "PNG", "jpg", "JPG"];
     const positions = [50, 60, 40, 70, 30, 80, 20, 90, 10, 100, 0];
 
     for (const pos of positions) {
-      for (const ext of exts) {
-        const fileName = `${baseName} - ${pos}.${ext}`;
-        const url = `${HERO_PORTRAIT_BASE_URL}/${fileName}`;
-        const exists = await probeImageExists(url);
+      const fileName = `${baseName} - ${pos}.jpg`;
+      const url = `${HERO_PORTRAIT_BASE_URL}/${fileName}`;
+      const exists = await probeImageExists(url);
 
-        if (exists) {
-          return {
-            url,
-            position: `center ${pos}%`
-          };
-        }
+      if (exists) {
+        return {
+          url,
+          position: `center ${pos}%`
+        };
       }
     }
 
