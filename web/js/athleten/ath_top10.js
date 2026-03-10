@@ -48,7 +48,7 @@
   };
 
   const FLAG_BASE_URL = "./svg";
-  const CAP_FALLBACK_FILE = "Cap-Ba.svg";
+  const CAP_FALLBACK_FILE = "Cap-BA.svg";
   const CAP_FALLBACK_URL = `${FLAG_BASE_URL}/${encodeURIComponent(CAP_FALLBACK_FILE)}`;
 
   const $ = (s, r = document) => r.querySelector(s);
