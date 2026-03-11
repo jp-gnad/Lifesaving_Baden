@@ -4,11 +4,23 @@
   const COLS = {
     gender: 0,
     name: 1,
+    d1: 3,
+    d2: 4,
+    d3: 5,
+    d4: 6,
+    d5: 7,
+    d6: 8,
     excelDate: 9,
     meet_name: 10,
     yy2: 11,
     ortsgruppe: 12,
     LV_state: 13,
+    p1: 15,
+    p2: 16,
+    p3: 17,
+    p4: 18,
+    p5: 19,
+    p6: 20,
     regelwerk: 22,
     startrecht: 24,
     BV_natio: 27
@@ -24,6 +36,22 @@
     const base = new Date(Date.UTC(1899, 11, 30));
     const d = new Date(base.getTime() + num * 86400000);
     return d.toISOString().slice(0, 10);
+  }
+
+  function excelSerialToDate(n) {
+    const num = Number(n);
+    if (!Number.isFinite(num)) return null;
+    const base = new Date(Date.UTC(1899, 11, 30));
+    return new Date(base.getTime() + num * 86400000);
+  }
+
+  function formatDateDEFromExcelSerial(n) {
+    const d = excelSerialToDate(n);
+    if (!d) return "";
+    const dd = String(d.getUTCDate()).padStart(2, "0");
+    const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const yyyy = d.getUTCFullYear();
+    return `${dd}.${mm}.${yyyy}`;
   }
 
   function regelwerkKind(v) {
@@ -191,6 +219,111 @@
     return athletes;
   }
 
+  function isFilled(v) {
+    return !(v == null || (typeof v === "string" && v.trim() === ""));
+  }
+
+  function formatPercent(value, total) {
+    if (!total) return "0,0";
+    return ((value / total) * 100).toFixed(1).replace(".", ",");
+  }
+
+  function computeOverviewStatsFromRows(rows) {
+    const athletes = buildIndicesFromRows(rows);
+
+    const meets = new Set();
+
+    let firstMeetNum = Infinity;
+    let lastMeetNum = -Infinity;
+
+    let starts = 0;
+    let d1Starts = 0;
+    let d2Starts = 0;
+    let d3Starts = 0;
+    let d4Starts = 0;
+    let d5Starts = 0;
+    let d6Starts = 0;
+
+    let women = 0;
+    let men = 0;
+
+    for (let i = 0; i < athletes.length; i++) {
+      if (String(athletes[i].geschlecht || "").toLowerCase().startsWith("w")) women++;
+      else men++;
+    }
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length === 0) continue;
+
+      const meet = String(row[COLS.meet_name] || "").trim();
+      const dNum = Number(row[COLS.excelDate]);
+
+      if (meet) {
+        meets.add(meet);
+        if (Number.isFinite(dNum) && dNum < firstMeetNum) firstMeetNum = dNum;
+        if (Number.isFinite(dNum) && dNum > lastMeetNum) lastMeetNum = dNum;
+      }
+
+      if (isFilled(row[COLS.d1]) || isFilled(row[COLS.p1])) {
+        starts++;
+        d1Starts++;
+      }
+      if (isFilled(row[COLS.d2]) || isFilled(row[COLS.p2])) {
+        starts++;
+        d2Starts++;
+      }
+      if (isFilled(row[COLS.d3]) || isFilled(row[COLS.p3])) {
+        starts++;
+        d3Starts++;
+      }
+      if (isFilled(row[COLS.d4]) || isFilled(row[COLS.p4])) {
+        starts++;
+        d4Starts++;
+      }
+      if (isFilled(row[COLS.d5]) || isFilled(row[COLS.p5])) {
+        starts++;
+        d5Starts++;
+      }
+      if (isFilled(row[COLS.d6]) || isFilled(row[COLS.p6])) {
+        starts++;
+        d6Starts++;
+      }
+    }
+
+    const persons = athletes.length;
+    const firstMeetYear =
+      Number.isFinite(firstMeetNum) ? excelSerialToDate(firstMeetNum).getUTCFullYear() : "";
+    const lastMeetDate = Number.isFinite(lastMeetNum) ? formatDateDEFromExcelSerial(lastMeetNum) : "";
+
+    return {
+      persons,
+      meets: meets.size,
+      starts,
+      women,
+      men,
+      firstMeetYear,
+      lastMeetDate,
+      disciplineStarts: {
+        d1: d1Starts,
+        d2: d2Starts,
+        d3: d3Starts,
+        d4: d4Starts,
+        d5: d5Starts,
+        d6: d6Starts
+      },
+      chip1Title: `${formatPercent(women, persons)}% Frauen / ${formatPercent(men, persons)}% Männer`,
+      chip2Title: `${firstMeetYear || "-" } bis ${lastMeetDate || "-"}`,
+      chip3Title:
+        `100m Lifesaver: ${formatPercent(d1Starts, starts)}%\n` +
+        `50m Retten: ${formatPercent(d2Starts, starts)}%\n` +
+        `200m Super-Lifesaver: ${formatPercent(d3Starts, starts)}%\n` +
+        `100m Kombi: ${formatPercent(d4Starts, starts)}%\n` +
+        `100m Retten Flossen: ${formatPercent(d5Starts, starts)}%\n` +
+        `200m Hindernis: ${formatPercent(d6Starts, starts)}%`
+    };
+  }
+
   let xlsxScriptPromise = null;
 
   async function ensureXLSX() {
@@ -240,5 +373,21 @@
     return buildIndicesFromRows(rows);
   }
 
-  window.AthDataSmall = { loadAthletes, buildIndicesFromRows, loadWorkbookArray };
+  async function loadAthletesAndStats(opts = {}) {
+    const excelUrl = typeof opts.excelUrl === "string" ? opts.excelUrl : State.excelUrl;
+    const sheetName = typeof opts.sheetName === "string" ? opts.sheetName : "Tabelle2";
+    const rows = await loadWorkbookArray(sheetName, excelUrl);
+    return {
+      athletes: buildIndicesFromRows(rows),
+      stats: computeOverviewStatsFromRows(rows)
+    };
+  }
+
+  window.AthDataSmall = {
+    loadAthletes,
+    loadAthletesAndStats,
+    loadWorkbookArray,
+    buildIndicesFromRows,
+    computeOverviewStatsFromRows
+  };
 })();
