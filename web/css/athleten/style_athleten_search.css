@@ -44,7 +44,10 @@
   min-height: 55px;
   box-sizing: border-box;
   background: rgba(15, 15, 18, 0.75);
-  border-bottom: 2px solid rgba(15, 15, 18, 1);
+
+  border-bottom: 1.5px solid;
+  border-image: linear-gradient(to right, rgba(255, 237, 0, 0.75), rgba(15, 15, 18, 0.8)) 1;
+
   padding: 0 var(--ath-panel-pad-x);
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
