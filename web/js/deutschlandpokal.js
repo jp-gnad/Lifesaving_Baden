@@ -38,7 +38,7 @@ const DP_SLIDE_SETTINGS = {
       label: "Mehr Infos!",
       href: "https://www.dlrg.de/mitmachen/rettungssport/nationale-und-internationale-wettkaempfe/internationaler-deutschlandpokal-2023/",
     },
-    bgPos: "center 65%",
+    bgPos: "center 50%",
   },
   "2022": {
     text: "LV-Gesamtwertung: 5. Platz",
@@ -56,13 +56,17 @@ const DP_SLIDE_SETTINGS = {
     },
     bgPos: "center 35%",
   },
+  "2018": {
+    text: "AUSGEFALLEN",
+    bgPos: "center 45%",
+  },
   "2017": {
     text: "LV-Gesamtwertung: 7. Platz",
     cta: {
       label: "Mehr Infos!",
       href: "https://baden.dlrg-jugend.de/wir/news/detailansicht/deutschlandpokal-2017-234-n/",
     },
-    bgPos: "center 50%",
+    bgPos: "center 45%",
   },
   "2016": {
     text: "LV-Gesamtwertung: 4. Platz",
@@ -87,6 +91,10 @@ const DP_SLIDE_SETTINGS = {
     cta: { label: "Mehr Infos!", href: "https://sachsen-anhalt.dlrg.de/rettungssport/deutschlandpokal/dp-2013/" },
     bgPos: "center 20%",
   },
+  "2012": {
+    text: "AUSGEFALLEN",
+    bgPos: "center 30%",
+  },
   "2011": {
     text: "LV-Gesamtwertung: 7. Platz",
     cta: {
@@ -94,6 +102,18 @@ const DP_SLIDE_SETTINGS = {
       href: "https://www.durlacher.de/start/neuigkeiten-archiv/artikel/2011/dezember/15/schwimmer-der-dlrg-durlach-auch-international-erfolgreich",
     },
     bgPos: "center 30%",
+  },
+  "2008": {
+    text: "AUSGEFALLEN",
+    bgPos: "center 50%",
+  },
+  "2007": {
+    text: "LV-Gesamtwertung: 9. Platz",
+    bgPos: "center 50%",
+  },
+  "2005": {
+    text: "AUSGEFALLEN",
+    bgPos: "center 15%",
   },
   "2000": {
     text: "LV-Gesamtwertung: 11. Platz",
