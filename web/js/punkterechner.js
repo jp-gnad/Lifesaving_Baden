@@ -36,36 +36,36 @@ const prLangState = {
 const PR_DISCIPLINES = {
   Einzel: {
     "12": [
-      { id: "E12_50_HIND", label: "50m Hindernis-schwimmen", excelKey: "50m hindernis", drKey: "50m Hindernis" },
+      { id: "E12_50_HIND", label: "50m Hindernisschwimmen ", excelKey: "50m hindernis", drKey: "50m Hindernis" },
       { id: "E12_50_KOMB", label: "50m komb. Schwimmen", excelKey: "50m komb schwimmen", drKey: "50m komb. Schwimmen" },
       { id: "E12_50_FLOSS", label: "50m Flossen", excelKey: "50m flossen", drKey: "50m Flossen" }
     ],
     "13/14": [
-      { id: "E1314_100_HIND", label: "100m Hindernis-schwimmen", excelKey: "100m hindernis", drKey: "100m Hindernis" },
+      { id: "E1314_100_HIND", label: "100m Hindernisschwimmen ", excelKey: "100m hindernis", drKey: "100m Hindernis" },
       { id: "E1314_50_RETT", label: "50m Retten", excelKey: "50m retten", drKey: "50m Retten" },
       { id: "E1314_50_FLOSS", label: "50m Retten mit Flossen", excelKey: "50m retten mit flossen", drKey: "50m Retten mit Flossen" }
     ],
     "15/16": [
-      { id: "E1516_200_HIND", label: "200m Hindernis-schwimmen", excelKey: "200m hindernis", drKey: "200m Hindernis" },
-      { id: "E1516_100_LIFE", label: "100m Retten m. Fl. u. GR.", excelKey: "100m lifesaver", drKey: "100m Lifesaver" },
+      { id: "E1516_200_HIND", label: "200m Hindernisschwimmen ", excelKey: "200m hindernis", drKey: "200m Hindernis" },
+      { id: "E1516_100_LIFE", label: "100m Lifesaver", excelKey: "100m lifesaver", drKey: "100m Lifesaver" },
       { id: "E1516_50_RETT", label: "50m Retten", excelKey: "50m retten", drKey: "50m Retten" },
-      { id: "E1516_100_KOMB", label: "100m komb. Rettungs-übung", excelKey: "100m komb rettungs", drKey: "100m Kombi" },
+      { id: "E1516_100_KOMB", label: "100m komb. Rettungsübung", excelKey: "100m komb rettungs", drKey: "100m Kombi" },
       { id: "E1516_100_FLOSS", label: "100m Retten mit Flossen", excelKey: "100m retten", drKey: "100m Retten" },
       { id: "E1516_200_SUPER", label: "200m Super-Lifesaver", excelKey: "200m super lifesaver", drKey: "200m Superlifesaver" }
     ],
     "17/18": [
-      { id: "E1718_200_HIND", label: "200m Hindernis-schwimmen", excelKey: "200m hindernis", drKey: "200m Hindernis" },
-      { id: "E1718_100_LIFE", label: "100m Retten m. Fl. u. GR.", excelKey: "100m lifesaver", drKey: "100m Lifesaver" },
+      { id: "E1718_200_HIND", label: "200m Hindernisschwimmen ", excelKey: "200m hindernis", drKey: "200m Hindernis" },
+      { id: "E1718_100_LIFE", label: "100m Lifesaver", excelKey: "100m lifesaver", drKey: "100m Lifesaver" },
       { id: "E1718_50_RETT", label: "50m Retten", excelKey: "50m retten", drKey: "50m Retten" },
-      { id: "E1718_100_KOMB", label: "100m komb. Rettungs-übung", excelKey: "100m komb rettungs", drKey: "100m Kombi" },
+      { id: "E1718_100_KOMB", label: "100m komb. Rettungsübung", excelKey: "100m komb rettungs", drKey: "100m Kombi" },
       { id: "E1718_100_FLOSS", label: "100m Retten mit Flossen", excelKey: "100m retten", drKey: "100m Retten" },
       { id: "E1718_200_SUPER", label: "200m Super-Lifesaver", excelKey: "200m super lifesaver", drKey: "200m Superlifesaver" }
     ],
     Offen: [
-      { id: "EO_200_HIND", label: "200m Hindernis-schwimmen", excelKey: "200m hindernis", drKey: "200m Hindernis" },
-      { id: "EO_100_LIFE", label: "100m Retten m. Fl. u. GR.", excelKey: "100m lifesaver", drKey: "100m Lifesaver" },
+      { id: "EO_200_HIND", label: "200m Hindernisschwimmen ", excelKey: "200m hindernis", drKey: "200m Hindernis" },
+      { id: "EO_100_LIFE", label: "100m Lifesaver", excelKey: "100m lifesaver", drKey: "100m Lifesaver" },
       { id: "EO_50_RETT", label: "50m Retten", excelKey: "50m retten", drKey: "50m Retten" },
-      { id: "EO_100_KOMB", label: "100m komb. Rettungs-übung", excelKey: "100m komb rettungs", drKey: "100m Kombi" },
+      { id: "EO_100_KOMB", label: "100m komb. Rettungsübung", excelKey: "100m komb rettungs", drKey: "100m Kombi" },
       { id: "EO_100_FLOSS", label: "100m Retten mit Flossen", excelKey: "100m retten", drKey: "100m Retten" },
       { id: "EO_200_SUPER", label: "200m Super-Lifesaver", excelKey: "200m super lifesaver", drKey: "200m Superlifesaver" }
     ]
@@ -108,15 +108,15 @@ PR_DISCIPLINES.Einzel.Junioren = PR_DISCIPLINES.Einzel["17/18"];
 PR_DISCIPLINES.Mannschaft.Junioren = PR_DISCIPLINES.Mannschaft["17/18"];
 
 const PR_DISCIPLINE_LABELS_EN = {
-  "50m Hindernis-schwimmen": "50m obstacle swim",
+  "50m Hindernisschwimmen ": "50m obstacle swim",
   "50m komb. Schwimmen": "50m medley swim",
   "50m Flossen": "50m fins swim",
-  "100m Hindernis-schwimmen": "100m obstacle swim",
+  "100m Hindernisschwimmen ": "100m obstacle swim",
   "50m Retten": "50m manikin carry",
   "50m Retten mit Flossen": "50m manikin carry with fins",
-  "200m Hindernis-schwimmen": "200m obstacle swim",
-  "100m Retten m. Fl. u. GR.": "100m lifesaver",
-  "100m komb. Rettungs-übung": "100m rescue medley",
+  "200m Hindernisschwimmen ": "200m obstacle swim",
+  "100m Lifesaver": "100m lifesaver",
+  "100m komb. Rettungsübung": "100m rescue medley",
   "100m Retten mit Flossen": "100m manikin carry with fins",
   "200m Super-Lifesaver": "200m super lifesaver",
   "4×50m Hindernisstaffel": "4×50m obstacle relay",
@@ -477,15 +477,13 @@ function prCanonicalNationalDisciplineKey(name) {
   s = s.replace(/\bfreistilschwimmen\b/g, "freistil schwimmen");
   s = s.replace(/\bflossenschwimmen\b/g, "flossen");
   s = s.replace(/\bkombiniertes schwimmen\b/g, "komb schwimmen");
-  s = s.replace(/\bkombinierte rettungsuebung\b/g, "komb rettungs");
+  s = s.replace(/\b100m komb. Rettungsuebung\b/g, "komb rettungs");
   s = s.replace(/\bkombinierte rettungs uebung\b/g, "komb rettungs");
   s = s.replace(/\bkomb rettungs uebung\b/g, "komb rettungs");
   s = s.replace(/\brueckenlage ohne armtaetigkeit\b/g, "rueckenlage ohne arme");
   s = s.replace(/\bschleppen einer puppe\b/g, "schleppen puppe");
 
-  s = s.replace(/\b100m retten m fl u gr\b/g, "100m lifesaver");
-  s = s.replace(/\b100m retten m flossen u gr\b/g, "100m lifesaver");
-  s = s.replace(/\b100m retten mit flossen u gr\b/g, "100m lifesaver");
+  s = s.replace(/\b100m lifesaver\b/g, "100m lifesaver");
 
   return s.replace(/\s+/g, " ").trim();
 }
@@ -1096,7 +1094,7 @@ async function prRenderCurrentSelection() {
       const input = document.createElement("input");
       input.type = "text";
       input.className = "pr-time-input";
-      input.placeholder = "mm:ss,cc";
+      input.placeholder = "m:ss,cc";
       input.autocomplete = "off";
       input.inputMode = "numeric";
       input.maxLength = 8;

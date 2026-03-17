@@ -233,6 +233,12 @@ main#content {
   font-weight: 600;
 }
 
+#pr-rule, #pr-mode, #pr-gender, #pr-age   {
+  padding: 0.35rem 0.45rem;
+  background: rgba(15, 15, 16, 0.75);
+  color: rgba(255, 255, 255, 0.75);
+}
+
 @media (max-width: 720px) {
   .pr-lang-switch {
     top: 0.75rem;
@@ -272,11 +278,16 @@ main#content {
   }
 
   .pr-controls-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem;
   }
 
   .pr-control {
     padding: 0.75rem 0.8rem;
+  }
+
+  #pr-rule, #pr-mode, #pr-gender, #pr-age   {
+    padding: 0.2rem 0.35rem;
+    font-size: 0.9rem;
   }
 }
