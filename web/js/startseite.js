@@ -10,10 +10,10 @@ const WIDE_SLIDES = [
   {
     title: "Kalender",
     meta: "DLRG ・ Wettkämpfe ・ Landeskader ・ Bundeskader",
-    text: "Aktueller Jahresplan vom Landeskader Baden",
+    text: "Übersicht zu den Wichtigsten Wettkampfterminen, sowie Maßnahmen vom Landes- und Bundeskader",
     img: "./png/karussel/bild3.jpg",
     cta: { label: "Mehr Informationen", href: "./kalender.html" },
-    bgY: "50%",
+    bgY: "25%",
   },
   {
     title: "Infoschreiben",
