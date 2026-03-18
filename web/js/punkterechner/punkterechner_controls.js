@@ -78,11 +78,7 @@ const prI18n = {
     tableDiscipline: "Disziplin",
     tableTime: "Zeit",
     points: "Punkte",
-    summaryAll4: "Gesamt ({rule}, alle 4 Disziplinen)",
-    summaryTop3: "Gesamt ({rule}, beste 3 Disziplinen)",
-    summaryTop4: "Gesamt ({rule}, beste 4 Disziplinen)",
-    ruleGermanyLower: "deutschland",
-    ruleWorldLower: "weltrekord",
+    summaryCombined: "Gesamt 3-Kampf / 4-Kampf",
     loading: "Rekordwerte werden initialisiert …",
     noDisc: "Für diese Kombination sind keine Disziplinen definiert.",
     xlsxMissing: "XLSX-Bibliothek nicht gefunden – Rekordzeiten können nicht geladen werden.",
@@ -138,11 +134,7 @@ const prI18n = {
     tableDiscipline: "Discipline",
     tableTime: "Time",
     points: "Points",
-    summaryAll4: "Total ({rule}, all 4 disciplines)",
-    summaryTop3: "Total ({rule}, best 3 disciplines)",
-    summaryTop4: "Total ({rule}, best 4 disciplines)",
-    ruleGermanyLower: "germany",
-    ruleWorldLower: "world record",
+    summaryCombined: "Total 3-event / 4-event",
     loading: "Record values are being initialized …",
     noDisc: "No disciplines are defined for this combination.",
     xlsxMissing: "XLSX library not found – record times cannot be loaded.",
@@ -290,21 +282,9 @@ function prGetRuleLabelLower() {
 }
 
 function prUpdateSummaryLabel() {
-  const modeEl = document.getElementById("pr-mode");
-  const rule = prGetRule();
-  const isTeam = modeEl ? modeEl.value === "Mannschaft" : false;
   const cell = document.getElementById("pr-summary-label");
   if (!cell) return;
-
-  const ruleLabel = prGetRuleLabelLower();
-
-  if (isTeam) {
-    cell.textContent = prT("summaryAll4", { rule: ruleLabel });
-  } else if (rule === "International") {
-    cell.textContent = prT("summaryTop4", { rule: ruleLabel });
-  } else {
-    cell.textContent = prT("summaryTop3", { rule: ruleLabel });
-  }
+  cell.textContent = prT("summaryCombined");
 }
 
 function prUpdatePointsHeader() {

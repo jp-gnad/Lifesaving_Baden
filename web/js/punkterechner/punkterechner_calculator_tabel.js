@@ -193,6 +193,14 @@ function prGetDisciplines(mode, ak) {
   return m[ak] || [];
 }
 
+function prFormatPoints(points) {
+  if (!isFinite(points)) return "";
+  return new Intl.NumberFormat("de-DE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(points) + " P";
+}
+
 function prSanitizeTimeDigits(value) {
   return String(value || "")
     .replace(/\D+/g, "")
@@ -250,8 +258,8 @@ function prCreateCalculatorTableMarkup() {
         <tbody></tbody>
         <tfoot>
           <tr class="pr-summary-row">
-            <td colspan="2" id="pr-summary-label">Gesamt (deutschland, beste 3 Disziplinen)</td>
-            <td id="pr-total-de"></td>
+            <td colspan="2" id="pr-summary-label">Gesamt 3-Kampf / 4-Kampf</td>
+            <td id="pr-total-combined"></td>
           </tr>
         </tfoot>
       </table>
@@ -265,10 +273,10 @@ async function prRenderCurrentSelection() {
   if (!table) return;
 
   const tbody = table.querySelector("tbody");
-  const totalDe = document.getElementById("pr-total-de");
+  const totalCombined = document.getElementById("pr-total-combined");
 
   if (tbody) tbody.innerHTML = "";
-  if (totalDe) totalDe.textContent = "";
+  if (totalCombined) totalCombined.textContent = "";
 
   const modeElem = document.getElementById("pr-mode");
   const ageElem = document.getElementById("pr-age");
@@ -391,7 +399,7 @@ function prRecalcRowPoints(tr) {
 
   const pts = prCalcNationalPoints(timeSec, recSeconds);
   tr.dataset.pointsDe = pts > 0 ? String(pts) : "0";
-  pointsCell.textContent = pts > 0 ? pts.toFixed(2) + " P" : "0,00 P";
+  pointsCell.textContent = pts > 0 ? prFormatPoints(pts) : "0,00 P";
 }
 
 function prUpdateTotalPointsDe() {
@@ -400,15 +408,9 @@ function prUpdateTotalPointsDe() {
 
   const tbody = table.querySelector("tbody");
   const rows = tbody ? Array.from(tbody.querySelectorAll("tr")) : [];
-  const totalCell = document.getElementById("pr-total-de");
+  const totalCell = document.getElementById("pr-total-combined");
+
   if (!totalCell) return;
-
-  const modeElem = document.getElementById("pr-mode");
-  const mode = modeElem ? modeElem.value : "Einzel";
-  const isTeam = mode === "Mannschaft";
-
-  const rule = prGetRule();
-  const isIntl = rule === "International";
 
   const entries = rows.map(row => {
     const cell = row.querySelector(".pr-points-de");
@@ -422,38 +424,33 @@ function prUpdateTotalPointsDe() {
     }
   });
 
-  const vals = entries.map(e => e.val).filter(v => v > 0);
-  if (!vals.length) {
+  const valsSorted = entries
+    .map(e => e.val)
+    .filter(v => v > 0)
+    .sort((a, b) => b - a);
+
+  if (!valsSorted.length) {
     totalCell.textContent = "";
     return;
   }
 
-  let total;
-  if (isTeam) {
-    total = vals.reduce((a, b) => a + b, 0);
-  } else {
-    const valsSorted = vals.slice().sort((a, b) => b - a);
-    const k = isIntl ? 4 : 3;
-    total = valsSorted.slice(0, k).reduce((a, b) => a + b, 0);
-  }
+  const total3 = valsSorted.slice(0, 3).reduce((a, b) => a + b, 0);
+  const total4 = valsSorted.slice(0, 4).reduce((a, b) => a + b, 0);
 
-  totalCell.textContent = total.toFixed(2) + " P";
+  const total3Text = total3 > 0 ? prFormatPoints(total3) : "0,00 P";
+  const total4Text = total4 > 0 ? prFormatPoints(total4) : "0,00 P";
 
-  if (isTeam) {
-    entries.forEach(e => {
-      if (e.cell && e.val > 0) e.cell.classList.add("pr-points-de-top3");
-    });
-  } else {
-    const entriesSorted = entries.slice().sort((a, b) => b.val - a.val);
-    const k = isIntl ? 4 : 3;
+  totalCell.textContent = `${total3Text} / ${total4Text}`;
 
-    entriesSorted.slice(0, k).forEach(e => {
-      if (e.cell && e.val > 0) e.cell.classList.add("pr-points-de-top3");
-    });
+  const entriesSorted = entries.slice().sort((a, b) => b.val - a.val);
 
-    const extraIndex = k;
-    if (entriesSorted.length > extraIndex && entriesSorted[extraIndex].val > 0 && entriesSorted[extraIndex].cell) {
-      entriesSorted[extraIndex].cell.classList.add("pr-points-de-top4");
+  entriesSorted.slice(0, 3).forEach(e => {
+    if (e.cell && e.val > 0) {
+      e.cell.classList.add("pr-points-de-top3");
     }
+  });
+
+  if (entriesSorted.length > 3 && entriesSorted[3].cell && entriesSorted[3].val > 0) {
+    entriesSorted[3].cell.classList.add("pr-points-de-top4");
   }
 }
