@@ -37,7 +37,7 @@ const prI18n = {
     switchText: "English",
     switchFlag: "./svg/Großbritannien.svg",
     switchAlt: "English",
-    modeLabel: "Wertung",
+    modeLabel: "Disziplinen",
     modeIndividual: "Einzel",
     modeTeam: "Mannschaft",
     ageLabel: "Altersklasse",
@@ -75,7 +75,7 @@ const prI18n = {
     age280: "AK 280+",
     ageOpenShort: "Offen",
     ageJunior: "Junioren",
-    tableDiscipline: "Disziplin",
+    tableDiscipline: "Disziplinen",
     tableTime: "Zeit",
     points: "Punkte",
     summaryCombined: "Gesamt 3-Kampf / 4-Kampf",
@@ -93,7 +93,7 @@ const prI18n = {
     switchText: "Deutsch",
     switchFlag: "./svg/Deutschland.svg",
     switchAlt: "Deutsch",
-    modeLabel: "Scoring",
+    modeLabel: "Disciplines",
     modeIndividual: "Individual",
     modeTeam: "Team",
     ageLabel: "Age group",
@@ -131,7 +131,7 @@ const prI18n = {
     age280: "Age 280+",
     ageOpenShort: "Open",
     ageJunior: "Youth",
-    tableDiscipline: "Discipline",
+    tableDiscipline: "Disciplines",
     tableTime: "Time",
     points: "Points",
     summaryCombined: "Total 3-event / 4-event",
@@ -275,12 +275,6 @@ function prGetRule() {
   return el ? el.value : "National";
 }
 
-function prGetRuleLabelLower() {
-  return prGetRule() === "International"
-    ? prT("ruleWorldLower")
-    : prT("ruleGermanyLower");
-}
-
 function prUpdateSummaryLabel() {
   const cell = document.getElementById("pr-summary-label");
   if (!cell) return;
@@ -312,7 +306,6 @@ function prApplyLanguage() {
   const disciplineHeader = document.getElementById("pr-discipline-header");
   const timeHeader = document.getElementById("pr-time-header");
   const loading = document.getElementById("pr-loading");
-
   const sourceNoteText = document.getElementById("pr-source-note-text");
   const sourceNoteLink = document.getElementById("pr-source-note-link");
 
@@ -321,8 +314,16 @@ function prApplyLanguage() {
   if (ageLabel) ageLabel.textContent = prT("ageLabel");
   if (genderLabel) genderLabel.textContent = prT("genderLabel");
   if (ruleLabel) ruleLabel.textContent = prT("ruleLabel");
-  if (disciplineHeader) disciplineHeader.textContent = prT("tableDiscipline");
-  if (timeHeader) timeHeader.textContent = prT("tableTime");
+
+  if (disciplineHeader) {
+    disciplineHeader.textContent = prT("tableDiscipline");
+    disciplineHeader.dataset.mobileTime = prT("tableTime");
+  }
+
+  if (timeHeader) {
+    timeHeader.textContent = prT("tableTime");
+  }
+
   if (loading) loading.textContent = prT("loading");
   if (sourceNoteText) sourceNoteText.textContent = prT("sourceNote");
   if (sourceNoteLink) sourceNoteLink.textContent = prT("sourceLinkText");
@@ -391,7 +392,7 @@ function prCreateControlsMarkup() {
     <section class="pr-controls-wrapper">
       <div class="pr-controls-grid">
         <div class="pr-control">
-          <label for="pr-mode" id="pr-mode-label">Wertung</label>
+          <label for="pr-mode" id="pr-mode-label">Disziplinen</label>
           <select id="pr-mode">
             <option value="Einzel">Einzel</option>
             <option value="Mannschaft">Mannschaft</option>

@@ -413,14 +413,14 @@ function prUpdateTotalPointsDe() {
   if (!totalCell) return;
 
   const entries = rows.map(row => {
-    const cell = row.querySelector(".pr-points-de");
-    const val = cell ? parseFloat(cell.textContent) : NaN;
-    return { row, cell, val: isNaN(val) ? 0 : val };
-  });
+  const cell = row.querySelector(".pr-points-de");
+  const val = parseFloat(row.dataset.pointsDe || "0");
+  return { row, cell, val: isNaN(val) ? 0 : val };
+});
 
   entries.forEach(e => {
     if (e.cell) {
-      e.cell.classList.remove("pr-points-de-top3", "pr-points-de-top4");
+      e.cell.classList.remove("pr-points-de-top3", "pr-points-de-top4", "pr-points-de-top5-6");
     }
   });
 
@@ -430,7 +430,7 @@ function prUpdateTotalPointsDe() {
     .sort((a, b) => b - a);
 
   if (!valsSorted.length) {
-    totalCell.textContent = "";
+    totalCell.innerHTML = "";
     return;
   }
 
@@ -440,12 +440,15 @@ function prUpdateTotalPointsDe() {
   const total3Text = total3 > 0 ? prFormatPoints(total3) : "0,00 P";
   const total4Text = total4 > 0 ? prFormatPoints(total4) : "0,00 P";
 
-  totalCell.textContent = `${total3Text} / ${total4Text}`;
-
+  totalCell.innerHTML = `
+    <span class="pr-total-part">${total3Text}</span>
+    <span class="pr-total-separator"> / </span>
+    <span class="pr-total-part">${total4Text}</span>
+  `;
   const entriesSorted = entries.slice().sort((a, b) => b.val - a.val);
 
   entriesSorted.slice(0, 3).forEach(e => {
-    if (e.cell && e.val > 0) {
+  if (e.cell && e.val > 0) {
       e.cell.classList.add("pr-points-de-top3");
     }
   });
@@ -453,4 +456,10 @@ function prUpdateTotalPointsDe() {
   if (entriesSorted.length > 3 && entriesSorted[3].cell && entriesSorted[3].val > 0) {
     entriesSorted[3].cell.classList.add("pr-points-de-top4");
   }
+
+  entriesSorted.slice(4, 6).forEach(e => {
+    if (e.cell && e.val > 0) {
+      e.cell.classList.add("pr-points-de-top5-6");
+    }
+  });
 }
