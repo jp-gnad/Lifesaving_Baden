@@ -7,7 +7,7 @@ main#content {
   background: url("../png/hintergrund5.JPG") center/cover no-repeat;
   background-position: center 50%;
   height: 600px;
-  padding-top: 125px;
+  padding-top: 20px;
   text-align: center;
   color: white;
   z-index: 0;
@@ -40,19 +40,26 @@ main#content {
   position: relative;
   z-index: 2;
   font-size: 2.75em;
+  pointer-events: none;
+  text-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    0 6px 18px rgba(0, 0, 0, 0.25);
 }
 
 .pr-lang-switch {
   position: absolute;
-  top: 1rem;
-  left: 1rem;
-  z-index: 2;
+  top: 1.25rem;
+  left: 1.25rem;
+  z-index: 20;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.2rem;
-  padding: 0;
+  justify-content: center;
+  min-width: 84px;
+  min-height: 84px;
+  padding: 0.6rem 0.7rem;
   border: 0;
+  border-radius: 12px;
   background: transparent;
   color: white;
   cursor: pointer;
@@ -74,12 +81,12 @@ main#content {
 .pr-controls-wrapper {
   position: relative;
   max-width: 960px;
-  margin: -17.5rem auto 1rem;
+  margin: -28.5rem auto 1rem;
   padding: 1rem 1.25rem;
-  background: rgba(15, 15, 18, 0.35);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(15, 15, 18, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   color: #f9fafb;
   z-index: 5;
@@ -99,18 +106,18 @@ main#content {
   gap: 0.45rem;
   min-width: 0;
   padding: 0.85rem 0.9rem;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(15, 15, 18, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
 }
 
 .pr-control label {
   font-size: 0.82rem;
   font-weight: 600;
-  color: rgba(249, 250, 251, 0.9);
+  color: rgba(255, 255, 255, 0.9);
   letter-spacing: 0.01em;
 }
 
@@ -126,18 +133,10 @@ main#content {
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
-.pr-info {
-  margin-top: 0.9rem;
-  font-size: 0.85rem;
-  opacity: 0.9;
-  border-radius: 10px;
-}
-
 .pr-table-wrapper {
   position: relative;
   max-width: 960px;
   margin: 0 auto 3rem;
-  padding: 1rem 1.25rem 1.5rem;
   background: rgba(15, 15, 18, 0.35);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -161,7 +160,7 @@ main#content {
   font-size: 0.92rem;
   overflow: hidden;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(15, 15, 18, 0.2);
 }
 
 .pr-table thead th {
@@ -170,7 +169,7 @@ main#content {
   z-index: 1;
   text-align: left;
   padding: 0.75rem 0.8rem;
-  background: rgba(15, 15, 18, 0.75);
+  background: rgba(15, 15, 18, 0.6);
   color: #f9fafb;
   border-bottom: 1px solid rgba(255, 255, 255, 0.14);
   backdrop-filter: blur(8px);
@@ -181,15 +180,15 @@ main#content {
 .pr-table tfoot td {
   padding: 0.4rem 0.8rem;
   border-bottom: 1.2px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .pr-table tbody tr:nth-child(even) td {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .pr-table tbody tr:hover td {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .pr-disc-name {
@@ -235,14 +234,36 @@ main#content {
 
 #pr-rule, #pr-mode, #pr-gender, #pr-age   {
   padding: 0.35rem 0.45rem;
-  background: rgba(15, 15, 16, 0.75);
-  color: rgba(255, 255, 255, 0.75);
+  background: rgba(15, 15, 16, 0.8);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.pr-source-note {
+  max-width: 960px;
+  margin: 0 auto 2rem;
+  padding: 0 0.5rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.72);
+  text-align: center;
+}
+
+.pr-source-note a {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: underline;
+}
+
+.pr-source-note a:hover {
+  color: rgb(255, 237, 0);
 }
 
 @media (max-width: 720px) {
   .pr-lang-switch {
-    top: 0.75rem;
+    top: 1rem;
     left: 0.75rem;
+    min-width: 72px;
+    min-height: 72px;
+    padding: 0.45rem 0.55rem;
   }
 
   .pr-lang-switch img {
@@ -254,8 +275,8 @@ main#content {
   }
 
   .hero {
-    height: 400px;
-    padding-top: 80px;
+    height: 600px;
+    padding-top: 10px;
   }
 
   .hero h1 {
@@ -263,13 +284,12 @@ main#content {
   }
 
   .pr-controls-wrapper {
-    margin: -12.5rem 0.5rem 1rem;
+    margin: -31.5rem 0.5rem 1rem;
     padding: 0.85rem 0.9rem;
   }
 
   .pr-table-wrapper {
     margin: 0 0.5rem 2rem;
-    padding: 0.85rem 0.9rem 1rem;
     overflow-x: auto;
   }
 
