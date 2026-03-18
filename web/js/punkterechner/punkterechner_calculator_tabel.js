@@ -320,6 +320,10 @@ async function prRenderCurrentSelection() {
       tr.appendChild(tdName);
 
       const tdInput = document.createElement("td");
+
+      const inputWrap = document.createElement("span");
+      inputWrap.className = "pr-time-input-wrap";
+
       const input = document.createElement("input");
       input.type = "text";
       input.className = "pr-time-input";
@@ -327,7 +331,9 @@ async function prRenderCurrentSelection() {
       input.autocomplete = "off";
       input.inputMode = "numeric";
       input.maxLength = 8;
-      tdInput.appendChild(input);
+
+      inputWrap.appendChild(input);
+      tdInput.appendChild(inputWrap);
       tr.appendChild(tdInput);
 
       let recSeconds = null;
