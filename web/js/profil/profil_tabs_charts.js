@@ -973,15 +973,15 @@
       const fx = v => m.l + ((v - xMin) / (xMax - xMin)) * cw;
       const fy = v => m.t + ch - ((v - yMin) / (yMax - yMin)) * ch;
 
-      const grid = s("g", { class: "time-grid" });
-      const yAxis = s("g", { class: "time-yaxis" });
+      const grid = sLocal("g", { class: "time-grid" });
+      const yAxis = sLocal("g", { class: "time-yaxis" });
 
       const yStep = getYAxisStepSec(discKey);
       for (let v = yMin, first = true; v <= yMax + 1e-9; v += yStep) {
         const yy = fy(v);
-        grid.appendChild(s("line", { x1: m.l, y1: yy, x2: W - m.r, y2: yy, class: first ? "hline0" : "hline" }));
+        grid.appendChild(sLocal("line", { x1: m.l, y1: yy, x2: W - m.r, y2: yy, class: first ? "hline0" : "hline" }));
         yAxis.appendChild(
-          s("text", { x: m.l, y: yy, "text-anchor": "start", "dominant-baseline": "middle" }, mmss(v))
+          sLocal("text", { x: m.l, y: yy, "text-anchor": "start", "dominant-baseline": "middle" }, mmss(v))
         );
         first = false;
       }
@@ -991,29 +991,29 @@
       if ((W < 720 && spanYears > 15) || (W >= 720 && spanYears > 30)) xStep = 5;
       const startTick = Math.ceil(xMin / xStep) * xStep;
 
-      const xAxis = s("g", { class: "time-xaxis" });
+      const xAxis = sLocal("g", { class: "time-xaxis" });
       const tickLen = 8;
 
       for (let v = startTick; v <= Math.floor(xMax); v += xStep) {
         const xx = fx(v);
-        grid.appendChild(s("line", { x1: xx, y1: m.t + ch, x2: xx, y2: m.t + ch + tickLen, class: "xtick" }));
-        xAxis.appendChild(s("text", { x: xx, y: m.t + ch + tickLen + 6, "text-anchor": "middle" }, String(v)));
+        grid.appendChild(sLocal("line", { x1: xx, y1: m.t + ch, x2: xx, y2: m.t + ch + tickLen, class: "xtick" }));
+        xAxis.appendChild(sLocal("text", { x: xx, y: m.t + ch + tickLen + 6, "text-anchor": "middle" }, String(v)));
       }
-      xAxis.appendChild(s("text", { x: m.l + cw / 2, y: m.t + ch + tickLen + 26, "text-anchor": "middle" }, "Alter"));
+      xAxis.appendChild(sLocal("text", { x: m.l + cw / 2, y: m.t + ch + tickLen + 26, "text-anchor": "middle" }, "Alter"));
 
-      yAxis.appendChild(s("text", { x: m.l, y: m.t - 4, "text-anchor": "start" }, ""));
+      yAxis.appendChild(sLocal("text", { x: m.l, y: m.t - 4, "text-anchor": "start" }, ""));
 
       svg.appendChild(grid);
       svg.appendChild(xAxis);
       svg.appendChild(yAxis);
 
-      const defs = s("defs");
+      const defs = sLocal("defs");
       const gidB = `time-grad-b-${Math.random().toString(36).slice(2)}`;
       const gidG = `time-grad-g-${Math.random().toString(36).slice(2)}`;
       const mkGrad = (id, color) => {
-        const g = s("linearGradient", { id, x1: "0", y1: "0", x2: "0", y2: "1" });
-        g.appendChild(s("stop", { offset: "0%", "stop-color": color, "stop-opacity": "0.22" }));
-        g.appendChild(s("stop", { offset: "100%", "stop-color": color, "stop-opacity": "0" }));
+        const g = sLocal("linearGradient", { id, x1: "0", y1: "0", x2: "0", y2: "1" });
+        g.appendChild(sLocal("stop", { offset: "0%", "stop-color": color, "stop-opacity": "0.22" }));
+        g.appendChild(sLocal("stop", { offset: "100%", "stop-color": color, "stop-opacity": "0" }));
         return g;
       };
       defs.appendChild(mkGrad(gidB, "rgb(227,6,19)"));
@@ -1025,13 +1025,13 @@
         const pathD = pts.map((p, i) => `${i ? "L" : "M"}${fx(p.age)} ${fy(p.sec)}`).join(" ");
         if (withArea) {
           const areaD = `${pathD} L${fx(pts[pts.length - 1].age)} ${fy(yMin)} L${fx(pts[0].age)} ${fy(yMin)} Z`;
-          svg.appendChild(s("path", { d: areaD, class: `time-area ${colorClass}`, fill: `url(#${fillId})` }));
+          svg.appendChild(sLocal("path", { d: areaD, class: `time-area ${colorClass}`, fill: `url(#${fillId})` }));
         }
-        svg.appendChild(s("path", { d: pathD, class: `time-line ${colorClass}` }));
+        svg.appendChild(sLocal("path", { d: pathD, class: `time-line ${colorClass}` }));
 
-        const dots = s("g", { class: `time-dots ${colorClass}` });
+        const dots = sLocal("g", { class: `time-dots ${colorClass}` });
         pts.forEach((p, idx) => {
-          const c = s("circle", {
+          const c = sLocal("circle", {
             cx: fx(p.age), cy: fy(p.sec), r: 4.5, class: "time-dot", tabindex: 0,
             "data-idx": idx, "data-series": colorClass,
             "data-name": (colorClass === "blue" ? (a?.name || "") : (cmpAth?.name || "")),
@@ -1118,7 +1118,7 @@
         const empty = el("div", { class: "best-empty" },
           "Keine Zeiten für ", (DISCIPLINES.find(d => d.key === discKey)?.label || "diese Disziplin"), "."
         );
-        svg.appendChild(s("g"));
+        svg.appendChild(sLocal("g"));
         if (!card.querySelector(".best-empty")) card.appendChild(empty);
       } else {
         card.querySelector(".best-empty")?.remove();
