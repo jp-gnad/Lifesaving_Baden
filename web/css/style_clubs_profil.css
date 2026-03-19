@@ -1,0 +1,345 @@
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  background: rgb(15, 15, 18);
+}
+
+body {
+  color: rgb(220, 220, 220);
+}
+
+main#content {
+  margin: 0 auto;
+  min-height: 1000px;
+  position: relative;
+}
+
+.container {
+  width: min(1200px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+.hero {
+  position: relative;
+  background: url("../png/hintergrund3.jpg") center/cover no-repeat;
+  background-position: center 36%;
+  height: 440px;
+  color: white;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
+  display: flex;
+  align-items: flex-start;
+  text-align: left;
+  z-index: 10;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      to right,
+      rgba(15, 15, 18, 0.72) 0%,
+      rgba(15, 15, 18, 0.42) 24%,
+      rgba(15, 15, 18, 0.12) 45%,
+      rgba(15, 15, 18, 0) 62%
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(15, 15, 18, 0) 18%,
+      rgba(15, 15, 18, 0.2) 58%,
+      rgba(15, 15, 18, 0.94) 88%,
+      rgba(15, 15, 18, 1) 100%
+    );
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 21;
+  width: 100%;
+  padding-top: 0;
+}
+
+.rek-hero-layout {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-left: 8rem;
+  margin-top: 4.2rem;
+}
+
+.rek-hero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.rek-hero-avatar-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 4.5rem;
+  width: 4.5rem;
+  height: 4.5rem;
+  min-width: 4.5rem;
+  min-height: 4.5rem;
+}
+
+#rek-search-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 100;
+}
+
+.hero-search-spacer {
+  width: 100%;
+  min-height: 55px;
+}
+
+.hero-kicker {
+  margin: 0 0 0.45rem;
+  color: rgba(255, 237, 0, 0.92);
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: 4em;
+  line-height: 1.05;
+}
+
+.hero-meta {
+  margin: 0.8rem 0 0;
+  max-width: 760px;
+  font-size: 1rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+#rekorde-profil-section {
+  position: relative;
+  z-index: 20;
+}
+
+.rek-profile-error {
+  max-width: 1200px;
+  margin: 0 auto;
+  margin-top: 1.5rem;
+  padding: 1.2rem 1.5rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.25);
+  color: rgb(30, 30, 33);
+}
+
+.rek-avatar-dual {
+  position: relative;
+  width: 3rem;
+  height: 2.4rem;
+  flex: 0 0 3rem;
+  background: transparent !important;
+}
+
+.rek-avatar-dual-cap {
+  display: block;
+  position: absolute;
+  top: 0;
+  width: 2.1rem;
+  height: 2.4rem;
+  object-fit: contain;
+  background: transparent !important;
+}
+
+.rek-avatar-dual-cap.left {
+  left: 0;
+}
+
+.rek-avatar-dual-cap.right {
+  right: 0;
+}
+
+.rek-avatar-flip {
+  width: 2.4rem;
+  height: 2.4rem;
+  flex: 0 0 2.4rem;
+  perspective: 700px;
+  background: transparent !important;
+}
+
+.rek-avatar-flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+  animation: rek-avatar-slow-flip 8s linear infinite;
+  background: transparent !important;
+}
+
+@keyframes rek-avatar-slow-flip {
+  from {
+    transform: rotateY(0deg);
+  }
+
+  20% {
+    transform: rotateY(55deg);
+  }
+
+  25% {
+    transform: rotateY(90deg);
+  }
+
+  30% {
+    transform: rotateY(125deg);
+  }
+
+  50% {
+    transform: rotateY(180deg);
+  }
+
+  70% {
+    transform: rotateY(235deg);
+  }
+
+  75% {
+    transform: rotateY(270deg);
+  }
+
+  80% {
+    transform: rotateY(305deg);
+  }
+
+  to {
+    transform: rotateY(360deg);
+  }
+}
+
+.rek-avatar-flip-cap {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  backface-visibility: hidden;
+  background: transparent !important;
+}
+
+.rek-avatar-flip-cap.back {
+  transform: rotateY(180deg);
+}
+
+.rek-avatar-dual.ath-suggest-avatar,
+.rek-avatar-flip.ath-suggest-avatar,
+.rek-avatar-dual.rek-hero-avatar,
+.rek-avatar-flip.rek-hero-avatar {
+  background: transparent !important;
+}
+
+.ath-avatar.rek-hero-avatar.xl {
+  width: 4.5rem;
+  height: 4.5rem;
+}
+
+.rek-avatar-dual.xl {
+  width: 5rem;
+  height: 4.5rem;
+  flex-basis: 5rem;
+}
+
+.rek-avatar-dual.xl .rek-avatar-dual-cap {
+  width: 3.4rem;
+  height: 4.5rem;
+}
+
+.rek-avatar-flip.xl {
+  width: 4.5rem;
+  height: 4.5rem;
+  flex-basis: 4.5rem;
+}
+
+@media (max-width: 720px) {
+  .hero {
+    height: 320px;
+    background-position: center 34%;
+  }
+
+  .hero-search-spacer {
+    min-height: 44px;
+  }
+
+  .hero-kicker {
+    margin: 0 0 0.35rem;
+    font-size: 0.72rem;
+  }
+
+  .rek-hero-layout {
+    gap: 0.8rem;
+    margin-left: 0;
+    margin-top: 2.6rem;
+  }
+
+  .hero h1 {
+    font-size: 2em;
+    line-height: 1.1;
+  }
+
+  .hero-meta {
+    margin-left: 0;
+    font-size: 0.84rem;
+    line-height: 1.4;
+  }
+
+  .container {
+    width: calc(100% - 1rem);
+  }
+
+  .rek-profile-error {
+    margin-inline: 0.75rem;
+    padding: 1rem;
+  }
+
+  .rek-avatar-dual {
+    width: 2.6rem;
+    height: 2rem;
+    flex-basis: 2.6rem;
+  }
+
+  .rek-avatar-dual-cap {
+    width: 1.8rem;
+    height: 2rem;
+  }
+
+  .ath-avatar.rek-hero-avatar.xl {
+    width: 3.4rem;
+    height: 3.4rem;
+  }
+
+  .rek-avatar-dual.xl {
+    width: 3.8rem;
+    height: 3.4rem;
+    flex-basis: 3.8rem;
+  }
+
+  .rek-avatar-dual.xl .rek-avatar-dual-cap {
+    width: 2.6rem;
+    height: 3.4rem;
+  }
+
+  .rek-avatar-flip.xl {
+    width: 3.4rem;
+    height: 3.4rem;
+    flex-basis: 3.4rem;
+  }
+}

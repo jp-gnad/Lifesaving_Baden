@@ -127,7 +127,7 @@
               <img class="home-card__img" src="./png/Bild5.png" alt="" loading="lazy" decoding="async">
             </a>
 
-            <a class="home-card" href="./rekorde.html" aria-label="Rekorde und Bestenlisten">
+            <a class="home-card" href="./clubs.html" aria-label="Clubs und Bestenlisten">
               <img class="home-card__img" src="./png/Bild3.png" alt="" loading="lazy" decoding="async">
             </a>
           </div>

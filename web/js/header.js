@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
         { key: "dem", label: "Deutsche Einzelstrecken Meisterschaften", href: "dem.html" },
       ],
     },
-    { key: "rekorde", label: "Rekorde", href: "rekorde.html" },
+    { key: "clubs", label: "Clubs", href: "clubs.html" },
     {
       key: "kader",
       label: "Kader",

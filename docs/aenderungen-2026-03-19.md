@@ -40,3 +40,18 @@ Diese Anpassungen wurden direkt im Projekt umgesetzt.
 ### 6. Offener Folgepunkt
 
 - `trainingsplaene.html` ist aktuell bewusst nur eine saubere Zwischenloesung. Die Seite ist verlinkt und erreichbar, enthaelt aber noch keine echten Trainingsinhalte.
+
+### 7. Clubs neu aufgebaut
+
+- `web/js/clubs.js` wurde auf einen sauberen Seiten-Bootstrap für den Bereich `Clubs` mit Übersicht und Such-Mount umgestellt.
+- Die Datenlogik für die Clubs-Seite liegt jetzt in `web/js/clubs/clubs_data.js`.
+- Die Suchoberfläche für Clubs liegt jetzt in `web/js/clubs/clubs_search.js` und orientiert sich grafisch am Athletenbereich.
+- Für geöffnete Gliederungen gibt es jetzt eine eigene Zielseite `web/clubs_profil.html` mit dem Bootstrap `web/js/clubs/clubs_profil.js`.
+- Die erste Clubs-Top-10 liegt in `web/js/clubs/clubs_top10.js` und nutzt bewusst die Athleten-Top-10-Optik.
+- Für die Auswertung `Ortsgruppen mit den meisten Wettkämpfen` werden in `Tabelle2` der Excel-Datei Wettkampfname (`Spalte 10`), Wettkampfdaten (`Spalte 9`) und Ortsgruppe (`Spalte 12`) gelesen.
+- Pro Ortsgruppe wird ein Wettkampf nur einmal gezählt, auch wenn mehrere Sportler derselben Ortsgruppe dort gestartet sind. Ettlingen und Wettersbach werden dabei gemeinsam als `Ettlingen/Wettersbach` behandelt.
+- Zusätzlich gibt es jetzt die Clubs-Top-10 `Anzahl an Sportlern`: Eine Person wird pro Ortsgruppe genau einmal gezählt, auch wenn sie mehrfach für dieselbe Ortsgruppe gestartet ist.
+- Ergänzt wurden außerdem die Clubs-Top-10 `Wettkämpfe im Ausland` und `Wettkämpfe auf 50m-Bahn`, beide wieder als eindeutige Wettkämpfe pro Ortsgruppe gezählt.
+- Ergänzt wurde außerdem die Clubs-Top-10 `Startrecht Bundesverband`: Gezählt wird pro Ortsgruppe die eindeutige Kombination aus `Sportler-ID + Wettkampf`, sobald `Startrecht = BV` ist. Mehrere Zeilen derselben Person beim selben Wettkampf zählen dabei nur einmal.
+- Ergänzt wurde außerdem die Clubs-Top-10 `Ø Wettkämpfe pro Sportler`: Pro Person wird gezählt, auf wie vielen eindeutigen Wettkämpfen sie für eine Ortsgruppe gestartet ist; diese Werte werden pro Ortsgruppe gemittelt. Starts für mehrere Ortsgruppen werden jeweils getrennt gewertet, Ettlingen und Wettersbach aber gemeinsam als `Ettlingen/Wettersbach`. Berücksichtigt werden nur Ortsgruppen mit mindestens 10 Sportlern.
+- Unterstuetzt werden aktuell Ortsgruppen, Landesverbaende und Bundesverbaende. Bezirke bleiben vorerst bewusst unberuecksichtigt.
