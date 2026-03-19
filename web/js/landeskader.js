@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
       aria: "DLRG Punkterechner",
     },
     {
-      href: "./trainingspläne.html",
+      href: "./trainingsplaene.html",
       img: "./png/hintergrund7.jpg",
       kicker: "Trainingspläne",
       main: "Trainingspläne vom Landeskader Baden",

@@ -39,6 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test (1).xlsx";
   const HERO_DEFAULT_BG_URL = "./png/hintergrund4.JPG";
   const HERO_PORTRAIT_BASE_URL = "./png/pp";
+  const HERO_PORTRAIT_EXTS = ["jpg", "jpeg", "png", "JPG", "JPEG", "PNG"];
 
   let AllMeetsByAthleteId = new Map();
   let heroBgRequestId = 0;
@@ -84,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    for (const ext of exts) {
+    for (const ext of HERO_PORTRAIT_EXTS) {
       const fileName = `${baseName}.${ext}`;
       const url = `${HERO_PORTRAIT_BASE_URL}/${fileName}`;
       const exists = await probeImageExists(url);

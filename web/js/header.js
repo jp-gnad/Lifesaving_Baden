@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
       children: [
         { key: "Live Quallifikationen", label: "Live Quallifikationen", href: "kaderstatus.html" },
         { key: "kaderrichtlinien", label: "Kaderrichtlinien", href: "kriterien.html" },
-        { key: "trainingsplaene", label: "Trainingspläne", href: "#" },
+        { key: "trainingsplaene", label: "Trainingspläne", href: "trainingsplaene.html" },
       ],
     },
     { key: "athleten", label: "Athleten", href: "athleten.html" },

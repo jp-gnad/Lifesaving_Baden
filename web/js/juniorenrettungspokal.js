@@ -1,12 +1,11 @@
 const ENABLE_PW_GATE = true;
 
-const DP_FOLDER = "./png/JRP-Team/";
-const DP_MIN_YEAR = 2000;
-const DP_MAX_YEAR = new Date().getFullYear() + 1;
-const DP_EXTS = [".jpg"];
-const PICTURE_KARUSSEL_SRC = "/juniorenrettungspokal/picture_karussel.js";
+const JRP_FOLDER = "./png/JRP-Team/";
+const JRP_MIN_YEAR = 2000;
+const JRP_MAX_YEAR = new Date().getFullYear() + 1;
+const JRP_EXTS = [".jpg"];
 
-const DP_SLIDE_SETTINGS = {
+const JRP_SLIDE_SETTINGS = {
   "2025": {
     text: "ausgefallen - FILCOW Cup",
     cta: { label: "Mehr Infos!", href: "https://www.liveheats.com/events/389513" },
@@ -104,119 +103,15 @@ const DP_SLIDE_SETTINGS = {
   },
 };
 
-const DATA_EXCEL_URL =
-  "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test%20(1).xlsx";
+const DATA_EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test%20(1).xlsx";
 const DATA_SHEET = "Tabelle2";
 
-const CONFIG_EXCEL_URL =
-  "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx";
+const CONFIG_EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx";
 const CONFIG_SHEET = "JRP";
 const CONFIG_TABLE_NAME = "JRP_konfig";
 
-document.addEventListener("DOMContentLoaded", async () => {
-  const main = document.getElementById("content");
-  if (!main) return;
-
-  renderShell(main);
-
-  try {
-    await ensurePictureKarusselScript();
-    await window.initPictureKarussel({
-      rootSelector: "[data-wide-carousel]",
-      folder: DP_FOLDER,
-      minYear: DP_MIN_YEAR,
-      maxYear: DP_MAX_YEAR,
-      exts: DP_EXTS,
-      slideSettings: DP_SLIDE_SETTINGS,
-      titleBase: "Junioren Rettungspokal",
-    });
-  } catch (e) {
-    console.error(e);
-    main.innerHTML = `
-      <section class="intro">
-        <div class="container">
-          <h2>Junioren Rettungspokal</h2>
-          <p>Keine Jahresbilder im Ordner <code>${DP_FOLDER}</code> gefunden.</p>
-        </div>
-      </section>
-    `;
-    return;
-  }
-
-  if (ENABLE_PW_GATE) {
-    initProtectedArea();
-  } else {
-    bootProtectedContent();
-  }
-});
-
-function renderShell(main) {
-  main.innerHTML = `
-    <section class="wide-carousel" aria-label="Junioren Rettungspokal Rückblick">
-      <div class="wide-carousel__viewport" data-wide-carousel tabindex="0">
-        <div class="wide-carousel__slides">
-          <article class="wide-carousel__slide wide-carousel__slide--center" style="background:#111">
-            <div class="wide-carousel__content">
-              <h2>Junioren Rettungspokal</h2>
-              <p>Lade Bilder…</p>
-            </div>
-          </article>
-        </div>
-
-        <button class="wide-carousel__arrow wide-carousel__arrow--prev" type="button" aria-label="Vorherige Folie">
-          <svg class="wide-carousel__chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M9 18l6-6-6-6" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"></path>
-          </svg>
-        </button>
-
-        <button class="wide-carousel__arrow wide-carousel__arrow--next" type="button" aria-label="Nächste Folie">
-          <svg class="wide-carousel__chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M9 18l6-6-6-6" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"></path>
-          </svg>
-        </button>
-      </div>
-    </section>
-
-    <div id="jrp-protected"></div>
-  `;
-}
-
-function initProtectedArea() {
-  const mount = document.getElementById("jrp-protected");
-  if (!mount) return;
-
-  if (!window.PWGate || typeof window.PWGate.open !== "function") {
-    mount.innerHTML = `
-      <section class="info-wrap" aria-label="Nominierungen">
-        <section class="info-section">
-          <p class="info-status info-error">PW.js konnte nicht geladen werden.</p>
-        </section>
-      </section>
-    `;
-    return;
-  }
-
-  window.PWGate.open({
-    mountId: "jrp-protected",
-    message: "Bitte Freigabecode eingeben.",
-    placeholder: "Eingabe...",
-    buttonText: "Öffnen",
-    invalidText: "Eingabe ungültig.",
-    grantedText: "Freigabe erteilt …",
-    onSuccess: bootProtectedContent,
-  });
-}
-
-function bootProtectedContent() {
-  renderProtectedContent();
-  initDpNominationListTables();
-}
-
-function renderProtectedContent() {
-  const mount = document.getElementById("jrp-protected");
-  if (!mount) return;
-
-  mount.innerHTML = `
+function renderProtectedMarkup() {
+  return `
     <section class="info-wrap" aria-label="Nominierungen">
       <section class="info-section" aria-labelledby="dp-list-title">
         <h2 id="dp-list-title">Aktuelle Nominierungsliste</h2>
@@ -231,48 +126,46 @@ function renderProtectedContent() {
   `;
 }
 
-function ensurePictureKarusselScript() {
-  if (typeof window.initPictureKarussel === "function") return Promise.resolve();
+async function bootProtectedContent() {
+  const status = document.getElementById("pflichtzeiten-status");
 
-  return new Promise((resolve, reject) => {
-    const existing = document.querySelector(`script[data-picture-karussel="${PICTURE_KARUSSEL_SRC}"]`);
-    if (existing) {
-      existing.addEventListener("load", () => {
-        if (typeof window.initPictureKarussel === "function") resolve();
-        else reject(new Error("picture_karussel_init_missing"));
-      });
-      existing.addEventListener("error", () => reject(new Error("picture_karussel_load_failed")));
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = PICTURE_KARUSSEL_SRC;
-    script.defer = true;
-    script.dataset.pictureKarussel = PICTURE_KARUSSEL_SRC;
-    script.onload = () => {
-      if (typeof window.initPictureKarussel === "function") resolve();
-      else reject(new Error("picture_karussel_init_missing"));
-    };
-    script.onerror = () => reject(new Error("picture_karussel_load_failed"));
-    document.head.appendChild(script);
-  });
-}
-
-function initDpNominationListTables() {
-  if (typeof initPflichtzeitenTabellen !== "function") {
-    console.error("PZ_tabellen.js ist nicht geladen oder initPflichtzeitenTabellen fehlt.");
-    const status = document.getElementById("pflichtzeiten-status");
+  try {
+    await window.CompetitionPage.waitForGlobals("initPflichtzeitenTabellen");
+    window.initPflichtzeitenTabellen(CONFIG_SHEET, CONFIG_TABLE_NAME, {
+      mountId: "pflichtzeiten-root",
+      statusId: "pflichtzeiten-status",
+      dataExcelUrl: DATA_EXCEL_URL,
+      dataSheet: DATA_SHEET,
+      configExcelUrl: CONFIG_EXCEL_URL,
+    });
+  } catch (err) {
+    console.error(err);
     if (status) {
       status.textContent = "Pflichtzeiten konnten nicht geladen werden.";
     }
-    return;
   }
-
-  initPflichtzeitenTabellen(CONFIG_SHEET, CONFIG_TABLE_NAME, {
-    mountId: "pflichtzeiten-root",
-    statusId: "pflichtzeiten-status",
-    dataExcelUrl: DATA_EXCEL_URL,
-    dataSheet: DATA_SHEET,
-    configExcelUrl: CONFIG_EXCEL_URL,
-  });
 }
+
+window.CompetitionPage.init({
+  pageTitle: "Junioren Rettungspokal",
+  carouselAriaLabel: "Junioren Rettungspokal Rückblick",
+  protectedRootId: "jrp-protected",
+  gate: {
+    enabled: ENABLE_PW_GATE,
+    message: "Bitte Freigabecode eingeben.",
+    placeholder: "Eingabe...",
+    buttonText: "Öffnen",
+    invalidText: "Eingabe ungültig.",
+    grantedText: "Freigabe erteilt …",
+  },
+  carousel: {
+    folder: JRP_FOLDER,
+    minYear: JRP_MIN_YEAR,
+    maxYear: JRP_MAX_YEAR,
+    exts: JRP_EXTS,
+    slideSettings: JRP_SLIDE_SETTINGS,
+    titleBase: "Junioren Rettungspokal",
+  },
+  renderProtectedMarkup,
+  bootProtectedContent,
+});
