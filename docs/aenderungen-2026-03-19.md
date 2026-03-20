@@ -55,3 +55,14 @@ Diese Anpassungen wurden direkt im Projekt umgesetzt.
 - Ergänzt wurde außerdem die Clubs-Top-10 `Startrecht Bundesverband`: Gezählt wird pro Ortsgruppe die eindeutige Kombination aus `Sportler-ID + Wettkampf`, sobald `Startrecht = BV` ist. Mehrere Zeilen derselben Person beim selben Wettkampf zählen dabei nur einmal.
 - Ergänzt wurde außerdem die Clubs-Top-10 `Ø Wettkämpfe pro Sportler`: Pro Person wird gezählt, auf wie vielen eindeutigen Wettkämpfen sie für eine Ortsgruppe gestartet ist; diese Werte werden pro Ortsgruppe gemittelt. Starts für mehrere Ortsgruppen werden jeweils getrennt gewertet, Ettlingen und Wettersbach aber gemeinsam als `Ettlingen/Wettersbach`. Berücksichtigt werden nur Ortsgruppen mit mindestens 10 Sportlern.
 - Unterstuetzt werden aktuell Ortsgruppen, Landesverbaende und Bundesverbaende. Bezirke bleiben vorerst bewusst unberuecksichtigt.
+
+### 8. Punkterechner erweitert
+
+- Die Verlaufstabelle `pr-past-table` wurde etwas groesser gesetzt, damit Jahreswerte und Punktsummen leichter lesbar sind.
+- Die Reihenfolge im Punkterechner ist jetzt `discipline-table`, danach der Chart und danach `pr-past-table`.
+- Neu hinzugekommen ist `web/js/punkterechner/punkterechner_chart.js`. Das Modul setzt zwischen Verlaufstabelle und Eingabetabelle einen Chart-Block.
+- Der Chart visualisiert dieselben Jahresdaten wie `pr-past-table`, allerdings als einzelne Disziplinlinien statt als Summen.
+- Die X-Achse zeigt die Jahre, die Y-Achse nutzt eine nichtlineare Skala mit den Stufen `0, 200, 400, 500, 600, 700, 800, 900, 1000, 1100`.
+- Im Punkterechner ist jetzt zusaetzlich die Athleten-Suche im Stil der Athletenseite eingebunden. Eine Auswahl uebernimmt Bestzeiten direkt in den Rechner, setzt Geschlecht und passt die Altersklasse aus dem Jahrgang automatisch an. Fuer juengere Athleten werden passende Zeiten jetzt nicht mehr pauschal blockiert, sondern soweit moeglich disziplinspezifisch teilweise uebernommen.
+- Bereits eingetragene Zeiten bleiben im Punkterechner jetzt auch beim Wechsel von Altersklasse, Geschlecht, Disziplinmodus oder Rekordwerten erhalten, soweit die Disziplin fachlich weiter zuordenbar ist.
+- Im Punkterechner gibt es jetzt zusaetzlich die Auswahl `Wertung`. Standardmaessig ist `3-Kampf` aktiv. Die Footer-Summe in der Eingabetabelle und die Summenspalte der Verlaufstabelle folgen beide dieser Auswahl.

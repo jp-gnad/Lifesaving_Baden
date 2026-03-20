@@ -40,6 +40,7 @@ const prI18n = {
     modeLabel: "Disziplinen",
     modeIndividual: "Einzel",
     modeTeam: "Mannschaft",
+    scoreLabel: "Wertung",
     ageLabel: "Altersklasse",
     genderLabel: "Geschlecht",
     genderFemale: "Weiblich",
@@ -96,6 +97,7 @@ const prI18n = {
     modeLabel: "Disciplines",
     modeIndividual: "Individual",
     modeTeam: "Team",
+    scoreLabel: "Scoring",
     ageLabel: "Age group",
     genderLabel: "Gender",
     genderFemale: "Female",
@@ -275,10 +277,62 @@ function prGetRule() {
   return el ? el.value : "National";
 }
 
+function prFormatScoringLabel(count) {
+  const safeCount = Math.max(1, Number(count) || 1);
+  return prLangState.current === "en" ? `${safeCount}-event` : `${safeCount}-Kampf`;
+}
+
+function prGetSummaryLabelText(count) {
+  const safeCount = Math.max(1, Number(count) || 1);
+  return prLangState.current === "en"
+    ? `Total ${prFormatScoringLabel(safeCount)}`
+    : `Gesamt ${prFormatScoringLabel(safeCount)}`;
+}
+
+function prGetDisciplineCountForCurrentSelection() {
+  const modeSel = document.getElementById("pr-mode");
+  const ageSel = document.getElementById("pr-age");
+  const mode = modeSel ? modeSel.value : "Einzel";
+  const age = ageSel ? ageSel.value : "Offen";
+  const disciplines = typeof prGetDisciplines === "function" ? prGetDisciplines(mode, age) : [];
+  return Array.isArray(disciplines) ? disciplines.length : 0;
+}
+
+function prRenderScoringOptions(selectedValue) {
+  const scoreSel = document.getElementById("pr-score");
+  if (!scoreSel) return;
+
+  const disciplineCount = Math.max(1, prGetDisciplineCountForCurrentSelection());
+  const options = Array.from({ length: disciplineCount }, (_, index) => {
+    const count = index + 1;
+    return { value: String(count), label: prFormatScoringLabel(count) };
+  });
+
+  const fallbackValue = options.some(opt => opt.value === "3")
+    ? "3"
+    : options[options.length - 1].value;
+  const targetValue = options.some(opt => opt.value === String(selectedValue))
+    ? String(selectedValue)
+    : fallbackValue;
+
+  prBuildOptions(scoreSel, options, targetValue);
+}
+
+function prGetScoringCount() {
+  const disciplineCount = prGetDisciplineCountForCurrentSelection();
+  if (!disciplineCount) return 0;
+
+  const scoreSel = document.getElementById("pr-score");
+  const rawValue = parseInt(scoreSel ? scoreSel.value : "", 10);
+  const fallbackValue = Math.min(3, disciplineCount);
+  const targetValue = Number.isFinite(rawValue) ? rawValue : fallbackValue;
+  return Math.max(1, Math.min(targetValue, disciplineCount));
+}
+
 function prUpdateSummaryLabel() {
   const cell = document.getElementById("pr-summary-label");
   if (!cell) return;
-  cell.textContent = prT("summaryCombined");
+  cell.textContent = prGetSummaryLabelText(prGetScoringCount());
 }
 
 function prUpdatePointsHeader() {
@@ -292,14 +346,17 @@ function prApplyLanguage() {
   const ageSel = document.getElementById("pr-age");
   const genderSel = document.getElementById("pr-gender");
   const ruleSel = document.getElementById("pr-rule");
+  const scoreSel = document.getElementById("pr-score");
 
   const modeValue = modeSel ? modeSel.value : "Einzel";
   const ageValue = ageSel ? ageSel.value : "Offen";
   const genderValue = genderSel ? genderSel.value : "weiblich";
   const ruleValue = ruleSel ? ruleSel.value : "National";
+  const scoreValue = scoreSel ? scoreSel.value : "3";
 
   const title = document.getElementById("pr-page-title");
   const modeLabel = document.getElementById("pr-mode-label");
+  const scoreLabel = document.getElementById("pr-score-label");
   const ageLabel = document.getElementById("pr-age-label");
   const genderLabel = document.getElementById("pr-gender-label");
   const ruleLabel = document.getElementById("pr-rule-label");
@@ -311,6 +368,7 @@ function prApplyLanguage() {
 
   if (title) title.textContent = prT("title");
   if (modeLabel) modeLabel.textContent = prT("modeLabel");
+  if (scoreLabel) scoreLabel.textContent = prT("scoreLabel");
   if (ageLabel) ageLabel.textContent = prT("ageLabel");
   if (genderLabel) genderLabel.textContent = prT("genderLabel");
   if (ruleLabel) ruleLabel.textContent = prT("ruleLabel");
@@ -344,6 +402,7 @@ function prApplyLanguage() {
   ], ruleValue);
 
   prRenderAgeOptions(ageValue);
+  prRenderScoringOptions(scoreValue);
   prUpdateLanguageSwitch();
   prUpdatePointsHeader();
   prUpdateSummaryLabel();
@@ -355,25 +414,120 @@ function prApplyLanguage() {
 
 function prCaptureTimes() {
   const values = {};
+
   document.querySelectorAll("#discipline-table tbody tr").forEach(tr => {
     const input = tr.querySelector(".pr-time-input");
     if (input && input.value) {
-      values[tr.dataset.disciplineId] = input.value;
+      const disciplineId = String(tr.dataset.disciplineId || "");
+      const restoreKey = prGetDisciplineRestoreKeyFromRow(tr, disciplineId);
+
+      values[restoreKey] = input.value;
+      if (disciplineId) {
+        values[disciplineId] = input.value;
+      }
     }
   });
   return values;
 }
 
 function prRestoreTimes(values) {
-  Object.entries(values || {}).forEach(([id, time]) => {
-    const tr = document.querySelector(`#discipline-table tbody tr[data-discipline-id="${id}"]`);
-    if (!tr) return;
+  document.querySelectorAll("#discipline-table tbody tr").forEach(tr => {
+    const disciplineId = String(tr.dataset.disciplineId || "");
+    const restoreKey = prGetDisciplineRestoreKeyFromRow(tr, disciplineId);
     const input = tr.querySelector(".pr-time-input");
     if (!input) return;
+
+    const time =
+      values?.[restoreKey] ??
+      values?.[disciplineId] ??
+      "";
+
+    if (!time) return;
+
     input.value = prNormalizeTimeInputValue(time);
     prRecalcRowPoints(tr);
   });
+
   prUpdateTotalPointsDe();
+}
+
+function prGetDisciplineRestoreKeyFromRow(tr, fallbackId = "") {
+  if (!tr) return String(fallbackId || "");
+
+  const nameCell = tr.querySelector(".pr-disc-name");
+  const label =
+    nameCell?.dataset?.baseLabel ||
+    nameCell?.textContent ||
+    "";
+  const normalized = prNormalizeDisciplineRestoreName(label);
+
+  if (normalized) {
+    return `disc:${normalized}`;
+  }
+
+  return String(fallbackId || tr.dataset.disciplineId || "");
+}
+
+function prGetCurrentDisciplinesById() {
+  const modeSel = document.getElementById("pr-mode");
+  const ageSel = document.getElementById("pr-age");
+
+  const mode = modeSel ? modeSel.value : "Einzel";
+  const age = ageSel ? ageSel.value : "Offen";
+  const disciplines = typeof prGetDisciplines === "function" ? prGetDisciplines(mode, age) : [];
+
+  return new Map(
+    (Array.isArray(disciplines) ? disciplines : []).map(discipline => [String(discipline.id || ""), discipline])
+  );
+}
+
+function prGetDisciplineRestoreKey(discipline, fallbackId = "") {
+  if (discipline && typeof window.prGetTimeFieldForDiscipline === "function") {
+    const fieldIndex = window.prGetTimeFieldForDiscipline(discipline);
+    if (fieldIndex != null) {
+      return `field:${fieldIndex}`;
+    }
+  }
+
+  const candidates = [
+    discipline?.label,
+    discipline?.drKey,
+    discipline?.excelKey
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = prNormalizeDisciplineRestoreName(candidate);
+    if (normalized) {
+      return `disc:${normalized}`;
+    }
+  }
+
+  return String(fallbackId || discipline?.id || "");
+}
+
+function prNormalizeDisciplineRestoreName(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/hindernisschwimmen/g, "hindernis")
+    .replace(/rettungsuebung/g, "rettungs")
+    .replace(/rettungsubung/g, "rettungs")
+    .replace(/super lifesaver/g, "super-lifesaver")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+async function prRenderSelectionPreservingTimes(onBeforeRender) {
+  const savedTimes = prCaptureTimes();
+
+  if (typeof onBeforeRender === "function") {
+    onBeforeRender();
+  }
+
+  await prRenderCurrentSelection();
+  prRestoreTimes(savedTimes);
 }
 
 async function prToggleLanguage() {
@@ -396,6 +550,15 @@ function prCreateControlsMarkup() {
           <select id="pr-mode">
             <option value="Einzel">Einzel</option>
             <option value="Mannschaft">Mannschaft</option>
+          </select>
+        </div>
+
+        <div class="pr-control">
+          <label for="pr-score" id="pr-score-label">Wertung</label>
+          <select id="pr-score">
+            <option value="1">1-Kampf</option>
+            <option value="2">2-Kampf</option>
+            <option value="3" selected>3-Kampf</option>
           </select>
         </div>
 
@@ -432,6 +595,7 @@ function prCreateControlsMarkup() {
 
 function prInitEvents() {
   const modeSel = document.getElementById("pr-mode");
+  const scoreSel = document.getElementById("pr-score");
   const ageSel = document.getElementById("pr-age");
   const genderSel = document.getElementById("pr-gender");
   const ruleSel = document.getElementById("pr-rule");
@@ -440,30 +604,53 @@ function prInitEvents() {
     modeSel.addEventListener("change", () => {
       const ageElement = document.getElementById("pr-age");
       const ageValue = ageElement ? ageElement.value : "Offen";
+      const scoreValue = scoreSel ? scoreSel.value : "3";
 
-      prRenderAgeOptions(ageValue);
+      prRenderSelectionPreservingTimes(() => {
+        prRenderAgeOptions(ageValue);
+        prRenderScoringOptions(scoreValue);
+        prUpdateSummaryLabel();
+      });
+    });
+  }
+
+  if (scoreSel) {
+    scoreSel.addEventListener("change", () => {
       prUpdateSummaryLabel();
-      prRenderCurrentSelection();
+      prUpdateTotalPointsDe();
+      if (typeof window.prRenderPastTable === "function") {
+        window.prRenderPastTable();
+      }
     });
   }
 
   if (genderSel) {
-    genderSel.addEventListener("change", () => prRenderCurrentSelection());
+    genderSel.addEventListener("change", () => prRenderSelectionPreservingTimes());
   }
 
   if (ageSel) {
-    ageSel.addEventListener("change", () => prRenderCurrentSelection());
+    ageSel.addEventListener("change", () => {
+      const scoreValue = scoreSel ? scoreSel.value : "3";
+
+      prRenderSelectionPreservingTimes(() => {
+        prRenderScoringOptions(scoreValue);
+        prUpdateSummaryLabel();
+      });
+    });
   }
 
   if (ruleSel) {
     ruleSel.addEventListener("change", () => {
       const ageElement = document.getElementById("pr-age");
       const ageValue = ageElement ? ageElement.value : "Offen";
+      const scoreValue = scoreSel ? scoreSel.value : "3";
 
-      prRenderAgeOptions(ageValue);
-      prUpdateSummaryLabel();
-      prUpdatePointsHeader();
-      prRenderCurrentSelection();
+      prRenderSelectionPreservingTimes(() => {
+        prRenderAgeOptions(ageValue);
+        prRenderScoringOptions(scoreValue);
+        prUpdateSummaryLabel();
+        prUpdatePointsHeader();
+      });
     });
   }
 

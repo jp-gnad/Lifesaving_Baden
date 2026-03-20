@@ -9,7 +9,8 @@
   const prPastState = {
     renderToken: 0,
     inputTimer: null,
-    domReadyHandled: false
+    domReadyHandled: false,
+    chartRows: []
   };
 
   prPastExtendI18n();
@@ -119,7 +120,7 @@
         -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 8px;
-        z-index: 5;
+        z-index: 1;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
         color: #f9fafb;
         overflow: hidden;
@@ -158,7 +159,7 @@
         border-radius: 8px;
         background: rgba(15, 15, 18, 0.2);
         font-variant-numeric: tabular-nums;
-        font-size: clamp(0.46rem, 1.85vw, 0.92rem);
+        font-size: clamp(0.5rem, 1.95vw, 0.98rem);
         line-height: 1.08;
       }
 
@@ -235,20 +236,14 @@
         background: rgba(255, 255, 255, 0.06);
       }
 
-      .pr-past-table .pr-past-total3,
-      .pr-past-table .pr-past-total4 {
+      .pr-past-table .pr-past-total {
         font-weight: 700;
         color: rgb(255, 237, 0);
       }
 
-      .pr-past-table td.pr-past-points-top3 {
+      .pr-past-table td.pr-past-points-counted {
         color: rgba(255, 255, 255, 0.95);
         font-weight: 700;
-      }
-
-      .pr-past-table td.pr-past-points-top4 {
-        color: rgba(255, 255, 255, 0.58);
-        font-weight: 600;
       }
 
       .pr-past-table .pr-past-missing {
@@ -289,7 +284,7 @@
         }
 
         .pr-past-table {
-          font-size: clamp(0.44rem, 1.7vw, 0.72rem);
+          font-size: clamp(0.47rem, 1.82vw, 0.78rem);
           line-height: 1.02;
         }
 
@@ -345,12 +340,14 @@
     let section = document.getElementById("pr-past-table-section");
     if (section) return section;
 
+    const tableWrapper = document.querySelector(".pr-table-wrapper");
     const sourceNote =
       document.querySelector(".pr-source-note") ||
       document.getElementById("pr-source-note-text")?.closest("section") ||
       document.getElementById("pr-source-note-text")?.parentElement;
 
-    if (!sourceNote || !sourceNote.parentNode) return null;
+    const parent = (tableWrapper && tableWrapper.parentNode) || (sourceNote && sourceNote.parentNode);
+    if (!parent) return null;
 
     const wrapper = document.createElement("div");
     wrapper.innerHTML = prCreatePastTableMarkup().trim();
@@ -358,7 +355,14 @@
 
     if (!section) return null;
 
-    sourceNote.parentNode.insertBefore(section, sourceNote);
+    if (tableWrapper) {
+      parent.insertBefore(section, tableWrapper);
+    } else if (sourceNote) {
+      parent.insertBefore(section, sourceNote);
+    } else {
+      return null;
+    }
+
     return section;
   }
 
@@ -499,7 +503,14 @@
   }
 
   function prPastGetColumnCount(disciplines) {
-    return 1 + disciplines.length + 2;
+    return 1 + disciplines.length + 1;
+  }
+
+  function prPastGetSumHeaderLabel() {
+    const scoringCount = typeof prGetScoringCount === "function" ? prGetScoringCount() : 3;
+    return prLangState.current === "en"
+      ? `Total ${prFormatScoringLabel(scoringCount)}`
+      : `Summe ${prFormatScoringLabel(scoringCount)}`;
   }
 
   function prPastBuildHeader(disciplines) {
@@ -522,13 +533,9 @@
       tr.appendChild(th);
     });
 
-    const th3 = prPastCreateTh(prLangState.current === "en" ? "Sum 3" : "Sum 3");
-    th3.classList.add("pr-past-sum-head");
-    tr.appendChild(th3);
-
-    const th4 = prPastCreateTh(prLangState.current === "en" ? "Sum 4" : "Sum 4");
-    th4.classList.add("pr-past-sum-head");
-    tr.appendChild(th4);
+    const thSum = prPastCreateTh(prPastGetSumHeaderLabel());
+    thSum.classList.add("pr-past-sum-head");
+    tr.appendChild(thSum);
 
     thead.appendChild(tr);
   }
@@ -642,6 +649,17 @@
     tbody.appendChild(tr);
   }
 
+  function prPastPublishChartData(rows) {
+    prPastState.chartRows = Array.isArray(rows) ? rows.slice() : [];
+    window.prPastChartData = prPastState.chartRows.slice();
+
+    document.dispatchEvent(new CustomEvent("pr:past-data-updated", {
+      detail: {
+        rows: window.prPastChartData.slice()
+      }
+    }));
+  }
+
   async function prRenderPastTable() {
     const section = prEnsurePastTableMounted();
     if (!section) return;
@@ -660,6 +678,7 @@
     tbody.innerHTML = "";
 
     if (!disciplines.length) {
+      prPastPublishChartData([]);
       prPastShowMessage("");
       table.hidden = false;
       prPastBuildHeader([]);
@@ -687,11 +706,14 @@
       const years = prPastBuildYearRange(latestYear);
 
       if (!years.length) {
+        prPastPublishChartData([]);
         prPastShowMessage(prT("pastNoData"), true);
         return;
       }
 
       const enteredTimes = prPastCollectEnteredTimes();
+      const chartRows = [];
+      const scoringCount = typeof prGetScoringCount === "function" ? prGetScoringCount() : 3;
 
       prPastBuildHeader(disciplines);
 
@@ -704,15 +726,22 @@
 
         const numericValuesForSums = [];
         const disciplinePointEntries = [];
+        const disciplineChartEntries = [];
 
         disciplines.forEach(disc => {
           const timeSec = enteredTimes[disc.id];
+          const disciplineLabel = prGetDisciplineLabel(disc);
 
           if (timeSec == null || !isFinite(timeSec)) {
             numericValuesForSums.push(0);
             const td = prPastCreateTd(prPastFormatNumber(0));
             tr.appendChild(td);
             disciplinePointEntries.push({ td, val: 0 });
+            disciplineChartEntries.push({
+              id: disc.id,
+              label: disciplineLabel,
+              points: 0
+            });
             return;
           }
 
@@ -721,6 +750,11 @@
           if (typeof recSec !== "number" || !isFinite(recSec) || recSec <= 0) {
             const td = prPastCreateTd("-", "pr-past-missing");
             tr.appendChild(td);
+            disciplineChartEntries.push({
+              id: disc.id,
+              label: disciplineLabel,
+              points: null
+            });
             return;
           }
 
@@ -733,25 +767,30 @@
           tr.appendChild(td);
 
           disciplinePointEntries.push({ td, val: safePts });
+          disciplineChartEntries.push({
+            id: disc.id,
+            label: disciplineLabel,
+            points: safePts
+          });
         });
 
         const rankedEntries = disciplinePointEntries
           .filter(entry => entry && entry.td && isFinite(entry.val) && entry.val > 0)
           .sort((a, b) => b.val - a.val);
 
-        rankedEntries.slice(0, 3).forEach(entry => {
-          entry.td.classList.add("pr-past-points-top3");
+        rankedEntries.slice(0, scoringCount).forEach(entry => {
+          entry.td.classList.add("pr-past-points-counted");
         });
 
-        if (rankedEntries[3]) {
-          rankedEntries[3].td.classList.add("pr-past-points-top4");
-        }
+        const totalSelected = prPastCalcTopSum(numericValuesForSums, scoringCount);
 
-        const total3 = prPastCalcTopSum(numericValuesForSums, 3);
-        const total4 = prPastCalcTopSum(numericValuesForSums, 4);
+        chartRows.push({
+          year,
+          disciplines: disciplineChartEntries,
+          selectedTotal: totalSelected
+        });
 
-        tr.appendChild(prPastCreateTd(prPastFormatNumber(total3), "pr-past-total3"));
-        tr.appendChild(prPastCreateTd(prPastFormatNumber(total4), "pr-past-total4"));
+        tr.appendChild(prPastCreateTd(prPastFormatNumber(totalSelected), "pr-past-total"));
 
         fragment.appendChild(tr);
       });
@@ -760,11 +799,16 @@
       tbody.appendChild(fragment);
       table.hidden = false;
       prPastHideMessage();
+      prPastPublishChartData(chartRows);
     } catch (err) {
       console.error(err);
+      prPastPublishChartData([]);
       prPastShowMessage(err && err.message ? err.message : prT("pastLoadError"), true);
     }
   }
 
+  window.prGetPastChartData = function () {
+    return prPastState.chartRows.slice();
+  };
   window.prRenderPastTable = prRenderPastTable;
 })();

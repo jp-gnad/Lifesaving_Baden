@@ -1,6 +1,7 @@
 function prCreateHeroMarkup() {
   return `
     <section class="hero">
+      <div id="pr-ath-search-slot"></div>
       <div class="hero-head">
         <button id="pr-lang-switch" class="pr-lang-switch" type="button">
           <img id="pr-lang-switch-icon" src="./svg/Großbritannien.svg" alt="English">

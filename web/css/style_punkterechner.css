@@ -6,10 +6,9 @@ main#content {
   position: relative;
   background: url("../png/hintergrund5.JPG") center/cover no-repeat;
   background-position: center 50%;
-  height: 600px;
-  padding-top: 20px;
+  height: 640px;
+  padding-top: 0;
   color: white;
-  z-index: 0;
 }
 
 .hero::before {
@@ -45,7 +44,7 @@ main#content {
   width: fit-content;
   max-width: calc(100% - 2rem);
   margin: 0 auto;
-  padding-top: 1rem;
+  padding-top: 3rem;
 }
 
 .hero h1 {
@@ -92,7 +91,7 @@ main#content {
 .pr-controls-wrapper {
   position: relative;
   max-width: 960px;
-  margin: -28.5rem auto 1rem;
+  margin: -21.5rem auto 1rem;
   padding: 1rem 1.25rem;
   background: rgba(15, 15, 18, 0.3);
   backdrop-filter: blur(10px);
@@ -100,8 +99,43 @@ main#content {
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   color: #f9fafb;
-  z-index: 5;
+  z-index: 1;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+}
+
+#pr-ath-search-mount {
+  width: 100%;
+  min-height: 52px;
+  margin-left: 0;
+}
+
+#pr-ath-search-slot {
+  position: relative;
+  z-index: 120;
+}
+
+.pr-ath-search-section {
+  position: relative;
+  margin: 0 0 1.2rem;
+  z-index: 120;
+}
+
+.pr-ath-search-meta {
+  max-width: 960px;
+  margin: 0.55rem auto 0;
+  padding: 0 0.8rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: rgba(249, 250, 251, 0.76);
+  text-align: center;
+}
+
+.pr-ath-search-meta.is-warning {
+  color: rgba(255, 237, 0, 0.96);
+}
+
+.pr-ath-search-meta.is-error {
+  color: rgba(255, 135, 135, 0.95);
 }
 
 .pr-controls-grid {
@@ -162,7 +196,7 @@ main#content {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
-  z-index: 5;
+  z-index: 1;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
   color: #f9fafb;
   overflow: hidden;
@@ -287,6 +321,11 @@ main#content {
   font-weight: 700;
 }
 
+.pr-table td.pr-points-de-counted {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 700;
+}
+
 .pr-table td.pr-points-de-top4 {
   color: rgba(255, 255, 255, 0.5);
   font-weight: 600;
@@ -328,15 +367,15 @@ main#content {
 
 @media (max-width: 720px) {
   .hero {
-    height: 600px;
-    padding-top: 10px;
+    height: 590px;
+    padding-top: 0;
   }
 
   .hero-head {
     gap: 0.6rem;
     max-width: calc(100% - 1rem);
     margin: 0 auto;
-    padding-top: 0.5rem;
+    padding-top: 0.55rem;
   }
 
   .hero h1 {
@@ -358,8 +397,21 @@ main#content {
   }
 
   .pr-controls-wrapper {
-    margin: -31.5rem 0.5rem 1rem;
+    margin: -21.6rem 0.5rem 1rem;
     padding: 0.85rem 0.9rem;
+  }
+
+  #pr-ath-search-mount {
+    min-height: 44px;
+  }
+
+  .pr-ath-search-section {
+    margin: 0 0 1rem;
+  }
+
+  .pr-ath-search-meta {
+    padding: 0 0.6rem;
+    font-size: 0.8rem;
   }
 
   .pr-controls-grid {
