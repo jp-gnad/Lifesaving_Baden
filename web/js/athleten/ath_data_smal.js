@@ -1,6 +1,4 @@
 (function () {
-  const DEFAULT_EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test (1).xlsx";
-
   const COLS = {
     gender: 0,
     name: 1,
@@ -24,10 +22,6 @@
     regelwerk: 22,
     startrecht: 24,
     BV_natio: 27
-  };
-
-  const State = {
-    excelUrl: DEFAULT_EXCEL_URL
   };
 
   function excelSerialToISO(n) {
@@ -324,57 +318,32 @@
     };
   }
 
-  let xlsxScriptPromise = null;
-
-  async function ensureXLSX() {
-    if (window.XLSX) return;
-    if (!xlsxScriptPromise) {
-      xlsxScriptPromise = new Promise((res, rej) => {
-        const s = document.createElement("script");
-        s.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
-        s.onload = res;
-        s.onerror = rej;
-        document.head.appendChild(s);
-      });
+  function getExcelLoader() {
+    if (!window.ExcelLoader || typeof window.ExcelLoader.loadSheetRows !== "function") {
+      throw new Error("ExcelLoader missing");
     }
-    await xlsxScriptPromise;
+
+    return window.ExcelLoader;
   }
 
-  let workbookPromise = null;
-  let workbookUrl = null;
-
-  async function getWorkbook(excelUrl) {
-    const url = encodeURI(excelUrl);
-
-    if (workbookPromise && workbookUrl === url) return workbookPromise;
-
-    workbookUrl = url;
-    workbookPromise = (async () => {
-      await ensureXLSX();
-      const resp = await fetch(url, { mode: "cors" });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const buf = await resp.arrayBuffer();
-      return XLSX.read(buf, { type: "array" });
-    })();
-
-    return workbookPromise;
-  }
-
-  async function loadWorkbookArray(sheetName = "Tabelle2", excelUrl = State.excelUrl) {
-    const wb = await getWorkbook(excelUrl);
-    const ws = wb.Sheets[sheetName] || wb.Sheets[wb.SheetNames[0]];
-    return XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: "" });
+  async function loadWorkbookArray(sheetName = "Tabelle2", excelUrl = "") {
+    const loader = getExcelLoader();
+    return loader.loadSheetRows({
+      sheetName,
+      excelUrl: typeof excelUrl === "string" && excelUrl.trim() ? excelUrl : loader.getUrl("athleteData"),
+      defval: ""
+    });
   }
 
   async function loadAthletes(opts = {}) {
-    const excelUrl = typeof opts.excelUrl === "string" ? opts.excelUrl : State.excelUrl;
+    const excelUrl = typeof opts.excelUrl === "string" ? opts.excelUrl : "";
     const sheetName = typeof opts.sheetName === "string" ? opts.sheetName : "Tabelle2";
     const rows = await loadWorkbookArray(sheetName, excelUrl);
     return buildIndicesFromRows(rows);
   }
 
   async function loadAthletesAndStats(opts = {}) {
-    const excelUrl = typeof opts.excelUrl === "string" ? opts.excelUrl : State.excelUrl;
+    const excelUrl = typeof opts.excelUrl === "string" ? opts.excelUrl : "";
     const sheetName = typeof opts.sheetName === "string" ? opts.sheetName : "Tabelle2";
     const rows = await loadWorkbookArray(sheetName, excelUrl);
     return {

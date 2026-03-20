@@ -1,6 +1,4 @@
 (function () {
-  const DEFAULT_EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test (1).xlsx";
-
   const COLS = {
     ortsgruppe: 12,
     lvState: 13,
@@ -43,10 +41,7 @@
   };
 
   const State = {
-    excelUrl: DEFAULT_EXCEL_URL,
-    workbookPromise: null,
-    groupsPromise: null,
-    xlsxPromise: null
+    groupsBySource: new Map()
   };
 
   const normalize = (value) => String(value ?? "").replace(/\s+/g, " ").trim();
@@ -71,42 +66,21 @@
     return "Gliederung";
   }
 
-  function ensureXLSX() {
-    if (window.XLSX) return Promise.resolve();
-
-    if (!State.xlsxPromise) {
-      State.xlsxPromise = new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-      });
+  function getExcelLoader() {
+    if (!window.ExcelLoader || typeof window.ExcelLoader.loadSheetRows !== "function") {
+      throw new Error("ExcelLoader missing");
     }
 
-    return State.xlsxPromise;
+    return window.ExcelLoader;
   }
 
-  async function getWorkbook() {
-    if (!State.workbookPromise) {
-      State.workbookPromise = (async () => {
-        await ensureXLSX();
-
-        const response = await fetch(encodeURI(State.excelUrl), { mode: "cors" });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-        const buf = await response.arrayBuffer();
-        return window.XLSX.read(buf, { type: "array" });
-      })();
-    }
-
-    return State.workbookPromise;
-  }
-
-  async function loadWorkbookArray(sheetName = "Tabelle2") {
-    const workbook = await getWorkbook();
-    const sheet = workbook.Sheets[sheetName] || workbook.Sheets[workbook.SheetNames[0]];
-    return window.XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: "" });
+  async function loadWorkbookArray(sheetName = "Tabelle2", excelUrl = "") {
+    const loader = getExcelLoader();
+    return loader.loadSheetRows({
+      sheetName,
+      excelUrl: typeof excelUrl === "string" && excelUrl.trim() ? excelUrl : loader.getUrl("athleteData"),
+      defval: ""
+    });
   }
 
   function isHeaderRow(row) {
@@ -429,14 +403,28 @@
   }
 
   async function loadGroupsAndStats(options = {}) {
-    if (!State.groupsPromise) {
-      State.groupsPromise = (async () => {
-        const rows = await loadWorkbookArray(options.sheetName || "Tabelle2");
-        return buildGroupsFromRows(rows);
-      })();
+    const loader = getExcelLoader();
+    const sheetName = typeof options.sheetName === "string" ? options.sheetName : "Tabelle2";
+    const excelUrl =
+      typeof options.excelUrl === "string" && options.excelUrl.trim()
+        ? options.excelUrl
+        : loader.getUrl("athleteData");
+    const cacheKey = `${sheetName}::${excelUrl}`;
+
+    if (!State.groupsBySource.has(cacheKey)) {
+      State.groupsBySource.set(
+        cacheKey,
+        (async () => {
+          const rows = await loadWorkbookArray(sheetName, excelUrl);
+          return buildGroupsFromRows(rows);
+        })().catch(error => {
+          State.groupsBySource.delete(cacheKey);
+          throw error;
+        })
+      );
     }
 
-    return State.groupsPromise;
+    return State.groupsBySource.get(cacheKey);
   }
 
   function findGroupById(groups, id) {

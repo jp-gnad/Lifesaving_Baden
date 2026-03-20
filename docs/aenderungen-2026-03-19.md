@@ -66,3 +66,9 @@ Diese Anpassungen wurden direkt im Projekt umgesetzt.
 - Im Punkterechner ist jetzt zusaetzlich die Athleten-Suche im Stil der Athletenseite eingebunden. Eine Auswahl uebernimmt Bestzeiten direkt in den Rechner, setzt Geschlecht und passt die Altersklasse aus dem Jahrgang automatisch an. Fuer juengere Athleten werden passende Zeiten jetzt nicht mehr pauschal blockiert, sondern soweit moeglich disziplinspezifisch teilweise uebernommen.
 - Bereits eingetragene Zeiten bleiben im Punkterechner jetzt auch beim Wechsel von Altersklasse, Geschlecht, Disziplinmodus oder Rekordwerten erhalten, soweit die Disziplin fachlich weiter zuordenbar ist.
 - Im Punkterechner gibt es jetzt zusaetzlich die Auswahl `Wertung`. Standardmaessig ist `3-Kampf` aktiv. Die Footer-Summe in der Eingabetabelle und die Summenspalte der Verlaufstabelle folgen beide dieser Auswahl.
+
+### 9. Excel-Anbindung zentralisiert
+
+- Mit `web/js/shared/excel_loader.js` gibt es jetzt einen gemeinsamen Loader fuer Excel-Dateien, inklusive zentraler URL-Konfiguration, gemeinsamem XLSX-Laden und Workbook-Cache pro Seitenaufruf.
+- Die Hauptbereiche `Athleten`, `Profil`, `Clubs` und die Rekordwert-Excel im `Punkterechner` verwenden jetzt diese gemeinsame Schicht statt eigener Workbook- und Fetch-Logik.
+- Die Daten bleiben weiterhin direkt Excel-basiert; es wurden bewusst keine JSON-Zwischenschritte, kein `localStorage` und kein `sessionStorage` eingefuehrt.

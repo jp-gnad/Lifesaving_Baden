@@ -623,9 +623,10 @@
     if (!context) return;
 
     if (context.rule === "International") {
-      if (typeof XLSX === "undefined") {
+      if (!window.ExcelLoader || typeof window.ExcelLoader.ensureXLSX !== "function") {
         throw new Error(prT("xlsxMissing"));
       }
+      await window.ExcelLoader.ensureXLSX();
       await prEnsureRecordsWorkbook();
       prSelectRecordsSheet();
       return;

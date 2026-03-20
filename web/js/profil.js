@@ -36,7 +36,6 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const PAGE_MODE = "profil";
-  const EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test (1).xlsx";
   const HERO_DEFAULT_BG_URL = "./png/hintergrund4.JPG";
   const HERO_PORTRAIT_BASE_URL = "./png/pp";
   const HERO_PORTRAIT_EXTS = ["jpg", "jpeg", "png", "JPG", "JPEG", "PNG"];
@@ -162,47 +161,20 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (e) {}
   }
 
-  let xlsxScriptPromise = null;
-
-  async function ensureXLSX() {
-    if (window.XLSX) return;
-
-    if (!xlsxScriptPromise) {
-      xlsxScriptPromise = new Promise((res, rej) => {
-        const s = document.createElement("script");
-        s.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
-        s.onload = res;
-        s.onerror = rej;
-        document.head.appendChild(s);
-      });
+  function getExcelLoader() {
+    if (!window.ExcelLoader || typeof window.ExcelLoader.loadSheetRows !== "function") {
+      throw new Error("ExcelLoader missing");
     }
 
-    await xlsxScriptPromise;
-  }
-
-  let workbookPromise = null;
-
-  async function getWorkbook() {
-    if (!workbookPromise) {
-      workbookPromise = (async () => {
-        await ensureXLSX();
-
-        const url = encodeURI(EXCEL_URL);
-        const resp = await fetch(url, { mode: "cors" });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-
-        const buf = await resp.arrayBuffer();
-        const wb = XLSX.read(buf, { type: "array" });
-        return wb;
-      })();
-    }
-    return workbookPromise;
+    return window.ExcelLoader;
   }
 
   async function loadWorkbookArray(sheetName = "Tabelle2") {
-    const wb = await getWorkbook();
-    const ws = wb.Sheets[sheetName] || wb.Sheets[wb.SheetNames[0]];
-    return XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: "" });
+    return getExcelLoader().loadSheetRows({
+      urlKey: "athleteData",
+      sheetName,
+      defval: ""
+    });
   }
 
   const COLS = {

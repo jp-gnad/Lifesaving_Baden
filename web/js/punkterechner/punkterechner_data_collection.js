@@ -1,8 +1,3 @@
-const PR_RECORDS_URL =
-  window.location.protocol === "file:"
-    ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx"
-    : "./utilities/records_kriterien.xlsx";
-
 const PR_NATIONAL_RECORDS_URL = "https://www.dennisfabri.de/assets/js/calculator.bundle.js";
 
 const prRecords = {
@@ -324,18 +319,14 @@ function prExcelTimeCellToSeconds(cell) {
 }
 
 async function prEnsureRecordsWorkbook() {
-  if (typeof XLSX === "undefined") return;
-
   try {
     if (!prRecords.workbook) {
-      const resp = await fetch(PR_RECORDS_URL);
-      if (!resp.ok) {
-        console.warn("records_kriterien.xlsx konnte nicht geladen werden:", resp.status);
+      if (!window.ExcelLoader || typeof window.ExcelLoader.getWorkbook !== "function") {
+        console.warn("ExcelLoader ist nicht verfuegbar.");
         return;
       }
-      const buf = await resp.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array" });
-      prRecords.workbook = wb;
+
+      prRecords.workbook = await window.ExcelLoader.getWorkbook({ urlKey: "recordsCriteria" });
     }
 
     prSelectRecordsSheet();
