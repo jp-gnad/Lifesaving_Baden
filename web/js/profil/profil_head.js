@@ -19,7 +19,7 @@
   };
 
   const FLAG_BASE_URL = "./svg";
-  const CAP_FALLBACK_FILE = "Cap-BA.svg";
+  const CAP_FALLBACK_FILE = "Cap-Baden_light.svg";
   const CAP_FALLBACK_URL = `${FLAG_BASE_URL}/${encodeURIComponent(CAP_FALLBACK_FILE)}`;
 
   let AllMeetsByAthleteId = new Map();
@@ -147,7 +147,7 @@
         file: String(x?.file || "").trim(),
         toned: !!x?.toned
       }))
-      .filter((x) => x.file && x.file !== CAP_FALLBACK_FILE);
+      .filter((x) => x.file);
 
     hostEl?.classList.remove("cap-overlay");
     imgEl.src = CAP_FALLBACK_URL;

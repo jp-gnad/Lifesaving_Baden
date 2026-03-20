@@ -257,6 +257,41 @@
     return rows;
   }
 
+  async function buildCalculatedLSCSeries(a) {
+    if (!global.ProfileLSC || typeof global.ProfileLSC.calculateHistorySeries !== "function") {
+      return buildLSCSeries(a);
+    }
+
+    const jahrgang = Number(a?.jahrgang);
+    if (!Number.isFinite(jahrgang)) return [];
+
+    const birth = new Date(`${jahrgang}-07-01T00:00:00Z`);
+    const history = await global.ProfileLSC.calculateHistorySeries(a, { byMeet: true });
+    const rows = [];
+
+    (Array.isArray(history) ? history : []).forEach((entry) => {
+      const dateISO = String(entry?.date || "").slice(0, 10);
+      if (!dateISO || !Number.isFinite(entry?.calculatedLsc)) return;
+
+      const d = new Date(dateISO);
+      if (isNaN(d)) return;
+
+      const years = (d - birth) / (365.2425 * 24 * 3600 * 1000);
+      const age = Math.round(years * 100) / 100;
+      const meetName = String(entry?.meetName || entry?.meet_name || "").replace(/\s+-\s+.*$/, "").trim();
+
+      rows.push({
+        age,
+        lsc: Number(entry.calculatedLsc),
+        date: dateISO,
+        meet_name: meetName
+      });
+    });
+
+    rows.sort((l, r) => new Date(l.date) - new Date(r.date));
+    return rows;
+  }
+
   function renderLSCChart(a) {
     const sLocal = (tag, attrs = {}, ...children) => {
       const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
@@ -275,18 +310,16 @@
       return el;
     };
 
-    const basePts = buildLSCSeries(a);
     const card = hEl("div", { class: "ath-lsc-card" },
       hEl("div", { class: "lsc-head" }, hEl("h4", {}, "LSC Verlauf"))
     );
-    if (!basePts.length) {
-      card.appendChild(hEl("div", { class: "best-empty" }, "Keine LSC-Daten vorhanden."));
-      return card;
-    }
+    const status = hEl("div", { class: "best-empty" }, "LSC-Verlauf wird berechnet …");
+    card.appendChild(status);
 
     const vp = hEl("div", { class: "lsc-viewport" });
     const svg = sLocal("svg", { class: "lsc-svg", role: "img", "aria-label": "LSC Verlauf" });
     vp.appendChild(svg);
+    vp.classList.add("hidden");
     card.appendChild(vp);
 
     const tip = hEl("div", { class: "lsc-tooltip", "aria-hidden": "true" },
@@ -301,8 +334,10 @@
         hEl("span", { class: "lsc-key-label" }, a?.name || "Athlet A")
       )
     );
+    legend.classList.add("hidden");
     card.appendChild(legend);
 
+    let basePts = [];
     let cmpAth = null;
     let cmpPts = null;
 
@@ -320,10 +355,30 @@
 
     cmpWrap.appendChild(hEl("div", { class: "lsc-search-row" }, cmpInput, clearBtn));
     cmpWrap.appendChild(suggest);
+    cmpWrap.classList.add("hidden");
     card.appendChild(cmpWrap);
 
     let cmpQuery = "", cmpResults = [], cmpActive = -1;
+    let cmpLoadId = 0;
     const normalizeLocal = (s) => (s || "").toString().toLowerCase().normalize("NFKD").replace(/\p{Diacritic}/gu, "").replace(/\s+/g, " ").trim();
+
+    function showStatus(message) {
+      status.textContent = message;
+      status.classList.remove("hidden");
+      vp.classList.add("hidden");
+      legend.classList.add("hidden");
+      cmpWrap.classList.add("hidden");
+      tip.style.opacity = "0";
+      tip.style.transform = "translate(-9999px,-9999px)";
+      tip.setAttribute("aria-hidden", "true");
+    }
+
+    function showChart() {
+      status.classList.add("hidden");
+      vp.classList.remove("hidden");
+      legend.classList.remove("hidden");
+      cmpWrap.classList.remove("hidden");
+    }
 
     function updateCmpSuggest() {
       const q = cmpQuery.trim();
@@ -382,12 +437,13 @@
 
     function hideCmpSuggest() { suggest.classList.add("hidden"); }
 
-    function chooseCmp(ax) {
+    async function chooseCmp(ax) {
+      const reqId = ++cmpLoadId;
       const full = withHydratedMeets(ax);
       const merged = mergeDuplicateMeets(full.meets);
 
       cmpAth = { ...full, meets: merged };
-      cmpPts = buildLSCSeries(cmpAth);
+      cmpPts = null;
 
       legend.querySelector(".lsc-key--cmp")?.remove();
       legend.appendChild(
@@ -402,6 +458,18 @@
       dismissKeyboard();
       cmpInput.value = cmpQuery = "";
       paint();
+
+      try {
+        const series = await buildCalculatedLSCSeries(cmpAth);
+        if (reqId !== cmpLoadId || !cmpAth || cmpAth.id !== full.id) return;
+        cmpPts = series.length ? series : buildLSCSeries(cmpAth);
+      } catch (error) {
+        console.error("Vergleichs-LSC-Verlauf konnte nicht berechnet werden:", error);
+        if (reqId !== cmpLoadId || !cmpAth || cmpAth.id !== full.id) return;
+        cmpPts = buildLSCSeries(cmpAth);
+      }
+
+      paint();
     }
 
     cmpInput.addEventListener("input", e => { cmpQuery = e.target.value || ""; updateCmpSuggest(); });
@@ -415,6 +483,7 @@
     document.addEventListener("click", (e) => { if (!cmpWrap.contains(e.target)) hideCmpSuggest(); });
 
     clearBtn.addEventListener("click", () => {
+      cmpLoadId += 1;
       cmpAth = null; cmpPts = null;
       clearBtn.classList.add("hidden");
       legend.querySelector(".lsc-key--cmp")?.remove();
@@ -425,6 +494,11 @@
     let xMin, xMax;
     const updateXDomain = () => {
       const all = cmpPts && cmpPts.length ? basePts.concat(cmpPts) : basePts;
+      if (!all.length) {
+        xMin = 0;
+        xMax = 1;
+        return;
+      }
       xMin = Math.floor(Math.min(...all.map(p => p.age)));
       xMax = Math.ceil(Math.max(...all.map(p => p.age)));
       if (xMax === xMin) xMax = xMin + 1;
@@ -434,6 +508,7 @@
     let activeIdx = null, activeSeries = "blue";
 
     function paint() {
+      if (!basePts.length) return;
       updateXDomain();
 
       const rect = vp.getBoundingClientRect();
@@ -701,7 +776,24 @@
 
     const ro = new ResizeObserver(paint);
     ro.observe(vp);
-    requestAnimationFrame(paint);
+
+    (async () => {
+      try {
+        const series = await buildCalculatedLSCSeries(a);
+        basePts = series.length ? series : buildLSCSeries(a);
+      } catch (error) {
+        console.error("LSC-Verlauf konnte nicht berechnet werden:", error);
+        basePts = buildLSCSeries(a);
+      }
+
+      if (!basePts.length) {
+        showStatus("Keine LSC-Daten vorhanden.");
+        return;
+      }
+
+      showChart();
+      requestAnimationFrame(paint);
+    })();
 
     return card;
   }

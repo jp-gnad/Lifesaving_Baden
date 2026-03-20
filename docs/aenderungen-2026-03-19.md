@@ -72,3 +72,21 @@ Diese Anpassungen wurden direkt im Projekt umgesetzt.
 - Mit `web/js/shared/excel_loader.js` gibt es jetzt einen gemeinsamen Loader fuer Excel-Dateien, inklusive zentraler URL-Konfiguration, gemeinsamem XLSX-Laden und Workbook-Cache pro Seitenaufruf.
 - Die Hauptbereiche `Athleten`, `Profil`, `Clubs` und die Rekordwert-Excel im `Punkterechner` verwenden jetzt diese gemeinsame Schicht statt eigener Workbook- und Fetch-Logik.
 - Die Daten bleiben weiterhin direkt Excel-basiert; es wurden bewusst keine JSON-Zwischenschritte, kein `localStorage` und kein `sessionStorage` eingefuehrt.
+
+### 10. Berechneter LSC im Profil
+
+- Im Athleten-Profil gibt es jetzt zusätzlich zum bisherigen Excel-Wert ein zweites Info-Tile `LSC berechnet`.
+- Die neue Logik liegt in `web/js/profil/profil_lsc.js`.
+- Für die Berechnung werden alle verfügbaren Zeiten der letzten 2 Jahre bis zum jüngsten Wettkampf betrachtet.
+- Pro Disziplin werden die besten 3 Punktwerte gemittelt; danach werden die besten 3 Disziplinmittel erneut gemittelt.
+- Unterhalb des Info-Grids gibt es jetzt eine aufklappbare Herleitung, in der pro Disziplin sichtbar ist, welche Zeiten, Wettkämpfe, WR-Werte und Punkte in die Berechnung eingeflossen sind.
+- Wettkämpfe mit `Mehrkampf_Platz = ausg.` werden in der Berechnung vollständig ignoriert.
+- Ausgeschlossene Leistungen und `DQ` bleiben in der Herleitung sichtbar, werden dort aber mit `0,00 P` und einer Begründung (`ausg.` oder `DQ`) gekennzeichnet.
+- Bei leeren WR-Zellen in frühen Jahren läuft die Suche in `WR-Open` jetzt weiter nach vorne, bis für die jeweilige Disziplin und das Geschlecht der erste gültige offene WR gefunden wird.
+- Die Berechnung folgt der Punkteformel des Punkterechners. Da das Web-Workbook nur die schlanke `Tabelle2` mit 28 Spalten ausliefert, können VBA-spezifische Zusatzfelder wie separate Straf-/Statusspalten im Web aktuell nicht unabhängig nachgebildet werden; berücksichtigt werden daher die im Web verfügbaren Zeiten inklusive vorhandener `DQ`-Marker.
+- Zusätzlich gibt es jetzt interne Helfer, um den LSC-Verlauf auch historisch für jeden einzelnen Wettkampf neu zu berechnen und diese Werte direkt mit den in der Excel gespeicherten LSCs zu vergleichen.
+- Der LSC-Chart im Athleten-Profil nutzt jetzt bevorzugt diesen neu berechneten historischen Verlauf statt der in der Excel gespeicherten LSC-Werte; nur falls die Berechnung nicht geladen werden kann, bleibt der bisherige Excel-Verlauf als Fallback aktiv.
+- Die Athleten-Top-10 `LSC aktuell` und `LSC Junioren aktuell` werden jetzt ebenfalls live aus der eigenen LSC-Berechnung aufgebaut. Die übrigen Top-10-Gruppen bleiben zunächst weiter an die bestehende `top10.json` gekoppelt.
+- Für diese beiden Live-Top-10 gilt jetzt auch der BA-Filter aus dem VBA: berücksichtigt werden nur Athleten, deren letzter nationaler Start dem Landesverband `BA` zugeordnet ist.
+- `LSC aktuell` nimmt den jüngsten berechneten LSC innerhalb der letzten 2 Jahre relativ zum jüngsten Wettkampfdatum der Datenbank; `LSC Junioren aktuell` nimmt den jüngsten berechneten LSC innerhalb der letzten 2 Jahre relativ zu heute und filtert zusätzlich auf `Jahrgangsbasis < 19 Jahre`.
+- Zusätzlich werden jetzt auch die einfachen Athleten-Top-10 `Starts`, `Wettkämpfe`, `Aktive Jahre` und `Auslandswettkämpfe` direkt live aus den Excel-Daten aufgebaut. Nur `Höchster LSC` bleibt vorerst noch bei der bisherigen JSON-Quelle.

@@ -64,6 +64,21 @@
     return y;
   }
 
+  function normalizePool(v) {
+    const value = String(v || "").trim();
+    return value === "25" || value === "50" ? value : "";
+  }
+
+  function normalizeStartrecht(s) {
+    const value = String(s || "").trim().toUpperCase();
+    return value === "OG" || value === "LV" || value === "BV" || value === "BZ" ? value : "";
+  }
+
+  function toNumOrBlank(v) {
+    const n = parseInt(String(v).replace(/[^\d\-]/g, ""), 10);
+    return Number.isFinite(n) ? String(n) : String(v || "").trim();
+  }
+
   function makeAthleteId(name, gender, birthYear) {
     const base = (name || "")
       .toLowerCase()
@@ -213,6 +228,109 @@
     return athletes;
   }
 
+  function mapRowToAthleteMinimal(row) {
+    const name = String(row[COLS.name] || "").trim();
+    const gender = String(row[COLS.gender] || "").trim();
+    const iso = excelSerialToISO(row[COLS.excelDate]);
+    const yy2 = row[COLS.yy2];
+    const jahrgang = parseTwoDigitYearWithMeetYear(yy2, iso);
+    const ortsgruppe = String(row[COLS.ortsgruppe] || "").trim();
+
+    return {
+      id: makeAthleteId(name, gender, jahrgang),
+      name,
+      jahrgang,
+      geschlecht: gender,
+      ortsgruppe,
+      LV_state: String(row[COLS.LV_state] ?? "").trim().toUpperCase(),
+      BV_natio: String(row[COLS.BV_natio] ?? "").trim(),
+      Startrecht: String(row[COLS.startrecht] ?? "").trim().toUpperCase()
+    };
+  }
+
+  function mapRowToMeet(row) {
+    return {
+      meet_name: String(row[COLS.meet_name] || "").trim(),
+      date: excelSerialToISO(row[COLS.excelDate]),
+      Ortsgruppe: String(row[COLS.ortsgruppe] || "").trim(),
+      LV_state: String(row[COLS.LV_state] ?? "").trim().toUpperCase(),
+      BV_natio: String(row[COLS.BV_natio] ?? "").trim(),
+      Land: String(row[23] ?? "").trim().toUpperCase(),
+      Startrecht: normalizeStartrecht(row[COLS.startrecht]),
+      Regelwerk: String(row[COLS.regelwerk] || "").trim(),
+      Wertung: String(row[25] || "").trim(),
+      pool: normalizePool(row[21]),
+      LSC: String(row[2] ?? "").trim(),
+      Mehrkampf_Platz: toNumOrBlank(row[14]),
+      "100m_Lifesaver_Zeit": String(row[COLS.d1] ?? "").trim(),
+      "50m_Retten_Zeit": String(row[COLS.d2] ?? "").trim(),
+      "200m_SuperLifesaver_Zeit": String(row[COLS.d3] ?? "").trim(),
+      "100m_Kombi_Zeit": String(row[COLS.d4] ?? "").trim(),
+      "100m_Retten_Zeit": String(row[COLS.d5] ?? "").trim(),
+      "200m_Hindernis_Zeit": String(row[COLS.d6] ?? "").trim(),
+      "100m_Lifesaver_Platz": toNumOrBlank(row[COLS.p1]),
+      "50m_Retten_Platz": toNumOrBlank(row[COLS.p2]),
+      "200m_SuperLifesaver_Platz": toNumOrBlank(row[COLS.p3]),
+      "100m_Kombi_Platz": toNumOrBlank(row[COLS.p4]),
+      "100m_Retten_Platz": toNumOrBlank(row[COLS.p5]),
+      "200m_Hindernis_Platz": toNumOrBlank(row[COLS.p6])
+    };
+  }
+
+  function buildAthletesWithMeets(rows) {
+    const athleteById = new Map();
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length === 0) continue;
+
+      const athlete = mapRowToAthleteMinimal(row);
+      if (!athlete.name || !athlete.jahrgang) continue;
+
+      if (!athleteById.has(athlete.id)) {
+        athleteById.set(athlete.id, { ...athlete, meets: [], _lastOgNum: -Infinity });
+      }
+
+      const rec = athleteById.get(athlete.id);
+      const meet = mapRowToMeet(row);
+      rec.meets.push(meet);
+
+      const dateNum = Number(row[COLS.excelDate]);
+      if (athlete.ortsgruppe && Number.isFinite(dateNum) && dateNum >= rec._lastOgNum) {
+        rec._lastOgNum = dateNum;
+        rec.ortsgruppe = athlete.ortsgruppe;
+      }
+
+      if (athlete.LV_state && Number.isFinite(dateNum) && dateNum >= (rec._lastLVNum ?? -Infinity)) {
+        rec._lastLVNum = dateNum;
+        rec.LV_state = athlete.LV_state;
+      }
+
+      if (athlete.BV_natio && Number.isFinite(dateNum) && dateNum >= (rec._lastBVNum ?? -Infinity)) {
+        rec._lastBVNum = dateNum;
+        rec.BV_natio = athlete.BV_natio;
+      }
+
+      if (athlete.Startrecht && Number.isFinite(dateNum) && dateNum >= (rec._lastSRNum ?? -Infinity)) {
+        rec._lastSRNum = dateNum;
+        rec.Startrecht = athlete.Startrecht;
+      }
+    }
+
+    const athletes = Array.from(athleteById.values()).map((rec) => {
+      const out = { ...rec };
+      delete out._lastOgNum;
+      delete out._lastLVNum;
+      delete out._lastBVNum;
+      delete out._lastSRNum;
+      out.meets.sort((l, r) => new Date(l.date) - new Date(r.date));
+      return out;
+    });
+
+    athletes.sort((l, r) => l.name.localeCompare(r.name, "de"));
+    return athletes;
+  }
+
   function isFilled(v) {
     return !(v == null || (typeof v === "string" && v.trim() === ""));
   }
@@ -352,11 +470,20 @@
     };
   }
 
+  async function loadAthletesWithMeets(opts = {}) {
+    const excelUrl = typeof opts.excelUrl === "string" ? opts.excelUrl : "";
+    const sheetName = typeof opts.sheetName === "string" ? opts.sheetName : "Tabelle2";
+    const rows = await loadWorkbookArray(sheetName, excelUrl);
+    return buildAthletesWithMeets(rows);
+  }
+
   window.AthDataSmall = {
     loadAthletes,
     loadAthletesAndStats,
+    loadAthletesWithMeets,
     loadWorkbookArray,
     buildIndicesFromRows,
+    buildAthletesWithMeets,
     computeOverviewStatsFromRows
   };
 })();

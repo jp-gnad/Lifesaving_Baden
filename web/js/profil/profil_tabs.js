@@ -1427,7 +1427,7 @@
     }
   }
 
-  function renderOverviewSection(a) {
+  function renderOverviewSection(a, calcParts = null) {
     const header = h("div", { class: "ath-info-header" }, h("h3", {}, ""));
     const grid = h("div", { class: "ath-info-grid" });
 
@@ -1437,10 +1437,9 @@
     const totalStarts = totalStartsFromMeets(a);
     const dqLane = computeLaneDQProb(a);
     const totalMeters = sumWettkampfMeter(a);
-    const chartCard = renderLSCChart(a);
     const pieCard = renderDisciplinePieCard(a);
-
     grid.appendChild(infoTileBig("LSC", a.lsc != null ? fmtInt(a.lsc) : "—"));
+    if (calcParts?.tile) grid.appendChild(calcParts.tile);
     grid.appendChild(infoTileWettkaempfeFlip(a, meets));
     grid.appendChild(infoTileStartsFlip(totalStarts, startsPer));
     grid.appendChild(infoTileDQFlip(totalDQ, dqLane));
@@ -1449,7 +1448,13 @@
     grid.appendChild(infoTileYearsFlip(meets.activeYears, meets.first, meets.firstName));
     grid.appendChild(infoTileMetersFlip("Wettkampfmeter", totalMeters, meets.total));
 
-    return h("div", { class: "ath-profile-section info" }, header, grid, chartCard, pieCard);
+    return h(
+      "div",
+      { class: "ath-profile-section info" },
+      header,
+      grid,
+      pieCard
+    );
 
     function infoTileBig(label, value) {
       const title = h("div", { class: "info-label lsc-label", "data-state": "short" },
@@ -1828,7 +1833,7 @@
   }
 
   function renderAthTabs(labels, activeLabel, onChange) {
-    const map = { "Bestzeiten": "bests", "Info": "info", "Wettkämpfe": "meets" };
+    const map = { "Bestzeiten": "bests", "Info": "info", "LSC": "lsc", "Wettkämpfe": "meets" };
     const bar = h("div", { class: "ath-tabs full-bleed" });
     const list = h("div", { class: "ath-tabs-list" });
     const ul = h("div", { class: "ath-tabs-underline" });
@@ -1872,13 +1877,30 @@
   }
 
   function renderAthTabsAndPanels(ax, refs) {
+    const calcParts =
+      global.ProfileLSC && typeof global.ProfileLSC.createOverviewParts === "function"
+        ? global.ProfileLSC.createOverviewParts(ax)
+        : null;
+    const lscChartCard = renderLSCChart(ax);
+    const lscSection =
+      calcParts?.section ||
+      (global.ProfileLSC && typeof global.ProfileLSC.createSection === "function"
+        ? global.ProfileLSC.createSection(ax)
+        : h("div", { class: "best-empty" }, "LSC-Berechnung nicht verfügbar."));
+
     const panels = h("div", { class: "ath-tab-panels" },
       h("div", { class: "ath-tab-panel", "data-key": "bests" }, renderBestzeitenSection(ax, refs)),
-      h("div", { class: "ath-tab-panel", "data-key": "info" }, renderOverviewSection(ax)),
+      h("div", { class: "ath-tab-panel", "data-key": "info" }, renderOverviewSection(ax, calcParts)),
+      h("div", { class: "ath-tab-panel", "data-key": "lsc" },
+        h("div", { class: "ath-lsc-tab-stack" },
+          lscChartCard,
+          lscSection
+        )
+      ),
       h("div", { class: "ath-tab-panel", "data-key": "meets" }, renderMeetsSection(ax))
     );
 
-    const tabs = renderAthTabs(["Bestzeiten", "Info", "Wettkämpfe"], "Bestzeiten", (key) => {
+    const tabs = renderAthTabs(["Bestzeiten", "Info", "LSC", "Wettkämpfe"], "Bestzeiten", (key) => {
       panels.querySelectorAll(".ath-tab-panel").forEach(p => {
         p.classList.toggle("active", p.dataset.key === key);
       });
