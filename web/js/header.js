@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
     {
       key: "wettkaempfe",
       label: "Wettkämpfe",
-      href: "nominierung.html",
+      href: "wettkaempfe.html",
       children: [
         { key: "deutschlandpokal", label: "Deutschland Pokal", href: "deutschlandpokal.html" },
         { key: "bodenseepokal", label: "Bodensee Pokal", href: "bodenseepokal.html" },

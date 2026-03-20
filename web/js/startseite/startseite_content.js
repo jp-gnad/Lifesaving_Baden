@@ -119,7 +119,7 @@
               <img class="home-card__img" src="./png/Bild4.png" alt="" loading="lazy" decoding="async">
             </a>
 
-            <a class="home-card" href="./nominierung.html" aria-label="Wettkaempfe und Nominierung">
+            <a class="home-card" href="./wettkaempfe.html" aria-label="Wettkaempfe und Nominierung">
               <img class="home-card__img" src="./png/Bild1.png" alt="" loading="lazy" decoding="async">
             </a>
 

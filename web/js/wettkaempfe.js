@@ -59,7 +59,7 @@ function preloadImage(url) {
 
 
 
-// nominierung.js
+// wettkaempfe.js
 document.addEventListener("DOMContentLoaded", () => {
   const main = document.getElementById("content");
   if (!main) return;
