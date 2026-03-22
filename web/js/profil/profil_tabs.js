@@ -1438,7 +1438,6 @@
     const dqLane = computeLaneDQProb(a);
     const totalMeters = sumWettkampfMeter(a);
     const pieCard = renderDisciplinePieCard(a);
-    grid.appendChild(infoTileBig("LSC", a.lsc != null ? fmtInt(a.lsc) : "—"));
     if (calcParts?.tile) grid.appendChild(calcParts.tile);
     grid.appendChild(infoTileWettkaempfeFlip(a, meets));
     grid.appendChild(infoTileStartsFlip(totalStarts, startsPer));
@@ -1455,31 +1454,6 @@
       grid,
       pieCard
     );
-
-    function infoTileBig(label, value) {
-      const title = h("div", { class: "info-label lsc-label", "data-state": "short" },
-        h("span", { class: "label label-short", "aria-hidden": "false" }, "LSC"),
-        h("span", { class: "label label-long", "aria-hidden": "true" }, "Lifesaving Score")
-      );
-      const valueEl = h("div", { class: "info-value big" }, value);
-      const wrap = h("div", {
-        class: "info-tile accent lsc-tile",
-        role: "button",
-        tabindex: "0",
-        "aria-pressed": "false",
-        onclick: toggle,
-        onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } }
-      }, title, valueEl);
-      function toggle() {
-        const toLong = title.dataset.state !== "long";
-        title.dataset.state = toLong ? "long" : "short";
-        title.classList.toggle("show-long", toLong);
-        title.querySelector(".label-short")?.setAttribute("aria-hidden", toLong ? "true" : "false");
-        title.querySelector(".label-long")?.setAttribute("aria-hidden", toLong ? "false" : "true");
-        wrap.setAttribute("aria-pressed", toLong ? "true" : "false");
-      }
-      return wrap;
-    }
 
     function renderBahnverteilungTile(a) {
       const m = computeMeetInfo(a);

@@ -967,6 +967,47 @@ main#content {
   margin-top: 0.45rem;
 }
 
+.lsc-calc-tile-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.lsc-calc-warning-slot {
+  margin-left: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.lsc-calc-warning-slot:empty {
+  display: none;
+}
+
+.lsc-calc-warning-button {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  border-radius: 999px;
+}
+
+.lsc-calc-warning-button:focus-visible {
+  outline: 2px solid #f59e0b;
+  outline-offset: 2px;
+}
+
+.lsc-calc-warning-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  display: block;
+}
+
 .info-sub.lsc-calc-meta {
   margin-top: 0;
 }

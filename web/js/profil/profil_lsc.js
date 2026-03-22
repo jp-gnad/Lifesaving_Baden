@@ -7,6 +7,7 @@
   const WR_SHEET_NAME = "WR-Open";
   const WR_HEADER_ROW = 3;
   const WR_FIRST_DATA_ROW = 4;
+  const LSC_WARNING_ICON_SRC = "./svg/icon_status_yellow.svg";
 
   const WR_STATE = {
     promise: null,
@@ -153,6 +154,14 @@
     if (!normalized) return null;
     const parsed = Number.parseFloat(normalized);
     return Number.isFinite(parsed) ? round2(parsed) : null;
+  }
+
+  function buildLscMismatchMessage(delta) {
+    return [
+      "Es gibt möglicherweise Probleme bei der Berechnung ihres LSCs.",
+      "Bitte wenden sie sich an den Administrator.",
+      `Der Unterschied beträgt ${fmtPoints(delta)} P.`
+    ].join("\n");
   }
 
   function normalizeKey(str) {
@@ -633,10 +642,53 @@
 
   function createTile() {
     const title = h("div", { class: "info-label" }, "LSC berechnet");
+    const warningSlot = h("div", { class: "lsc-calc-warning-slot", dataset: { role: "warning-slot" } });
+    const head = h("div", { class: "lsc-calc-tile-head" }, title, warningSlot);
     const value = h("div", { class: "info-value big", dataset: { role: "value" } }, "…");
     const meta = h("div", { class: "info-sub lsc-calc-meta", dataset: { role: "meta" } }, "Wird berechnet …");
 
-    return h("div", { class: "info-tile accent lsc-tile lsc-calc-tile" }, title, value, meta);
+    return h("div", { class: "info-tile accent lsc-tile lsc-calc-tile" }, head, value, meta);
+  }
+
+  function updateTileComparisonState(tile, athlete, calculatedLsc) {
+    const warningSlot = tile.querySelector('[data-role="warning-slot"]');
+    if (!warningSlot) return;
+
+    warningSlot.replaceChildren();
+    tile.removeAttribute("data-lsc-mismatch");
+
+    const excelLsc = parseStoredLsc(athlete?.lsc);
+    if (!Number.isFinite(excelLsc) || !Number.isFinite(calculatedLsc)) return;
+
+    const delta = round2(calculatedLsc - excelLsc);
+    const absDelta = round2(Math.abs(delta));
+    if (!(absDelta > 0)) return;
+
+    const message = buildLscMismatchMessage(absDelta);
+    const button = h(
+      "button",
+      {
+        class: "lsc-calc-warning-button",
+        type: "button",
+        title: "Abweichung zum Excel-LSC anzeigen",
+        "aria-label": "Abweichung zum Excel-LSC anzeigen",
+        onclick: (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          global.alert(message);
+        }
+      },
+      h("img", {
+        class: "lsc-calc-warning-icon",
+        src: LSC_WARNING_ICON_SRC,
+        alt: "",
+        loading: "lazy",
+        decoding: "async"
+      })
+    );
+
+    tile.setAttribute("data-lsc-mismatch", "true");
+    warningSlot.appendChild(button);
   }
 
   function createDetailsCard() {
@@ -790,6 +842,7 @@
       }
 
       if (value) value.textContent = fmtValue(calc.finalScore);
+      updateTileComparisonState(tile, athlete, calc.finalScore);
 
       const standLabel = calc.latestRun
         ? `Stand ${formatDateWithYear(calc.latestRun.date)}`
