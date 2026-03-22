@@ -1131,6 +1131,71 @@ main#content {
   gap: 0.85rem;
 }
 
+.ath-lsc-calc-carousel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.ath-lsc-calc-viewport {
+  position: relative;
+}
+
+.ath-lsc-calc-arrow,
+.ath-lsc-calc-dots {
+  display: none;
+}
+
+.ath-lsc-calc-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #0f172a;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.16);
+  cursor: pointer;
+  z-index: 2;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.ath-lsc-calc-arrow.prev {
+  left: 0.35rem;
+}
+
+.ath-lsc-calc-arrow.next {
+  right: 0.35rem;
+}
+
+.ath-lsc-calc-arrow:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.ath-lsc-calc-dots {
+  justify-content: center;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.ath-lsc-calc-dot {
+  width: 0.48rem;
+  height: 0.48rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.45);
+  cursor: pointer;
+}
+
+.ath-lsc-calc-dot.active {
+  background: rgb(227, 6, 19);
+}
+
 .ath-lsc-calc-discipline {
   border-radius: 0.95rem;
   border: 1px solid rgba(226, 232, 240, 0.95);
@@ -1428,6 +1493,41 @@ main#content {
 @media (max-width: 700px) {
   .ath-lsc-current-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ath-lsc-calc-grid {
+    display: grid;
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(100%, 100%);
+    gap: 0.85rem;
+    overflow-x: auto;
+    overflow-y: visible;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 0;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    scrollbar-width: none;
+  }
+
+  .ath-lsc-calc-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ath-lsc-calc-discipline {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .ath-lsc-calc-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ath-lsc-calc-dots {
+    display: flex;
   }
 
   .ath-lsc-calc-summary {

@@ -841,9 +841,19 @@
     body.appendChild(summary);
 
     const grid = h("div", { class: "ath-lsc-calc-grid" });
+    const countedDisciplines = new Set(calc.topDisciplines || []);
+    const orderedDisciplines = (calc.disciplines || []).slice().sort((l, r) => {
+      const lCounted = countedDisciplines.has(l.key) ? 1 : 0;
+      const rCounted = countedDisciplines.has(r.key) ? 1 : 0;
+      return (
+        rCounted - lCounted ||
+        r.averagePoints - l.averagePoints ||
+        String(l.label || "").localeCompare(String(r.label || ""), "de-DE")
+      );
+    });
 
-    calc.disciplines.forEach((disc) => {
-      const usedInScore = calc.topDisciplines.includes(disc.key);
+    orderedDisciplines.forEach((disc) => {
+      const usedInScore = countedDisciplines.has(disc.key);
       const visibleEntries = disc.entries.filter(entry => Number.isFinite(entry.timeSeconds));
       const badge = usedInScore
         ? h("span", { class: "ath-lsc-calc-badge" }, "zählt")
@@ -916,7 +926,106 @@
       );
     });
 
-    body.appendChild(grid);
+    body.appendChild(createCalcGridCarousel(grid));
+  }
+
+  function createCalcGridCarousel(grid) {
+    const cards = Array.from(grid?.children || []);
+    if (cards.length <= 1) return grid;
+
+    const prevBtn = h(
+      "button",
+      {
+        class: "ath-lsc-calc-arrow prev",
+        type: "button",
+        "aria-label": "Vorherige Disziplin",
+        title: "Vorherige Disziplin"
+      },
+      "‹"
+    );
+    const nextBtn = h(
+      "button",
+      {
+        class: "ath-lsc-calc-arrow next",
+        type: "button",
+        "aria-label": "Nächste Disziplin",
+        title: "Nächste Disziplin"
+      },
+      "›"
+    );
+
+    const dots = h("div", { class: "ath-lsc-calc-dots", "aria-label": "Disziplinen-Navigation" });
+    const dotButtons = cards.map((card, index) => {
+      const label = card.querySelector(".ath-lsc-calc-label")?.textContent?.trim() || `Disziplin ${index + 1}`;
+      return h("button", {
+        class: "ath-lsc-calc-dot",
+        type: "button",
+        "aria-label": `${label} anzeigen`,
+        title: label
+      });
+    });
+    dots.append(...dotButtons);
+
+    const viewport = h("div", { class: "ath-lsc-calc-viewport" }, grid, prevBtn, nextBtn);
+    const wrap = h("div", { class: "ath-lsc-calc-carousel" }, viewport, dots);
+
+    let activeIndex = 0;
+    let scrollTicking = false;
+
+    const goToIndex = (index) => {
+      const clamped = Math.max(0, Math.min(cards.length - 1, index));
+      const target = cards[clamped];
+      if (!target) return;
+      activeIndex = clamped;
+      syncControls();
+      grid.scrollTo({ left: target.offsetLeft, behavior: "smooth" });
+    };
+
+    const findClosestIndex = () => {
+      let bestIndex = 0;
+      let bestDistance = Number.POSITIVE_INFINITY;
+
+      cards.forEach((card, index) => {
+        const distance = Math.abs(card.offsetLeft - grid.scrollLeft);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestIndex = index;
+        }
+      });
+
+      return bestIndex;
+    };
+
+    const syncControls = () => {
+      activeIndex = findClosestIndex();
+      prevBtn.disabled = activeIndex <= 0;
+      nextBtn.disabled = activeIndex >= cards.length - 1;
+      dotButtons.forEach((dot, index) => {
+        dot.classList.toggle("active", index === activeIndex);
+        dot.setAttribute("aria-current", index === activeIndex ? "true" : "false");
+      });
+    };
+
+    prevBtn.addEventListener("click", () => goToIndex(activeIndex - 1));
+    nextBtn.addEventListener("click", () => goToIndex(activeIndex + 1));
+    dotButtons.forEach((dot, index) => dot.addEventListener("click", () => goToIndex(index)));
+
+    grid.addEventListener("scroll", () => {
+      if (scrollTicking) return;
+      scrollTicking = true;
+      global.requestAnimationFrame(() => {
+        syncControls();
+        scrollTicking = false;
+      });
+    }, { passive: true });
+
+    if (typeof global.ResizeObserver === "function") {
+      const ro = new global.ResizeObserver(() => syncControls());
+      ro.observe(grid);
+    }
+
+    global.requestAnimationFrame(() => syncControls());
+    return wrap;
   }
 
   function applyError(tile, card, message) {
