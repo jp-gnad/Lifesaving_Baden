@@ -663,8 +663,13 @@
   async function calculateBestHistoricalLsc(athlete) {
     const history = await calculateHistorySeries(athlete, { byMeet: true });
     let bestEntry = null;
+    let bestExcelEntry = null;
 
     (Array.isArray(history) ? history : []).forEach((entry) => {
+      if (Number.isFinite(entry?.excelLsc) && (!bestExcelEntry || entry.excelLsc > bestExcelEntry.excelLsc)) {
+        bestExcelEntry = entry;
+      }
+
       if (!Number.isFinite(entry?.calculatedLsc)) return;
       if (!bestEntry || entry.calculatedLsc > bestEntry.calculatedLsc) {
         bestEntry = entry;
@@ -674,6 +679,8 @@
     return {
       finalScore: Number.isFinite(bestEntry?.calculatedLsc) ? round2(bestEntry.calculatedLsc) : null,
       firstDate: String(bestEntry?.date || "").trim() || null,
+      bestExcelLsc: Number.isFinite(bestExcelEntry?.excelLsc) ? round2(bestExcelEntry.excelLsc) : null,
+      bestExcelDate: String(bestExcelEntry?.date || "").trim() || null,
       entry: bestEntry
     };
   }
@@ -713,7 +720,8 @@
 
   function createBestScoreTile() {
     const title = h("div", { class: "info-label" }, createBestLscTitle());
-    const head = h("div", { class: "lsc-calc-tile-head" }, title);
+    const warningSlot = h("div", { class: "lsc-calc-warning-slot", dataset: { role: "warning-slot" } });
+    const head = h("div", { class: "lsc-calc-tile-head" }, title, warningSlot);
     const value = h("div", { class: "info-value big", dataset: { role: "value" } }, "\u2026");
     const meta = h("div", { class: "info-sub lsc-calc-meta", dataset: { role: "meta" } }, "Wird berechnet \u2026");
 
@@ -960,6 +968,11 @@
       if (Number.isFinite(best.finalScore)) {
         if (bestValue) bestValue.textContent = fmtValue(best.finalScore);
         if (bestMeta) bestMeta.textContent = best.firstDate ? formatDateWithYear(best.firstDate) : "Unbekanntes Datum";
+        updateTileComparisonState(
+          bestTile,
+          Number.isFinite(best.bestExcelLsc) ? { lsc: best.bestExcelLsc } : null,
+          best.finalScore
+        );
       } else {
         setTileMessage(bestTile, "Kein berechneter LSC-Verlauf.");
       }
