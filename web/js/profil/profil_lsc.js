@@ -170,7 +170,17 @@
       "span",
       { class: cls },
       h("span", { class: "lsc-calc-title-line is-lead" }, "Aktueller"),
-      h("span", { class: "lsc-calc-title-line" }, "Lifesaving-Score (LSC)")
+      h("span", { class: "lsc-calc-title-line" }, "Lifesaving-Score")
+    );
+  }
+
+  function createBestLscTitle(className = "") {
+    const cls = ["lsc-calc-title", className].filter(Boolean).join(" ");
+    return h(
+      "span",
+      { class: cls },
+      h("span", { class: "lsc-calc-title-line is-lead" }, "Bester"),
+      h("span", { class: "lsc-calc-title-line" }, "Lifesaving-Score")
     );
   }
 
@@ -650,6 +660,24 @@
     return options.byMeet ? collapseHistorySeriesByMeet(history) : history.slice();
   }
 
+  async function calculateBestHistoricalLsc(athlete) {
+    const history = await calculateHistorySeries(athlete, { byMeet: true });
+    let bestEntry = null;
+
+    (Array.isArray(history) ? history : []).forEach((entry) => {
+      if (!Number.isFinite(entry?.calculatedLsc)) return;
+      if (!bestEntry || entry.calculatedLsc > bestEntry.calculatedLsc) {
+        bestEntry = entry;
+      }
+    });
+
+    return {
+      finalScore: Number.isFinite(bestEntry?.calculatedLsc) ? round2(bestEntry.calculatedLsc) : null,
+      firstDate: String(bestEntry?.date || "").trim() || null,
+      entry: bestEntry
+    };
+  }
+
   function createTile() {
     const title = h("div", { class: "info-label" }, createLscTitle());
     const warningSlot = h("div", { class: "lsc-calc-warning-slot", dataset: { role: "warning-slot" } });
@@ -657,7 +685,64 @@
     const value = h("div", { class: "info-value big", dataset: { role: "value" } }, "…");
     const meta = h("div", { class: "info-sub lsc-calc-meta", dataset: { role: "meta" } }, "Wird berechnet …");
 
-    return h("div", { class: "info-tile accent lsc-tile lsc-calc-tile" }, head, value, meta);
+    const layout = h(
+      "div",
+      { class: "lsc-calc-tile-layout" },
+      h("div", { class: "lsc-calc-tile-col lsc-calc-tile-col-title" }, head),
+      h("div", { class: "lsc-calc-tile-col lsc-calc-tile-col-value" }, value, meta)
+    );
+
+    return h("div", { class: "info-tile accent lsc-tile lsc-calc-tile" }, layout);
+  }
+
+  function createBestTile() {
+    const title = h("div", { class: "info-label" }, createBestLscTitle());
+    const head = h("div", { class: "lsc-calc-tile-head" }, title);
+    const value = h("div", { class: "info-value big", dataset: { role: "value" } }, "â€¦");
+    const meta = h("div", { class: "info-sub lsc-calc-meta", dataset: { role: "meta" } }, "Wird berechnet â€¦");
+
+    const layout = h(
+      "div",
+      { class: "lsc-calc-tile-layout" },
+      h("div", { class: "lsc-calc-tile-col lsc-calc-tile-col-title" }, head),
+      h("div", { class: "lsc-calc-tile-col lsc-calc-tile-col-value" }, value, meta)
+    );
+
+    return h("div", { class: "info-tile accent lsc-tile lsc-calc-tile lsc-best-tile" }, layout);
+  }
+
+  function createBestScoreTile() {
+    const title = h("div", { class: "info-label" }, createBestLscTitle());
+    const head = h("div", { class: "lsc-calc-tile-head" }, title);
+    const value = h("div", { class: "info-value big", dataset: { role: "value" } }, "\u2026");
+    const meta = h("div", { class: "info-sub lsc-calc-meta", dataset: { role: "meta" } }, "Wird berechnet \u2026");
+
+    const layout = h(
+      "div",
+      { class: "lsc-calc-tile-layout" },
+      h("div", { class: "lsc-calc-tile-col lsc-calc-tile-col-title" }, head),
+      h("div", { class: "lsc-calc-tile-col lsc-calc-tile-col-value" }, value, meta)
+    );
+
+    return h("div", { class: "info-tile accent lsc-tile lsc-calc-tile lsc-best-tile" }, layout);
+  }
+
+  function applyTileMessage(tile, message) {
+    const value = tile?.querySelector?.('[data-role="value"]');
+    const meta = tile?.querySelector?.('[data-role="meta"]');
+
+    if (value) value.textContent = "â€”";
+    if (meta) meta.textContent = message;
+    updateTileComparisonState(tile, null, null);
+  }
+
+  function setTileMessage(tile, message) {
+    const value = tile?.querySelector?.('[data-role="value"]');
+    const meta = tile?.querySelector?.('[data-role="meta"]');
+
+    if (value) value.textContent = "\u2014";
+    if (meta) meta.textContent = message;
+    updateTileComparisonState(tile, null, null);
   }
 
   function updateTileComparisonState(tile, athlete, calculatedLsc) {
@@ -841,46 +926,58 @@
     }
   }
 
-  async function hydrateOverviewParts(athlete, tile, card, requestId) {
+  async function hydrateOverviewParts(athlete, tile, bestTile, card, requestId) {
     try {
-      const calc = await calculateCurrentLsc(athlete);
+      const [calc, best] = await Promise.all([
+        calculateCurrentLsc(athlete),
+        calculateBestHistoricalLsc(athlete)
+      ]);
       if (requestId !== renderRequestId) return;
 
       const value = tile.querySelector('[data-role="value"]');
       const meta = tile.querySelector('[data-role="meta"]');
+      const bestValue = bestTile.querySelector('[data-role="value"]');
+      const bestMeta = bestTile.querySelector('[data-role="meta"]');
       const summaryMeta = card.querySelector('[data-role="summary-meta"]');
 
-      if (!Number.isFinite(calc.finalScore)) {
+      if (Number.isFinite(calc.finalScore)) {
+        if (value) value.textContent = fmtValue(calc.finalScore);
+        updateTileComparisonState(tile, athlete, calc.finalScore);
+
+        const standLabel = calc.latestRun
+          ? formatDateWithYear(calc.latestRun.date)
+          : "Letzter Wettkampf";
+
+        if (meta) meta.textContent = standLabel;
+        if (summaryMeta) {
+          summaryMeta.textContent = `${fmtValue(calc.finalScore)} · ${standLabel}`;
+        }
+        renderBody(card, calc);
+      } else {
         applyError(tile, card, "Nicht genügend Zeiten für eine LSC-Berechnung.");
-        return;
       }
 
-      if (value) value.textContent = fmtValue(calc.finalScore);
-      updateTileComparisonState(tile, athlete, calc.finalScore);
-
-      const standLabel = calc.latestRun
-        ? formatDateWithYear(calc.latestRun.date)
-        : "Letzter Wettkampf";
-
-      if (meta) meta.textContent = standLabel;
-      if (summaryMeta) {
-        summaryMeta.textContent = `${fmtValue(calc.finalScore)} · ${standLabel}`;
+      if (Number.isFinite(best.finalScore)) {
+        if (bestValue) bestValue.textContent = fmtValue(best.finalScore);
+        if (bestMeta) bestMeta.textContent = best.firstDate ? formatDateWithYear(best.firstDate) : "Unbekanntes Datum";
+      } else {
+        setTileMessage(bestTile, "Kein berechneter LSC-Verlauf.");
       }
-
-      renderBody(card, calc);
     } catch (error) {
       console.error("LSC-Berechnung fehlgeschlagen:", error);
       if (requestId !== renderRequestId) return;
       applyError(tile, card, "LSC konnte nicht berechnet werden.");
+      setTileMessage(bestTile, "LSC konnte nicht berechnet werden.");
     }
   }
 
   ProfileLSC.createOverviewParts = function createOverviewParts(athlete) {
     const tile = createTile();
+    const bestTile = createBestScoreTile();
     const requestId = ++renderRequestId;
     const details = createDetailsCard();
-    hydrateOverviewParts(athlete, tile, details, requestId);
-    return { tile };
+    hydrateOverviewParts(athlete, tile, bestTile, details, requestId);
+    return { tile, bestTile, tiles: [tile, bestTile] };
   };
 
   ProfileLSC.createSection = function createSection(athlete) {

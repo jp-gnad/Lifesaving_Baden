@@ -1855,8 +1855,11 @@
         ? global.ProfileLSC.createOverviewParts(ax)
         : null;
     const lscChartCard = renderLSCChart(ax);
-    const lscCurrentTile = calcParts?.tile
-      ? h("div", { class: "ath-lsc-current-grid" }, calcParts.tile)
+    const lscTiles = Array.isArray(calcParts?.tiles)
+      ? calcParts.tiles.filter(Boolean)
+      : (calcParts?.tile ? [calcParts.tile] : []);
+    const lscCurrentTile = lscTiles.length
+      ? h("div", { class: "ath-lsc-current-grid" }, lscTiles)
       : null;
     const lscSection =
       calcParts?.section ||

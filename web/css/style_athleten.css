@@ -673,7 +673,8 @@ main#content {
 
 .ath-lsc-current-grid {
   display: grid;
-  grid-template-columns: minmax(240px, 360px);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 360px));
+  gap: 0.85rem;
   justify-content: start;
 }
 
@@ -868,6 +869,8 @@ main#content {
 .lsc-calc-title {
   display: inline-flex;
   flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
   line-height: 1.05;
 }
 
@@ -983,18 +986,50 @@ main#content {
   color: #6b7280;
 }
 
+.lsc-calc-tile {
+  display: flex;
+  align-items: center;
+}
+
+.lsc-calc-tile-layout {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+}
+
+.lsc-calc-tile-col {
+  min-width: 0;
+}
+
+.lsc-calc-tile-col-title {
+  display: flex;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.lsc-calc-tile-col-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  min-width: max-content;
+}
+
 .lsc-calc-tile .info-value.big {
-  margin-top: 0.45rem;
+  margin-top: 0;
+  line-height: 1;
 }
 
 .lsc-calc-tile-head {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 0.45rem;
 }
 
 .lsc-calc-warning-slot {
-  margin-left: auto;
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
