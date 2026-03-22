@@ -4,7 +4,7 @@ function prCreateHeroMarkup() {
       <div id="pr-ath-search-slot"></div>
       <div class="hero-head">
         <button id="pr-lang-switch" class="pr-lang-switch" type="button">
-          <img id="pr-lang-switch-icon" src="./svg/Großbritannien.svg" alt="English">
+          <img id="pr-lang-switch-icon" src="./assets/svg/Großbritannien.svg" alt="English">
           <span id="pr-lang-switch-text">English</span>
         </button>
         <h1 id="pr-page-title">Punkterechner</h1>

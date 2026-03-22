@@ -1,5 +1,7 @@
 const CONFIG_EXCEL_URL =
-  "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx";
+  window.location.protocol === "file:"
+    ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx"
+    : "./data/records_kriterien.xlsx";
 const CONFIG_SHEET = "LK Kalender";
 const CONFIG_TABLE_NAME = "LK_Kalender";
 
@@ -10,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const KADER_CARDS = [
     {
       href: "./kaderstatus.html",
-      img: "./png/hintergrund15.jpg",
+      img: "./assets/png/hintergrund15.jpg",
       kicker: "Kader-Qualifikationen",
       main: "Live Kadernormen fürs kommende Jahr.",
       more: "Liste aller Athleten mit erbrachten Landes-/Bundeskadernormen für die kommende Saison",
@@ -18,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     {
       href: "./kriterien.html",
-      img: "./png/hintergrund6.JPG",
+      img: "./assets/png/hintergrund6.JPG",
       kicker: "Aktuelle Kaderrichtlinien",
       main: "Kriterien für den Landeskader",
       more: "Du willst in den Landeskader? Versuche die Kriterien zu erfüllen. Gerne kannst du uns auch immer ansprechen!",
@@ -26,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     {
       href: "./trainingsplaene.html",
-      img: "./png/hintergrund7.jpg",
+      img: "./assets/png/hintergrund7.jpg",
       kicker: "Trainingspläne",
       main: "Trainingspläne vom Landeskader Baden",
       more: "Du willst trainineren wie der Landeskader oder die Trainings nochmal nachschwimmen? Hier findest du die Trainingseinheiten der letzten Jahre.",

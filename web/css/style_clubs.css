@@ -33,7 +33,7 @@ main#content {
 
 .hero {
   position: relative;
-  background: url("../png/hintergrund3.jpg") center/cover no-repeat;
+  background: url("../assets/png/hintergrund3.jpg") center/cover no-repeat;
   background-position: center 36%;
   height: 560px;
   color: white;
@@ -107,7 +107,6 @@ main#content {
 #rekorde-container-section,
 .rek-ui {
   position: relative;
-  z-index: 5;
 }
 
 .rek-ui {

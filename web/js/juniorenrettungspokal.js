@@ -1,6 +1,8 @@
+const LEGACY_REMOTE_BASE = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities";
+
 const ENABLE_PW_GATE = true;
 
-const JRP_FOLDER = "./png/JRP-Team/";
+const JRP_FOLDER = "./assets/png/JRP-Team/";
 const JRP_MIN_YEAR = 2000;
 const JRP_MAX_YEAR = new Date().getFullYear() + 1;
 const JRP_EXTS = [".jpg"];
@@ -103,10 +105,16 @@ const JRP_SLIDE_SETTINGS = {
   },
 };
 
-const DATA_EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test%20(1).xlsx";
+const DATA_EXCEL_URL =
+  window.location.protocol === "file:"
+    ? `${LEGACY_REMOTE_BASE}/test%20(1).xlsx`
+    : "./data/test (1).xlsx";
 const DATA_SHEET = "Tabelle2";
 
-const CONFIG_EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx";
+const CONFIG_EXCEL_URL =
+  window.location.protocol === "file:"
+    ? `${LEGACY_REMOTE_BASE}/records_kriterien.xlsx`
+    : "./data/records_kriterien.xlsx";
 const CONFIG_SHEET = "JRP";
 const CONFIG_TABLE_NAME = "JRP_konfig";
 

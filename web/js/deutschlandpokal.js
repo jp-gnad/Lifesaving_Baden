@@ -1,13 +1,21 @@
+const LEGACY_REMOTE_BASE = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities";
+
 const ENABLE_PW_GATE = false;
 
-const CONFIG_EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx";
+const CONFIG_EXCEL_URL =
+  window.location.protocol === "file:"
+    ? `${LEGACY_REMOTE_BASE}/records_kriterien.xlsx`
+    : "./data/records_kriterien.xlsx";
 const CONFIG_SHEET = "DP";
 const CONFIG_TABLE_NAME = "DP_konfig";
 
-const DATA_EXCEL_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test%20(1).xlsx";
+const DATA_EXCEL_URL =
+  window.location.protocol === "file:"
+    ? `${LEGACY_REMOTE_BASE}/test%20(1).xlsx`
+    : "./data/test (1).xlsx";
 const DATA_SHEET = "Tabelle2";
 
-const DP_FOLDER = "./png/DP-Team/";
+const DP_FOLDER = "./assets/png/DP-Team/";
 const DP_MIN_YEAR = 1994;
 const DP_MAX_YEAR = new Date().getFullYear() + 1;
 const DP_EXTS = [".jpg"];

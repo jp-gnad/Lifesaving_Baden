@@ -18,7 +18,7 @@
     return el;
   };
 
-  const FLAG_BASE_URL = "./svg";
+  const FLAG_BASE_URL = "./assets/svg";
   const CAP_FALLBACK_FILE = "Cap-Baden_light.svg";
   const CAP_FALLBACK_URL = `${FLAG_BASE_URL}/${encodeURIComponent(CAP_FALLBACK_FILE)}`;
 
@@ -333,7 +333,7 @@
     );
   }
 
-  const HISTORIE_ICON_BASE = "png/historie";
+  const HISTORIE_ICON_BASE = "./assets/png/historie";
   const HISTORIE_TOOLTIP = {
     DP: "Internationaler Deutschland-Pokal",
     JRP: "Junioren Rettungspokal",

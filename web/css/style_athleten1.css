@@ -34,7 +34,7 @@ main#content {
 
 .hero {
   position: relative;
-  background: url("../png/hintergrund4.JPG") center/cover no-repeat;
+  background: url("../assets/png/hintergrund4.JPG") center/cover no-repeat;
   background-position: center 50%;
   height: 600px;
   color: white;

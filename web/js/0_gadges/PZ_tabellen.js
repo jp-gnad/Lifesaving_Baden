@@ -15,11 +15,15 @@
 
   // ======= DEFAULTS (können bei Bedarf via opts überschrieben werden) =======
   const DEFAULT_DATA_EXCEL_URL =
-    "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test%20(1).xlsx";
+    window.location.protocol === "file:"
+      ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test%20(1).xlsx"
+      : "./data/test (1).xlsx";
   const DEFAULT_DATA_SHEET = "Tabelle2";
 
   const DEFAULT_CONFIG_EXCEL_URL =
-    "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx";
+    window.location.protocol === "file:"
+      ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx"
+      : "./data/records_kriterien.xlsx";
 
   // ======= DATA-Layout =======
   const DATA_COLS = {
@@ -717,7 +721,7 @@
       infoBtn.dataset.info = cfg.id;
 
       const icon = document.createElement("img");
-      icon.src = "./svg/icon_info.svg";
+      icon.src = "./assets/svg/icon_info.svg";
       icon.alt = "Info";
       icon.className = "pz-info-icon";
       icon.width = 18;
@@ -798,7 +802,7 @@
           cap.decoding = "async";
           cap.src = capSrcFromOrtsgruppe(rec.ortsgruppe);
           cap.addEventListener("error", () => {
-            cap.src = "./svg/Cap-Baden_light.svg";
+            cap.src = "./assets/svg/Cap-Baden_light.svg";
           });
 
           const text = document.createElement("div");
@@ -1249,9 +1253,9 @@
 
     function capSrcFromOrtsgruppe(ortsgruppe) {
       const og = String(ortsgruppe ?? "").trim();
-      if (!og) return "./svg/Cap-Baden_light.svg";
+      if (!og) return "./assets/svg/Cap-Baden_light.svg";
       const safe = og.replace(/[\/\\]/g, "-");
-      return `./svg/Cap-${encodeURIComponent(safe)}.svg`;
+      return `./assets/svg/Cap-${encodeURIComponent(safe)}.svg`;
     }
 
     function normalizePoolLength(v) {

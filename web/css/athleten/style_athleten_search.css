@@ -202,14 +202,10 @@
   backface-visibility: hidden;
 }
 
-.ath-avatar.search-cap-overlay::after {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  background: rgba(15, 15, 13, 0.71);
-  border-radius: 999px;
-  border: 1px solid rgba(15, 15, 18, 0.2);
-  pointer-events: none;
+.ath-avatar.search-cap-overlay .avatar-img,
+.rek-avatar-dual.search-cap-overlay .rek-avatar-dual-cap,
+.rek-avatar-flip-inner.search-cap-overlay .rek-avatar-flip-cap {
+  opacity: 0.35;
 }
 
 .ath-input-wrap {

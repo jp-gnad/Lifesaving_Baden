@@ -72,7 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
       more: "Du möchtest einemal teil der Badischen Auswahlmannschaft für den Deutschlandpokal sein? Versuche die Kriterien zu erfüllen und dich in der Liste hoch zu schwimmen!",
       aria: "Deutschland Pokal",
       rotator: {
-        folder: "./png/DP-Team/",
+        folder: "./assets/png/DP-Team/",
         minYear: 2000,
         maxYear: new Date().getFullYear() + 1,
         intervalMs: 15000,
@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
       aria: "Junioren Rettungspokal",
 
       rotator: {
-        folder: "./png/BP-Team/",
+        folder: "./assets/png/BP-Team/",
         minYear: 2000,
         maxYear: new Date().getFullYear() + 1,
         intervalMs: 15000
@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
       aria: "Junioren Rettungspokal",
 
       rotator: {
-        folder: "./png/JRP-Team/",
+        folder: "./assets/png/JRP-Team/",
         minYear: 2000,
         maxYear: new Date().getFullYear() + 1,
         intervalMs: 15000
@@ -113,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
       more: "Die DEM gehören zu den höchsten und wichtigsten Wettkämpfen im Rettungssport. Teilnahmeberechtigt sind nur die besten Schwimmer deutschlands.",
       aria: "Deutsche Einzelstrecken Meisterschaften",
 
-      img: "./png/hintergrund9.jpg",
+      img: "./assets/png/hintergrund9.jpg",
     },
   ];
 

@@ -25,6 +25,31 @@
     return `../${dirPath}/${enc}`;
   }
 
+  function getPreferredDir(config) {
+    const dirs = Array.isArray(config?.dirCandidates) ? config.dirCandidates : [];
+    return String(dirs.find((dir) => String(dir || "").trim()) || "").trim();
+  }
+
+  function normalizeDoc(doc, config) {
+    if (!doc || typeof doc !== "object") return null;
+
+    const name = String(doc.name || "").trim();
+    const preferredDir = getPreferredDir(config);
+    const next = { ...doc };
+
+    if (name && preferredDir) {
+      next.url = buildRelativeUrl(preferredDir, name);
+    }
+
+    return next;
+  }
+
+  function normalizeDocs(docs, config) {
+    return (Array.isArray(docs) ? docs : [])
+      .map((doc) => normalizeDoc(doc, config))
+      .filter(Boolean);
+  }
+
   function readCache(key, ttlMs) {
     try {
       const raw = localStorage.getItem(key);
@@ -102,7 +127,7 @@
       <a class="info-brief" href="${href}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(aria)}">
         <img
           class="info-brief__img"
-          src="./png/icons/brief.png"
+          src="./assets/png/icons/brief.png"
           alt="${escapeHtml(config.cardImageAlt)}"
           loading="lazy"
           decoding="async"
@@ -159,18 +184,18 @@
 
     const cached = readCache(config.cacheKey, config.cacheTtlMs);
     if (cached?.docs?.length) {
-      renderLists(config, cached.docs, currentEl, archiveEl);
+      renderLists(config, normalizeDocs(cached.docs, config), currentEl, archiveEl);
       return;
     }
 
     try {
-      const docs = await fetchDocsFromGitHub(config);
+      const docs = normalizeDocs(await fetchDocsFromGitHub(config), config);
       writeCache(config.cacheKey, { docs });
       renderLists(config, docs, currentEl, archiveEl);
     } catch (err) {
       const stale = readCache(config.cacheKey, Number.MAX_SAFE_INTEGER);
       if (stale?.docs?.length) {
-        renderLists(config, stale.docs, currentEl, archiveEl);
+        renderLists(config, normalizeDocs(stale.docs, config), currentEl, archiveEl);
         return;
       }
       renderError(config, config.apiErrorText);

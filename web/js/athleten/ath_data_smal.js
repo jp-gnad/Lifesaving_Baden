@@ -446,11 +446,18 @@
 
   async function loadWorkbookArray(sheetName = "Tabelle2", excelUrl = "") {
     const loader = getExcelLoader();
-    return loader.loadSheetRows({
+    const options = {
       sheetName,
-      excelUrl: typeof excelUrl === "string" && excelUrl.trim() ? excelUrl : loader.getUrl("athleteData"),
       defval: ""
-    });
+    };
+
+    if (typeof excelUrl === "string" && excelUrl.trim()) {
+      options.excelUrl = excelUrl;
+    } else {
+      options.urlKey = "athleteData";
+    }
+
+    return loader.loadSheetRows(options);
   }
 
   async function loadAthletes(opts = {}) {

@@ -1,9 +1,19 @@
 (function () {
   const MIN_QUERY_LEN = 1;
-  const FLAG_BASE_URL = "./svg";
+  const FLAG_BASE_URL = "./assets/svg";
+  const CAP_FALLBACK_FILE = "Cap-Baden_light.svg";
+  const CAP_FALLBACK_URL = `${FLAG_BASE_URL}/${encodeURIComponent(CAP_FALLBACK_FILE)}`;
+  const KNOWN_CAP_KEYS = new Set([
+    "AUS", "BA", "Baden", "Baden_light", "BB", "BE", "BEL", "Bietigheim-Bissingen", "BRA", "BUL", "BY",
+    "CAN", "CZE", "DEN", "Deutschland", "Durlach", "EGY", "ESP", "Ettlingen", "FRA", "GBR", "GER", "HE",
+    "HH", "HKG", "ITA", "JPN", "Karlsruhe", "Luckenwalde", "Malsch", "MV", "NED", "NI", "Nieder-Olm/Wörrstadt",
+    "none", "NOR", "NR", "NZL", "Pankow", "POL", "RP", "SH", "SIN", "SL", "SN", "ST", "SUI", "SWE", "TH",
+    "USA", "Wadgassen", "Waghäusel", "Weil am Rhein", "Wettersbach", "WF", "WÜ"
+  ]);
   const IS_COARSE_POINTER = window.matchMedia?.("(pointer: coarse)").matches ?? false;
   const TAP_MAX_MOVE = 10;
   const TAP_MAX_DURATION = 500;
+  const OverlayStateByHost = new WeakMap();
 
   const $ = (selector, root = document) => root.querySelector(selector);
 
@@ -99,50 +109,92 @@
 
   function buildIconUrlCandidates(key) {
     const value = String(key || "").trim();
-    if (!value) return [];
+    if (!value || !KNOWN_CAP_KEYS.has(value)) return [];
 
     const encoded = encodeURIComponent(value);
     return [`${FLAG_BASE_URL}/Cap-${encoded}.svg`, `${FLAG_BASE_URL}/CAP-${encoded}.svg`];
   }
 
-  function applyCapFallback(img, hostEl, keys, overlayClass = "search-cap-overlay") {
-    const sources = [];
+  function buildSourceSteps(keys) {
+    const out = [];
     const seen = new Set();
 
-    for (const key of keys || []) {
-      for (const candidate of buildIconUrlCandidates(key)) {
-        if (seen.has(candidate)) continue;
-        seen.add(candidate);
-        sources.push(candidate);
-      }
+    for (let index = 0; index < (Array.isArray(keys) ? keys.length : 0); index++) {
+      const key = String(keys[index] || "").trim();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+
+      const urls = buildIconUrlCandidates(key);
+      if (!urls.length) continue;
+
+      out.push({
+        urls,
+        overlay: index > 0
+      });
     }
 
-    if (!sources.length) {
-      hostEl.classList.remove(overlayClass);
-      img.remove();
+    return out;
+  }
+
+  function setHostOverlayState(hostEl, overlayClass, imgEl, enabled) {
+    if (!hostEl) return;
+
+    let state = OverlayStateByHost.get(hostEl);
+    if (!state) {
+      state = new Map();
+      OverlayStateByHost.set(hostEl, state);
+    }
+
+    if (imgEl) {
+      state.set(imgEl, !!enabled);
+    }
+
+    const hasOverlay = Array.from(state.values()).some(Boolean);
+    hostEl.classList.toggle(overlayClass, hasOverlay);
+  }
+
+  function applyCapFallback(img, hostEl, keys, overlayClass = "search-cap-overlay") {
+    const steps = buildSourceSteps(keys);
+
+    if (!steps.length) {
+      setHostOverlayState(hostEl, overlayClass, img, true);
+      img.onerror = null;
+      img.onload = null;
+      img.style.visibility = "visible";
+      img.src = CAP_FALLBACK_URL;
       return;
     }
 
-    let index = 0;
+    let stepIndex = 0;
+    let urlIndex = 0;
 
     const load = () => {
-      img.src = sources[index];
-      hostEl.classList.toggle(overlayClass, index > 0);
+      const step = steps[stepIndex];
+      setHostOverlayState(hostEl, overlayClass, img, step.overlay);
+      img.src = step.urls[urlIndex];
     };
 
     img.onload = () => {
       img.style.visibility = "visible";
+      setHostOverlayState(hostEl, overlayClass, img, steps[stepIndex]?.overlay);
     };
 
     img.onerror = () => {
-      if (index + 1 < sources.length) {
-        index++;
+      const step = steps[stepIndex];
+
+      if (urlIndex + 1 < step.urls.length) {
+        urlIndex++;
+        load();
+      } else if (stepIndex + 1 < steps.length) {
+        stepIndex++;
+        urlIndex = 0;
         load();
       } else {
-        hostEl.classList.remove(overlayClass);
+        setHostOverlayState(hostEl, overlayClass, img, true);
         img.onerror = null;
         img.onload = null;
-        img.remove();
+        img.style.visibility = "visible";
+        img.src = CAP_FALLBACK_URL;
       }
     };
 
@@ -458,7 +510,7 @@
 
     const searchIcon = h("img", {
       class: "ath-search-deco-icon",
-      src: "./svg/icon_lupe.svg",
+      src: "./assets/svg/icon_lupe.svg",
       alt: "",
       "aria-hidden": "true",
       draggable: "false"

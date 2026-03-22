@@ -36,8 +36,8 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const PAGE_MODE = "profil";
-  const HERO_DEFAULT_BG_URL = "./png/hintergrund4.JPG";
-  const HERO_PORTRAIT_BASE_URL = "./png/pp";
+  const HERO_DEFAULT_BG_URL = "./assets/png/hintergrund4.JPG";
+  const HERO_PORTRAIT_BASE_URL = "./assets/png/pp";
   const HERO_PORTRAIT_EXTS = ["jpg", "jpeg", "png", "JPG", "JPEG", "PNG"];
 
   let AllMeetsByAthleteId = new Map();

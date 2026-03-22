@@ -18,21 +18,21 @@ document.addEventListener("DOMContentLoaded", () => {
                href="https://www.facebook.com/p/DLRG-Team-Baden-100066777226581/?locale=de_DE"
                target="_blank" rel="noopener noreferrer"
                aria-label="Facebook">
-              <img src="./png/icons/facebook.png" alt="Facebook">
+              <img src="./assets/png/icons/facebook.png" alt="Facebook">
             </a>
 
             <a class="footer-icon"
                href="https://www.instagram.com/lifesaving_baden/"
                target="_blank" rel="noopener noreferrer"
                aria-label="Instagram">
-              <img src="./png/icons/insta.png" alt="Instagram">
+              <img src="./assets/png/icons/insta.png" alt="Instagram">
             </a>
 
             <a class="footer-icon"
                href="https://www.youtube.com/@dlrgbaden"
                target="_blank" rel="noopener noreferrer"
                aria-label="YouTube">
-              <img src="./png/icons/youtube.png" alt="YouTube">
+              <img src="./assets/png/icons/youtube.png" alt="YouTube">
             </a>
           </div>
         </div>
@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <!-- BAND (schwarz) -->
     <div class="footer-band" aria-hidden="true">
       <div class="footer-container footer-band-inner">
-        <img class="footer-elk" src="./png/icons/elch.png" alt="">
+        <img class="footer-elk" src="./assets/png/icons/elch.png" alt="">
       </div>
     </div>
 

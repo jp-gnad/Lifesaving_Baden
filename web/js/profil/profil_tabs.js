@@ -78,7 +78,7 @@
     } catch (e) {}
   }
 
-  const FLAG_BASE_URL = "./svg";
+  const FLAG_BASE_URL = "./assets/svg";
 
   const LAND_TO_ISO3 = {
     Deutschland: "GER",
@@ -271,7 +271,7 @@
 
   function applyCapFallback(img, hostEl, seq, {
     overlayClass = "cap-overlay",
-    noneSrc = `${FLAG_BASE_URL}/Cap-None.svg`
+    noneSrc = `${FLAG_BASE_URL}/Cap-none.svg`
   } = {}) {
     if (!seq || !seq.length) {
       hostEl.classList.remove(overlayClass);
@@ -431,7 +431,7 @@
     if (!seq.length) {
       const imgNone = h("img", {
         class: "m-ogcap-icon",
-        src: "svg/Cap-None.svg",
+        src: `${FLAG_BASE_URL}/Cap-none.svg`,
         alt: "no cap",
         loading: "lazy",
         decoding: "async",
@@ -454,7 +454,7 @@
         } else if (!noneUsed) {
           noneUsed = true;
           cell.classList.remove("ogcap-overlay");
-          img.src = "svg/Cap-None.svg";
+          img.src = `${FLAG_BASE_URL}/Cap-none.svg`;
         } else {
           img.remove();
         }
@@ -1251,7 +1251,7 @@
           meetRawName
             ? h("img", {
               class: "m-event-icon",
-              src: `png/events/${encodeURIComponent(meetRawName)}.png`,
+              src: `./assets/png/events/${encodeURIComponent(meetRawName)}.png`,
               alt: meetShortName,
               loading: "lazy",
               decoding: "async",
@@ -1259,7 +1259,7 @@
                 const img = e.currentTarget;
                 if (!img.dataset.fallback) {
                   img.dataset.fallback = "1";
-                  img.src = "png/events/DLRG.png";
+                  img.src = "./assets/png/events/DLRG.png";
                 } else {
                   img.remove();
                 }

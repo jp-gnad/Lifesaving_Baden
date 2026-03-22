@@ -1,6 +1,15 @@
 (function () {
   const MIN_QUERY_LEN = 3;
-  const FLAG_BASE_URL = "./svg";
+  const FLAG_BASE_URL = "./assets/svg";
+  const CAP_FALLBACK_FILE = "Cap-Baden_light.svg";
+  const CAP_FALLBACK_URL = `${FLAG_BASE_URL}/${encodeURIComponent(CAP_FALLBACK_FILE)}`;
+  const KNOWN_CAP_KEYS = new Set([
+    "AUS", "BA", "Baden", "Baden_light", "BB", "BE", "BEL", "Bietigheim-Bissingen", "BRA", "BUL", "BY",
+    "CAN", "CZE", "DEN", "Deutschland", "Durlach", "EGY", "ESP", "Ettlingen", "FRA", "GBR", "GER", "HE",
+    "HH", "HKG", "ITA", "JPN", "Karlsruhe", "Luckenwalde", "Malsch", "MV", "NED", "NI", "Nieder-Olm/Wörrstadt",
+    "none", "NOR", "NR", "NZL", "Pankow", "POL", "RP", "SH", "SIN", "SL", "SN", "ST", "SUI", "SWE", "TH",
+    "USA", "Wadgassen", "Waghäusel", "Weil am Rhein", "Wettersbach", "WF", "WÜ"
+  ]);
 
   const IS_COARSE_POINTER = window.matchMedia?.("(pointer: coarse)").matches ?? false;
   const TAP_MAX_MOVE = 10;
@@ -189,18 +198,23 @@
   }
 
   function applyCapFallback(img, hostEl, seq, overlayClass = "search-cap-overlay") {
-    if (!seq || !seq.length) {
-      hostEl.classList.remove(overlayClass);
+    const filteredSeq = (Array.isArray(seq) ? seq : []).filter((entry) =>
+      KNOWN_CAP_KEYS.has(String(entry?.key || "").trim())
+    );
+
+    if (!filteredSeq.length) {
+      hostEl.classList.add(overlayClass);
       img.onerror = null;
       img.onload = null;
-      img.remove();
+      img.style.visibility = "visible";
+      img.src = CAP_FALLBACK_URL;
       return;
     }
 
     let i = 0;
 
     const load = () => {
-      const entry = seq[i];
+      const entry = filteredSeq[i];
       hostEl.classList.toggle(overlayClass, !!entry.overlay);
       img.src = `${FLAG_BASE_URL}/Cap-${encodeURIComponent(entry.key)}.svg`;
     };
@@ -210,14 +224,15 @@
     };
 
     img.onerror = () => {
-      if (i + 1 < seq.length) {
+      if (i + 1 < filteredSeq.length) {
         i++;
         load();
       } else {
-        hostEl.classList.remove(overlayClass);
+        hostEl.classList.add(overlayClass);
         img.onerror = null;
         img.onload = null;
-        img.remove();
+        img.style.visibility = "visible";
+        img.src = CAP_FALLBACK_URL;
       }
     };
 
@@ -398,7 +413,7 @@
 
     const searchIcon = h("img", {
       class: "ath-search-deco-icon",
-      src: "./svg/icon_lupe.svg",
+      src: "./assets/svg/icon_lupe.svg",
       alt: "",
       "aria-hidden": "true",
       draggable: "false"

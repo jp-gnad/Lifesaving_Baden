@@ -2,13 +2,43 @@
   "use strict";
 
   const XLSX_CDN_URL = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+  const REMOTE_DATA_BASE = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/data";
+  const REMOTE_LEGACY_BASE = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities";
 
-  const URLS = {
-    athleteData: "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test (1).xlsx",
+  const URL_CANDIDATES = {
+    athleteData:
+      window.location.protocol === "file:"
+        ? [
+            `${REMOTE_LEGACY_BASE}/test (1).xlsx`,
+            `${REMOTE_DATA_BASE}/test (1).xlsx`
+          ]
+        : [
+            "./data/test (1).xlsx",
+            `${REMOTE_DATA_BASE}/test (1).xlsx`,
+            `${REMOTE_LEGACY_BASE}/test (1).xlsx`
+          ],
     recordsCriteria:
       window.location.protocol === "file:"
-        ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx"
-        : "./utilities/records_kriterien.xlsx"
+        ? [
+            `${REMOTE_LEGACY_BASE}/records_kriterien.xlsx`,
+            `${REMOTE_DATA_BASE}/records_kriterien.xlsx`
+          ]
+        : [
+            "./data/records_kriterien.xlsx",
+            `${REMOTE_DATA_BASE}/records_kriterien.xlsx`,
+            `${REMOTE_LEGACY_BASE}/records_kriterien.xlsx`
+          ],
+    top10Data:
+      window.location.protocol === "file:"
+        ? [
+            `${REMOTE_LEGACY_BASE}/top10.json`,
+            `${REMOTE_DATA_BASE}/top10.json`
+          ]
+        : [
+            "./data/top10.json",
+            `${REMOTE_DATA_BASE}/top10.json`,
+            `${REMOTE_LEGACY_BASE}/top10.json`
+          ]
   };
 
   let xlsxPromise = null;
@@ -18,12 +48,56 @@
     return encodeURI(String(excelUrl || "").trim());
   }
 
+  function dedupeUrls(urls) {
+    const out = [];
+    const seen = new Set();
+
+    for (const url of Array.isArray(urls) ? urls : [urls]) {
+      const value = String(url || "").trim();
+      if (!value || seen.has(value)) continue;
+      seen.add(value);
+      out.push(value);
+    }
+
+    return out;
+  }
+
+  function getUrlCandidates(urlKey) {
+    return dedupeUrls(URL_CANDIDATES[String(urlKey || "").trim()] || []);
+  }
+
   function getUrl(urlKey) {
-    return URLS[String(urlKey || "").trim()] || "";
+    return getUrlCandidates(urlKey)[0] || "";
   }
 
   function getFetchOptions(url) {
     return /^https?:\/\//i.test(String(url || "").trim()) ? { mode: "cors" } : {};
+  }
+
+  async function fetchFirstAvailable(urls, init = {}) {
+    const candidates = dedupeUrls(urls);
+    let lastError = null;
+
+    for (const candidate of candidates) {
+      const normalized = normalizeUrl(candidate);
+
+      try {
+        const response = await fetch(normalized, {
+          ...getFetchOptions(candidate),
+          ...init
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        return { response, url: normalized };
+      } catch (error) {
+        lastError = new Error(`${normalized} -> ${error?.message || error}`);
+      }
+    }
+
+    throw lastError || new Error("No URL candidates available");
   }
 
   function ensureXLSX() {
@@ -59,12 +133,16 @@
         : typeof options.excelUrl === "string"
         ? options.excelUrl
         : "";
+    const explicitUrls =
+      typeof options === "object" && options && Array.isArray(options.excelUrls)
+        ? options.excelUrls
+        : [];
     const urlKey =
       typeof options === "object" && options && typeof options.urlKey === "string"
         ? options.urlKey
         : "";
-    const excelUrl = explicitUrl || getUrl(urlKey);
-    const cacheKey = normalizeUrl(excelUrl);
+    const excelUrls = dedupeUrls(explicitUrl ? [explicitUrl] : explicitUrls.length ? explicitUrls : getUrlCandidates(urlKey));
+    const cacheKey = excelUrls.map(normalizeUrl).join("||");
 
     if (!cacheKey) {
       throw new Error("Excel URL missing");
@@ -75,12 +153,7 @@
         cacheKey,
         (async () => {
           await ensureXLSX();
-
-          const response = await fetch(cacheKey, getFetchOptions(cacheKey));
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-          }
-
+          const { response } = await fetchFirstAvailable(excelUrls);
           const buffer = await response.arrayBuffer();
           return window.XLSX.read(buffer, { type: "array" });
         })()
@@ -118,25 +191,33 @@
         : typeof options.excelUrl === "string"
         ? options.excelUrl
         : "";
+    const explicitUrls =
+      typeof options === "object" && options && Array.isArray(options.excelUrls)
+        ? options.excelUrls
+        : [];
     const urlKey =
       typeof options === "object" && options && typeof options.urlKey === "string"
         ? options.urlKey
         : "";
 
-    if (!explicitUrl && !urlKey) {
+    if (!explicitUrl && !explicitUrls.length && !urlKey) {
       workbookCache.clear();
       return;
     }
 
-    const cacheKey = normalizeUrl(explicitUrl || getUrl(urlKey));
+    const cacheKey = dedupeUrls(explicitUrl ? [explicitUrl] : explicitUrls.length ? explicitUrls : getUrlCandidates(urlKey))
+      .map(normalizeUrl)
+      .join("||");
     if (cacheKey) {
       workbookCache.delete(cacheKey);
     }
   }
 
   window.ExcelLoader = {
-    urls: URLS,
+    urls: URL_CANDIDATES,
     getUrl,
+    getUrlCandidates,
+    fetchFirstAvailable,
     ensureXLSX,
     getWorkbook,
     loadSheetRows,

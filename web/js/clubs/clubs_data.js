@@ -76,11 +76,18 @@
 
   async function loadWorkbookArray(sheetName = "Tabelle2", excelUrl = "") {
     const loader = getExcelLoader();
-    return loader.loadSheetRows({
+    const options = {
       sheetName,
-      excelUrl: typeof excelUrl === "string" && excelUrl.trim() ? excelUrl : loader.getUrl("athleteData"),
       defval: ""
-    });
+    };
+
+    if (typeof excelUrl === "string" && excelUrl.trim()) {
+      options.excelUrl = excelUrl;
+    } else {
+      options.urlKey = "athleteData";
+    }
+
+    return loader.loadSheetRows(options);
   }
 
   function isHeaderRow(row) {
@@ -405,11 +412,9 @@
   async function loadGroupsAndStats(options = {}) {
     const loader = getExcelLoader();
     const sheetName = typeof options.sheetName === "string" ? options.sheetName : "Tabelle2";
-    const excelUrl =
-      typeof options.excelUrl === "string" && options.excelUrl.trim()
-        ? options.excelUrl
-        : loader.getUrl("athleteData");
-    const cacheKey = `${sheetName}::${excelUrl}`;
+    const excelUrl = typeof options.excelUrl === "string" && options.excelUrl.trim() ? options.excelUrl : "";
+    const sourceKey = excelUrl || loader.getUrlCandidates("athleteData").join("||") || "athleteData";
+    const cacheKey = `${sheetName}::${sourceKey}`;
 
     if (!State.groupsBySource.has(cacheKey)) {
       State.groupsBySource.set(

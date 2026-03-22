@@ -6,7 +6,7 @@ main#content {
 
 .hero {
   position: relative;
-  background: url("../png/karussel/bild3.jpg") center/cover no-repeat;  background-position: center 25%;
+  background: url("../assets/png/karussel/bild3.jpg") center/cover no-repeat;  background-position: center 25%;
   height: 600px;
   text-align: center;
   padding-top: 125px;

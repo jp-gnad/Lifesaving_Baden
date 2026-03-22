@@ -7,7 +7,7 @@
   const WR_SHEET_NAME = "WR-Open";
   const WR_HEADER_ROW = 3;
   const WR_FIRST_DATA_ROW = 4;
-  const LSC_WARNING_ICON_SRC = "./svg/icon_status_yellow.svg";
+  const LSC_WARNING_ICON_SRC = "./assets/svg/icon_status_yellow.svg";
 
   const WR_STATE = {
     promise: null,

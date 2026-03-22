@@ -1,9 +1,15 @@
+const LEGACY_REMOTE_BASE = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities";
+
 const DATA_EXCEL_URL =
-  "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test%20(1).xlsx";
+  window.location.protocol === "file:"
+    ? `${LEGACY_REMOTE_BASE}/test%20(1).xlsx`
+    : "./data/test (1).xlsx";
 const DATA_SHEET = "Tabelle2";
 
 const CONFIG_EXCEL_URL =
-  "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx";
+  window.location.protocol === "file:"
+    ? `${LEGACY_REMOTE_BASE}/records_kriterien.xlsx`
+    : "./data/records_kriterien.xlsx";
 const CONFIG_SHEET = "LK";
 const CONFIG_TABLE_NAME = "LK_konfig";
 

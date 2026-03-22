@@ -35,7 +35,7 @@ const prI18n = {
   de: {
     title: "Punkterechner",
     switchText: "English",
-    switchFlag: "./svg/Großbritannien.svg",
+    switchFlag: "./assets/svg/Großbritannien.svg",
     switchAlt: "English",
     modeLabel: "Disziplinen",
     modeIndividual: "Einzel",
@@ -92,7 +92,7 @@ const prI18n = {
   en: {
     title: "Points Calculator",
     switchText: "Deutsch",
-    switchFlag: "./svg/Deutschland.svg",
+    switchFlag: "./assets/svg/Deutschland.svg",
     switchAlt: "Deutsch",
     modeLabel: "Disciplines",
     modeIndividual: "Individual",

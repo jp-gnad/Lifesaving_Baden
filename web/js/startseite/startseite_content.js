@@ -1,20 +1,24 @@
 (function (global) {
   const StartseiteContent = {};
+  const HERO_VIDEO_SRC =
+    window.location.protocol === "file:"
+      ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/MP4/LWC_2024.mp4"
+      : "./assets/MP4/LWC_2024.mp4";
 
   const WIDE_SLIDES = [
     {
       title: "Willkommen beim Lifesaving Team Baden",
       meta: "DLRG ・ Landeskader Baden ・ Leistungssport",
       text: "Willkommen auf der inoffiziellen Internetseite des Lifesaving Team Badens. Hier findest du nuetzliche Informationen rund um den Rettungssport in Baden.",
-      icon: { src: "./png/icons/Baden2.png", href: "https://baden.dlrg.de/mitmachen/rettungssport/", alt: "DLRG Rettungssport" },
-      img: "./png/hintergrund1.JPG",
+      icon: { src: "./assets/png/icons/Baden2.png", href: "https://baden.dlrg.de/mitmachen/rettungssport/", alt: "DLRG Rettungssport" },
+      img: "./assets/png/hintergrund1.JPG",
       bgY: "50%",
     },
     {
       title: "Kalender",
       meta: "DLRG ・ Wettkaempfe ・ Landeskader ・ Bundeskader",
       text: "Uebersicht zu den wichtigsten Wettkampfterminen sowie Massnahmen vom Landes- und Bundeskader.",
-      img: "./png/karussel/bild3.jpg",
+      img: "./assets/png/karussel/bild3.jpg",
       cta: { label: "Mehr Informationen", href: "./kalender.html" },
       bgY: "25%",
     },
@@ -22,7 +26,7 @@
       title: "Infoschreiben",
       meta: "DLRG ・ Neuigkeiten ・ Landeskader ・ Rettungssport",
       text: "Aktuelles Jahres-Infoschreiben vom Landeskader Baden.",
-      img: "./png/karussel/bild5.JPG",
+      img: "./assets/png/karussel/bild5.JPG",
       cta: { label: "Mehr Informationen", href: "./info.html" },
       bgY: "50%",
     },
@@ -30,8 +34,8 @@
       title: "Dopingpraevention",
       meta: "NADA ・ WADA ・ Sport ・ Sicher und sauber",
       text: "Auch in der DLRG wird Leistungssport betrieben. Deshalb gelten fuer Rettungssportler die Anti-Doping-Regeln von NADA und WADA.",
-      img: "./png/karussel/bild4.jpg",
-      icon: { src: "./png/icons/nada.png", href: "https://lifesaving2026.com/", alt: "DLRG Rettungssport" },
+      img: "./assets/png/karussel/bild4.jpg",
+      icon: { src: "./assets/png/icons/nada.png", href: "https://lifesaving2026.com/", alt: "DLRG Rettungssport" },
       cta: {
         label: "Mehr Informationen",
         href: "https://www.dlrg.de/mitmachen/rettungssport/kader/dopingpraevention/",
@@ -42,12 +46,12 @@
       title: "Lifesaving World Championships",
       meta: "ILS ・ Weltmeisterschaft ・ Lifesaving Sport ・ 2026",
       text: "Die LWC finden 2026 vom 25. Nov bis 13. Dez in Port Elizabeth / Suedafrika statt. Das groesste Highlight im Jahr.",
-      img: "./png/karussel/bild6.JPG",
+      img: "./assets/png/karussel/bild6.JPG",
       video: {
-        src: "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/MP4/LWC_2024.mp4",
+        src: HERO_VIDEO_SRC,
         delayMs: 2000,
       },
-      icon: { src: "./svg/events/LWC_big - 2026.svg", href: "https://lifesaving2026.com/", alt: "DLRG Rettungssport" },
+      icon: { src: "./assets/svg/events/LWC_big - 2026.svg", href: "https://lifesaving2026.com/", alt: "DLRG Rettungssport" },
       cta: { label: "Mehr Informationen", href: "https://lifesaving2026.com/" },
       bgY: "35%",
     },
@@ -112,23 +116,23 @@
         <div class="container">
           <div class="home-cards">
             <a class="home-card" href="./athleten.html" aria-label="Dein Athletenprofil">
-              <img class="home-card__img" src="./png/Bild2.png" alt="" loading="lazy" decoding="async">
+              <img class="home-card__img" src="./assets/png/Bild2.png" alt="" loading="lazy" decoding="async">
             </a>
 
             <a class="home-card" href="./punkterechner.html" aria-label="DLRG Punkterechner">
-              <img class="home-card__img" src="./png/Bild4.png" alt="" loading="lazy" decoding="async">
+              <img class="home-card__img" src="./assets/png/Bild4.png" alt="" loading="lazy" decoding="async">
             </a>
 
             <a class="home-card" href="./wettkaempfe.html" aria-label="Wettkaempfe und Nominierung">
-              <img class="home-card__img" src="./png/Bild1.png" alt="" loading="lazy" decoding="async">
+              <img class="home-card__img" src="./assets/png/Bild1.png" alt="" loading="lazy" decoding="async">
             </a>
 
             <a class="home-card" href="./landeskader.html" aria-label="Landeskader">
-              <img class="home-card__img" src="./png/Bild5.png" alt="" loading="lazy" decoding="async">
+              <img class="home-card__img" src="./assets/png/Bild5.png" alt="" loading="lazy" decoding="async">
             </a>
 
             <a class="home-card" href="./clubs.html" aria-label="Clubs und Bestenlisten">
-              <img class="home-card__img" src="./png/Bild3.png" alt="" loading="lazy" decoding="async">
+              <img class="home-card__img" src="./assets/png/Bild3.png" alt="" loading="lazy" decoding="async">
             </a>
           </div>
         </div>

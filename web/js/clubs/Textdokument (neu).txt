@@ -63,7 +63,7 @@
   const iconRel = (key) => {
     const k = safeFilePart(key);
     if (!k) return "";
-    return encodeURI(`./svg/Cap-${k}.svg`);
+    return encodeURI(`./assets/svg/Cap-${k}.svg`);
   };
 
   const ensureXLSX = () => {

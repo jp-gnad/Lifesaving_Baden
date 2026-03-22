@@ -11,7 +11,7 @@ main#content {
 
 .hero {
   position: relative;
-  background: url("../png/hintergrund15.jpg") center/cover no-repeat;
+  background: url("../assets/png/hintergrund15.jpg") center/cover no-repeat;
   background-position: center 20%;
   height: 500px;
   text-align: center;

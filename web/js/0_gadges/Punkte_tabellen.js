@@ -22,7 +22,7 @@
     regelwerk: 22,
   };
 
-  const CAP_SVG_FOLDER = "./svg/";
+  const CAP_SVG_FOLDER = "./assets/svg/";
   const CAP_FALLBACK_SRC = CAP_SVG_FOLDER + "Cap-Baden_light.svg";
 
   const STATE = {

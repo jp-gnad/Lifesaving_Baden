@@ -1,6 +1,16 @@
 (function () {
-  const DEFAULT_TOP10_URL =
+  const DEFAULT_TOP10_URL = "./data/top10.json";
+  const REMOTE_TOP10_URL =
+    "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/data/top10.json";
+  const LEGACY_TOP10_URL =
     "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/top10.json";
+  const KNOWN_CAP_KEYS = new Set([
+    "AUS", "BA", "Baden", "Baden_light", "BB", "BE", "BEL", "Bietigheim-Bissingen", "BRA", "BUL", "BY",
+    "CAN", "CZE", "DEN", "Deutschland", "Durlach", "EGY", "ESP", "Ettlingen", "FRA", "GBR", "GER", "HE",
+    "HH", "HKG", "ITA", "JPN", "Karlsruhe", "Luckenwalde", "Malsch", "MV", "NED", "NI", "Nieder-Olm/Wörrstadt",
+    "none", "NOR", "NR", "NZL", "Pankow", "POL", "RP", "SH", "SIN", "SL", "SN", "ST", "SUI", "SWE", "TH",
+    "USA", "Wadgassen", "Waghäusel", "Weil am Rhein", "Wettersbach", "WF", "WÜ"
+  ]);
 
   const TOP10_GROUPS = [
     { key: "starts", label: "Starts" },
@@ -49,7 +59,7 @@
       "Es werden nur badische Athleten berücksichtigt. Gezählt werden eindeutige Wettkämpfe außerhalb von GER."
   };
 
-  const FLAG_BASE_URL = "./svg";
+  const FLAG_BASE_URL = "./assets/svg";
   const CAP_FALLBACK_FILE = "Cap-BA.svg";
   const CAP_FALLBACK_URL = `${FLAG_BASE_URL}/${encodeURIComponent(CAP_FALLBACK_FILE)}`;
   const DAY_MS = 24 * 60 * 60 * 1000;
@@ -115,6 +125,7 @@
     const og = String(rawOG || "").trim();
     if (!og) return CAP_FALLBACK_FILE;
     if (og === "Nieder-Olm/Wörrstadt") return "Cap-Nieder-OlmWörrstadt.svg";
+    if (!KNOWN_CAP_KEYS.has(og)) return CAP_FALLBACK_FILE;
     return `Cap-${og}.svg`;
   }
 
@@ -160,10 +171,46 @@
     };
   }
 
+  function getTop10UrlCandidates() {
+    const customUrl = String(State.top10Url || "").trim();
+    if (customUrl && customUrl !== DEFAULT_TOP10_URL) {
+      return [customUrl];
+    }
+
+    if (window.ExcelLoader && typeof window.ExcelLoader.getUrlCandidates === "function") {
+      const candidates = window.ExcelLoader.getUrlCandidates("top10Data");
+      if (candidates.length) return candidates;
+    }
+
+    if (window.location.protocol === "file:") {
+      return [LEGACY_TOP10_URL, REMOTE_TOP10_URL];
+    }
+
+    return [DEFAULT_TOP10_URL, REMOTE_TOP10_URL, LEGACY_TOP10_URL];
+  }
+
   async function loadTop10Json() {
-    const resp = await fetch(encodeURI(State.top10Url), { mode: "cors" });
-    if (!resp.ok) throw new Error(`Top10 HTTP ${resp.status}`);
-    return resp.json();
+    const candidates = getTop10UrlCandidates();
+
+    if (window.ExcelLoader && typeof window.ExcelLoader.fetchFirstAvailable === "function") {
+      const { response, url } = await window.ExcelLoader.fetchFirstAvailable(candidates);
+      State.top10Url = url;
+      return response.json();
+    }
+
+    let lastError = null;
+    for (const candidate of candidates) {
+      try {
+        const resp = await fetch(encodeURI(candidate), /^https?:\/\//i.test(candidate) ? { mode: "cors" } : {});
+        if (!resp.ok) throw new Error(`Top10 HTTP ${resp.status}`);
+        State.top10Url = candidate;
+        return resp.json();
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError || new Error("Top10 konnte nicht geladen werden.");
   }
 
   function normalizeRank(value, fallback) {
@@ -572,20 +619,26 @@
     renderTop10();
   }
 
-  function setFallbackTransparency(imgEl, isFallback) {
+  function setFallbackTransparency(imgEl, wrapperEl, isFallback) {
     if (!imgEl) return;
     imgEl.classList.toggle("is-fallback", !!isFallback);
+    wrapperEl?.classList.toggle("is-fallback", !!isFallback);
   }
 
   function setCapWithCache(imgEl, capFile, wrapperEl) {
     imgEl.src = CAP_FALLBACK_URL;
-    setFallbackTransparency(imgEl, true);
+    setFallbackTransparency(imgEl, wrapperEl, true);
 
-    probeCapFileExists(capFile).then((ok) => {
+    const file = String(capFile || "").trim();
+    if (!file || file === CAP_FALLBACK_FILE) {
+      return;
+    }
+
+    probeCapFileExists(file).then((ok) => {
       if (!ok) return;
 
-      imgEl.src = `${FLAG_BASE_URL}/${encodeURIComponent(capFile)}`;
-      setFallbackTransparency(imgEl, false);
+      imgEl.src = `${FLAG_BASE_URL}/${encodeURIComponent(file)}`;
+      setFallbackTransparency(imgEl, wrapperEl, false);
     });
   }
 

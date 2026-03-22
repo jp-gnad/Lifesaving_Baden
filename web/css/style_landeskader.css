@@ -17,7 +17,7 @@ main#content{
   display: grid;
   place-items: center;
   text-align: center;
-  background: url("../png/hintergrund2.jpg") center/cover no-repeat;
+  background: url("../assets/png/hintergrund2.jpg") center/cover no-repeat;
   background-position: center 25%;
   overflow: hidden;
   padding-top: 125px;
