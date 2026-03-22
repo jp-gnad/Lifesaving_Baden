@@ -1427,7 +1427,7 @@
     }
   }
 
-  function renderOverviewSection(a, calcParts = null) {
+  function renderOverviewSection(a) {
     const header = h("div", { class: "ath-info-header" }, h("h3", {}, ""));
     const grid = h("div", { class: "ath-info-grid" });
 
@@ -1438,7 +1438,6 @@
     const dqLane = computeLaneDQProb(a);
     const totalMeters = sumWettkampfMeter(a);
     const pieCard = renderDisciplinePieCard(a);
-    if (calcParts?.tile) grid.appendChild(calcParts.tile);
     grid.appendChild(infoTileWettkaempfeFlip(a, meets));
     grid.appendChild(infoTileStartsFlip(totalStarts, startsPer));
     grid.appendChild(infoTileDQFlip(totalDQ, dqLane));
@@ -1856,6 +1855,9 @@
         ? global.ProfileLSC.createOverviewParts(ax)
         : null;
     const lscChartCard = renderLSCChart(ax);
+    const lscCurrentTile = calcParts?.tile
+      ? h("div", { class: "ath-lsc-current-grid" }, calcParts.tile)
+      : null;
     const lscSection =
       calcParts?.section ||
       (global.ProfileLSC && typeof global.ProfileLSC.createSection === "function"
@@ -1864,9 +1866,10 @@
 
     const panels = h("div", { class: "ath-tab-panels" },
       h("div", { class: "ath-tab-panel", "data-key": "bests" }, renderBestzeitenSection(ax, refs)),
-      h("div", { class: "ath-tab-panel", "data-key": "info" }, renderOverviewSection(ax, calcParts)),
+      h("div", { class: "ath-tab-panel", "data-key": "info" }, renderOverviewSection(ax)),
       h("div", { class: "ath-tab-panel", "data-key": "lsc" },
         h("div", { class: "ath-lsc-tab-stack" },
+          lscCurrentTile,
           lscChartCard,
           lscSection
         )

@@ -164,6 +164,16 @@
     ].join("\n");
   }
 
+  function createLscTitle(className = "") {
+    const cls = ["lsc-calc-title", className].filter(Boolean).join(" ");
+    return h(
+      "span",
+      { class: cls },
+      h("span", { class: "lsc-calc-title-line is-lead" }, "Aktueller"),
+      h("span", { class: "lsc-calc-title-line" }, "Lifesaving-Score (LSC)")
+    );
+  }
+
   function normalizeKey(str) {
     return String(str || "")
       .toLowerCase()
@@ -641,7 +651,7 @@
   }
 
   function createTile() {
-    const title = h("div", { class: "info-label" }, "LSC berechnet");
+    const title = h("div", { class: "info-label" }, createLscTitle());
     const warningSlot = h("div", { class: "lsc-calc-warning-slot", dataset: { role: "warning-slot" } });
     const head = h("div", { class: "lsc-calc-tile-head" }, title, warningSlot);
     const value = h("div", { class: "info-value big", dataset: { role: "value" } }, "…");
@@ -692,7 +702,11 @@
   }
 
   function createDetailsCard() {
-    const summaryTitle = h("span", { class: "ath-lsc-calc-summary-title", dataset: { role: "summary-title" } }, "LSC berechnet");
+    const summaryTitle = h(
+      "span",
+      { class: "ath-lsc-calc-summary-title", dataset: { role: "summary-title" } },
+      createLscTitle("ath-lsc-calc-summary-title-text")
+    );
     const summaryMeta = h("span", { class: "ath-lsc-calc-summary-meta", dataset: { role: "summary-meta" } }, "Berechnung wird geladen …");
     const summary = h("summary", { class: "ath-lsc-calc-summary" }, summaryTitle, summaryMeta);
 
@@ -845,7 +859,7 @@
       updateTileComparisonState(tile, athlete, calc.finalScore);
 
       const standLabel = calc.latestRun
-        ? `Stand ${formatDateWithYear(calc.latestRun.date)}`
+        ? formatDateWithYear(calc.latestRun.date)
         : "Letzter Wettkampf";
 
       if (meta) meta.textContent = standLabel;
