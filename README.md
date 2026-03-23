@@ -15,6 +15,8 @@ Die README ist als schneller Einstieg fuer Menschen und KI gedacht. Sie beantwor
 - Es gibt aktuell keinen Build-Prozess, keinen Bundler und kein `package.json`.
 - Die Seite basiert auf statischem HTML, CSS und Vanilla-JavaScript.
 - Viele Features laden ihre Daten clientseitig aus Excel-Dateien und externen URLs.
+- Bei lokalem Arbeiten moeglichst nicht per `file://` oeffnen, weil Browser Excel-/JSON-Fetches aus Sicherheitsgruenden blockieren koennen.
+- Stattdessen lokal per HTTP starten, z. B. mit `powershell -ExecutionPolicy Bypass -File .\scripts\start_local_server.ps1`, und dann `http://localhost:8000/...` aufrufen.
 
 ## Wichtigste Einstiegspunkte
 

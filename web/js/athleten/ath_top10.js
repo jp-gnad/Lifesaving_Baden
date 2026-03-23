@@ -201,7 +201,7 @@
     let lastError = null;
     for (const candidate of candidates) {
       try {
-        const resp = await fetch(encodeURI(candidate), /^https?:\/\//i.test(candidate) ? { mode: "cors" } : {});
+        const resp = await fetch(normalizeUrl(candidate), /^https?:\/\//i.test(candidate) ? { mode: "cors" } : {});
         if (!resp.ok) throw new Error(`Top10 HTTP ${resp.status}`);
         State.top10Url = candidate;
         return resp.json();
@@ -281,6 +281,17 @@
     }
 
     return out;
+  }
+
+  function normalizeUrl(url) {
+    const raw = String(url || "").trim();
+    if (!raw) return "";
+
+    try {
+      return encodeURI(decodeURI(raw));
+    } catch (_) {
+      return encodeURI(raw);
+    }
   }
 
   function formatLscValue(value) {

@@ -3,14 +3,80 @@
 
   const DEFAULT_DATA_EXCEL_URL =
     window.location.protocol === "file:"
-      ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/test%20(1).xlsx"
+      ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/data/test (1).xlsx"
       : "./data/test (1).xlsx";
   const DEFAULT_DATA_SHEET = "Tabelle2";
 
   const DEFAULT_CONFIG_EXCEL_URL =
     window.location.protocol === "file:"
-      ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx"
+      ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/data/records_kriterien.xlsx"
       : "./data/records_kriterien.xlsx";
+
+  function toUrlList(value) {
+    if (Array.isArray(value)) return value;
+    if (typeof value === "string") return [value];
+    return [];
+  }
+
+  function dedupeUrls(urls) {
+    const out = [];
+    const seen = new Set();
+
+    for (const url of urls || []) {
+      const value = String(url || "").trim();
+      if (!value || seen.has(value)) continue;
+      seen.add(value);
+      out.push(value);
+    }
+
+    return out;
+  }
+
+  function normalizeUrl(url) {
+    const raw = String(url || "").trim();
+    if (!raw) return "";
+
+    try {
+      return encodeURI(decodeURI(raw));
+    } catch (_) {
+      return encodeURI(raw);
+    }
+  }
+
+  function resolveUrlCandidates(explicitUrls, explicitUrl, urlKey) {
+    const loaderCandidates =
+      typeof global.ExcelLoader?.getUrlCandidates === "function"
+        ? global.ExcelLoader.getUrlCandidates(urlKey)
+        : [];
+
+    return dedupeUrls([
+      ...toUrlList(explicitUrls),
+      explicitUrl,
+      ...loaderCandidates
+    ]);
+  }
+
+  async function fetchArrayBufferFirstAvailable(urls) {
+    const candidates = dedupeUrls(urls);
+
+    if (typeof global.ExcelLoader?.fetchFirstAvailable === "function") {
+      const { response } = await global.ExcelLoader.fetchFirstAvailable(candidates, { cache: "no-store" });
+      return await response.arrayBuffer();
+    }
+
+    let lastError = null;
+    for (const candidate of candidates) {
+      try {
+        const response = await fetch(normalizeUrl(candidate), /^https?:\/\//i.test(candidate) ? { mode: "cors", cache: "no-store" } : { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.arrayBuffer();
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError || new Error("Excel-Datei konnte nicht geladen werden.");
+  }
 
   const DATA_COLS = {
     gender: 0,
@@ -66,10 +132,10 @@
       mountId: opts.mountId || "Normzeiten-root",
       statusId: opts.statusId || "Normzeiten-status",
 
-      dataExcelUrl: opts.dataExcelUrl || DEFAULT_DATA_EXCEL_URL,
+      dataExcelUrls: resolveUrlCandidates(opts.dataExcelUrls, opts.dataExcelUrl || DEFAULT_DATA_EXCEL_URL, "athleteData"),
       dataSheet: opts.dataSheet || DEFAULT_DATA_SHEET,
 
-      configExcelUrl: opts.configExcelUrl || DEFAULT_CONFIG_EXCEL_URL,
+      configExcelUrls: resolveUrlCandidates(opts.configExcelUrls, opts.configExcelUrl || DEFAULT_CONFIG_EXCEL_URL, "recordsCriteria"),
 
       configs: [],
       dataRows: [],
@@ -107,7 +173,7 @@
       if (!state.configSheet) throw new Error("configSheet fehlt.");
       if (!state.configTableName) throw new Error("configTableName fehlt.");
 
-      const cfgWb = XLSX.read(await (await fetch(state.configExcelUrl, { cache: "no-store" })).arrayBuffer(), {
+      const cfgWb = XLSX.read(await fetchArrayBufferFirstAvailable(state.configExcelUrls), {
         type: "array",
         cellDates: true,
       });
@@ -131,7 +197,7 @@
 
       if (status) status.textContent = "Lade Daten …";
 
-      const dataWb = XLSX.read(await (await fetch(state.dataExcelUrl, { cache: "no-store" })).arrayBuffer(), {
+      const dataWb = XLSX.read(await fetchArrayBufferFirstAvailable(state.dataExcelUrls), {
         type: "array",
         cellDates: true,
       });

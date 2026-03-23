@@ -1,4 +1,7 @@
+const PAGES_WEB_BASE = "https://jp-gnad.github.io/Lifesaving_Baden/web";
+const PAGES_ROOT_BASE = "https://jp-gnad.github.io/Lifesaving_Baden";
 const LEGACY_REMOTE_BASE = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities";
+const DATA_REMOTE_BASE = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/data";
 
 const ENABLE_PW_GATE = true;
 
@@ -105,16 +108,26 @@ const JRP_SLIDE_SETTINGS = {
   },
 };
 
-const DATA_EXCEL_URL =
+const DATA_EXCEL_URLS =
   window.location.protocol === "file:"
-    ? `${LEGACY_REMOTE_BASE}/test%20(1).xlsx`
-    : "./data/test (1).xlsx";
+    ? [
+        `${PAGES_WEB_BASE}/data/test (1).xlsx`,
+        `${PAGES_ROOT_BASE}/data/test (1).xlsx`,
+        `${DATA_REMOTE_BASE}/test (1).xlsx`,
+        `${LEGACY_REMOTE_BASE}/test (1).xlsx`
+      ]
+    : ["./data/test (1).xlsx"];
 const DATA_SHEET = "Tabelle2";
 
-const CONFIG_EXCEL_URL =
+const CONFIG_EXCEL_URLS =
   window.location.protocol === "file:"
-    ? `${LEGACY_REMOTE_BASE}/records_kriterien.xlsx`
-    : "./data/records_kriterien.xlsx";
+    ? [
+        `${PAGES_WEB_BASE}/data/records_kriterien.xlsx`,
+        `${PAGES_ROOT_BASE}/data/records_kriterien.xlsx`,
+        `${DATA_REMOTE_BASE}/records_kriterien.xlsx`,
+        `${LEGACY_REMOTE_BASE}/records_kriterien.xlsx`
+      ]
+    : ["./data/records_kriterien.xlsx"];
 const CONFIG_SHEET = "JRP";
 const CONFIG_TABLE_NAME = "JRP_konfig";
 
@@ -142,9 +155,9 @@ async function bootProtectedContent() {
     window.initPflichtzeitenTabellen(CONFIG_SHEET, CONFIG_TABLE_NAME, {
       mountId: "pflichtzeiten-root",
       statusId: "pflichtzeiten-status",
-      dataExcelUrl: DATA_EXCEL_URL,
+      dataExcelUrls: DATA_EXCEL_URLS,
       dataSheet: DATA_SHEET,
-      configExcelUrl: CONFIG_EXCEL_URL,
+      configExcelUrls: CONFIG_EXCEL_URLS,
     });
   } catch (err) {
     console.error(err);

@@ -25,11 +25,77 @@
   const CAP_SVG_FOLDER = "./assets/svg/";
   const CAP_FALLBACK_SRC = CAP_SVG_FOLDER + "Cap-Baden_light.svg";
 
+  function toUrlList(value) {
+    if (Array.isArray(value)) return value;
+    if (typeof value === "string") return [value];
+    return [];
+  }
+
+  function dedupeUrls(urls) {
+    const out = [];
+    const seen = new Set();
+
+    for (const url of urls || []) {
+      const value = String(url || "").trim();
+      if (!value || seen.has(value)) continue;
+      seen.add(value);
+      out.push(value);
+    }
+
+    return out;
+  }
+
+  function normalizeUrl(url) {
+    const raw = String(url || "").trim();
+    if (!raw) return "";
+
+    try {
+      return encodeURI(decodeURI(raw));
+    } catch (_) {
+      return encodeURI(raw);
+    }
+  }
+
+  function resolveUrlCandidates(explicitUrls, explicitUrl, urlKey) {
+    const loaderCandidates =
+      typeof window.ExcelLoader?.getUrlCandidates === "function"
+        ? window.ExcelLoader.getUrlCandidates(urlKey)
+        : [];
+
+    return dedupeUrls([
+      ...toUrlList(explicitUrls),
+      explicitUrl,
+      ...loaderCandidates
+    ]);
+  }
+
+  async function fetchArrayBufferFirstAvailable(urls) {
+    const candidates = dedupeUrls(urls);
+
+    if (typeof window.ExcelLoader?.fetchFirstAvailable === "function") {
+      const { response } = await window.ExcelLoader.fetchFirstAvailable(candidates, { cache: "no-store" });
+      return await response.arrayBuffer();
+    }
+
+    let lastError = null;
+    for (const candidate of candidates) {
+      try {
+        const response = await fetch(normalizeUrl(candidate), /^https?:\/\//i.test(candidate) ? { mode: "cors", cache: "no-store" } : { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.arrayBuffer();
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError || new Error("Excel-Datei konnte nicht geladen werden.");
+  }
+
   const STATE = {
-    configExcelUrl: "",
+    configExcelUrls: [],
     configSheet: "BP",
     configTableName: "BP_konfig",
-    dataExcelUrl: "",
+    dataExcelUrls: [],
     dataSheet: "Tabelle2",
     mountId: "bp-list",
   };
@@ -51,15 +117,15 @@
   let NOM_STAND_TEXT = "";
 
   window.initBodenseePunkteTabelle = async function initBodenseePunkteTabelle(options = {}) {
-    STATE.configExcelUrl = String(options.configExcelUrl || STATE.configExcelUrl || "").trim();
+    STATE.configExcelUrls = resolveUrlCandidates(options.configExcelUrls, options.configExcelUrl || STATE.configExcelUrls[0] || "", "recordsCriteria");
     STATE.configSheet = String(options.configSheet || STATE.configSheet || "BP").trim();
     STATE.configTableName = String(options.configTableName || STATE.configTableName || "BP_konfig").trim();
-    STATE.dataExcelUrl = String(options.dataExcelUrl || STATE.dataExcelUrl || "").trim();
+    STATE.dataExcelUrls = resolveUrlCandidates(options.dataExcelUrls, options.dataExcelUrl || STATE.dataExcelUrls[0] || "", "athleteData");
     STATE.dataSheet = String(options.dataSheet || STATE.dataSheet || "Tabelle2").trim();
     STATE.mountId = String(options.mountId || STATE.mountId || "bp-list").trim();
 
-    if (!STATE.configExcelUrl) throw new Error("config_excel_url_missing");
-    if (!STATE.dataExcelUrl) throw new Error("data_excel_url_missing");
+    if (!STATE.configExcelUrls.length) throw new Error("config_excel_url_missing");
+    if (!STATE.dataExcelUrls.length) throw new Error("data_excel_url_missing");
 
     await loadNominierungslisteFromExcel();
   };
@@ -1133,9 +1199,7 @@
 
     await ensureXlsxLoaded();
 
-    const cfgRes = await fetch(STATE.configExcelUrl, { cache: "no-store" });
-    if (!cfgRes.ok) throw new Error(`Konfig-Excel konnte nicht geladen werden (${cfgRes.status})`);
-    const cfgWb = window.XLSX.read(await cfgRes.arrayBuffer(), { type: "array" });
+    const cfgWb = window.XLSX.read(await fetchArrayBufferFirstAvailable(STATE.configExcelUrls), { type: "array" });
 
     const cfgs = loadConfigsFromWorkbook(cfgWb);
     if (!cfgs.length) {
@@ -1145,9 +1209,7 @@
 
     attachReferenceTimesToConfigs(cfgs, cfgWb);
 
-    const dataRes = await fetch(STATE.dataExcelUrl, { cache: "no-store" });
-    if (!dataRes.ok) throw new Error(`Daten-Excel konnte nicht geladen werden (${dataRes.status})`);
-    const dataWb = window.XLSX.read(await dataRes.arrayBuffer(), { type: "array", cellDates: true });
+    const dataWb = window.XLSX.read(await fetchArrayBufferFirstAvailable(STATE.dataExcelUrls), { type: "array", cellDates: true });
 
     const wsData = dataWb.Sheets[STATE.dataSheet];
     if (!wsData) {

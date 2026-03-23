@@ -1,7 +1,17 @@
-const CONFIG_EXCEL_URL =
+const PAGES_WEB_BASE = "https://jp-gnad.github.io/Lifesaving_Baden/web";
+const PAGES_ROOT_BASE = "https://jp-gnad.github.io/Lifesaving_Baden";
+const LEGACY_REMOTE_BASE = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities";
+const DATA_REMOTE_BASE = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/data";
+
+const CONFIG_EXCEL_URLS =
   window.location.protocol === "file:"
-    ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/records_kriterien.xlsx"
-    : "./data/records_kriterien.xlsx";
+    ? [
+        `${PAGES_WEB_BASE}/data/records_kriterien.xlsx`,
+        `${PAGES_ROOT_BASE}/data/records_kriterien.xlsx`,
+        `${DATA_REMOTE_BASE}/records_kriterien.xlsx`,
+        `${LEGACY_REMOTE_BASE}/records_kriterien.xlsx`
+      ]
+    : ["./data/records_kriterien.xlsx"];
 const CONFIG_SHEET = "LK Kalender";
 const CONFIG_TABLE_NAME = "LK_Kalender";
 
@@ -90,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
 async function initFromExcel(container) {
   try {
     await ensureXlsx();
-    const ab = await fetchExcelArrayBuffer(CONFIG_EXCEL_URL);
+    const ab = await fetchExcelArrayBuffer(CONFIG_EXCEL_URLS, "recordsCriteria");
     const wb = window.XLSX.read(ab, { type: "array", cellDates: true });
     const ws = wb.Sheets[CONFIG_SHEET] || wb.Sheets[wb.SheetNames[0]];
     if (!ws) throw new Error("sheet_missing");
@@ -185,10 +195,41 @@ function ensureXlsx() {
   });
 }
 
-async function fetchExcelArrayBuffer(url) {
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error("fetch_failed");
-  return await res.arrayBuffer();
+async function fetchExcelArrayBuffer(urls, urlKey = "") {
+  const loaderCandidates =
+    typeof window.ExcelLoader?.getUrlCandidates === "function"
+      ? window.ExcelLoader.getUrlCandidates(urlKey)
+      : [];
+  const candidates = [...new Set([...(Array.isArray(urls) ? urls : [urls]), ...loaderCandidates].map((url) => String(url || "").trim()).filter(Boolean))];
+
+  if (typeof window.ExcelLoader?.fetchFirstAvailable === "function") {
+    const { response } = await window.ExcelLoader.fetchFirstAvailable(candidates, { cache: "no-store" });
+    return await response.arrayBuffer();
+  }
+
+  let lastError = null;
+  for (const candidate of candidates) {
+    try {
+      const response = await fetch(normalizeUrl(candidate), /^https?:\/\//i.test(candidate) ? { mode: "cors", cache: "no-store" } : { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.arrayBuffer();
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error("fetch_failed");
+}
+
+function normalizeUrl(url) {
+  const raw = String(url || "").trim();
+  if (!raw) return "";
+
+  try {
+    return encodeURI(decodeURI(raw));
+  } catch (_) {
+    return encodeURI(raw);
+  }
 }
 
 function normHeader(s) {

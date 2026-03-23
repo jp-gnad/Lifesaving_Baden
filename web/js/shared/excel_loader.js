@@ -2,6 +2,8 @@
   "use strict";
 
   const XLSX_CDN_URL = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+  const PAGES_WEB_BASE = "https://jp-gnad.github.io/Lifesaving_Baden/web";
+  const PAGES_ROOT_BASE = "https://jp-gnad.github.io/Lifesaving_Baden";
   const REMOTE_DATA_BASE = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/data";
   const REMOTE_LEGACY_BASE = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities";
 
@@ -9,33 +11,45 @@
     athleteData:
       window.location.protocol === "file:"
         ? [
-            `${REMOTE_LEGACY_BASE}/test (1).xlsx`,
-            `${REMOTE_DATA_BASE}/test (1).xlsx`
+            `${PAGES_WEB_BASE}/data/test (1).xlsx`,
+            `${PAGES_ROOT_BASE}/data/test (1).xlsx`,
+            `${REMOTE_DATA_BASE}/test (1).xlsx`,
+            `${REMOTE_LEGACY_BASE}/test (1).xlsx`
           ]
         : [
             "./data/test (1).xlsx",
+            `${PAGES_WEB_BASE}/data/test (1).xlsx`,
+            `${PAGES_ROOT_BASE}/data/test (1).xlsx`,
             `${REMOTE_DATA_BASE}/test (1).xlsx`,
             `${REMOTE_LEGACY_BASE}/test (1).xlsx`
           ],
     recordsCriteria:
       window.location.protocol === "file:"
         ? [
-            `${REMOTE_LEGACY_BASE}/records_kriterien.xlsx`,
-            `${REMOTE_DATA_BASE}/records_kriterien.xlsx`
+            `${PAGES_WEB_BASE}/data/records_kriterien.xlsx`,
+            `${PAGES_ROOT_BASE}/data/records_kriterien.xlsx`,
+            `${REMOTE_DATA_BASE}/records_kriterien.xlsx`,
+            `${REMOTE_LEGACY_BASE}/records_kriterien.xlsx`
           ]
         : [
             "./data/records_kriterien.xlsx",
+            `${PAGES_WEB_BASE}/data/records_kriterien.xlsx`,
+            `${PAGES_ROOT_BASE}/data/records_kriterien.xlsx`,
             `${REMOTE_DATA_BASE}/records_kriterien.xlsx`,
             `${REMOTE_LEGACY_BASE}/records_kriterien.xlsx`
           ],
     top10Data:
       window.location.protocol === "file:"
         ? [
-            `${REMOTE_LEGACY_BASE}/top10.json`,
-            `${REMOTE_DATA_BASE}/top10.json`
+            `${PAGES_WEB_BASE}/data/top10.json`,
+            `${PAGES_ROOT_BASE}/data/top10.json`,
+            `${REMOTE_DATA_BASE}/top10.json`,
+            `${REMOTE_LEGACY_BASE}/top10.json`
           ]
         : [
             "./data/top10.json",
+            `${PAGES_WEB_BASE}/data/top10.json`,
+            `${PAGES_ROOT_BASE}/data/top10.json`,
             `${REMOTE_DATA_BASE}/top10.json`,
             `${REMOTE_LEGACY_BASE}/top10.json`
           ]
@@ -45,7 +59,14 @@
   const workbookCache = new Map();
 
   function normalizeUrl(excelUrl) {
-    return encodeURI(String(excelUrl || "").trim());
+    const raw = String(excelUrl || "").trim();
+    if (!raw) return "";
+
+    try {
+      return encodeURI(decodeURI(raw));
+    } catch (_) {
+      return encodeURI(raw);
+    }
   }
 
   function dedupeUrls(urls) {
