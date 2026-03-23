@@ -41,6 +41,10 @@ const BP_SLIDE_SETTINGS = {
     text: "LV-Gesamtwertung: 2. Platz",
     bgPos: "center 50%",
   },
+  "2000": {
+    text: "LV-Gesamtwertung: 1. Platz",
+    bgPos: "center 20%",
+  },
   "1996": {
     text: "LV-Gesamtwertung: Damen & Herren 2. Platz",
     bgPos: "center 50%",
