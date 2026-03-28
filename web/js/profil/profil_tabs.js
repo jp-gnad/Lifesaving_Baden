@@ -93,7 +93,8 @@
     Dänemark: "DEN",
     Ägypten: "EGY",
     Großbritannien: "GBR",
-    Australien: "AUS"
+    Australien: "AUS",
+    Schweden: "SWE"
   };
 
   const ISO3_TO_EN = {
