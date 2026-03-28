@@ -6,7 +6,7 @@ Die README ist als schneller Einstieg fuer Menschen und KI gedacht. Sie beantwor
 
 1. Wo liegt der eigentliche Webcode?
 2. Welche Dateien sind die wichtigsten Einstiegspunkte?
-3. Wo kommen die fachlichen Daten her?
+3. Wie ist das Repo grob aufgebaut?
 
 ## Schnellstart
 
@@ -29,34 +29,14 @@ Die README ist als schneller Einstieg fuer Menschen und KI gedacht. Sie beantwor
   - Clubs: `web/clubs.html`, `web/js/clubs.js`, `web/js/clubs/`
   - Punkterechner: `web/punkterechner.html`, `web/js/punkterechner.js`, `web/js/punkterechner/`
 
-## Zentrale Datenquellen
-
-- Hauptdatenbank: `web/data/test (1).xlsx`
-  - Wird in vielen Bereichen als Quelle fuer `Tabelle2` genutzt.
-- Rekorde und Konfiguration: `web/data/records_kriterien.xlsx`
-  - Enthaelt Rekord-/Referenzwerte und Konfigurationsbereiche fuer Wettbewerbs- und Kaderseiten.
-- Legacy-/Fallback-Daten: `web/data/top10.json`
-  - Wird aktuell nur noch fuer einen Teil der Athleten-Top-10 genutzt.
-- PDF-Bibliotheken:
-  - `content/Infoschreiben/`
-  - `content/kaderkriterien/`
-
 ## Repo-Struktur
 
 ```text
 .
 |-- README.md
 |-- content/
-|   |-- bestenlisten/
-|   |-- Infoschreiben/
-|   `-- kaderkriterien/
 |-- docs/
-|   |-- architecture.md
-|   |-- data-schema.md
-|   |-- page-map.md
-|   `-- aenderungen-2026-03-19.md
 |-- scripts/
-|   `-- compare_lsc_latest_csharp.ps1
 |-- web/
 |   |-- *.html
 |   |-- assets/
@@ -72,7 +52,7 @@ Die README ist als schneller Einstieg fuer Menschen und KI gedacht. Sie beantwor
 - Jede HTML-Seite bindet ihre CSS- und JS-Dateien manuell per `<link>` und `<script>` ein.
 - Viele JS-Dateien registrieren ihre API explizit auf `window`.
 - Seiten-Bootstrap-Dateien rendern den Inhalt zur Laufzeit in `#content`.
-- Daten kommen meist aus `Tabelle2` in `web/data/test (1).xlsx` oder aus `web/data/records_kriterien.xlsx`.
+- Viele Seiten laden gemeinsame Inhalte und strukturierte Daten clientseitig zur Laufzeit.
 - Es gibt bereits erste gemeinsame Basismodule, aber weiterhin einige grosse und stark gekoppelte Dateien.
 
 ## Empfohlene Lese-Reihenfolge
@@ -80,8 +60,7 @@ Die README ist als schneller Einstieg fuer Menschen und KI gedacht. Sie beantwor
 1. `README.md`
 2. `docs/architecture.md`
 3. `docs/page-map.md`
-4. `docs/data-schema.md`
-5. `docs/aenderungen-2026-03-19.md`
+4. `docs/aenderungen-2026-03-19.md`
 
 ## Dokumentationspflege
 
@@ -89,7 +68,6 @@ Diese Dokumentation soll bei strukturellen Aenderungen bewusst mitgepflegt werde
 
 - `README.md` aktualisieren bei neuen Hauptbereichen, groesseren Umstrukturierungen oder geaenderten Einstiegspunkten.
 - `docs/page-map.md` aktualisieren bei neuen HTML-Seiten, entfernten Seiten oder veraenderter Script-Zuordnung.
-- `docs/data-schema.md` aktualisieren bei Aenderungen an Datenquellen, Excel-Dateien, Sheetnamen, Tabellenbereichen oder Spaltenindizes.
 - `docs/architecture.md` aktualisieren bei neuen Shared-Modulen, geaenderten Datenfluessen oder groesseren Architekturentscheidungen.
 - Kleine Text-, CSS- oder Bugfix-Aenderungen ohne Strukturwirkung muessen die Doku in der Regel nicht anpassen.
 
@@ -104,7 +82,7 @@ Bei jeder strukturellen Aenderung sollen die betroffenen Doku-Dateien im selben 
 - `web/js/header.js` definiert die reale Hauptnavigation der Seite.
 - `web/js/profil/profil_tabs.js`, `web/js/0_gadges/PZ_tabellen.js` und `web/js/profil/profil_lsc.js` sind derzeit Hotspots mit hoher Komplexitaet.
 - Script-Reihenfolge in den HTML-Dateien ist relevant, weil viele Module ueber `window.*` gekoppelt sind.
-- Inhalte liegen jetzt getrennt in `content/`, Laufzeitdaten in `web/data/` und Medien in `web/assets/`.
+- Inhalte, Laufzeitdaten und Medien sind strukturell getrennt abgelegt.
 - Beim Einstieg ignorieren:
   - `tmp_chrome_profile/` ist kein Quellcode.
   - `web/js/clubs/Textdokument (neu).txt`
@@ -115,5 +93,4 @@ Bei jeder strukturellen Aenderung sollen die betroffenen Doku-Dateien im selben 
 
 - Architekturuebersicht: [docs/architecture.md](docs/architecture.md)
 - Seitenkarte: [docs/page-map.md](docs/page-map.md)
-- Datenschema: [docs/data-schema.md](docs/data-schema.md)
 - Letzte groessere Aenderungen: [docs/aenderungen-2026-03-19.md](docs/aenderungen-2026-03-19.md)
