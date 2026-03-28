@@ -135,8 +135,11 @@ function renderProtectedMarkup() {
   return `
     <section class="info-wrap" aria-label="Nominierungen">
       <section class="info-section" aria-labelledby="dp-list-title">
-        <h2 id="dp-list-title">Aktuelle Nominierungsliste</h2>
-        <p class="info-status">Die Live-Nominierungen können Fehler enthalten und sind nicht ausschlaggebend für die finale Nominierung.</p>
+        <h2 id="dp-list-title">Aktuelle Richtzeiten</h2>
+        <p class="info-status">
+          Hier findest du eine Übersicht zu den erreichten Richtzeiten für den JRP.<br>
+          Es handelt sich hierbei um keine Nominierungsliste.
+        </p>        
         <div id="dp-list" class="info-links">
           <div id="pflichtzeiten-root" class="pz-root">
             <p id="pflichtzeiten-status" class="pz-statusline">Lade Pflichtzeiten aus Excel …</p>
