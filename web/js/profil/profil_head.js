@@ -210,6 +210,7 @@
     Ägypten: "EGY",
     Großbritannien: "GBR",
     Australien: "AUS",
+    Schweden: "SWE"
   };
 
   const LV_STATE_LABEL = {
@@ -246,6 +247,7 @@
     EGY: "EGYPT",
     GBR: "GREAT BRITAIN",
     AUS: "AUSTRALIA",
+    SWE: "SWEDEN"
   };
 
   function iso3FromLand(landName) {
@@ -294,6 +296,7 @@
     "Ägypten",
     "Niederlande",
     "Großbritannien",
+    "Schweden"
   ]);
 
   function countriesFromAthlete(a) {
