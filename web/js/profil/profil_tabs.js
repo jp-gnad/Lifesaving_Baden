@@ -110,7 +110,8 @@
     DEN: "DENMARK",
     EGY: "EGYPT",
     GBR: "GREAT BRITAIN",
-    AUS: "AUSTRALIA"
+    AUS: "AUSTRALIA",
+    SWE: "SWEDEN"
   };
 
   const LV_STATE_LABEL = {
