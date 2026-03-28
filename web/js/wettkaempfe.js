@@ -64,56 +64,65 @@ document.addEventListener("DOMContentLoaded", () => {
   const main = document.getElementById("content");
   if (!main) return;
 
-  const NOM_CARDS = [
+  const COMPETITION_SECTIONS = [
     {
-      href: "./deutschlandpokal.html",
-      kicker: "int. Deutschlandpokal (DP)",
-      main: "Live Nominierungslisten",
-      more: "Du möchtest einemal teil der Badischen Auswahlmannschaft für den Deutschlandpokal sein? Versuche die Kriterien zu erfüllen und dich in der Liste hoch zu schwimmen!",
-      aria: "Deutschland Pokal",
-      rotator: {
-        folder: "./assets/png/DP-Team/",
-        minYear: 2000,
-        maxYear: new Date().getFullYear() + 1,
-        intervalMs: 15000,
-      },
+      title: "Landesvergleichswettkämpfe",
+      ariaLabel: "Landesvergleichswettkämpfe Inhalte",
+      cards: [
+        {
+          href: "./deutschlandpokal.html",
+          kicker: "int. Deutschlandpokal (DP)",
+          main: "Live Nominierungslisten",
+          more: "Du möchtest einemal teil der Badischen Auswahlmannschaft für den Deutschlandpokal sein? Versuche die Kriterien zu erfüllen und dich in der Liste hoch zu schwimmen!",
+          aria: "Deutschland Pokal",
+          rotator: {
+            folder: "./assets/png/DP-Team/",
+            minYear: 2000,
+            maxYear: new Date().getFullYear() + 1,
+            intervalMs: 15000,
+          },
+        },
+        {
+          href: "./bodenseepokal.html",
+          kicker: "Bodensee Pokal (BP)",
+          main: "Live Nominierungslisten",
+          more: "Du möchtest einemal teil der Badischen Auswahlmannschaft für den Bodensee Pokal sein? Versuche die Kriterien zu erfüllen und dich in der Liste hoch zu schwimmen!",
+          aria: "Bodensee Pokal",
+          rotator: {
+            folder: "./assets/png/BP-Team/",
+            minYear: 2000,
+            maxYear: new Date().getFullYear() + 1,
+            intervalMs: 15000
+          },
+        },
+        {
+          href: "./juniorenrettungspokal.html",
+          kicker: "Junioren Rettungspokal (JRP)",
+          main: "Live Nominierungslisten",
+          more: "Du möchtest einemal teil der Badischen Auswahlmannschaft für den Junioren Rettungspokal sein? Versuche die Kriterien zu erfüllen und dich in der Liste hoch zu schwimmen!",
+          aria: "Junioren Rettungspokal",
+          rotator: {
+            folder: "./assets/png/JRP-Team/",
+            minYear: 2000,
+            maxYear: new Date().getFullYear() + 1,
+            intervalMs: 15000
+          },
+        },
+      ],
     },
     {
-      href: "./bodenseepokal.html",
-      kicker: "Bodensee Pokal (BP)",
-      main: "Live Nominierungslisten",
-      more: "Du möchtest einemal teil der Badischen Auswahlmannschaft für den Bodensee Pokal sein? Versuche die Kriterien zu erfüllen und dich in der Liste hoch zu schwimmen!",
-      aria: "Junioren Rettungspokal",
-
-      rotator: {
-        folder: "./assets/png/BP-Team/",
-        minYear: 2000,
-        maxYear: new Date().getFullYear() + 1,
-        intervalMs: 15000
-      },
-    },
-    {
-      href: "./juniorenrettungspokal.html",
-      kicker: "Junioren Rettungspokal (JRP)",
-      main: "Live Nominierungslisten",
-      more: "Du möchtest einemal teil der Badischen Auswahlmannschaft für den Junioren Rettungspokal sein? Versuche die Kriterien zu erfüllen und dich in der Liste hoch zu schwimmen!",
-      aria: "Junioren Rettungspokal",
-
-      rotator: {
-        folder: "./assets/png/JRP-Team/",
-        minYear: 2000,
-        maxYear: new Date().getFullYear() + 1,
-        intervalMs: 15000
-      },
-    },
-    {
-      href: "./dem.html",
-      kicker: "Deutsche Einzelstrecken Meisterschaften (DEM)",
-      main: "Erreichte Pflichtzeiten in Baden",
-      more: "Die DEM gehören zu den höchsten und wichtigsten Wettkämpfen im Rettungssport. Teilnahmeberechtigt sind nur die besten Schwimmer deutschlands.",
-      aria: "Deutsche Einzelstrecken Meisterschaften",
-
-      img: "./assets/png/hintergrund9.jpg",
+      title: "Sonstige Wettkämpfe",
+      ariaLabel: "Sonstige Wettkämpfe Inhalte",
+      cards: [
+        {
+          href: "./dem.html",
+          kicker: "Deutsche Einzelstrecken Meisterschaften (DEM)",
+          main: "Erreichte Pflichtzeiten in Baden",
+          more: "Die DEM gehören zu den höchsten und wichtigsten Wettkämpfen im Rettungssport. Teilnahmeberechtigt sind nur die besten Schwimmer deutschlands.",
+          aria: "Deutsche Einzelstrecken Meisterschaften",
+          img: "./assets/png/hintergrund9.jpg",
+        },
+      ],
     },
   ];
 
@@ -154,46 +163,48 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     </section>
 
-    <section class="intro">
-      <div class="container">
-        <h2>Aktuelle Nominierungen</h2>
-      </div>
-    </section>
-
-    <section class="home-links" aria-label="Nominierung Inhalte">
-      <div class="container">
-        <div class="home-cards">
-          ${NOM_CARDS.map((c) => {
-            const isRotator = !!c.rotator;
-            const imgSrc = (c.imgFallback || c.img || "");
-            const rot = c.rotator || {};
-            const rotAttrs = isRotator
-              ? `data-year-rotator="1"
-                 data-folder="${rot.folder}"
-                 data-min-year="${rot.minYear}"
-                 data-max-year="${rot.maxYear}"
-                 data-interval="${rot.intervalMs}"`
-              : "";
-
-            return `
-              <a class="home-card" href="${c.href}" aria-label="${c.aria}">
-                <img class="home-card__img"
-                     src="${imgSrc}"
-                     alt=""
-                     loading="lazy"
-                     decoding="async"
-                     ${rotAttrs}>
-                <div class="home-card__overlay">
-                  <div class="home-card__kicker">${c.kicker}</div>
-                  <div class="home-card__box home-card__box--main">${c.main}</div>
-                  <div class="home-card__box home-card__box--more">${c.more}</div>
-                </div>
-              </a>
-            `;
-          }).join("")}
+    ${COMPETITION_SECTIONS.map((section) => `
+      <section class="intro">
+        <div class="container">
+          <h2>${section.title}</h2>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <section class="home-links" aria-label="${section.ariaLabel}">
+        <div class="container">
+          <div class="${section.cards.length === 1 ? "home-cards home-cards--single" : section.cards.length === 3 ? "home-cards home-cards--triple" : "home-cards"}">
+            ${section.cards.map((c) => {
+              const isRotator = !!c.rotator;
+              const imgSrc = (c.imgFallback || c.img || "");
+              const rot = c.rotator || {};
+              const rotAttrs = isRotator
+                ? `data-year-rotator="1"
+                   data-folder="${rot.folder}"
+                   data-min-year="${rot.minYear}"
+                   data-max-year="${rot.maxYear}"
+                   data-interval="${rot.intervalMs}"`
+                : "";
+
+              return `
+                <a class="home-card" href="${c.href}" aria-label="${c.aria}">
+                  <img class="home-card__img"
+                       src="${imgSrc}"
+                       alt=""
+                       loading="lazy"
+                       decoding="async"
+                       ${rotAttrs}>
+                  <div class="home-card__overlay">
+                    <div class="home-card__kicker">${c.kicker}</div>
+                    <div class="home-card__box home-card__box--main">${c.main}</div>
+                    <div class="home-card__box home-card__box--more">${c.more}</div>
+                  </div>
+                </a>
+              `;
+            }).join("")}
+          </div>
+        </div>
+      </section>
+    `).join("")}
   `;
 
   initYearRotators();

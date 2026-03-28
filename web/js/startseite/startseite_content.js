@@ -2,7 +2,7 @@
   const StartseiteContent = {};
   const HERO_VIDEO_SRC =
     window.location.protocol === "file:"
-      ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/MP4/LWC_2024.mp4"
+      ? "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/assets/MP4/LWC_2024.mp4"
       : "./assets/MP4/LWC_2024.mp4";
 
   const WIDE_SLIDES = [

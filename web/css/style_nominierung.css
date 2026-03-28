@@ -126,6 +126,17 @@ main#content{
   gap: 18px;
 }
 
+.home-cards--triple{
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 1060px;
+  margin: 0 auto;
+}
+
+.home-cards--single{
+  grid-template-columns: minmax(280px, 360px);
+  justify-content: center;
+}
+
 .home-card{
   position:relative;
   display:block;
@@ -264,13 +275,15 @@ main#content{
 }
 
 @media (max-width: 1280px){
-  .home-cards{
+  .home-cards,
+  .home-cards--triple{
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 900px){
-  .home-cards{
+  .home-cards,
+  .home-cards--triple{
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -298,7 +311,8 @@ main#content{
     padding: 0 12px;
   }
 
-  .home-cards{
+  .home-cards,
+  .home-cards--triple{
     grid-template-columns: 1fr;
   }
 }
