@@ -98,6 +98,7 @@
     dataExcelUrls: [],
     dataSheet: "Tabelle2",
     mountId: "bp-list",
+    pointsMode: "standard",
   };
 
   let COLS = { ...COLS_DEFAULT };
@@ -123,6 +124,7 @@
     STATE.dataExcelUrls = resolveUrlCandidates(options.dataExcelUrls, options.dataExcelUrl || STATE.dataExcelUrls[0] || "", "athleteData");
     STATE.dataSheet = String(options.dataSheet || STATE.dataSheet || "Tabelle2").trim();
     STATE.mountId = String(options.mountId || STATE.mountId || "bp-list").trim();
+    STATE.pointsMode = normalizePointsMode(options.pointsMode || options.scoringMode || STATE.pointsMode || "standard");
 
     if (!STATE.configExcelUrls.length) throw new Error("config_excel_url_missing");
     if (!STATE.dataExcelUrls.length) throw new Error("data_excel_url_missing");
@@ -205,8 +207,17 @@
     return Number(x).toFixed(2).replace(".", ",");
   }
 
-  function calcPointsFromRatio(ratio) {
+  function normalizePointsMode(value) {
+    const mode = String(value ?? "").trim().toLowerCase();
+    if (mode === "natio" || mode === "nationalmannschaft" || mode === "nationalteam") return "natio";
+    return "standard";
+  }
+
+  function calcPointsFromRatio(ratio, pointsMode = STATE.pointsMode) {
     if (!Number.isFinite(ratio) || ratio <= 0) return 0;
+    if (pointsMode === "natio") {
+      return 1000 * Math.pow(1 / ratio, 3);
+    }
     if (ratio >= 5) return 0;
     if (ratio >= 2) return 2000 / 3 - (400 / 3) * ratio;
     return 467 * ratio * ratio - 2001 * ratio + 2534;
@@ -919,7 +930,7 @@
         }
 
         const ratio = best.sec / wrSec;
-        const pts = calcPointsFromRatio(ratio);
+        const pts = calcPointsFromRatio(ratio, STATE.pointsMode);
         const pts2 = round2(pts);
 
         a.points[dis.key] = pts2;

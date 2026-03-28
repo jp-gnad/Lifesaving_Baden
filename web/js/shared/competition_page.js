@@ -42,11 +42,16 @@
   }
 
   function renderCarouselError(config, main) {
+    const usesExplicitSlides = Array.isArray(config.carousel?.slides) && config.carousel.slides.length > 0;
+    const errorText = usesExplicitSlides
+      ? "Keine gültigen Karussellbilder konfiguriert."
+      : `Keine Jahresbilder im Ordner <code>${escapeHtml(config.carousel.folder)}</code> gefunden.`;
+
     main.innerHTML = `
       <section class="intro">
         <div class="container">
           <h2>${escapeHtml(config.pageTitle)}</h2>
-          <p>Keine Jahresbilder im Ordner <code>${escapeHtml(config.carousel.folder)}</code> gefunden.</p>
+          <p>${errorText}</p>
         </div>
       </section>
     `;
@@ -97,7 +102,10 @@
       minYear: config.carousel.minYear,
       maxYear: config.carousel.maxYear,
       exts: config.carousel.exts,
+      yearSuffixes: config.carousel.yearSuffixes,
+      slides: config.carousel.slides,
       slideSettings: config.carousel.slideSettings,
+      fallbackSlide: config.carousel.fallbackSlide,
       titleBase: config.carousel.titleBase
     });
   }

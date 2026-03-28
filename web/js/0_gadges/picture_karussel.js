@@ -11,23 +11,78 @@
       folder: options.folder || "",
       minYear: Number.isFinite(options.minYear) ? options.minYear : 2000,
       maxYear: Number.isFinite(options.maxYear) ? options.maxYear : new Date().getFullYear() + 1,
-      exts: Array.isArray(options.exts) && options.exts.length ? options.exts : [".jpg"],
+      exts: normalizeExts(Array.isArray(options.exts) && options.exts.length ? options.exts : [".jpg"]),
+      yearSuffixes: normalizeYearSuffixes(options.yearSuffixes),
+      slides: Array.isArray(options.slides) ? options.slides : [],
       slideSettings: options.slideSettings || {},
+      fallbackSlide: options.fallbackSlide && typeof options.fallbackSlide === "object"
+        ? options.fallbackSlide
+        : null,
       titleBase: typeof options.titleBase === "string" && options.titleBase.trim()
         ? options.titleBase.trim()
         : "Junioren Rettungspokal",
     };
 
-    const first = await findLatestSlide(cfg);
-    if (!first) throw new Error("no_slides");
+    const explicitSlides = buildExplicitSlides(cfg);
+    if (explicitSlides.length) {
+      track.innerHTML = explicitSlides
+        .map((slide, index) => slideToHtml(slide, index === 0))
+        .join("");
 
-    track.innerHTML = slideToHtml(first, true);
+      initWideCarousel(root);
+      initSlideLazyLoading(root);
+      return;
+    }
+
+    const first = await findLatestSlide(cfg);
+    const fallback = first ? null : buildFallbackSlide(cfg);
+    const initialSlide = first ? first.slide : fallback;
+    if (!initialSlide) throw new Error("no_slides");
+
+    track.innerHTML = slideToHtml(initialSlide, true);
 
     initWideCarousel(root);
     initSlideLazyLoading(root);
 
-    loadRemainingSlides(root, cfg, first.year - 1).catch(console.error);
+    if (first) {
+      loadRemainingSlides(root, cfg, first.year, first.url).catch(console.error);
+    }
   };
+
+  function normalizeExts(exts) {
+    const out = [];
+    const seen = new Set();
+
+    for (const ext of exts || []) {
+      const raw = String(ext || "").trim();
+      if (!raw) continue;
+      const normalized = raw.startsWith(".") ? raw : `.${raw}`;
+
+      for (const variant of [normalized, normalized.toLowerCase(), normalized.toUpperCase()]) {
+        if (!variant || seen.has(variant)) continue;
+        seen.add(variant);
+        out.push(variant);
+      }
+    }
+
+    return out.length ? out : [".jpg", ".JPG"];
+  }
+
+  function normalizeYearSuffixes(suffixes) {
+    const input = Array.isArray(suffixes) && suffixes.length ? suffixes : [""];
+    const out = [];
+    const seen = new Set();
+
+    for (const suffix of input) {
+      const value = String(suffix ?? "").trim();
+      if (seen.has(value)) continue;
+      seen.add(value);
+      out.push(value);
+    }
+
+    if (!seen.has("")) out.unshift("");
+    return out;
+  }
 
   function buildSlideObj(year, imgUrl, cfgAll) {
     const key = String(year);
@@ -48,26 +103,86 @@
 
   async function findLatestSlide(cfg) {
     for (let year = cfg.maxYear; year >= cfg.minYear; year--) {
-      const imgUrl = await firstExistingUrl(cfg.folder, year, cfg.exts);
-      if (!imgUrl) continue;
-      return buildSlideObj(year, imgUrl, cfg);
+      const urls = await existingUrlsForYear(cfg.folder, year, cfg.exts, cfg.yearSuffixes);
+      if (!urls.length) continue;
+      return {
+        year,
+        url: urls[0],
+        slide: buildSlideObj(year, urls[0], cfg),
+      };
     }
     return null;
   }
 
-  async function loadRemainingSlides(root, cfg, startYear) {
+  async function loadRemainingSlides(root, cfg, startYear, alreadyLoadedUrl = "") {
     const track = root.querySelector(".wide-carousel__slides");
     if (!track) return;
 
     for (let year = startYear; year >= cfg.minYear; year--) {
-      const imgUrl = await firstExistingUrl(cfg.folder, year, cfg.exts);
-      if (imgUrl) {
+      const urls = await existingUrlsForYear(cfg.folder, year, cfg.exts, cfg.yearSuffixes);
+      const pendingUrls = year === startYear && alreadyLoadedUrl
+        ? urls.filter((url) => url !== alreadyLoadedUrl)
+        : urls;
+
+      for (const imgUrl of pendingUrls) {
         const s = buildSlideObj(year, imgUrl, cfg);
         track.insertAdjacentHTML("beforeend", slideToHtml(s, false));
         root.dispatchEvent(new CustomEvent("dp-slides-updated"));
+        await sleep(25);
       }
-      await sleep(25);
     }
+  }
+
+  function buildExplicitSlides(cfg) {
+    return (cfg.slides || [])
+      .map((slide) => normalizeExplicitSlide(slide, cfg))
+      .filter(Boolean);
+  }
+
+  function normalizeExplicitSlide(slide, cfg) {
+    if (!slide || typeof slide !== "object") return null;
+
+    const img = String(slide.img || slide.src || "").trim();
+    if (!img) return null;
+
+    const year = slide.year ?? null;
+    const title =
+      typeof slide.title === "string" && slide.title.trim()
+        ? slide.title.trim()
+        : year !== null && year !== undefined && year !== ""
+          ? `${cfg.titleBase} ${year}`
+          : cfg.titleBase;
+
+    return {
+      year,
+      title,
+      text: slide.text ?? "",
+      img,
+      cta: slide.cta ?? null,
+      bgPos: slide.bgPos ?? "center center",
+      h: slide.h ?? null,
+      textPos: slide.textPos ?? "bottom",
+      textAlign: slide.textAlign ?? "center",
+      contentBottom: slide.contentBottom ?? null,
+    };
+  }
+
+  function buildFallbackSlide(cfg) {
+    const fallback = cfg.fallbackSlide;
+    if (!fallback?.img) return null;
+
+    return {
+      year: fallback.year ?? null,
+      title: fallback.title ?? cfg.titleBase,
+      text: fallback.text ?? "",
+      img: fallback.img,
+      cta: fallback.cta ?? null,
+      bgPos: fallback.bgPos ?? "center center",
+      h: fallback.h ?? null,
+      textPos: fallback.textPos ?? "bottom",
+      textAlign: fallback.textAlign ?? "center",
+      contentBottom: fallback.contentBottom ?? null,
+    };
   }
 
   function slideToHtml(s, eager) {
@@ -306,12 +421,20 @@
     }, 900);
   }
 
-  async function firstExistingUrl(folder, year, exts) {
-    for (const ext of exts) {
-      const url = `${folder}${year}${ext}`;
-      if (await urlExists(url)) return url;
+  async function existingUrlsForYear(folder, year, exts, suffixes) {
+    const urls = [];
+
+    for (const suffix of suffixes || [""]) {
+      for (const ext of exts) {
+        const url = `${folder}${year}${suffix}${ext}`;
+        if (await urlExists(url)) {
+          urls.push(url);
+          break;
+        }
+      }
     }
-    return null;
+
+    return urls;
   }
 
   async function urlExists(url) {

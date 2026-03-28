@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
         { key: "bodenseepokal", label: "Bodensee Pokal", href: "bodenseepokal.html" },
         { key: "junioren", label: "Junioren Rettungspokal", href: "juniorenrettungspokal.html" },
         { key: "dem", label: "Deutsche Einzelstrecken Meisterschaften", href: "dem.html" },
+        { key: "nationalmannschaften", label: "Nationalmannschaften", href: "nationalmannschaft.html" },
       ],
     },
     { key: "clubs", label: "Clubs", href: "clubs.html" },

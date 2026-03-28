@@ -1,0 +1,47 @@
+@import url("./style_deutschlandpokal.css");
+
+.info-copy {
+  max-width: 900px;
+  margin: 1rem auto 2.75rem;
+  color: rgb(86, 86, 87);
+  font-size: clamp(1rem, 1.3vw, 1.1rem);
+  line-height: 1.7;
+  text-align: center;
+}
+
+.info-copy a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(227, 6, 19, 0.55);
+  transition: color 200ms ease, text-decoration-color 200ms ease;
+}
+
+.info-copy a:hover,
+.info-copy a:focus-visible {
+  color: rgb(227, 6, 19);
+  text-decoration-color: rgb(227, 6, 19);
+}
+
+.info-copy a:focus-visible {
+  outline: 2px solid rgba(227, 6, 19, 0.45);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+#natio-list {
+  margin-top: 2rem;
+}
+
+@media (max-width: 720px) {
+  #natio-list {
+    margin-top: 1.5rem;
+  }
+
+  .info-copy {
+    margin-bottom: 2rem;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+}

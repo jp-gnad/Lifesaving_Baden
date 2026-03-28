@@ -132,6 +132,13 @@ main#content{
   margin: 0 auto;
 }
 
+.home-cards--double{
+  grid-template-columns: repeat(2, minmax(280px, 360px));
+  justify-content: center;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
 .home-cards--single{
   grid-template-columns: minmax(280px, 360px);
   justify-content: center;
@@ -312,7 +319,8 @@ main#content{
   }
 
   .home-cards,
-  .home-cards--triple{
+  .home-cards--triple,
+  .home-cards--double{
     grid-template-columns: 1fr;
   }
 }

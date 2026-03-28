@@ -122,6 +122,21 @@ document.addEventListener("DOMContentLoaded", () => {
           aria: "Deutsche Einzelstrecken Meisterschaften",
           img: "./assets/png/hintergrund9.jpg",
         },
+        {
+          href: "./nationalmannschaft.html",
+          kicker: "Nationalmannschaft",
+          main: "4-Kampf Kriterium",
+          more: "Die zwei Punktbesten Mehrkämpfer*innen in den Pool-Disziplinen im Nominierungszeitraum können vorrangig nominiert werden.",
+          aria: "Nationalmannschaften",
+          rotator: {
+            folder: "./assets/png/Natio-Team/",
+            minYear: 2000,
+            maxYear: new Date().getFullYear() + 1,
+            intervalMs: 15000,
+            exts: [".jpg", ".JPG", ".jpeg", ".png"],
+            yearSuffixes: ["", "-1", "-2"],
+          },
+        },
       ],
     },
   ];
@@ -172,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       <section class="home-links" aria-label="${section.ariaLabel}">
         <div class="container">
-          <div class="${section.cards.length === 1 ? "home-cards home-cards--single" : section.cards.length === 3 ? "home-cards home-cards--triple" : "home-cards"}">
+          <div class="${section.cards.length === 1 ? "home-cards home-cards--single" : section.cards.length === 2 ? "home-cards home-cards--double" : section.cards.length === 3 ? "home-cards home-cards--triple" : "home-cards"}">
             ${section.cards.map((c) => {
               const isRotator = !!c.rotator;
               const imgSrc = (c.imgFallback || c.img || "");
@@ -182,7 +197,9 @@ document.addEventListener("DOMContentLoaded", () => {
                    data-folder="${rot.folder}"
                    data-min-year="${rot.minYear}"
                    data-max-year="${rot.maxYear}"
-                   data-interval="${rot.intervalMs}"`
+                   data-interval="${rot.intervalMs}"
+                   data-exts="${(rot.exts || []).join("|")}"
+                   data-year-suffixes="${(rot.yearSuffixes || []).map((suffix) => suffix === "" ? "__BASE__" : suffix).join("|")}"`
                 : "";
 
               return `
@@ -238,26 +255,26 @@ async function startYearRotator(imgEl) {
   const minYear = toInt(imgEl.dataset.minYear, 2000);
   const maxYear = toInt(imgEl.dataset.maxYear, new Date().getFullYear());
   const interval = toInt(imgEl.dataset.interval, 10000);
-
-  const exts = [".jpg"];
+  const exts = parseList(imgEl.dataset.exts, [".jpg"]);
+  const yearSuffixes = parseYearSuffixes(imgEl.dataset.yearSuffixes);
 
   // A) Sofort: neuestes vorhandenes Bild finden (stoppt beim ersten Treffer)
   let foundYear = null;
   let firstUrl = null;
 
-  outer:
   for (let y = maxYear; y >= minYear; y--) {
-    for (const ext of exts) {
-      const url = `${folder}${y}${ext}`;
-      const ok = await setInitialImage(imgEl, url); // lädt genau dieses Bild
-      if (ok) {
-        foundYear = y;
-        firstUrl = url;
-        break outer;
-      }
+    const urls = await existingUrlsForYear(folder, y, exts, yearSuffixes);
+    if (!urls.length) {
+      await idleYield();
+      continue;
     }
-    // kleine Entlastung fürs UI (optional)
-    await idleYield();
+
+    const ok = await setInitialImage(imgEl, urls[0]);
+    if (ok) {
+      foundYear = y;
+      firstUrl = urls[0];
+      break;
+    }
   }
 
   if (!firstUrl) return;
@@ -275,13 +292,21 @@ async function startYearRotator(imgEl) {
 
   // D) Hintergrund: ältere Jahre einsammeln (blockiert Initialanzeige nicht)
   (async () => {
-    for (let y = foundYear - 1; y >= minYear; y--) {
-      const url = await firstExistingUrl(folder, y, exts); // nutzt deine urlExists/probeByImage
-      if (url) {
-        urls.push(url);
-        preloadImage(url); // optional: macht Swaps später schneller
-      }
+    const firstYearUrls = await existingUrlsForYear(folder, foundYear, exts, yearSuffixes);
+    for (const url of firstYearUrls) {
+      if (url === firstUrl) continue;
+      urls.push(url);
+      preloadImage(url);
       await idleYield();
+    }
+
+    for (let y = foundYear - 1; y >= minYear; y--) {
+      const yearUrls = await existingUrlsForYear(folder, y, exts, yearSuffixes);
+      for (const url of yearUrls) {
+        urls.push(url);
+        preloadImage(url);
+        await idleYield();
+      }
     }
   })();
 }
@@ -291,12 +316,41 @@ function toInt(v, fallback) {
   return Number.isFinite(n) ? n : fallback;
 }
 
-async function firstExistingUrl(folder, year, exts) {
-  for (const ext of exts) {
-    const url = `${folder}${year}${ext}`;
-    if (await urlExists(url)) return url;
+function parseList(value, fallback = []) {
+  const raw = String(value || "").trim();
+  if (!raw) return [...fallback];
+
+  const parts = raw.split("|").map((entry) => entry.trim()).filter(Boolean);
+  return parts.length ? parts : [...fallback];
+}
+
+function parseYearSuffixes(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return [""];
+
+  const parts = raw
+    .split("|")
+    .map((entry) => entry.trim())
+    .map((entry) => entry === "__BASE__" ? "" : entry)
+    .filter((entry) => entry === "" || Boolean(entry));
+
+  return parts.length ? parts : [""];
+}
+
+async function existingUrlsForYear(folder, year, exts, suffixes) {
+  const urls = [];
+
+  for (const suffix of suffixes || [""]) {
+    for (const ext of exts) {
+      const url = `${folder}${year}${suffix}${ext}`;
+      if (await urlExists(url)) {
+        urls.push(url);
+        break;
+      }
+    }
   }
-  return null;
+
+  return urls;
 }
 
 async function urlExists(url) {
