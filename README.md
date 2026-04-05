@@ -1,7 +1,6 @@
 # Lifesaving Baden
 
 Dieses Repository enthaelt die Quellbasis fuer eine statische Mehrseiten-Webseite rund um den Rettungssport in Baden. Der deploybare Web-Root liegt im Ordner `web/`; der Rest des Repos enthaelt Daten, Dokumente, Skripte und Arbeitsnotizen.
-Zusaetzlich liegt unter `pdf_extractor/` jetzt ein eigenstaendiges Python-Teilprojekt fuer die spaetere Extraktion strukturierter Daten aus Wettkampf-PDFs.
 
 Die README ist als schneller Einstieg fuer Menschen und KI gedacht. Sie beantwortet drei Fragen:
 
@@ -37,7 +36,6 @@ Die README ist als schneller Einstieg fuer Menschen und KI gedacht. Sie beantwor
 |-- README.md
 |-- content/
 |-- docs/
-|-- pdf_extractor/
 |-- scripts/
 |-- web/
 |   |-- *.html
@@ -80,7 +78,6 @@ Bei jeder strukturellen Aenderung sollen die betroffenen Doku-Dateien im selben 
 ## Fuer KI besonders wichtig
 
 - Der deploybare Code liegt fast komplett unter `web/`.
-- `pdf_extractor/` ist ein separates Hilfsprojekt und nicht Teil der statischen Browser-Laufzeit.
 - `web/js/shared/excel_loader.js` ist der wichtigste Einstieg fuer Excel-basierte Datenfluesse.
 - `web/js/header.js` definiert die reale Hauptnavigation der Seite.
 - `web/js/profil/profil_tabs.js`, `web/js/0_gadges/PZ_tabellen.js` und `web/js/profil/profil_lsc.js` sind derzeit Hotspots mit hoher Komplexitaet.
