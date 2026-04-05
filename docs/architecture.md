@@ -76,6 +76,9 @@ Fast alle Seiten nutzen dieselben Grundbausteine:
   - PDF-Dokumente ausserhalb des Web-Roots
 - `web/data/`
   - Excel-Dateien und JSON-Daten
+- `pdf_extractor/`
+  - Eigenstaendiges Python-Teilprojekt fuer die spaetere Extraktion strukturierter Daten aus Wettkampfprotokollen
+  - Kein Teil der Browser-Laufzeit der Webseite
 
 ## Laufzeitmodell
 

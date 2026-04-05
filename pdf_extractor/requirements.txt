@@ -1,0 +1,9 @@
+pypdf>=5.0.0
+PyMuPDF>=1.24.0
+Pillow>=10.0.0
+pytesseract>=0.3.10
+openpyxl>=3.1.5
+
+# Optional, but recommended for deskewing scanned pages:
+opencv-python>=4.10.0.84
+numpy>=1.26.0
