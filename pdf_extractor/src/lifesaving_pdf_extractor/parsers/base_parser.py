@@ -60,7 +60,7 @@ class BaseProtocolParser(ABC):
             confidence=confidence,
             data=data,
             review_notes=review_notes,
-            raw_excerpt=raw_excerpt[:280],
+            raw_excerpt=raw_excerpt[:2000],
         )
 
     @staticmethod

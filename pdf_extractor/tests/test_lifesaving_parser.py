@@ -167,8 +167,92 @@ Pl Name Gliederung Jg Punkte Diff 50m k. Schwimmen 50m k. Schwimmen Zeit 50m k. 
         self.assertEqual(result.records[0].data["name"], "Zube, Nea")
         self.assertEqual(result.records[0].data["verein"], "Waibstadt")
         self.assertEqual(result.records[0].data["geschlecht"], "weiblich")
+        self.assertEqual(
+            result.records[0].data["summary_discipline_keys"],
+            "event_50m_combined_swim|event_50m_freestyle|event_50m_obstacle",
+        )
+        self.assertEqual(result.records[0].data["summary_discipline_count"], "3")
+        self.assertEqual(result.records[0].data["summary_disciplines"], "50m k. Schwimmen|50m Freistil|50m Hindernis")
         self.assertIn("50m k. Schwimmen", result.records[0].data["bemerkung"])
         self.assertIn("50m Freistil", result.records[0].data["bemerkung"])
+        self.assertNotIn("LV=", result.records[0].data["bemerkung"])
+
+    def test_normalizes_mojibake_and_non_breaking_spaces_in_text_based_rows(self) -> None:
+        nbsp = "\u00a0"
+        page_text = (
+            "Name: Badische Meisterschaften Frankenland\n"
+            "Ort: K\u00c3\u00b6nigheim\n"
+            "Datum: 14.03.2025\n"
+            "AK 10 maennlich\n"
+            "Pl  Name  Gliederung  Jg  Punkte  Diff  50m k. Schwimmen 50m k. Schwimmen Zeit 50m k. Schwimmen Pkt 50m k. Schwimmen Str\n"
+            f"5\u00c2{nbsp}\u00c2{nbsp}Fleuchaus,\u00c2{nbsp}Kilian\u00c2{nbsp}\u00c2{nbsp}Tauberbischofsheim"
+            f"\u00c2{nbsp}\u00c2{nbsp}15\u00c2{nbsp}\u00c2{nbsp}1028,95\u00c2{nbsp}\u00c2{nbsp}1201"
+            f"\u00c2{nbsp}\u00c2{nbsp}0:32,01\u00c2{nbsp}\u00c2{nbsp}S1:\u00c2{nbsp}disq."
+        )
+
+        result = self.parser.parse(
+            self._document(page_text, "Ergebnisse_Einzel.pdf"),
+            self._context("Ergebnisse_Einzel.pdf"),
+            [PreprocessedPage(page_number=1, text=page_text, text_source="pdf_text", used_ocr=False)],
+        )
+
+        self.assertEqual(len(result.records), 1)
+        self.assertEqual(result.records[0].data["name"], "Fleuchaus, Kilian")
+        self.assertEqual(result.records[0].data["verein"], "Tauberbischofsheim")
+        self.assertEqual(result.records[0].data["datum"], "14.03.2025")
+        self.assertEqual(result.records[0].data["ort"], "K\u00f6nigheim")
+        self.assertEqual(result.records[0].data["dq_status"], "DQ")
+
+    def test_detects_multiple_disciplines_from_compact_header_signature(self) -> None:
+        page_text = """
+Name: Badische Meisterschaften Frankenland
+Ort: Wallduern
+Datum: 14.03.2025
+AK 12 weiblich
+Pl Name Gliederung Jg Punkte Diff 50m k. Schwim 50m k. Schwim Zeit 50m k. Schwim Pkt Str50m Flossen50m Flossen Zeit50m Flossen Pkt Str50m Hindernis50m HindernisZeit50m HindernisPktStr
+1   Beispiel, Nina        Adelsheim        13  1498,19  0   0:35,61 613 0   0:28,10 854 0   0:38,11 644 0
+""".strip()
+
+        result = self.parser.parse(
+            self._document(page_text, "Ergebnisse_Einzel.pdf"),
+            self._context("Ergebnisse_Einzel.pdf"),
+            [PreprocessedPage(page_number=1, text=page_text, text_source="pdf_text", used_ocr=False)],
+        )
+
+        self.assertEqual(len(result.records), 1)
+        self.assertEqual(
+            result.records[0].data["summary_discipline_keys"],
+            "event_50m_combined_swim|event_50m_finswim|event_50m_obstacle",
+        )
+        self.assertEqual(result.records[0].data["summary_discipline_count"], "3")
+
+    def test_prefers_split_footer_discipline_index_lines_for_summary_pages(self) -> None:
+        page_text = """
+Name: LMS Beispiel
+Ort: Karlsruhe
+Datum: 29.06.2025
+50m Kombiniertes Schwimmen (0:37,12)
+Disziplin 1
+50m Flossenschwimmen (0:28,17)
+Disziplin 2
+50m Hindernisschwimmen (0:39,41)
+Disziplin 3
+Pl Name Gliederung Jg Punkte Diff
+1   Maier, Emma           Malsch        13  2300,50  0   0:41,19 754 0:28,93 742 0:37,28 804
+""".strip()
+
+        result = self.parser.parse(
+            self._document(page_text, "LMS2025_Ergebnisse_Einzel.pdf"),
+            self._context("LMS2025_Ergebnisse_Einzel.pdf"),
+            [PreprocessedPage(page_number=1, text=page_text, text_source="pdf_text", used_ocr=False)],
+        )
+
+        self.assertEqual(len(result.records), 1)
+        self.assertEqual(
+            result.records[0].data["summary_discipline_keys"],
+            "event_50m_combined_swim|event_50m_finswim|event_50m_obstacle",
+        )
+        self.assertEqual(result.records[0].data["summary_discipline_count"], "3")
 
     @staticmethod
     def _document(page_text: str, filename: str) -> LoadedDocument:

@@ -172,8 +172,8 @@ class ExcelExporter:
             row = self._build_base_row(record)
             row["gesamtplatzierung"] = self._clean_place(record.data.get("platz", ""))
             row["mehrkampf_punkte"] = self._clean_decimal(record.data.get("punkte", ""))
-            row["wertung"] = self._derive_wertung(record)
             self._populate_summary_disciplines(row, record)
+            row["wertung"] = self._derive_summary_wertung_from_row(row) or self._derive_wertung(record)
             rows.append(row)
             summary_rows[self._row_key(record)] = row
 
@@ -197,7 +197,7 @@ class ExcelExporter:
         row = {field: "" for field in FINAL_CSV_FIELDS}
         row["name"] = record.data.get("name", "")
         row["gender"] = self._gender_code(record.data.get("geschlecht", ""))
-        row["altersklasse"] = record.data.get("altersklasse", "")
+        row["altersklasse"] = self._format_age_group(record.data.get("altersklasse", ""))
         row["jahrgang"] = self._two_digit_year(record.data.get("jahrgang", ""))
         row["gliederung_ortsgruppe"] = record.data.get("verein", "")
         row["bezirk_q_gliederung"] = self._extract_region(record)
@@ -211,24 +211,20 @@ class ExcelExporter:
         return row
 
     def _populate_summary_disciplines(self, row: dict[str, str], record: ExtractedRecord) -> None:
-        disciplines = self._extract_summary_discipline_names(record)
-        values = self._extract_summary_discipline_values(record.raw_excerpt)
+        discipline_keys = self._extract_summary_discipline_keys(record)
+        values = self._extract_summary_discipline_values(record.raw_excerpt, len(discipline_keys))
+        if values and len(values) < len(discipline_keys):
+            discipline_keys = discipline_keys[: len(values)]
 
-        for index, discipline_name in enumerate(disciplines):
-            key = self._discipline_key(discipline_name)
-            if key is None:
-                continue
+        for index, key in enumerate(discipline_keys):
             if index >= len(values):
                 continue
 
-            time_value, points_value = values[index]
-            code = ""
-            penalty = ""
-            if self._is_status_token(time_value):
-                code = self._code_from_token(time_value)
-                penalty = self._penalty_from_token(time_value)
-                time_value = ""
-                points_value = ""
+            discipline_value = values[index]
+            time_value = discipline_value.get("time", "")
+            points_value = discipline_value.get("points", "")
+            code = discipline_value.get("code", "")
+            penalty = discipline_value.get("penalty", "")
 
             self._write_discipline_block(
                 row=row,
@@ -317,40 +313,236 @@ class ExcelExporter:
         for pattern in (r"(?:Q-Gld|LV)=([^;]+)",):
             match = re.search(pattern, record.data.get("bemerkung", ""), flags=re.IGNORECASE)
             if match:
-                return match.group(1).strip()
+                candidate = match.group(1).strip()
+                if self._looks_like_region(candidate):
+                    return candidate
         return record.data.get("bezirk_q_gliederung", "")
 
     def _extract_summary_discipline_names(self, record: ExtractedRecord) -> list[str]:
+        raw_disciplines = record.data.get("summary_disciplines", "")
+        if raw_disciplines:
+            return [item.strip() for item in raw_disciplines.split("|") if item.strip()]
+
         match = re.search(r"Disziplinen=(.+)$", record.data.get("bemerkung", ""))
         if not match:
             return []
         return [item.strip() for item in match.group(1).split("|") if item.strip()]
 
-    def _extract_summary_discipline_values(self, raw_excerpt: str) -> list[tuple[str, str]]:
+    def _extract_summary_discipline_keys(self, record: ExtractedRecord) -> list[str]:
+        raw_keys = record.data.get("summary_discipline_keys", "")
+        if raw_keys:
+            return [item.strip() for item in raw_keys.split("|") if item.strip()]
+
+        keys: list[str] = []
+        for name in self._extract_summary_discipline_names(record):
+            key = self._discipline_key(name)
+            if key is None:
+                continue
+            keys.append(key)
+        return keys
+
+    def _extract_summary_discipline_values(self, raw_excerpt: str, expected_count: int) -> list[dict[str, str]]:
         tail = self._extract_summary_tail(raw_excerpt)
         if not tail:
             return []
+
+        structured_values = self._extract_structured_summary_discipline_values(tail, expected_count)
+        if structured_values:
+            return structured_values
+
         matches = re.findall(
             r"([0-9:.,]+|n\.a\.|DNS|DQ|DNF)\s+([0-9.,]+|n\.a\.|DNS|DQ|DNF)",
             tail,
             flags=re.IGNORECASE,
         )
-        return [(time_value.strip(), points_value.strip()) for time_value, points_value in matches]
+        return [
+            {
+                "time": "" if self._is_status_token(time_value.strip()) else time_value.strip(),
+                "points": "" if self._is_status_token(points_value.strip()) else points_value.strip(),
+                "code": self._code_from_token(time_value.strip()) if self._is_status_token(time_value.strip()) else "",
+                "penalty": self._penalty_from_token(time_value.strip()) if self._is_status_token(time_value.strip()) else "",
+            }
+            for time_value, points_value in matches
+        ]
 
     def _extract_summary_tail(self, raw_excerpt: str) -> str:
+        normalized_excerpt = self._normalize_text_layer(raw_excerpt, collapse_spaces=False)
         for pattern in SUMMARY_ROW_PATTERNS:
-            match = pattern.match(raw_excerpt.strip())
+            match = pattern.match(normalized_excerpt)
             if match:
                 return match.group("tail").strip()
         return ""
 
+    def _extract_structured_summary_discipline_values(self, tail: str, expected_count: int) -> list[dict[str, str]]:
+        tokens = self._tokenize_summary_tail(tail)
+        if not tokens:
+            return []
+        start_indices = self._summary_slot_start_indices(tokens)
+        if not start_indices:
+            return []
+
+        values: list[dict[str, str]] = []
+        remaining_empty_slots = max(0, expected_count - len(start_indices))
+
+        leading_placeholders = start_indices[0]
+        while leading_placeholders > 0 and remaining_empty_slots > 0:
+            values.append(self._new_summary_value(""))
+            leading_placeholders -= 1
+            remaining_empty_slots -= 1
+
+        for position, start_index in enumerate(start_indices):
+            next_start = start_indices[position + 1] if position + 1 < len(start_indices) else len(tokens)
+            slot_tokens = tokens[start_index:next_start]
+            values.append(self._parse_summary_slot_tokens(slot_tokens))
+
+            trailing_placeholders = self._count_trailing_placeholders(slot_tokens)
+            candidate_empty_slots = max(0, trailing_placeholders - 1)
+            while candidate_empty_slots > 0 and remaining_empty_slots > 0:
+                values.append(self._new_summary_value(""))
+                candidate_empty_slots -= 1
+                remaining_empty_slots -= 1
+
+        if expected_count > 0 and len(values) < expected_count:
+            values.extend(self._new_summary_value("") for _ in range(expected_count - len(values)))
+
+        return values[:expected_count] if expected_count > 0 else values
+
+    def _tokenize_summary_tail(self, tail: str) -> list[str]:
+        normalized = self._normalize_text_layer(tail)
+        normalized = normalized.replace("...", " ... ")
+        normalized = re.sub(r"\s+", " ", normalized).strip()
+        return [token for token in normalized.split(" ") if token]
+
+    def _new_summary_value(self, anchor: str) -> dict[str, str]:
+        value = {"time": "", "points": "", "code": "", "penalty": ""}
+        stripped_anchor = anchor.strip()
+
+        if not stripped_anchor:
+            return value
+
+        if self._looks_like_time_value(stripped_anchor):
+            value["time"] = stripped_anchor
+            return value
+
+        if self._is_status_token(stripped_anchor):
+            value["code"] = self._code_from_token(stripped_anchor)
+            value["penalty"] = self._penalty_from_token(stripped_anchor)
+            return value
+
+        return value
+
+    def _summary_slot_start_indices(self, tokens: list[str]) -> list[int]:
+        starts: list[int] = []
+        for index, token in enumerate(tokens):
+            cleaned = token.rstrip(":;")
+            if cleaned == "...":
+                continue
+
+            if index > 0 and self._looks_like_summary_number(tokens[index - 1].rstrip(":;")) and self._is_status_token(cleaned):
+                continue
+
+            if self._looks_like_summary_number(cleaned):
+                next_token = tokens[index + 1].rstrip(":;") if index + 1 < len(tokens) else ""
+                if self._is_status_token(next_token):
+                    starts.append(index)
+                continue
+
+            if self._looks_like_summary_anchor(cleaned):
+                starts.append(index)
+
+        return starts
+
+    def _parse_summary_slot_tokens(self, slot_tokens: list[str]) -> dict[str, str]:
+        value = self._new_summary_value("")
+        content = [token.rstrip(":;") for token in slot_tokens if token.rstrip(":;") != "..."]
+        if not content:
+            return value
+
+        index = 0
+        if len(content) >= 2 and self._looks_like_summary_number(content[0]) and self._is_status_token(content[1]):
+            value["points"] = content[0]
+            value["code"] = self._code_from_token(content[1])
+            value["penalty"] = self._penalty_from_token(content[1])
+            index = 2
+        elif self._looks_like_time_value(content[0]):
+            value["time"] = content[0]
+            index = 1
+        elif self._is_status_token(content[0]):
+            value["code"] = self._code_from_token(content[0])
+            value["penalty"] = self._penalty_from_token(content[0])
+            index = 1
+
+        for token in content[index:]:
+            lowered = token.casefold()
+            if self._looks_like_summary_code(token):
+                value["code"] = token.upper()
+                continue
+            if lowered.startswith("disq"):
+                value["penalty"] = "disq."
+                if not value["code"]:
+                    value["code"] = "DQ"
+                continue
+            if self._looks_like_summary_number(token):
+                if not value["points"]:
+                    value["points"] = token
+                    continue
+                if token in {"50", "100", "150", "200"} and not value["penalty"]:
+                    value["penalty"] = token
+                continue
+            if self._is_status_token(token) and not value["code"]:
+                value["code"] = self._code_from_token(token)
+                value["penalty"] = self._penalty_from_token(token)
+
+        return value
+
+    @staticmethod
+    def _count_trailing_placeholders(slot_tokens: list[str]) -> int:
+        count = 0
+        for token in reversed(slot_tokens):
+            if token.rstrip(":;") != "...":
+                break
+            count += 1
+        return count
+
+    def _looks_like_summary_anchor(self, token: str) -> bool:
+        if self._looks_like_time_value(token):
+            return True
+        return self._is_status_token(token)
+
+    @staticmethod
+    def _looks_like_time_value(token: str) -> bool:
+        return bool(
+            re.fullmatch(r"\d{1,2}:\d{2}[.,]\d{1,2}", token)
+            or re.fullmatch(r"\d{2}:\d{2}:\d{2}\.\d{2}", token)
+            or re.fullmatch(r"\d{1,2}[.,]\d{1,2}", token)
+        )
+
+    @staticmethod
+    def _looks_like_summary_code(token: str) -> bool:
+        return bool(re.fullmatch(r"[A-Z]{1,3}\d{1,2}", token, flags=re.IGNORECASE))
+
+    @staticmethod
+    def _looks_like_summary_number(token: str) -> bool:
+        return bool(re.fullmatch(r"\d+(?:[.,]\d+)?", token))
+
     def _derive_wertung(self, record: ExtractedRecord) -> str:
         if self._is_summary_record(record):
-            disciplines = self._extract_summary_discipline_names(record)
-            return f"{len(disciplines)}-Kampf" if disciplines else ""
+            explicit_count = record.data.get("summary_discipline_count", "").strip()
+            if explicit_count.isdigit():
+                count = int(explicit_count)
+                return f"{count}-Kampf" if count > 0 else ""
+            discipline_keys = self._extract_summary_discipline_keys(record)
+            return f"{len(discipline_keys)}-Kampf" if discipline_keys else ""
         if self._is_status_only_record(record):
             return ""
         return "Einzelkampf"
+
+    def _derive_summary_wertung_from_row(self, row: dict[str, str]) -> str:
+        count = 0
+        for fields in DISCIPLINE_FIELDS.values():
+            if any(row.get(field, "").strip() for field in fields):
+                count += 1
+        return f"{count}-Kampf" if count > 0 else ""
 
     def _derive_round(self, record: ExtractedRecord) -> str:
         round_name = self._extract_round_name(record)
@@ -452,6 +644,14 @@ class ExcelExporter:
         if len(digits) >= 2:
             return digits[-2:]
         return ""
+
+    @staticmethod
+    def _format_age_group(value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            return ""
+        stripped = re.sub(r"^(?:AK|Altersklasse)\s+", "", stripped, flags=re.IGNORECASE)
+        return stripped.strip(" -")
 
     @staticmethod
     def _clean_place(value: str) -> str:
@@ -572,6 +772,21 @@ class ExcelExporter:
         return city.split(",")[0].strip()
 
     @staticmethod
+    def _looks_like_region(value: str) -> bool:
+        candidate = value.strip()
+        if not candidate:
+            return False
+        if len(candidate) > 30:
+            return False
+        if re.search(r"\d{1,2}:\d{2}", candidate):
+            return False
+        if re.search(r"\d{3,},\d{2}", candidate):
+            return False
+        if "..." in candidate:
+            return False
+        return True
+
+    @staticmethod
     def _canonical(value: str) -> str:
         normalized = (
             value.replace("\u00e4", "ae")
@@ -584,6 +799,28 @@ class ExcelExporter:
             .lower()
         )
         return re.sub(r"\s+", " ", normalized).strip()
+
+    @staticmethod
+    def _normalize_text_layer(value: str, collapse_spaces: bool = True) -> str:
+        repaired = ExcelExporter._repair_mojibake(value)
+        repaired = repaired.replace("\u00a0", " ").replace("\t", " ").replace("\ufeff", " ")
+        repaired = repaired.replace("\u00c2", " ")
+        repaired = re.sub(r"(?<=[A-Z])(\d+):", r"\1", repaired, flags=re.IGNORECASE)
+        if collapse_spaces:
+            repaired = re.sub(r"\s+", " ", repaired)
+        else:
+            repaired = re.sub(r"[ ]{3,}", "  ", repaired)
+        return repaired.strip()
+
+    @staticmethod
+    def _repair_mojibake(value: str) -> str:
+        if not value or ("\u00c3" not in value and "\u00c2" not in value):
+            return value
+        try:
+            repaired = value.encode("latin-1").decode("utf-8")
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            return value
+        return repaired if repaired else value
 
 
 class JSONExporter:

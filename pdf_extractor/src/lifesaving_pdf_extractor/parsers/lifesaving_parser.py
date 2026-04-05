@@ -35,6 +35,54 @@ class LifesavingProtocolParser(BaseProtocolParser):
     """Parser for text-based lifesaving result protocols."""
 
     name = "lifesaving"
+    _SUMMARY_DISCIPLINE_LABELS: dict[str, str] = {
+        "event_100m_lifesaver": "100m Lifesaver",
+        "event_50m_manikin_carry": "50m Retten",
+        "event_200m_super_lifesaver": "200m Super-Lifesaver",
+        "event_100m_rescue_medley": "100m Kombi",
+        "event_100m_manikin_carry_with_fins": "100m Retten mit Flossen",
+        "event_200m_obstacle": "200m Hindernis",
+        "event_100m_obstacle": "100m Hindernis",
+        "event_50m_manikin_carry_with_fins": "50m Retten mit Flossen",
+        "event_50m_finswim": "50m Flossen",
+        "event_50m_obstacle": "50m Hindernis",
+        "event_50m_combined_swim": "50m k. Schwimmen",
+        "event_50m_freestyle": "50m Freistil",
+        "event_25m_freestyle": "25m Freistil",
+        "event_25m_breaststroke": "25m Brust",
+        "event_25m_backstroke_no_arms": "25m Ruecken ohne Arme",
+        "event_25m_manikin": "25m Puppe",
+    }
+    _SUMMARY_DISCIPLINE_ALIASES: dict[str, tuple[str, ...]] = {
+        "event_100m_lifesaver": (
+            "100m lifesaver",
+            "100m retten mit gurt und flossen",
+            "100m manikin tow with fins",
+        ),
+        "event_50m_manikin_carry": ("50m retten", "50m manikin carry"),
+        "event_200m_super_lifesaver": ("200m super-lifesaver", "200m super lifesaver", "200m superlifesaver"),
+        "event_100m_rescue_medley": ("100m kombi", "kombinierte rettungsuebung", "100m rescue medley"),
+        "event_100m_manikin_carry_with_fins": (
+            "100m retten mit flossen",
+            "100m retten m fl",
+            "100m manikin carry with fins",
+        ),
+        "event_200m_obstacle": ("200m hindernis", "200m hindernisschwimmen", "200m obstacle swim"),
+        "event_100m_obstacle": ("100m hindernis", "100m hindernisschwimmen", "100m obstacle swim"),
+        "event_50m_manikin_carry_with_fins": ("50m retten mit flossen", "50m retten m fl"),
+        "event_50m_finswim": ("50m flossen", "50m flossenschwimmen"),
+        "event_50m_obstacle": ("50m hindernis", "50m hindernisschwimmen"),
+        "event_50m_combined_swim": ("50m k schwimmen", "50m kombiniertes schwimmen", "50m k schwimm"),
+        "event_50m_freestyle": ("50m freistil", "50m kraul"),
+        "event_25m_freestyle": ("25m freistil", "25m kraul"),
+        "event_25m_breaststroke": ("25m brust",),
+        "event_25m_backstroke_no_arms": (
+            "25m ruecken ohne arme",
+            "25m rue ohne arme",
+            "25m rue. ohne arme",
+        ),
+        "event_25m_manikin": ("25m puppe",),
+    }
 
     _RESULT_ROW_PATTERNS = (
         re.compile(
@@ -85,7 +133,7 @@ class LifesavingProtocolParser(BaseProtocolParser):
         records = []
 
         for page in pages:
-            page_text = page.text.strip()
+            page_text = self._normalize_page_text(page.text).strip()
             if not page_text:
                 continue
 
@@ -128,7 +176,7 @@ class LifesavingProtocolParser(BaseProtocolParser):
         pages: list[PreprocessedPage],
     ) -> dict[str, str]:
         metadata = self.extract_document_header(pages)
-        combined_text = "\n".join(page.text for page in pages if page.text)
+        combined_text = "\n".join(self._normalize_page_text(page.text) for page in pages if page.text)
 
         named_title = self._extract_labeled_value(combined_text, "Name")
         if named_title:
@@ -163,11 +211,14 @@ class LifesavingProtocolParser(BaseProtocolParser):
     ) -> list:
         records = []
         category, gender = self._extract_page_category(page_text)
-        disciplines = self._extract_result_disciplines(page_text)
-        qualifier_label = "Q-Gld" if "q-gld" in self._canonical(page_text) else "LV"
+        discipline_keys = self._extract_result_discipline_keys(page_text)
+        disciplines = [self._SUMMARY_DISCIPLINE_LABELS[key] for key in discipline_keys if key in self._SUMMARY_DISCIPLINE_LABELS]
+        has_qualifier_column = self._result_page_has_qualifier_column(page_text)
+        qualifier_label = "Q-Gld" if "q-gld" in self._canonical(page_text) else ("LV" if has_qualifier_column else "")
 
         for line in page_text.splitlines():
-            row = self._parse_result_row(line.strip())
+            cleaned_line = self._normalize_layout_line(line)
+            row = self._parse_result_row(cleaned_line, has_qualifier_column=has_qualifier_column)
             if row is None:
                 continue
 
@@ -186,6 +237,9 @@ class LifesavingProtocolParser(BaseProtocolParser):
                     "punkte": row.points if self._is_numeric_value(row.points) else "",
                     "bemerkung": self._build_result_remarks(row, qualifier_label, disciplines),
                     "dq_status": dq_status,
+                    "summary_disciplines": "|".join(disciplines),
+                    "summary_discipline_keys": "|".join(discipline_keys),
+                    "summary_discipline_count": str(len(discipline_keys)) if discipline_keys else "",
                 }
             )
 
@@ -211,7 +265,7 @@ class LifesavingProtocolParser(BaseProtocolParser):
                     status=record_status,
                     confidence=confidence,
                     review_notes=review_notes,
-                    raw_excerpt=line.strip(),
+                    raw_excerpt=cleaned_line,
                 )
             )
 
@@ -307,15 +361,16 @@ class LifesavingProtocolParser(BaseProtocolParser):
             current_round = ""
 
             for line in section_lines[1:]:
-                if self._looks_like_round_heading(line):
-                    current_round = self._normalize_round_name(line)
+                cleaned_line = self._normalize_layout_line(line)
+                if self._looks_like_round_heading(cleaned_line):
+                    current_round = self._normalize_round_name(cleaned_line)
                     continue
-                if self._is_table_header(line):
+                if self._is_table_header(cleaned_line):
                     continue
-                if line.startswith("AK "):
+                if cleaned_line.startswith("AK "):
                     continue
 
-                row = self._parse_individual_row(line)
+                row = self._parse_individual_row(cleaned_line)
                 if row is None:
                     continue
 
@@ -352,14 +407,17 @@ class LifesavingProtocolParser(BaseProtocolParser):
                         status=record_status,
                         confidence=confidence,
                         review_notes=review_notes,
-                        raw_excerpt=line,
+                        raw_excerpt=cleaned_line,
                     )
                 )
 
         return records
 
-    def _parse_result_row(self, line: str) -> ParsedResultRow | None:
-        for pattern in self._RESULT_ROW_PATTERNS:
+    def _parse_result_row(self, line: str, has_qualifier_column: bool) -> ParsedResultRow | None:
+        line = self._normalize_layout_line(line)
+        patterns = self._RESULT_ROW_PATTERNS if has_qualifier_column else (self._RESULT_ROW_PATTERNS[1],)
+
+        for pattern in patterns:
             match = pattern.match(line)
             if not match:
                 continue
@@ -377,6 +435,7 @@ class LifesavingProtocolParser(BaseProtocolParser):
         return None
 
     def _parse_individual_row(self, line: str) -> ParsedIndividualRow | None:
+        line = self._normalize_layout_line(line)
         for pattern in self._INDIVIDUAL_ROW_PATTERNS:
             match = pattern.match(line)
             if not match:
@@ -413,32 +472,72 @@ class LifesavingProtocolParser(BaseProtocolParser):
                 return category, gender
         return "", ""
 
-    def _extract_result_disciplines(self, page_text: str) -> list[str]:
-        disciplines: list[str] = []
-        for line in page_text.splitlines():
-            match = re.match(r"^(?P<name>.+?)\s+\([^)]+\)\s+Disziplin\s+\d+\s*$", line.strip(), flags=re.IGNORECASE)
-            if match:
-                disciplines.append(match.group("name").strip())
-        if disciplines:
-            return disciplines
+    def _extract_result_discipline_keys(self, page_text: str) -> list[str]:
+        footer_disciplines: dict[int, str] = {}
+        lines = [self._normalize_layout_line(line) for line in page_text.splitlines() if line.strip()]
 
-        seen: set[str] = set()
-        for match in re.finditer(
-            r"(?P<name>\d{2,3}m\s+.+?)\s+Zeit\b",
-            page_text,
-            flags=re.IGNORECASE,
-        ):
-            candidate = self._dedupe_repeated_label(match.group("name").strip())
-            canonical = self._canonical(candidate)
-            if canonical in seen:
+        for index, cleaned_line in enumerate(lines):
+            match = re.match(
+                r"^(?P<name>.+?)\s+\([^)]+\)\s+Disziplin\s+(?P<index>\d+)\s*$",
+                cleaned_line,
+                flags=re.IGNORECASE,
+            )
+            if match:
+                key = self._summary_discipline_key(match.group("name").strip())
+                if key is None:
+                    continue
+                footer_disciplines[int(match.group("index"))] = key
                 continue
-            seen.add(canonical)
-            disciplines.append(candidate)
-        return disciplines
+
+            inline_number_match = re.match(r"^Disziplin\s+(?P<index>\d+)\s*$", cleaned_line, flags=re.IGNORECASE)
+            if not inline_number_match or index == 0:
+                continue
+
+            key = self._summary_discipline_key(lines[index - 1])
+            if key is None:
+                continue
+            footer_disciplines[int(inline_number_match.group("index"))] = key
+
+        if footer_disciplines:
+            return [footer_disciplines[index] for index in sorted(footer_disciplines)]
+
+        header_block = self._extract_result_header_block(page_text)
+        if not header_block:
+            return []
+
+        signature = self._discipline_signature(header_block)
+        candidates: list[tuple[int, str, int]] = []
+        for key, aliases in self._SUMMARY_DISCIPLINE_ALIASES.items():
+            for alias in aliases:
+                alias_signature = self._discipline_signature(alias)
+                if not alias_signature:
+                    continue
+                start = 0
+                while True:
+                    position = signature.find(alias_signature, start)
+                    if position < 0:
+                        break
+                    candidates.append((position, key, len(alias_signature)))
+                    start = position + 1
+
+        candidates.sort(key=lambda item: (item[0], -item[2]))
+        ordered_keys: list[tuple[int, str]] = []
+        seen_keys: set[str] = set()
+        for position, key, alias_length in candidates:
+            if key in seen_keys:
+                continue
+            if ordered_keys and ordered_keys[-1][0] == position:
+                continue
+            if ordered_keys and ordered_keys[-1][1] == key and position - ordered_keys[-1][0] <= max(alias_length, 12):
+                continue
+            ordered_keys.append((position, key))
+            seen_keys.add(key)
+
+        return [key for _, key in ordered_keys]
 
     def _build_result_remarks(self, row: ParsedResultRow, qualifier_label: str, disciplines: list[str]) -> str:
         parts: list[str] = []
-        if row.qualifier:
+        if qualifier_label and self._is_valid_qualifier(row.qualifier):
             parts.append(f"{qualifier_label}={row.qualifier}")
         if row.diff:
             parts.append(f"Diff={row.diff}")
@@ -485,7 +584,7 @@ class LifesavingProtocolParser(BaseProtocolParser):
         return any(fragment in canonical for fragment in ignore_fragments)
 
     def _extract_footer_location_and_date(self, value: str) -> tuple[str, str]:
-        for line in reversed([item.strip() for item in value.splitlines() if item.strip()]):
+        for line in reversed([self._normalize_layout_line(item) for item in value.splitlines() if item.strip()]):
             match = re.match(
                 r"^(?P<location>.+?)\s+(?P<date>\d{1,2}[./-]\d{1,2}[./-]\d{4})$",
                 line,
@@ -504,12 +603,96 @@ class LifesavingProtocolParser(BaseProtocolParser):
                 return left
         return value
 
+    def _extract_result_header_block(self, page_text: str) -> str:
+        lines = [self._normalize_layout_line(line) for line in page_text.splitlines() if line.strip()]
+        first_row_index: int | None = None
+        for index, line in enumerate(lines):
+            if re.match(r"^(?:\d+|-)\s+", line):
+                first_row_index = index
+                break
+
+        if first_row_index is None:
+            return ""
+
+        start = max(0, first_row_index - 8)
+        header_lines = [
+            line
+            for line in lines[start:first_row_index]
+            if not line.lower().startswith("checksum")
+            and "stand:" not in line.lower()
+            and "jauswertung" not in line.lower()
+            and not re.match(r"^seite\s+\d+\s*$", line, flags=re.IGNORECASE)
+        ]
+
+        if header_lines:
+            return " ".join(header_lines)
+        return ""
+
+    def _summary_discipline_key(self, discipline_name: str) -> str | None:
+        canonical = self._canonical(discipline_name)
+        canonical = canonical.replace("obsatcle", "obstacle")
+        canonical = canonical.replace("manakin", "manikin")
+        canonical = canonical.replace("fl.", "fl")
+
+        for key, aliases in self._SUMMARY_DISCIPLINE_ALIASES.items():
+            if any(self._canonical(alias) in canonical for alias in aliases):
+                return key
+        return None
+
+    @staticmethod
+    def _discipline_signature(value: str) -> str:
+        return re.sub(r"[^a-z0-9]+", "", LifesavingProtocolParser._canonical(value))
+
+    def _result_page_has_qualifier_column(self, page_text: str) -> bool:
+        header_block = self._extract_result_header_block(page_text)
+        if not header_block:
+            return False
+        canonical = self._canonical(header_block)
+        return "q-gld" in canonical or re.search(r"\blv\b", canonical) is not None
+
+    @staticmethod
+    def _is_valid_qualifier(value: str) -> bool:
+        candidate = value.strip()
+        if not candidate:
+            return False
+        if len(candidate) > 40:
+            return False
+        if re.search(r"\d{1,2}:\d{2}", candidate):
+            return False
+        if re.search(r"\d{3,},\d{2}", candidate):
+            return False
+        if "..." in candidate:
+            return False
+        return True
+
     @staticmethod
     def _is_numeric_value(value: str) -> bool:
         return bool(re.fullmatch(r"[\d.,]+", value.strip()))
 
+    def _normalize_page_text(self, value: str) -> str:
+        return "\n".join(self._normalize_layout_line(line) for line in value.splitlines())
+
+    def _normalize_layout_line(self, value: str) -> str:
+        repaired = self._repair_mojibake(value)
+        repaired = repaired.replace("\u00a0", " ").replace("\t", " ").replace("\ufeff", " ")
+        repaired = repaired.replace("\u00c2", " ")
+        repaired = re.sub(r"\s*\.\.\.\s*", " ... ", repaired)
+        repaired = re.sub(r"(?<=[A-Z])(\d+):", r"\1", repaired, flags=re.IGNORECASE)
+        repaired = re.sub(r"[ ]{3,}", "  ", repaired)
+        return repaired.strip()
+
+    @staticmethod
+    def _repair_mojibake(value: str) -> str:
+        if not value or ("\u00c3" not in value and "\u00c2" not in value):
+            return value
+        try:
+            repaired = value.encode("latin-1").decode("utf-8")
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            return value
+        return repaired if repaired else value
+
     def _parse_category_from_line(self, line: str) -> tuple[str, str]:
-        cleaned = re.sub(r"\s*\([^)]*\)\s*$", "", line.strip())
+        cleaned = re.sub(r"\s*\([^)]*\)\s*$", "", self._normalize_layout_line(line))
         match = re.match(
             r"^(?P<category>AK\s+.+?)\s+(?P<gender>weiblich|maennlich|m\Snnlich|mixed)\b",
             cleaned,

@@ -142,7 +142,7 @@ const DP_SLIDE_SETTINGS = {
     bgPos: "center 50%",
   },
   "1996": {
-    text: "ausgefallen: 2. Deutschland Treffen",
+    text: "ausgefallen: 2. Deutschland Treffen | LV-Gesamtwertung: 8. Platz",
     bgPos: "center 20%",
   },
   "1995": {

@@ -28,6 +28,11 @@ def build_argument_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--json", action="store_true", help="Also write JSON output besides Excel.")
     parser.add_argument("--force-ocr", action="store_true", help="Run OCR for every page, even when text exists.")
+    parser.add_argument(
+        "--ocr-only",
+        action="store_true",
+        help="Use only OCR text for all pages and ignore embedded PDF text. Recommended for poor text layers.",
+    )
     parser.add_argument("--disable-ocr", action="store_true", help="Disable OCR fallback entirely.")
     parser.add_argument("--deskew", action="store_true", help="Try deskew correction when OpenCV is available.")
     parser.add_argument("--dpi", type=int, default=200, help="Render DPI for OCR preparation. Defaults to 200.")
@@ -49,6 +54,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = build_argument_parser()
     args = parser.parse_args(list(argv) if argv is not None else None)
 
+    if args.ocr_only and args.disable_ocr:
+        parser.error("--ocr-only and --disable-ocr cannot be used together.")
     if args.force_ocr and args.disable_ocr:
         parser.error("--force-ocr and --disable-ocr cannot be used together.")
 
@@ -64,6 +71,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser_override=args.parser,
         render_dpi=args.dpi,
         force_ocr=args.force_ocr,
+        ocr_only=args.ocr_only,
         disable_ocr=args.disable_ocr,
         enable_deskew=args.deskew,
         log_level=args.log_level,

@@ -83,6 +83,7 @@ class PipelineSettings:
     parser_override: str = "auto"
     render_dpi: int = 200
     force_ocr: bool = False
+    ocr_only: bool = False
     disable_ocr: bool = False
     enable_deskew: bool = False
     recursive: bool = True

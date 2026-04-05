@@ -54,7 +54,11 @@ class PagePreprocessor:
             review_flags.append(
                 ReviewFlag(
                     code="ocr_disabled",
-                    message="Page likely needs OCR, but OCR was disabled by CLI setting.",
+                    message=(
+                        "OCR was required by the current mode, but OCR was disabled by CLI setting."
+                        if settings.ocr_only
+                        else "Page likely needs OCR, but OCR was disabled by CLI setting."
+                    ),
                     source_file=source_path,
                     page_number=page.number,
                     confidence=0.95,
@@ -62,8 +66,8 @@ class PagePreprocessor:
             )
             return PreprocessedPage(
                 page_number=page.number,
-                text=direct_text,
-                text_source="pdf_text" if direct_text else "empty",
+                text="" if settings.ocr_only else direct_text,
+                text_source="empty" if settings.ocr_only else ("pdf_text" if direct_text else "empty"),
                 used_ocr=False,
                 review_flags=review_flags,
             )
@@ -81,8 +85,8 @@ class PagePreprocessor:
             )
             return PreprocessedPage(
                 page_number=page.number,
-                text=direct_text,
-                text_source="pdf_text" if direct_text else "empty",
+                text="" if settings.ocr_only else direct_text,
+                text_source="empty" if settings.ocr_only else ("pdf_text" if direct_text else "empty"),
                 used_ocr=False,
                 review_flags=review_flags,
             )
@@ -114,6 +118,16 @@ class PagePreprocessor:
             flag.source_file = source_path
         review_flags.extend(ocr_result.review_flags)
 
+        if settings.ocr_only:
+            return PreprocessedPage(
+                page_number=page.number,
+                text=ocr_result.text.strip(),
+                text_source="ocr" if ocr_result.text.strip() else "empty",
+                used_ocr=bool(ocr_result.text),
+                applied_rotation=applied_rotation,
+                review_flags=review_flags,
+            )
+
         merged_text = self._merge_text_sources(direct_text, ocr_result.text)
         if merged_text and direct_text and ocr_result.text and merged_text != direct_text:
             text_source = "merged"
@@ -135,7 +149,7 @@ class PagePreprocessor:
 
     @staticmethod
     def _should_use_ocr(analysis: PageAnalysis, settings: PipelineSettings) -> bool:
-        return settings.force_ocr or analysis.needs_ocr
+        return settings.ocr_only or settings.force_ocr or analysis.needs_ocr
 
     @staticmethod
     def _merge_text_sources(direct_text: str, ocr_text: str) -> str:

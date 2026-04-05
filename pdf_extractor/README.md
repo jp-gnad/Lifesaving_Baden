@@ -115,6 +115,12 @@ python src/main.py sample_data --output-dir output --json
 python src/main.py sample_data\beispiel.pdf --output-dir output --force-ocr
 ```
 
+Wenn die eingebaute Textschicht eines PDFs schlecht ist, kann stattdessen OCR-only sinnvoller sein:
+
+```bash
+python src/main.py sample_data\beispiel.pdf --output-dir output --ocr-only
+```
+
 Die Excel-Ausgabe wird pro Quelldatei mit dem jeweiligen PDF-Dateinamen erzeugt. Zusaetzlich entstehen weiterhin `review_needed.csv` und optional `extracted_records.json`.
 
 ## Einfacher Start unter Windows
@@ -126,6 +132,10 @@ Wenn du den Extractor ohne Kommandozeile starten willst, kannst du im Ordner `pd
 - `start_scraper.py` ausfuehren.
 
 Wenn kein `input_path` uebergeben wird, oeffnet sich automatisch ein Dateiauswahldialog fuer ein PDF-Protokoll. Nach der Auswahl startet die Verarbeitung direkt, und die Ausgabe landet im Ordner `output/`.
+
+Der Starter `start_scraper.py` verwendet inzwischen standardmaessig `--force-ocr`, solange du nicht explizit `--force-ocr`, `--disable-ocr` oder `--ocr-only` selbst uebergibst. Dadurch werden eingebetteter PDF-Text und OCR-Ergebnis zusammengefuehrt. Fuer besonders schlechte Textschichten kannst du weiterhin bewusst `--ocr-only` nutzen.
+
+Unter Windows versucht der OCR-Service ausserdem automatisch die Standardinstallation unter `C:\Program Files\Tesseract-OCR\tesseract.exe` zu finden, auch wenn der Pfad noch nicht global gesetzt wurde.
 
 ## Welche Teile spaeter mit echten PDFs ergaenzt werden muessen
 
