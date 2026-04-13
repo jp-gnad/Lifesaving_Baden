@@ -3,7 +3,7 @@ const PAGES_ROOT_BASE = "https://jp-gnad.github.io/Lifesaving_Baden";
 const LEGACY_REMOTE_BASE = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities";
 const DATA_REMOTE_BASE = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/data";
 
-const ENABLE_PW_GATE = true;
+const ENABLE_PW_GATE = false;
 
 const JRP_FOLDER = "./assets/png/JRP-Team/";
 const JRP_MIN_YEAR = 2000;
