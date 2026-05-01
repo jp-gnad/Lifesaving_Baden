@@ -23,7 +23,7 @@
       h("p", {}, "Die Datenbank erfasst nur Einzel-Pool-Wettkämpfe von Badischen Schwimmerinnen und Schwimmern im Rettungssport."),
       h("p", {}, "Staffeln und Freigewässer sind nicht enthalten."),
       h("p", {}, "Platzierungen sind noch nicht alle eingetragen."),
-      h("p", {}, "Sollten Fehler oder neue Ergebnisse gefunden werden, wenden sie sich bitte an jan-philipp.gnad@dlrg.org")
+      h("p", {}, "Sollten Fehler oder neue Ergebnisse gefunden werden, wenden sie sich bitte an jp.gnad@web.de")
     );
   }
 
