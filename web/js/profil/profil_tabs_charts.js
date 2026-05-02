@@ -340,7 +340,8 @@
     let basePts = [];
     let cmpAth = null;
     let cmpPts = null;
-    const allowDotKeyboardFocus = !(global.matchMedia && global.matchMedia("(hover: none), (pointer: coarse)").matches);
+    const isCoarsePointer = !!(global.matchMedia && global.matchMedia("(hover: none), (pointer: coarse)").matches);
+    const allowDotKeyboardFocus = !isCoarsePointer;
 
     const cmpWrap = hEl("div", { class: "lsc-compare-wrap" });
     const cmpInput = hEl("input", {
@@ -507,10 +508,39 @@
     updateXDomain();
 
     let activeIdx = null, activeSeries = "blue";
+    let interactiveDots = [];
+    let positionActiveTip = null;
+
+    function clearActiveDots() {
+      svg.querySelectorAll('.lsc-dot[data-active="1"]').forEach((node) => node.removeAttribute("data-active"));
+    }
+
+    function hideActiveTip() {
+      activeIdx = null;
+      tip.style.opacity = "0";
+      tip.style.transform = "translate(-9999px,-9999px)";
+      tip.setAttribute("aria-hidden", "true");
+      clearActiveDots();
+    }
+
+    function showTipForCircle(circle, idx, series) {
+      if (!(circle instanceof Element)) return;
+      clearActiveDots();
+      activeIdx = idx;
+      activeSeries = series;
+      circle.setAttribute("data-active", "1");
+      const name = circle.dataset.name ? ` – ${circle.dataset.name}` : "";
+      tip.querySelector(".tt-l1").textContent = `${circle.dataset.lsc} LSC${name}`;
+      tip.querySelector(".tt-l2").textContent = `${circle.dataset.date} — ${circle.dataset.meet || "—"}`;
+      if (typeof positionActiveTip === "function") {
+        positionActiveTip(circle);
+      }
+    }
 
     function paint() {
       if (!basePts.length) return;
       updateXDomain();
+      interactiveDots = [];
 
       const rect = vp.getBoundingClientRect();
       const W = Math.max(320, Math.floor(rect.width));
@@ -677,9 +707,11 @@
         const dots = sLocal("g", { class: `lsc-dots ${colorClass}` });
         pts.forEach((p, idx) => {
           const Y = Math.max(0, Math.min(1000, p.lsc));
+          const cx = fx(p.age);
+          const cy = fy(Y);
           const c = sLocal("circle", {
-            cx: fx(p.age),
-            cy: fy(Y),
+            cx,
+            cy,
             r: 4.5,
             class: "lsc-dot",
             tabindex: allowDotKeyboardFocus ? 0 : null,
@@ -691,25 +723,21 @@
             "data-date": (new Date(p.date)).toLocaleDateString("de-DE"),
             "data-meet": p.meet_name || "—"
           });
+          interactiveDots.push({ circle: c, idx, series: colorClass, cx, cy });
 
-          const show = () => {
-            activeIdx = idx;
-            activeSeries = colorClass;
-            c.setAttribute("data-active", "1");
+          if (!isCoarsePointer) {
+            const show = () => {
+              showTipForCircle(c, idx, colorClass);
+              return;
             const name = c.dataset.name ? ` – ${c.dataset.name}` : "";
-            tip.querySelector(".tt-l1").textContent = `${c.dataset.lsc} LSC${name}`;
             tip.querySelector(".tt-l2").textContent = `${c.dataset.date} — ${c.dataset.meet || "—"}`;
             positionTipNearCircle(c);
           };
-          const hide = () => {
-            if (activeIdx === idx && activeSeries === colorClass) {
-              activeIdx = null;
-            }
-            c.removeAttribute("data-active");
-            tip.style.opacity = "0";
-            tip.style.transform = "translate(-9999px,-9999px)";
-            tip.setAttribute("aria-hidden", "true");
-          };
+            const hide = () => {
+              if (activeIdx === idx && activeSeries === colorClass) {
+                hideActiveTip();
+              }
+            };
 
           c.addEventListener("pointerenter", show);
           c.addEventListener("pointerleave", hide);
@@ -722,6 +750,7 @@
             e.stopPropagation();
             show();
           });
+          }
 
           dots.appendChild(c);
         });
@@ -760,23 +789,61 @@
         tip.style.top = `${T}px`;
       }
 
+      positionActiveTip = positionTipNearCircle;
+
       if (activeIdx != null) {
         const sel = `.lsc-dots.${activeSeries} .lsc-dot[data-idx="${activeIdx}"]`;
         const active = svg.querySelector(sel);
         if (active) positionTipNearCircle(active);
+        else hideActiveTip();
       }
 
       if (!card._lscOutsideHandlerAttached) {
         card.addEventListener("pointerdown", (e) => {
           if (!svg.contains(e.target)) {
-            activeIdx = null;
-            tip.style.opacity = "0";
-            tip.style.transform = "translate(-9999px,-9999px)";
-            tip.setAttribute("aria-hidden", "true");
-            svg.querySelectorAll('.lsc-dot[data-active="1"]').forEach(n => n.removeAttribute("data-active"));
+            hideActiveTip();
           }
         }, { passive: true });
         card._lscOutsideHandlerAttached = true;
+      }
+
+      if (isCoarsePointer && !card._lscTapHandlerAttached) {
+        svg.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const ctm = svg.getScreenCTM();
+          if (!ctm || !interactiveDots.length) return;
+
+          const pt = svg.createSVGPoint();
+          pt.x = e.clientX;
+          pt.y = e.clientY;
+          const local = pt.matrixTransform(ctm.inverse());
+
+          let best = null;
+          let bestDistSq = Infinity;
+          interactiveDots.forEach((entry) => {
+            const dx = entry.cx - local.x;
+            const dy = entry.cy - local.y;
+            const distSq = (dx * dx) + (dy * dy);
+            if (distSq < bestDistSq) {
+              best = entry;
+              bestDistSq = distSq;
+            }
+          });
+
+          const maxTapDistance = 18;
+          if (!best || bestDistSq > (maxTapDistance * maxTapDistance)) {
+            hideActiveTip();
+            return;
+          }
+
+          if (activeIdx === best.idx && activeSeries === best.series) {
+            hideActiveTip();
+            return;
+          }
+
+          showTipForCircle(best.circle, best.idx, best.series);
+        });
+        card._lscTapHandlerAttached = true;
       }
     }
 
