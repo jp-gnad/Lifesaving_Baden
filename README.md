@@ -2,6 +2,12 @@
 
 Dieses Repository enthaelt die Quellbasis fuer eine statische Mehrseiten-Webseite rund um den Rettungssport in Baden. Der deploybare Web-Root liegt im Ordner `web/`; der Rest des Repos enthaelt Daten, Dokumente, Skripte und Arbeitsnotizen.
 
+## Wichtiger Hinweis
+
+Dieses Projekt, die Internetseite sowie die zugrunde liegenden Daten, Auswertungen und Strukturen sind ein rein privates Vorhaben.
+
+Es besteht keine direkte organisatorische, redaktionelle oder offizielle Verbindung zum DLRG Landesverband Baden e. V. oder zu anderen Gliederungen der DLRG, sofern dies nicht ausdruecklich separat kenntlich gemacht ist.
+
 Die README ist als schneller Einstieg fuer Menschen und KI gedacht. Sie beantwortet drei Fragen:
 
 1. Wo liegt der eigentliche Webcode?
