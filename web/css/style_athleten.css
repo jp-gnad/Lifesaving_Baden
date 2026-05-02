@@ -1368,7 +1368,8 @@ main#content {
 
 .lsc-svg {
   width: 100%;
-  height: 100%;
+  height: auto;
+  display: block;
 }
 
 .lsc-grid .hline0 {
@@ -1422,6 +1423,8 @@ main#content {
   r: 3px;
   transition: r 0.18s ease;
   vector-effect: non-scaling-stroke;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .lsc-dots.blue .lsc-dot {

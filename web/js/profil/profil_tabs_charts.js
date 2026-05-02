@@ -519,8 +519,6 @@
       else if (window.innerWidth <= 720) H = 500;
       else H = 560;
 
-      vp.style.minHeight = H + "px";
-
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
       svg.setAttribute("width", W);
       svg.setAttribute("height", H);
@@ -715,7 +713,11 @@
           c.addEventListener("pointerleave", hide);
           c.addEventListener("focus", show);
           c.addEventListener("blur", hide);
-          c.addEventListener("pointerdown", (e) => { e.stopPropagation(); show(); });
+          c.addEventListener("pointerdown", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            show();
+          });
 
           dots.appendChild(c);
         });
