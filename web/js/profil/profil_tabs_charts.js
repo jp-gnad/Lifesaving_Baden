@@ -340,6 +340,7 @@
     let basePts = [];
     let cmpAth = null;
     let cmpPts = null;
+    const allowDotKeyboardFocus = !(global.matchMedia && global.matchMedia("(hover: none), (pointer: coarse)").matches);
 
     const cmpWrap = hEl("div", { class: "lsc-compare-wrap" });
     const cmpInput = hEl("input", {
@@ -681,7 +682,8 @@
             cy: fy(Y),
             r: 4.5,
             class: "lsc-dot",
-            tabindex: 0,
+            tabindex: allowDotKeyboardFocus ? 0 : null,
+            focusable: allowDotKeyboardFocus ? "true" : "false",
             "data-idx": idx,
             "data-series": colorClass,
             "data-name": (colorClass === "blue" ? (a?.name || "") : (cmpAth?.name || "")),
@@ -711,8 +713,10 @@
 
           c.addEventListener("pointerenter", show);
           c.addEventListener("pointerleave", hide);
-          c.addEventListener("focus", show);
-          c.addEventListener("blur", hide);
+          if (allowDotKeyboardFocus) {
+            c.addEventListener("focus", show);
+            c.addEventListener("blur", hide);
+          }
           c.addEventListener("pointerdown", (e) => {
             e.preventDefault();
             e.stopPropagation();
