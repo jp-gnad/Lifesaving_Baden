@@ -455,8 +455,9 @@
       for (const run of lookbackRuns) {
         const raw = String(run?.[disc.meetZeit] || "").trim();
         const placeRaw = String(run?.[disc.meetPlatz] || "").trim();
+        const excludedReason = isExcludedRun(run) ? "ausg." : "";
         const isDq = isDqLikeValue(raw) || isDqLikeValue(placeRaw);
-        if (!raw && !isDq) continue;
+        if (!raw && !isDq && !excludedReason) continue;
 
         const entryKey = [
           disc.key,
@@ -466,59 +467,42 @@
           String(run?._sortRun || "")
         ].join("|");
 
-        const excludedReason = isExcludedRun(run) ? "ausg." : "";
-        if (excludedReason) {
-          const timeSeconds = parseTimeToSec(raw);
-          if (Number.isFinite(timeSeconds)) {
-            excludedEntries.push({
-              entryKey,
-              date: run.date,
-              meetName: String(run.meet_name || "").trim(),
-              rawTime: raw,
-              timeSeconds,
-              points: 0,
-              displayPoints: 0,
-              wrSeconds: null,
-              year: new Date(run.date).getFullYear(),
-              reason: excludedReason
-            });
-          }
-          continue;
-        }
-
         const year = new Date(run.date).getFullYear();
+        const reason = excludedReason || (isDq ? "DQ" : "");
         let wrSeconds = null;
-        if (!isDq) {
+        if (!reason) {
           wrSeconds = readWrSeconds(year, genderKey, meta.recordKeys);
           if (!Number.isFinite(wrSeconds) || wrSeconds <= 0) continue;
         }
 
         const timeSeconds = parseTimeToSec(raw);
-        const points = isDq ? 0 : calcPoints(timeSeconds, wrSeconds);
-        if (!isDq && !(points > 0)) continue;
-
         const baseEntry = {
           entryKey,
           date: run.date,
           meetName: String(run.meet_name || "").trim(),
           rawTime: raw,
           timeSeconds: Number.isFinite(timeSeconds) ? round2(timeSeconds) : null,
-          points,
-          displayPoints: isDq ? 0 : points,
+          points: 0,
+          displayPoints: 0,
           wrSeconds,
-          year
+          year,
+          reason: reason || ""
         };
 
-        entries.push(baseEntry);
-
-        if (isDq) {
-          excludedEntries.push({
-            ...baseEntry,
-            points: 0,
-            displayPoints: 0,
-            reason: "DQ"
-          });
+        if (reason) {
+          entries.push(baseEntry);
+          excludedEntries.push(baseEntry);
+          continue;
         }
+
+        const points = calcPoints(timeSeconds, wrSeconds);
+        if (!(points > 0)) continue;
+
+        entries.push({
+          ...baseEntry,
+          points,
+          displayPoints: points
+        });
       }
 
       entries.sort((l, r) => r.points - l.points || new Date(r.date) - new Date(l.date));
@@ -854,7 +838,22 @@
 
     orderedDisciplines.forEach((disc) => {
       const usedInScore = countedDisciplines.has(disc.key);
-      const visibleEntries = disc.entries.filter(entry => Number.isFinite(entry.timeSeconds));
+      const visibleEntries = Array.isArray(disc.entries) ? disc.entries : [];
+      const createRowMeta = (entry) =>
+        h("div", { class: "ath-lsc-calc-rowmeta" },
+          h("div", { class: "ath-lsc-calc-rowmeta-line" }, `${formatDate(entry.date)} · ${entry.meetName || "Wettkampf"}`),
+          h(
+            "div",
+            { class: "ath-lsc-calc-rowmeta-line" },
+            entry.reason
+              ? `Grund: ${entry.reason}`
+              : `WR ${formatSeconds(entry.wrSeconds)}`
+          )
+        );
+      const formatEntryTime = (entry) =>
+        Number.isFinite(entry.timeSeconds)
+          ? formatSeconds(entry.timeSeconds)
+          : (String(entry.rawTime || "").trim() || String(entry.reason || "DQ"));
       const badge = usedInScore
         ? h("span", { class: "ath-lsc-calc-badge" }, "zählt")
         : h("span", { class: "ath-lsc-calc-badge muted" }, "Reserve");
@@ -862,26 +861,24 @@
       const head = h("div", { class: "ath-lsc-calc-head" },
         h("div", {},
           h("div", { class: "ath-lsc-calc-label" }, disc.label),
-          h("div", { class: "ath-lsc-calc-sub" }, `${visibleEntries.length || 0} sichtbar · ${disc.entries.length || 0} von ${disc.consideredCount || 0} Leistungen berücksichtigt`)
+          h("div", { class: "ath-lsc-calc-sub" }, `${disc.entries.length || 0} von ${disc.consideredCount || 0} Leistungen`)
         ),
         h("div", { class: "ath-lsc-calc-value" }, `${fmtPoints(disc.averagePoints)} P`, badge)
       );
 
       const rows = visibleEntries.length
         ? visibleEntries.map((entry, index) =>
-            h("div", { class: "ath-lsc-calc-row" },
-              h("div", { class: "ath-lsc-calc-rank" }, `#${index + 1}`),
-              h("div", { class: "ath-lsc-calc-main" },
-                h("div", { class: "ath-lsc-calc-time" }, formatSeconds(entry.timeSeconds)),
-                h("div", { class: "ath-lsc-calc-rowmeta" },
-                  entry.reason
-                    ? `${formatDate(entry.date)} · ${entry.meetName || "Wettkampf"} · Grund: ${entry.reason}`
-                    : `${formatDate(entry.date)} · ${entry.meetName || "Wettkampf"} · WR ${formatSeconds(entry.wrSeconds)}`
-                )
+            h("div", { class: `ath-lsc-calc-row${entry.reason ? " is-excluded" : ""}` },
+            h("div", { class: "ath-lsc-calc-rank" }, `#${index + 1}`),
+            h("div", { class: "ath-lsc-calc-main" },
+              h("div", { class: "ath-lsc-calc-topline" },
+                h("div", { class: "ath-lsc-calc-time" }, formatEntryTime(entry)),
+                h("div", { class: "ath-lsc-calc-points" }, `${fmtPoints(entry.displayPoints)} P`)
               ),
-              h("div", { class: "ath-lsc-calc-points" }, `${fmtPoints(entry.displayPoints)} P`)
+              createRowMeta(entry)
             )
           )
+        )
         : [];
 
       const shownKeys = new Set(visibleEntries.map(entry => entry.entryKey));
@@ -891,21 +888,20 @@
           h("div", { class: "ath-lsc-calc-row is-excluded" },
             h("div", { class: "ath-lsc-calc-rank" }, "0"),
             h("div", { class: "ath-lsc-calc-main" },
-              h("div", { class: "ath-lsc-calc-time" },
-                Number.isFinite(entry.timeSeconds)
-                  ? formatSeconds(entry.timeSeconds)
-                  : (String(entry.rawTime || "").trim() || String(entry.reason || "DQ"))
+              h("div", { class: "ath-lsc-calc-topline" },
+                h("div", { class: "ath-lsc-calc-time" }, formatEntryTime(entry)),
+                h("div", { class: "ath-lsc-calc-points" }, "0,00 P")
               ),
-              h("div", { class: "ath-lsc-calc-rowmeta" },
-                `${formatDate(entry.date)} · ${entry.meetName || "Wettkampf"} · Grund: ${entry.reason || "nicht gewertet"}`
-              )
-            ),
-            h("div", { class: "ath-lsc-calc-points" }, "0,00 P")
+              createRowMeta({
+                ...entry,
+                reason: entry.reason || "nicht gewertet"
+              })
+            )
           )
         );
 
       if (!rows.length && !excludedRows.length) {
-        rows.push(h("div", { class: "best-empty compact" }, "Keine relevanten Zeiten im 2-Jahres-Fenster."));
+        rows.push(h("div", { class: "best-empty compact" }, "Keine Zeiten aus den letzten zwei Jahren vorhanden."));
       }
 
       grid.appendChild(
@@ -916,9 +912,11 @@
           h("div", { class: "ath-lsc-calc-rows" },
             rows,
             excludedRows.length
-              ? h("div", { class: "ath-lsc-calc-excluded-block" },
-                  h("div", { class: "ath-lsc-calc-excluded-title" }, "Ausgeschlossen / 0 Punkte"),
-                  excludedRows
+              ? h("details", { class: "ath-lsc-calc-excluded-block" },
+                  h("summary", { class: "ath-lsc-calc-excluded-toggle" },
+                    h("span", { class: "ath-lsc-calc-excluded-title" }, "Ausgeschlossen")
+                  ),
+                  h("div", { class: "ath-lsc-calc-excluded-rows" }, excludedRows)
                 )
               : null
           )
