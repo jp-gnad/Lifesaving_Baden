@@ -4,9 +4,9 @@
   const CAP_FALLBACK_FILE = "Cap-Baden_light.svg";
   const CAP_FALLBACK_URL = `${FLAG_BASE_URL}/${encodeURIComponent(CAP_FALLBACK_FILE)}`;
   const KNOWN_CAP_KEYS = new Set([
-    "AUS", "BA", "Baden", "Baden_light", "BB", "BE", "BEL", "Bietigheim-Bissingen", "BRA", "BUL", "BY",
+    "AUS", "BA", "Baden", "Baden_light", "BB", "BE", "BEL", "Bietigheim-Bissingen", "BRA", "BUL", "Bühl-Bühlertal", "BY",
     "CAN", "CZE", "DEN", "Deutschland", "Durlach", "EGY", "ESP", "Ettlingen", "FRA", "GBR", "GER", "HE",
-    "HH", "HKG", "ITA", "JPN", "Karlsruhe", "Luckenwalde", "Malsch", "MV", "NED", "NI", "Nieder-Olm/Wörrstadt",
+    "HH", "HKG", "ITA", "JPN", "Karlsruhe", "Luckenwalde", "Malsch", "MV", "Neckargemünd", "NED", "NI", "Nieder-Olm/Wörrstadt",
     "none", "NOR", "NR", "NZL", "Pankow", "POL", "RP", "SH", "SIN", "SL", "SN", "ST", "SUI", "SWE", "TH",
     "USA", "Wadgassen", "Waghäusel", "Weil am Rhein", "Wettersbach", "WF", "WÜ"
   ]);
