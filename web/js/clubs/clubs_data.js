@@ -168,6 +168,11 @@
       .replace(/ü/gi, "ue")
       .replace(/ß/g, "ss");
 
+    const folded = normalizeForSearch(value).replace(/\s+/g, "");
+    if (folded === "wu" || folded === "wue" || folded === "wurttemberg" || folded === "wuerttemberg") {
+      pushUnique(out, "WÜ");
+    }
+
     pushUnique(out, value);
     pushUnique(out, ascii);
     pushUnique(out, value.replace(/[\/\\]/g, ""));
@@ -355,12 +360,12 @@
 
       const avatar =
         name === "Baden-Württemberg"
-          ? createDualAvatar(["BA", "Baden"], ["WÜ", "WU", "WUE", "Württemberg"])
+          ? createFlipAvatar(["BA", "Baden"], ["WÜ", "WU", "WUE", "Württemberg"])
           : name === "Nordrhein-Westfalen"
-          ? createDualAvatar(["NR", "NW", "NO", "NRH", "Nordrhein"], ["WF", "WL", "WE", "Westfalen"])
+          ? createFlipAvatar(["NR", "NW", "NO", "NRH", "Nordrhein"], ["WF", "WL", "WE", "Westfalen"])
           : createSingleAvatar([
-              ...buildCapKeyVariants(name),
               ...buildCapKeyVariants(code),
+              ...buildCapKeyVariants(name),
               ...buildCapKeyVariants(bvCode),
               ...buildCapKeyVariants(bvName)
             ]);

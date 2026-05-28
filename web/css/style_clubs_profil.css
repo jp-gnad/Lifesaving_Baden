@@ -20,15 +20,15 @@ main#content {
 }
 
 .container {
-  width: min(1200px, calc(100% - 2rem));
+  width: min(1440px, calc(100% - 2rem));
   margin-inline: auto;
 }
 
 .hero {
   position: relative;
   background: url("../assets/png/hintergrund3.jpg") center/cover no-repeat;
-  background-position: center 36%;
-  height: 440px;
+  background-position: center 30%;
+  height: 560px;
   color: white;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
   display: flex;
@@ -51,9 +51,9 @@ main#content {
     ),
     linear-gradient(
       to bottom,
-      rgba(15, 15, 18, 0) 18%,
-      rgba(15, 15, 18, 0.2) 58%,
-      rgba(15, 15, 18, 0.94) 88%,
+      rgba(15, 15, 18, 0) 26%,
+      rgba(15, 15, 18, 0.18) 58%,
+      rgba(15, 15, 18, 0.92) 88%,
       rgba(15, 15, 18, 1) 100%
     );
   pointer-events: none;
@@ -69,9 +69,9 @@ main#content {
 .rek-hero-layout {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1.5rem;
   margin-left: 8rem;
-  margin-top: 4.2rem;
+  margin-top: 6rem;
 }
 
 .rek-hero-copy {
@@ -85,11 +85,11 @@ main#content {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 4.5rem;
-  width: 4.5rem;
-  height: 4.5rem;
-  min-width: 4.5rem;
-  min-height: 4.5rem;
+  flex: 0 0 6rem;
+  width: 6rem;
+  height: 6rem;
+  min-width: 6rem;
+  min-height: 6rem;
 }
 
 #rek-search-layer {
@@ -131,6 +131,408 @@ main#content {
 #rekorde-profil-section {
   position: relative;
   z-index: 20;
+}
+
+.club-profile-shell {
+  width: min(1440px, calc(100% - 2rem));
+  margin: -1.7rem auto 0;
+  padding-bottom: 4rem;
+}
+
+.club-profile-tabs {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  min-width: 0;
+  overflow-x: clip;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  scrollbar-width: none;
+}
+
+.club-profile-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.club-profile-tab {
+  position: relative;
+  flex: 1 1 9rem;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.62);
+  cursor: pointer;
+  padding: 0.85rem 1rem 0.95rem;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.club-profile-tab::after {
+  content: "";
+  position: absolute;
+  right: 1rem;
+  bottom: -1px;
+  left: 1rem;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(255, 237, 0, 0.95);
+  opacity: 0;
+  transform: scaleX(0.35);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.club-profile-tab:hover,
+.club-profile-tab:focus-visible,
+.club-profile-tab.is-active {
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.club-profile-tab:focus-visible {
+  outline: 1px solid rgba(255, 237, 0, 0.7);
+  outline-offset: -2px;
+}
+
+.club-profile-tab.is-active::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.club-profile-panels {
+  min-height: 2rem;
+  padding-top: 1.5rem;
+}
+
+.club-profile-panel {
+  display: none;
+}
+
+.club-profile-panel.is-active {
+  display: block;
+}
+
+.club-bests-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.club-bests-print-header {
+  display: none;
+}
+
+.club-bests-print-layout {
+  display: none;
+}
+
+.club-bests-control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.club-bests-actions {
+  margin-left: auto;
+}
+
+.club-bests-control-label {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.club-bests-seg {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.club-bests-seg-btn {
+  min-width: 4.5rem;
+  border: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  padding: 0.52rem 0.8rem;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.club-bests-seg-btn:last-child {
+  border-right: 0;
+}
+
+.club-bests-seg-btn.is-active {
+  background: rgba(255, 237, 0, 0.92);
+  color: rgb(15, 15, 18);
+}
+
+.club-bests-select {
+  min-height: 2.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 0 0.75rem;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.club-bests-select option {
+  color: rgb(15, 15, 18);
+}
+
+.club-bests-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.25rem;
+  color: rgba(255, 255, 255, 0.78);
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.club-bests-check input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: rgb(255, 237, 0);
+}
+
+.club-bests-print-btn {
+  min-height: 2.25rem;
+  border: 1px solid rgba(255, 237, 0, 0.42);
+  border-radius: 8px;
+  background: rgba(255, 237, 0, 0.9);
+  color: rgb(15, 15, 18);
+  cursor: pointer;
+  padding: 0 0.9rem;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.club-bests-print-btn:hover,
+.club-bests-print-btn:focus-visible {
+  background: rgb(255, 245, 70);
+}
+
+.club-bests-print-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 2px;
+}
+
+.club-bests-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.club-bests-card {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.club-bests-card-head {
+  padding: 0.9rem 1rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.club-bests-card-head h3,
+.club-bests-card-head h4 {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.club-bests-gender-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 1rem;
+  min-width: 0;
+}
+
+.club-bests-gender-section {
+  min-width: 0;
+}
+
+.club-bests-gender-section + .club-bests-gender-section {
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.club-bests-gender-title {
+  padding: 0.65rem 1rem;
+  color: rgba(255, 237, 0, 0.92);
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.club-bests-table-wrap {
+  overflow-x: clip;
+}
+
+.club-bests-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.78rem;
+}
+
+.club-bests-table th,
+.club-bests-table td {
+  padding: 0.58rem 0.7rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.club-bests-table th {
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.club-bests-rank,
+.club-bests-time {
+  font-weight: 800;
+  font-size: 0.92rem;
+}
+
+.club-bests-rank {
+  color: rgba(255, 237, 0, 0.94);
+  font-size: 0.95rem;
+}
+
+.club-bests-name {
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.club-bests-name-main,
+.club-bests-affiliation {
+  display: block;
+}
+
+.club-bests-birth-year {
+  color: rgba(255, 255, 255, 0.68);
+  font-weight: 700;
+}
+
+.club-bests-affiliation {
+  margin-top: 0.18rem;
+  color: rgba(255, 255, 255, 0.46);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.club-bests-cap-head,
+.club-bests-cap-cell {
+  text-align: center;
+}
+
+.club-bests-cap-cell {
+  vertical-align: middle;
+}
+
+.club-bests-cap-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  margin: 0 auto;
+}
+
+.club-bests-affiliation-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ath-avatar.club-bests-row-avatar,
+.rek-avatar-flip.club-bests-row-avatar {
+  inset: 0;
+  width: 2.35rem;
+  height: 2.35rem;
+  flex-basis: 2.35rem;
+}
+
+.rek-avatar-dual.club-bests-row-avatar {
+  width: 2.85rem;
+  height: 2.35rem;
+  flex-basis: 2.85rem;
+}
+
+.rek-avatar-dual.club-bests-row-avatar .rek-avatar-dual-cap {
+  width: 2rem;
+  height: 2.35rem;
+}
+
+.club-bests-table th:nth-child(1),
+.club-bests-table td:nth-child(1) {
+  width: 2.6rem;
+}
+
+.club-bests-table th:nth-child(3),
+.club-bests-table td:nth-child(3),
+.club-bests-table th:nth-child(5),
+.club-bests-table td:nth-child(5) {
+  width: 4.6rem;
+}
+
+.club-bests-table.has-club-caps th:nth-child(2),
+.club-bests-table.has-club-caps td:nth-child(2) {
+  width: 3.25rem;
+}
+
+.club-bests-table.has-club-caps th:nth-child(3),
+.club-bests-table.has-club-caps td:nth-child(3),
+.club-bests-table.has-club-caps th:nth-child(5),
+.club-bests-table.has-club-caps td:nth-child(5) {
+  width: auto;
+}
+
+.club-bests-table.has-club-caps th:nth-child(4),
+.club-bests-table.has-club-caps td:nth-child(4),
+.club-bests-table.has-club-caps th:nth-child(6),
+.club-bests-table.has-club-caps td:nth-child(6) {
+  width: 4.6rem;
+}
+
+.club-bests-empty,
+.club-bests-status {
+  padding: 1rem;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.86rem;
+}
+
+.club-bests-status--error {
+  color: rgb(255, 170, 170);
 }
 
 .rek-profile-error {
@@ -249,31 +651,31 @@ main#content {
 }
 
 .ath-avatar.rek-hero-avatar.xl {
-  width: 4.5rem;
-  height: 4.5rem;
+  width: 6rem;
+  height: 6rem;
 }
 
 .rek-avatar-dual.xl {
-  width: 5rem;
-  height: 4.5rem;
-  flex-basis: 5rem;
+  width: 6.7rem;
+  height: 6rem;
+  flex-basis: 6.7rem;
 }
 
 .rek-avatar-dual.xl .rek-avatar-dual-cap {
-  width: 3.4rem;
-  height: 4.5rem;
+  width: 4.55rem;
+  height: 6rem;
 }
 
 .rek-avatar-flip.xl {
-  width: 4.5rem;
-  height: 4.5rem;
-  flex-basis: 4.5rem;
+  width: 6rem;
+  height: 6rem;
+  flex-basis: 6rem;
 }
 
 @media (max-width: 720px) {
   .hero {
-    height: 320px;
-    background-position: center 34%;
+    height: 360px;
+    background-position: center 28%;
   }
 
   .hero-search-spacer {
@@ -288,7 +690,15 @@ main#content {
   .rek-hero-layout {
     gap: 0.8rem;
     margin-left: 0;
-    margin-top: 2.6rem;
+    margin-top: 4.8rem;
+  }
+
+  .rek-hero-avatar-wrap {
+    flex-basis: 3.6rem;
+    width: 3.6rem;
+    height: 3.6rem;
+    min-width: 3.6rem;
+    min-height: 3.6rem;
   }
 
   .hero h1 {
@@ -304,6 +714,199 @@ main#content {
 
   .container {
     width: calc(100% - 1rem);
+  }
+
+  .club-profile-shell {
+    width: calc(100% - 1rem);
+    margin-top: -0.75rem;
+    padding-bottom: 2.5rem;
+  }
+
+  .club-profile-tab {
+    padding: 0.8rem 0.8rem 0.9rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+  }
+
+  .club-profile-tab::after {
+    right: 0.8rem;
+    left: 0.8rem;
+  }
+
+  .club-profile-panels {
+    padding-top: 1rem;
+  }
+
+  .club-bests-controls {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .club-bests-actions {
+    margin-left: 0;
+  }
+
+  .club-bests-gender-grid {
+    grid-template-columns: 1fr;
+    row-gap: 0.9rem;
+  }
+
+  .club-bests-gender-section + .club-bests-gender-section {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 0;
+  }
+
+  .club-bests-table {
+    table-layout: auto;
+  }
+
+  .club-bests-table thead {
+    display: none;
+  }
+
+  .club-bests-table,
+  .club-bests-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .club-bests-table th:nth-child(n),
+  .club-bests-table td:nth-child(n) {
+    width: 100%;
+  }
+
+  .club-bests-table tr {
+    display: grid;
+    grid-template-areas:
+      "rank time"
+      "name time"
+      "meet meet"
+      "date date";
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.1rem 0.75rem;
+    padding: 0.85rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .club-bests-table tr.has-club-cap {
+    grid-template-areas:
+      "cap rank time"
+      "cap name time"
+      "cap meet meet"
+      "cap date date";
+    grid-template-columns: 3rem minmax(0, 1fr) auto;
+    min-height: 0;
+    padding-left: 0.85rem;
+  }
+
+  .club-bests-table td {
+    display: block;
+    min-width: 0;
+    width: auto;
+    padding: 0;
+    border-top: 0;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+
+  .club-bests-table td::before {
+    content: none;
+  }
+
+  .club-bests-table .club-bests-cap-cell {
+    grid-area: cap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    align-self: center;
+  }
+
+  .club-bests-table tr:not(.has-club-cap) .club-bests-cap-cell {
+    display: none;
+  }
+
+  .club-bests-rank {
+    grid-area: rank;
+    align-self: end;
+    font-size: 0.9rem;
+    line-height: 1;
+  }
+
+  .club-bests-rank::before {
+    content: "#";
+    margin-right: 0.15rem;
+    color: rgba(255, 255, 255, 0.42);
+    font-size: 0.66rem;
+    font-weight: 800;
+  }
+
+  .club-bests-name {
+    grid-area: name;
+    font-size: 0.96rem;
+    line-height: 1.2;
+  }
+
+  .club-bests-time {
+    grid-area: time;
+    align-self: center;
+    justify-self: end;
+    white-space: nowrap;
+    text-align: right;
+    font-size: 1rem;
+    line-height: 1.1;
+  }
+
+  .club-bests-meet,
+  .club-bests-date {
+    display: flex;
+    gap: 0.45rem;
+    align-items: baseline;
+    min-width: 0;
+    color: rgba(255, 255, 255, 0.76);
+    font-size: 0.74rem;
+    line-height: 1.25;
+    overflow-wrap: break-word;
+  }
+
+  .club-bests-meet {
+    grid-area: meet;
+    margin-top: 0.45rem;
+  }
+
+  .club-bests-date {
+    grid-area: date;
+    white-space: nowrap;
+  }
+
+  .club-bests-meet::before,
+  .club-bests-date::before {
+    content: attr(data-label);
+    flex: 0 0 4.6rem;
+    color: rgba(255, 255, 255, 0.46);
+    font-size: 0.64rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .club-bests-cap-wrap,
+  .ath-avatar.club-bests-row-avatar,
+  .rek-avatar-flip.club-bests-row-avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-basis: 2.5rem;
+  }
+
+  .rek-avatar-dual.club-bests-row-avatar {
+    width: 2.95rem;
+    height: 2.5rem;
+    flex-basis: 2.95rem;
+  }
+
+  .rek-avatar-dual.club-bests-row-avatar .rek-avatar-dual-cap {
+    width: 2.05rem;
+    height: 2.5rem;
   }
 
   .rek-profile-error {
@@ -342,5 +945,265 @@ main#content {
     width: 3.4rem;
     height: 3.4rem;
     flex-basis: 3.4rem;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm;
+  }
+
+  html,
+  body {
+    width: auto;
+    max-width: none;
+    overflow: visible !important;
+    background: rgb(255, 255, 255) !important;
+    color: rgb(20, 20, 22) !important;
+  }
+
+  body {
+    text-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  * {
+    box-shadow: none !important;
+  }
+
+  #site-header,
+  #site-footer,
+  #rek-search-layer,
+  .hero,
+  .club-profile-tabs,
+  .club-bests-controls {
+    display: none !important;
+  }
+
+  main#content {
+    min-height: 0 !important;
+    margin: 0 !important;
+  }
+
+  #rekorde-profil-section {
+    z-index: auto !important;
+  }
+
+  .club-profile-shell {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .club-profile-panels {
+    padding: 0 !important;
+  }
+
+  .club-profile-panel {
+    display: none !important;
+  }
+
+  .club-profile-panel.is-active {
+    display: block !important;
+  }
+
+  .club-bests-print-header {
+    display: block !important;
+    margin: 0 0 4mm;
+    color: rgb(20, 20, 22);
+  }
+
+  .club-bests-print-kicker,
+  .club-bests-print-meta {
+    margin: 0;
+    color: rgb(90, 90, 96);
+    font-size: 7pt;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .club-bests-print-header h2 {
+    margin: 0.8mm 0 1mm;
+    color: rgb(20, 20, 22);
+    font-size: 14pt;
+    line-height: 1.1;
+  }
+
+  .club-bests-grid {
+    display: none !important;
+  }
+
+  .club-bests-print-layout {
+    display: block !important;
+  }
+
+  .club-bests-print-gender {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .club-bests-print-gender + .club-bests-print-gender {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .club-bests-print-gender-title {
+    margin: 0 0 3mm;
+    color: rgb(20, 20, 22);
+    font-size: 12pt;
+    line-height: 1.1;
+  }
+
+  .club-bests-print-disciplines {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.4mm;
+  }
+
+  .club-bests-grid {
+    gap: 5mm;
+  }
+
+  .club-bests-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border: 1px solid rgb(205, 205, 210);
+    background: rgb(255, 255, 255);
+  }
+
+  .club-bests-card-head {
+    padding: 1.4mm 2mm 1mm;
+    border-bottom: 1px solid rgb(220, 220, 224);
+    background: rgb(242, 242, 244);
+  }
+
+  .club-bests-card-head h3,
+  .club-bests-card-head h4 {
+    color: rgb(20, 20, 22);
+    font-size: 8.8pt;
+    line-height: 1.05;
+  }
+
+  .club-bests-gender-grid {
+    display: block;
+  }
+
+  .club-bests-gender-section + .club-bests-gender-section {
+    border-left: 0;
+  }
+
+  .club-bests-gender-title {
+    padding: 1.4mm 2mm;
+    color: rgb(20, 20, 22);
+    background: rgb(242, 242, 244);
+    font-size: 7pt;
+  }
+
+  .club-bests-table-wrap {
+    overflow: visible !important;
+  }
+
+  .club-bests-table {
+    color: rgb(20, 20, 22);
+    font-size: 6.6pt;
+    table-layout: fixed;
+  }
+
+  .club-bests-table th,
+  .club-bests-table td {
+    padding: 0.85mm 1.2mm;
+    border-top: 1px solid rgb(226, 226, 230);
+    line-height: 1.08;
+  }
+
+  .club-bests-table th {
+    color: rgb(95, 95, 102);
+    font-size: 5.8pt;
+  }
+
+  .club-bests-rank,
+  .club-bests-time,
+  .club-bests-name {
+    color: rgb(20, 20, 22);
+    font-size: 7.4pt;
+  }
+
+  .club-bests-rank,
+  .club-bests-time {
+    font-size: 7.8pt;
+  }
+
+  .club-bests-name {
+    font-weight: 800;
+  }
+
+  .club-bests-birth-year,
+  .club-bests-affiliation,
+  .club-bests-empty,
+  .club-bests-status {
+    color: rgb(95, 95, 102);
+  }
+
+  .club-bests-affiliation {
+    margin-top: 0.2mm;
+    font-size: 5.9pt;
+    line-height: 1;
+  }
+
+  .club-bests-table th:nth-child(1),
+  .club-bests-table td:nth-child(1) {
+    width: 7mm;
+  }
+
+  .club-bests-table th:nth-child(3),
+  .club-bests-table td:nth-child(3),
+  .club-bests-table th:nth-child(5),
+  .club-bests-table td:nth-child(5) {
+    width: 16mm;
+  }
+
+  .club-bests-table.has-club-caps th:nth-child(2),
+  .club-bests-table.has-club-caps td:nth-child(2) {
+    width: 8mm;
+  }
+
+  .club-bests-table.has-club-caps th:nth-child(4),
+  .club-bests-table.has-club-caps td:nth-child(4),
+  .club-bests-table.has-club-caps th:nth-child(6),
+  .club-bests-table.has-club-caps td:nth-child(6) {
+    width: 16mm;
+  }
+
+  .club-bests-cap-wrap,
+  .ath-avatar.club-bests-row-avatar,
+  .rek-avatar-flip.club-bests-row-avatar {
+    width: 6mm;
+    height: 6mm;
+    flex-basis: 6mm;
+  }
+
+  .rek-avatar-dual.club-bests-row-avatar {
+    width: 7mm;
+    height: 6mm;
+    flex-basis: 7mm;
+  }
+
+  .rek-avatar-dual.club-bests-row-avatar .rek-avatar-dual-cap {
+    width: 5mm;
+    height: 6mm;
+  }
+
+  .club-bests-empty,
+  .club-bests-status {
+    padding: 1.5mm 2mm;
+    font-size: 6.4pt;
+  }
+
+  .rek-avatar-flip-inner {
+    animation: none !important;
+    transform: none !important;
   }
 }

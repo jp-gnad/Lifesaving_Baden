@@ -34,7 +34,7 @@ main#content {
 .hero {
   position: relative;
   background: url("../assets/png/hintergrund3.jpg") center/cover no-repeat;
-  background-position: center 36%;
+  background-position: center 30%;
   height: 560px;
   color: white;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
@@ -369,7 +369,7 @@ main#content {
 @media (max-width: 720px) {
   .hero {
     height: 360px;
-    background-position: center 34%;
+    background-position: center 28%;
   }
 
   .rek-ui {

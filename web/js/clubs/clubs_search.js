@@ -296,9 +296,7 @@
       })
       .filter((entry) => entry.matchIndex >= 0);
 
-    const visible = ranked.some((entry) => entry.isExact)
-      ? ranked.filter((entry) => entry.isExact)
-      : ranked;
+    const visible = ranked;
 
     visible.sort((left, right) => {
       const exactCompare = Number(right.isExact) - Number(left.isExact);
