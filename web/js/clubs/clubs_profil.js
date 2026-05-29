@@ -587,7 +587,19 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getBestenlisteStandSummary(date = new Date()) {
-    return `Stand: ${formatDateLocalDE(date)}`;
+    const dateText = typeof date === "string" ? formatDateDE(date) : formatDateLocalDE(date);
+    return `Stand: ${dateText || "-"}`;
+  }
+
+  function getLatestDatabaseMeetDateIso(rows) {
+    let latest = "";
+
+    for (const row of Array.isArray(rows) ? rows : []) {
+      const iso = excelSerialToISO(row?.[COLS.excelDate]);
+      if (iso && (!latest || iso > latest)) latest = iso;
+    }
+
+    return latest;
   }
 
   function sanitizePdfFileNamePart(value) {
@@ -1310,9 +1322,9 @@ document.addEventListener("DOMContentLoaded", () => {
     return new Blob([bytes], { type: "application/pdf" });
   }
 
-  async function createBestenlistePdfBlob(group, data, generatedAt = new Date(), fileName = "") {
+  async function createBestenlistePdfBlob(group, data, generatedAt = new Date(), fileName = "", standDate = generatedAt) {
     const pdfAvatarAssets = await buildPdfAvatarAssets(data);
-    const pdfMetaSummary = `${getBestenlisteSettingsSummary()} | ${getBestenlisteStandSummary(generatedAt)}`;
+    const pdfMetaSummary = `${getBestenlisteSettingsSummary()} | ${getBestenlisteStandSummary(standDate)}`;
     const pageWidth = 595.28;
     const pageHeight = 841.89;
     const margin = 28;
@@ -1468,8 +1480,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const rows = await getBestenlisteRows();
+      const standDate = getLatestDatabaseMeetDateIso(rows) || generatedAt;
       const data = buildBestenliste(rows, group, BESTS_STATE);
-      const blob = await createBestenlistePdfBlob(group, data, generatedAt, fileName);
+      const blob = await createBestenlistePdfBlob(group, data, generatedAt, fileName, standDate);
       const url = URL.createObjectURL(blob);
 
       if (tab) {
