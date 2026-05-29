@@ -163,7 +163,7 @@ main#content {
   cursor: pointer;
   padding: 0.85rem 1rem 0.95rem;
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   line-height: 1;
@@ -386,6 +386,15 @@ main#content {
   text-transform: uppercase;
 }
 
+.club-bests-gender-pager {
+  position: relative;
+}
+
+.club-bests-pager-arrow,
+.club-bests-page-dots {
+  display: none;
+}
+
 .club-bests-table-wrap {
   overflow-x: clip;
 }
@@ -420,6 +429,10 @@ main#content {
 .club-bests-time {
   font-weight: 800;
   font-size: 0.92rem;
+}
+
+.club-bests-mobile-meet {
+  display: none;
 }
 
 .club-bests-rank {
@@ -499,10 +512,13 @@ main#content {
 }
 
 .club-bests-table th:nth-child(3),
-.club-bests-table td:nth-child(3),
+.club-bests-table td:nth-child(3) {
+  width: 4.6rem;
+}
+
 .club-bests-table th:nth-child(5),
 .club-bests-table td:nth-child(5) {
-  width: 4.6rem;
+  width: 6.4rem;
 }
 
 .club-bests-table.has-club-caps th:nth-child(2),
@@ -518,10 +534,17 @@ main#content {
 }
 
 .club-bests-table.has-club-caps th:nth-child(4),
-.club-bests-table.has-club-caps td:nth-child(4),
+.club-bests-table.has-club-caps td:nth-child(4) {
+  width: 4.6rem;
+}
+
 .club-bests-table.has-club-caps th:nth-child(6),
 .club-bests-table.has-club-caps td:nth-child(6) {
-  width: 4.6rem;
+  width: 6.4rem;
+}
+
+.club-bests-date {
+  white-space: nowrap;
 }
 
 .club-bests-empty,
@@ -684,7 +707,7 @@ main#content {
 
   .hero-kicker {
     margin: 0 0 0.35rem;
-    font-size: 0.72rem;
+    font-size: 0.66rem;
   }
 
   .rek-hero-layout {
@@ -722,15 +745,22 @@ main#content {
     padding-bottom: 2.5rem;
   }
 
+  .club-profile-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.1rem;
+  }
+
   .club-profile-tab {
-    padding: 0.8rem 0.8rem 0.9rem;
-    font-size: 0.72rem;
-    letter-spacing: 0.1em;
+    min-width: 0;
+    padding: 0.78rem 0.28rem 0.88rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
   }
 
   .club-profile-tab::after {
-    right: 0.8rem;
-    left: 0.8rem;
+    right: 0.35rem;
+    left: 0.35rem;
   }
 
   .club-profile-panels {
@@ -740,6 +770,51 @@ main#content {
   .club-bests-controls {
     align-items: flex-start;
     flex-direction: column;
+    gap: 0.55rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .club-bests-control-group {
+    gap: 0.42rem;
+  }
+
+  .club-bests-control-label {
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+  }
+
+  .club-bests-seg {
+    border-radius: 7px;
+  }
+
+  .club-bests-seg-btn {
+    min-width: 3.65rem;
+    padding: 0.42rem 0.58rem;
+    font-size: 0.72rem;
+  }
+
+  .club-bests-select {
+    min-height: 1.95rem;
+    padding-inline: 0.58rem;
+    font-size: 0.72rem;
+  }
+
+  .club-bests-check {
+    min-height: 1.95rem;
+    gap: 0.38rem;
+    font-size: 0.72rem;
+  }
+
+  .club-bests-check input {
+    width: 0.86rem;
+    height: 0.86rem;
+  }
+
+  .club-bests-print-btn {
+    min-height: 2rem;
+    padding-inline: 0.72rem;
+    border-radius: 7px;
+    font-size: 0.72rem;
   }
 
   .club-bests-actions {
@@ -747,13 +822,120 @@ main#content {
   }
 
   .club-bests-gender-grid {
-    grid-template-columns: 1fr;
-    row-gap: 0.9rem;
+    display: flex;
+    grid-template-columns: none;
+    column-gap: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .club-bests-gender-pager {
+    padding-bottom: 1.45rem;
+  }
+
+  .club-bests-pager-arrow {
+    position: absolute;
+    top: calc(50% - 0.7rem);
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    background: rgba(15, 15, 18, 0.16);
+    color: rgba(255, 237, 0, 0.34);
+    cursor: pointer;
+    font: inherit;
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1;
+    opacity: 0.48;
+    transform: translateY(-50%);
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+  }
+
+  .club-bests-card:hover .club-bests-pager-arrow:not(:disabled),
+  .club-bests-card:focus-within .club-bests-pager-arrow:not(:disabled) {
+    border-color: rgba(255, 255, 255, 0.22);
+    background: rgba(15, 15, 18, 0.72);
+    color: rgba(255, 237, 0, 0.96);
+    opacity: 1;
+  }
+
+  .club-bests-pager-arrow::before {
+    display: block;
+    margin-top: -0.1rem;
+  }
+
+  .club-bests-pager-arrow--prev {
+    left: 0.35rem;
+  }
+
+  .club-bests-pager-arrow--prev::before {
+    content: "\2039";
+  }
+
+  .club-bests-pager-arrow--next {
+    right: 0.35rem;
+  }
+
+  .club-bests-pager-arrow--next::before {
+    content: "\203a";
+  }
+
+  .club-bests-pager-arrow:disabled {
+    display: none;
+    pointer-events: none;
+  }
+
+  .club-bests-page-dots {
+    position: absolute;
+    right: 0;
+    bottom: 0.46rem;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    gap: 0.35rem;
+  }
+
+  .club-bests-page-dot {
+    width: 0.42rem;
+    height: 0.42rem;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.28);
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .club-bests-page-dot.is-active {
+    background: rgba(255, 237, 0, 0.96);
+  }
+
+  .club-bests-gender-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .club-bests-gender-section {
+    flex: 0 0 100%;
+    min-width: 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
   }
 
   .club-bests-gender-section + .club-bests-gender-section {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 0;
     border-left: 0;
+  }
+
+  .club-bests-gender-section + .club-bests-gender-section .club-bests-gender-title {
+    border-top: 0;
   }
 
   .club-bests-table {
@@ -778,23 +960,19 @@ main#content {
   .club-bests-table tr {
     display: grid;
     grid-template-areas:
-      "rank time"
-      "name time"
-      "meet meet"
-      "date date";
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.1rem 0.75rem;
+      "rank name result"
+      "rank name result";
+    grid-template-columns: 1.45rem minmax(0, 1fr) max-content;
+    gap: 0.14rem 0.06rem;
     padding: 0.85rem;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .club-bests-table tr.has-club-cap {
     grid-template-areas:
-      "cap rank time"
-      "cap name time"
-      "cap meet meet"
-      "cap date date";
-    grid-template-columns: 3rem minmax(0, 1fr) auto;
+      "rank cap name result"
+      "rank cap name result";
+    grid-template-columns: 0.92rem 2.75rem minmax(0, 1fr) max-content;
     min-height: 0;
     padding-left: 0.85rem;
   }
@@ -820,6 +998,7 @@ main#content {
     justify-content: center;
     width: auto;
     align-self: center;
+    transform: translateX(-0.32rem);
   }
 
   .club-bests-table tr:not(.has-club-cap) .club-bests-cap-cell {
@@ -828,9 +1007,10 @@ main#content {
 
   .club-bests-rank {
     grid-area: rank;
-    align-self: end;
+    align-self: center;
     font-size: 0.9rem;
     line-height: 1;
+    text-align: center;
   }
 
   .club-bests-rank::before {
@@ -843,70 +1023,100 @@ main#content {
 
   .club-bests-name {
     grid-area: name;
+    align-self: end;
     font-size: 0.96rem;
     line-height: 1.2;
   }
 
-  .club-bests-time {
-    grid-area: time;
+  .club-bests-name-main {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: clip;
+    white-space: nowrap;
+  }
+
+  .club-bests-name-main--md {
+    font-size: 0.88rem;
+  }
+
+  .club-bests-name-main--sm {
+    font-size: 0.8rem;
+  }
+
+  .club-bests-name-main--xs {
+    font-size: 0.72rem;
+  }
+
+  .club-bests-table .club-bests-time {
+    grid-area: result;
     align-self: center;
     justify-self: end;
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
     white-space: nowrap;
     text-align: right;
     font-size: 1rem;
-    line-height: 1.1;
+    line-height: 1.2;
+  }
+
+  .club-bests-time-main {
+    line-height: 1.2;
+  }
+
+  .club-bests-mobile-meet {
+    display: block;
+    max-width: 4.8rem;
+    overflow: hidden;
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 0.72rem;
+    font-weight: 500;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .club-bests-meet,
   .club-bests-date {
-    display: flex;
-    gap: 0.45rem;
+    display: block;
     align-items: baseline;
     min-width: 0;
     color: rgba(255, 255, 255, 0.76);
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     line-height: 1.25;
     overflow-wrap: break-word;
   }
 
-  .club-bests-meet {
-    grid-area: meet;
-    margin-top: 0.45rem;
+  .club-bests-table .club-bests-meet {
+    display: none !important;
   }
 
-  .club-bests-date {
-    grid-area: date;
-    white-space: nowrap;
+  .club-bests-table .club-bests-date {
+    display: none !important;
   }
 
   .club-bests-meet::before,
   .club-bests-date::before {
-    content: attr(data-label);
-    flex: 0 0 4.6rem;
-    color: rgba(255, 255, 255, 0.46);
-    font-size: 0.64rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    content: none;
   }
 
   .club-bests-cap-wrap,
   .ath-avatar.club-bests-row-avatar,
   .rek-avatar-flip.club-bests-row-avatar {
-    width: 2.5rem;
-    height: 2.5rem;
-    flex-basis: 2.5rem;
+    width: 2.05rem;
+    height: 2.05rem;
+    flex-basis: 2.05rem;
   }
 
   .rek-avatar-dual.club-bests-row-avatar {
-    width: 2.95rem;
-    height: 2.5rem;
-    flex-basis: 2.95rem;
+    width: 2.4rem;
+    height: 2.05rem;
+    flex-basis: 2.4rem;
   }
 
   .rek-avatar-dual.club-bests-row-avatar .rek-avatar-dual-cap {
-    width: 2.05rem;
-    height: 2.5rem;
+    width: 1.68rem;
+    height: 2.05rem;
   }
 
   .rek-profile-error {

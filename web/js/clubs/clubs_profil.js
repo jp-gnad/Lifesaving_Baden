@@ -157,6 +157,14 @@ document.addEventListener("DOMContentLoaded", () => {
     return String(year).slice(-2).padStart(2, "0");
   }
 
+  function getNameFitClass(entry) {
+    const text = `${normalize(entry?.name)}${entry?.birthYear ? ` (${formatBirthYearShort(entry.birthYear)})` : ""}`;
+    if (text.length >= 34) return " club-bests-name-main--xs";
+    if (text.length >= 29) return " club-bests-name-main--sm";
+    if (text.length >= 24) return " club-bests-name-main--md";
+    return "";
+  }
+
   function getYearFromISO(iso) {
     const year = Number(String(iso || "").slice(0, 4));
     return Number.isFinite(year) ? year : null;
@@ -355,10 +363,15 @@ document.addEventListener("DOMContentLoaded", () => {
       .filter((entry) => entry.rank <= limit);
   }
 
+  function isOmsMeet(meetName) {
+    return /^OMS\s*-/i.test(normalize(meetName));
+  }
+
   function buildBestenliste(rows, group, settings) {
     const byDiscipline = new Map();
     const personalBest = new Map();
     const showAffiliationAvatar = !!group;
+    const excludeOmsMeets = group?.kind === "lv" || group?.kind === "bv";
 
     DISCIPLINES.forEach((discipline) => {
       byDiscipline.set(discipline.key, { m: [], w: [] });
@@ -375,6 +388,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const dateIso = excelSerialToISO(row[COLS.excelDate]);
       const birthYear = parseTwoDigitYearWithMeetYear(row[COLS.yy2], dateIso);
       if (!matchesAgeGroup(settings, birthYear, dateIso)) continue;
+
+      const meetName = normalize(row[COLS.meetName]);
+      if (excludeOmsMeets && isOmsMeet(meetName)) continue;
 
       const athleteId = makeAthleteId(name, gender, birthYear);
       const affiliation = getRowAffiliation(row);
@@ -395,7 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
           birthYear,
           seconds,
           timeLabel: formatSeconds(seconds),
-          meetName: normalize(row[COLS.meetName]),
+          meetName,
           dateIso,
           dateLabel: formatDateDE(dateIso),
           affiliation,
@@ -495,7 +511,7 @@ document.addEventListener("DOMContentLoaded", () => {
         type: "button",
         onclick: () => printBestenliste(group)
       },
-      "Drucken / PDF"
+      "PDF"
     );
 
     return h(
@@ -603,7 +619,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 { class: "club-bests-name", "data-label": "Name" },
                 h(
                   "span",
-                  { class: "club-bests-name-main" },
+                  { class: `club-bests-name-main${getNameFitClass(entry)}` },
                   entry.name,
                   entry.birthYear
                     ? h("span", { class: "club-bests-birth-year" }, ` (${formatBirthYearShort(entry.birthYear)})`)
@@ -611,7 +627,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 ),
                 renderAffiliation(entry)
               ),
-              h("td", { class: "club-bests-time", "data-label": "Zeit" }, entry.timeLabel),
+              h(
+                "td",
+                { class: "club-bests-time", "data-label": "Zeit" },
+                h("span", { class: "club-bests-time-main" }, entry.timeLabel),
+                h("span", { class: "club-bests-mobile-meet" }, entry.meetName || "—")
+              ),
               h("td", { class: "club-bests-meet", "data-label": "Wettkampf" }, entry.meetName || "—"),
               h("td", { class: "club-bests-date", "data-label": "Datum" }, entry.dateLabel || "—")
             )
@@ -645,6 +666,150 @@ document.addEventListener("DOMContentLoaded", () => {
       { class: "club-bests-cap-wrap", "aria-hidden": "true" },
       window.ClubsSearch.renderAvatar(entry.affiliationGroup, "sm", "club-bests-row-avatar")
     );
+  }
+
+  function getGenderPagerIndex(grid) {
+    if (!grid || !grid.clientWidth) return 0;
+    return Math.max(0, Math.round(grid.scrollLeft / grid.clientWidth));
+  }
+
+  function updateGenderPager(grid, dots, prevButton, nextButton) {
+    const page = getGenderPagerIndex(grid);
+    const lastPage = Math.max(0, dots.length - 1);
+
+    dots.forEach((dot, index) => {
+      const active = index === page;
+      dot.classList.toggle("is-active", active);
+      dot.setAttribute("aria-current", active ? "page" : "false");
+    });
+
+    if (prevButton) prevButton.disabled = page <= 0;
+    if (nextButton) nextButton.disabled = page >= lastPage;
+  }
+
+  function scrollGenderPager(grid, page) {
+    if (!grid) return;
+    grid.scrollTo({
+      left: grid.clientWidth * page,
+      behavior: "smooth"
+    });
+  }
+
+  function renderGenderPager(discipline) {
+    const pages = [
+      { label: "Frauen", entries: discipline.women },
+      { label: "MÃ¤nner", entries: discipline.men }
+    ];
+
+    const grid = h(
+      "div",
+      { class: "club-bests-gender-grid" },
+      pages.map((page) =>
+        h(
+          "section",
+          { class: "club-bests-gender-section", "aria-label": `${discipline.label} ${page.label}` },
+          h("div", { class: "club-bests-gender-title" }, page.label),
+          renderBestRows(page.entries)
+        )
+      )
+    );
+
+    const dots = pages.map((page, index) =>
+      h("button", {
+        class: `club-bests-page-dot${index === 0 ? " is-active" : ""}`,
+        type: "button",
+        "aria-label": `${discipline.label} ${page.label} anzeigen`,
+        "aria-current": index === 0 ? "page" : "false",
+        onclick: () => scrollGenderPager(grid, index)
+      })
+    );
+
+    const prevButton = h("button", {
+      class: "club-bests-pager-arrow club-bests-pager-arrow--prev",
+      type: "button",
+      "aria-label": "Vorherige Tabelle",
+      disabled: true,
+      onclick: () => scrollGenderPager(grid, Math.max(0, getGenderPagerIndex(grid) - 1))
+    });
+    const nextButton = h("button", {
+      class: "club-bests-pager-arrow club-bests-pager-arrow--next",
+      type: "button",
+      "aria-label": "NÃ¤chste Tabelle",
+      onclick: () => scrollGenderPager(grid, Math.min(pages.length - 1, getGenderPagerIndex(grid) + 1))
+    });
+
+    let frame = 0;
+    grid.addEventListener(
+      "scroll",
+      () => {
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => updateGenderPager(grid, dots, prevButton, nextButton));
+      },
+      { passive: true }
+    );
+    requestAnimationFrame(() => updateGenderPager(grid, dots, prevButton, nextButton));
+
+    return h(
+      "div",
+      { class: "club-bests-gender-pager" },
+      prevButton,
+      grid,
+      nextButton,
+      h("div", { class: "club-bests-page-dots" }, dots)
+    );
+  }
+
+  function ensureGenderPager(grid) {
+    if (!grid || grid.closest(".club-bests-gender-pager")) return;
+
+    const pages = Array.from(grid.querySelectorAll(".club-bests-gender-section"));
+    if (pages.length <= 1 || !grid.parentNode) return;
+
+    const pager = h("div", { class: "club-bests-gender-pager" });
+    const prevButton = h("button", {
+      class: "club-bests-pager-arrow club-bests-pager-arrow--prev",
+      type: "button",
+      "aria-label": "Vorherige Tabelle",
+      disabled: true,
+      onclick: () => scrollGenderPager(grid, Math.max(0, getGenderPagerIndex(grid) - 1))
+    });
+    const nextButton = h("button", {
+      class: "club-bests-pager-arrow club-bests-pager-arrow--next",
+      type: "button",
+      "aria-label": "NÃ¤chste Tabelle",
+      onclick: () => scrollGenderPager(grid, Math.min(pages.length - 1, getGenderPagerIndex(grid) + 1))
+    });
+    const dots = pages.map((page, index) => {
+      const label = page.querySelector(".club-bests-gender-title")?.textContent || `Seite ${index + 1}`;
+      return h("button", {
+        class: `club-bests-page-dot${index === 0 ? " is-active" : ""}`,
+        type: "button",
+        "aria-label": `${label} anzeigen`,
+        "aria-current": index === 0 ? "page" : "false",
+        onclick: () => scrollGenderPager(grid, index)
+      });
+    });
+
+    grid.parentNode.insertBefore(pager, grid);
+    pager.appendChild(prevButton);
+    pager.appendChild(grid);
+    pager.appendChild(nextButton);
+    pager.appendChild(h("div", { class: "club-bests-page-dots" }, dots));
+
+    let frame = 0;
+    grid.addEventListener(
+      "scroll",
+      () => {
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => updateGenderPager(grid, dots, prevButton, nextButton));
+      },
+      { passive: true }
+    );
+    requestAnimationFrame(() => updateGenderPager(grid, dots, prevButton, nextButton));
+  }
+
+  function initGenderPagers(root) {
+    root?.querySelectorAll(".club-bests-gender-grid").forEach(ensureGenderPager);
   }
 
   function renderBestenlisteGrid(data) {
@@ -726,6 +891,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = buildBestenliste(rows, group, BESTS_STATE);
       content.innerHTML = "";
       content.appendChild(renderBestenlisteGrid(data));
+      initGenderPagers(content);
       content.appendChild(renderBestenlistePrintLayout(data));
     } catch (error) {
       console.error("Club-Bestenliste konnte nicht geladen werden:", error);
