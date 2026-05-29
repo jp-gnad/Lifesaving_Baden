@@ -30,7 +30,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const PROFILE_TABS = [
     { key: "bestenliste", label: "Bestenliste" },
     { key: "stats", label: "Stats" },
-    { key: "erfolge", label: "Erfolge" }
+    { key: "erfolge", label: "Erfolge" },
+    { key: "wettkaempfe", label: "Wettkämpfe" }
   ];
   const COLS = {
     gender: 0,
@@ -315,9 +316,33 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getRowAffiliation(row) {
+    const rawAffiliation = normalize(row?.[COLS.ortsgruppe]).replace(/^og\s+/i, "");
+    const foldedAffiliation = normalizeForCompare(rawAffiliation);
+    if (foldedAffiliation === "ettlingen" || foldedAffiliation === "wettersbach") {
+      return rawAffiliation;
+    }
+
     return window.ClubsData && typeof window.ClubsData.normalizeOrtsgruppeName === "function"
       ? window.ClubsData.normalizeOrtsgruppeName(row[COLS.ortsgruppe])
       : normalize(row[COLS.ortsgruppe]);
+  }
+
+  function createSingleOgAffiliationGroup(affiliation) {
+    const name = normalize(affiliation);
+    const folded = normalizeForCompare(name);
+    if (folded !== "ettlingen" && folded !== "wettersbach") return null;
+
+    return {
+      id: `group_og_${folded}`,
+      kind: "og",
+      name,
+      label: "Ortsgruppe",
+      searchKeys: [name],
+      avatar: {
+        mode: "single",
+        iconKeys: [name]
+      }
+    };
   }
 
   function findAffiliationGroup(affiliation) {
@@ -333,6 +358,10 @@ document.addEventListener("DOMContentLoaded", () => {
         );
       }) || null
     );
+  }
+
+  function findBestenlisteAffiliationGroup(affiliation) {
+    return createSingleOgAffiliationGroup(affiliation) || findAffiliationGroup(affiliation);
   }
 
   function compareEntry(left, right) {
@@ -394,11 +423,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const athleteId = makeAthleteId(name, gender, birthYear);
       const affiliation = getRowAffiliation(row);
-      const affiliationGroup = showAffiliationAvatar ? findAffiliationGroup(affiliation) : null;
+      const affiliationGroup = showAffiliationAvatar ? findBestenlisteAffiliationGroup(affiliation) : null;
       if (isInvalidResultMark(row[COLS.pMehrkampf])) continue;
 
       for (const discipline of DISCIPLINES) {
         if (isInvalidResultMark(row[discipline.placeCol])) continue;
+        if (discipline.key === "z100k") {
+          const meetYear = getYearFromISO(dateIso);
+          if (Number.isFinite(meetYear) && meetYear < 2007) continue;
+        }
 
         const seconds = parseTimeToSec(row[discipline.col]);
         if (!Number.isFinite(seconds)) continue;
@@ -546,6 +579,35 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${BESTS_STATE.pool} m | ${ageGroup} | Top ${BESTS_STATE.limit} | ${mode}`;
   }
 
+  function formatDateLocalDE(date = new Date()) {
+    const value = date instanceof Date ? date : new Date(date);
+    if (Number.isNaN(value.getTime())) return "";
+
+    return `${String(value.getDate()).padStart(2, "0")}.${String(value.getMonth() + 1).padStart(2, "0")}.${value.getFullYear()}`;
+  }
+
+  function getBestenlisteStandSummary(date = new Date()) {
+    return `Stand: ${formatDateLocalDE(date)}`;
+  }
+
+  function sanitizePdfFileNamePart(value) {
+    const part = normalize(value)
+      .replace(/[<>:"/\\|?*]+/g, "-")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^[.-]+|[.-]+$/g, "");
+    return part || "Club";
+  }
+
+  function getBestenlistePdfFileName(group, date = new Date()) {
+    return [
+      "Bestenliste",
+      `${BESTS_STATE.pool}m`,
+      sanitizePdfFileNamePart(group?.name || "Club"),
+      formatDateLocalDE(date).replace(/[<>:"/\\|?*]+/g, "-")
+    ].join("_") + ".pdf";
+  }
+
   function renderBestenlistePrintHeader(group) {
     return h(
       "header",
@@ -616,6 +678,36 @@ document.addEventListener("DOMContentLoaded", () => {
   const PDF_AVATAR_REMOTE_BASE_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/assets/svg";
   const PDF_AVATAR_BASE_URL = "./assets/svg";
   const PDF_AVATAR_RASTER_SIZE = 72;
+  const PDF_AVATAR_REPLACEMENT_OPACITY = 0.28;
+
+  function pushPdfUnique(list, value) {
+    const normalizedValue = normalize(value);
+    if (!normalizedValue || list.includes(normalizedValue)) return;
+    list.push(normalizedValue);
+  }
+
+  function buildPdfCapKeyVariants(raw) {
+    const value = normalize(raw);
+    if (!value) return [];
+
+    const out = [];
+    const ascii = value
+      .replace(/\u00e4/gi, "ae")
+      .replace(/\u00f6/gi, "oe")
+      .replace(/\u00fc/gi, "ue")
+      .replace(/\u00df/g, "ss");
+
+    pushPdfUnique(out, value);
+    pushPdfUnique(out, ascii);
+    pushPdfUnique(out, value.replace(/[\/\\]/g, ""));
+    pushPdfUnique(out, ascii.replace(/[\/\\]/g, ""));
+    pushPdfUnique(out, value.replace(/[\/\\]/g, "-"));
+    pushPdfUnique(out, ascii.replace(/[\/\\]/g, "-"));
+    pushPdfUnique(out, value.replace(/\s+/g, ""));
+    pushPdfUnique(out, ascii.replace(/\s+/g, ""));
+
+    return out;
+  }
 
   function buildPdfIconUrlCandidates(key) {
     const value = normalize(key);
@@ -651,10 +743,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const PDF_HEX = Array.from({ length: 256 }, (_, index) => index.toString(16).padStart(2, "0"));
 
-  function rasterizeSvgForPdf(image) {
+  function rasterizeSvgForPdf(image, opacity = 1) {
     const canvas = document.createElement("canvas");
     canvas.width = PDF_AVATAR_RASTER_SIZE;
     canvas.height = PDF_AVATAR_RASTER_SIZE;
+    const clampedOpacity = Math.max(0, Math.min(1, Number(opacity) || 1));
 
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     ctx.fillStyle = "#fff";
@@ -665,7 +758,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let data = "";
 
     for (let index = 0; index < pixels.length; index += 4) {
-      const alpha = pixels[index + 3] / 255;
+      const alpha = (pixels[index + 3] / 255) * clampedOpacity;
       const red = Math.round(pixels[index] * alpha + 255 * (1 - alpha));
       const green = Math.round(pixels[index + 1] * alpha + 255 * (1 - alpha));
       const blue = Math.round(pixels[index + 2] * alpha + 255 * (1 - alpha));
@@ -680,35 +773,44 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  async function loadPdfImageResource(url, cache) {
-    if (cache.byUrl.has(url)) return cache.byUrl.get(url);
+  async function loadPdfImageResource(url, cache, opacity = 1) {
+    const clampedOpacity = Math.max(0, Math.min(1, Number(opacity) || 1));
+    const cacheKey = `${url}|${clampedOpacity}`;
+    if (cache.byUrl.has(cacheKey)) return cache.byUrl.get(cacheKey);
 
     const promise = loadPdfImageElement(url)
       .then((image) => {
         const resource = {
           name: `Im${cache.resources.length + 1}`,
-          ...rasterizeSvgForPdf(image)
+          ...rasterizeSvgForPdf(image, clampedOpacity)
         };
         cache.resources.push(resource);
         return resource;
       })
       .catch(() => null);
 
-    cache.byUrl.set(url, promise);
+    cache.byUrl.set(cacheKey, promise);
     return promise;
   }
 
-  async function loadPdfImageForKeys(keys, cache) {
+  async function loadPdfImageForKeys(keys, cache, options = {}) {
+    const primaryKeys = options.primaryKeys instanceof Set ? options.primaryKeys : new Set();
+    const fadeReplacements = !!options.fadeReplacements;
+
     for (const key of Array.isArray(keys) ? keys : []) {
       const candidates = buildPdfIconUrlCandidates(key);
+      const isPrimaryKey = primaryKeys.has(normalizeForCompare(key));
+      const opacity = fadeReplacements && !isPrimaryKey ? PDF_AVATAR_REPLACEMENT_OPACITY : 1;
+
       for (const url of candidates) {
-        const resource = await loadPdfImageResource(url, cache);
+        const resource = await loadPdfImageResource(url, cache, opacity);
         if (resource) return resource;
       }
     }
 
     for (const url of buildPdfIconUrlCandidates("Baden_light")) {
-      const resource = await loadPdfImageResource(url, cache);
+      const opacity = fadeReplacements ? PDF_AVATAR_REPLACEMENT_OPACITY : 1;
+      const resource = await loadPdfImageResource(url, cache, opacity);
       if (resource) return resource;
     }
 
@@ -729,6 +831,18 @@ document.addEventListener("DOMContentLoaded", () => {
     return [avatar.iconKeys || group?.iconKeys || []];
   }
 
+  function getPdfPrimaryAvatarKeys(group) {
+    const primaryKeys = [];
+
+    if (group?.kind === "og") {
+      [group.name, ...(Array.isArray(group.searchKeys) ? group.searchKeys : [])].forEach((value) => {
+        buildPdfCapKeyVariants(value).forEach((key) => pushPdfUnique(primaryKeys, key));
+      });
+    }
+
+    return new Set(primaryKeys.map(normalizeForCompare));
+  }
+
   async function buildPdfAvatarAssets(data) {
     const cache = {
       byUrl: new Map(),
@@ -745,8 +859,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     await Promise.all(
       Array.from(groupsById.values()).map(async (group) => {
+        const primaryKeys = getPdfPrimaryAvatarKeys(group);
+        const fadeReplacements = group?.kind === "og" && primaryKeys.size > 0;
         const images = (
-          await Promise.all(getPdfAvatarKeySets(group).map((keys) => loadPdfImageForKeys(keys, cache)))
+          await Promise.all(
+            getPdfAvatarKeySets(group).map((keys) =>
+              loadPdfImageForKeys(keys, cache, {
+                fadeReplacements,
+                primaryKeys
+              })
+            )
+          )
         ).filter(Boolean);
 
         if (images.length) {
@@ -762,6 +885,311 @@ document.addEventListener("DOMContentLoaded", () => {
       avatarsByGroupId,
       resources: cache.resources
     };
+  }
+
+  const PDF_FONT_REMOTE_BASE_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/assets/fonts";
+  const PDF_FONT_BASE_URL = "./assets/fonts";
+  const PDF_FONT_DEFS = [
+    { resourceName: "F1", fontName: "DLRG-Regular", fileName: "LT_50141_regular.woff", weight: 400 },
+    { resourceName: "F2", fontName: "DLRG-Heavy", fileName: "LT_50140_heavy.woff", weight: 800 }
+  ];
+
+  function buildPdfFontUrlCandidates(fileName) {
+    const encoded = encodeURIComponent(fileName);
+    const bases = [PDF_FONT_BASE_URL, PDF_FONT_REMOTE_BASE_URL].filter(
+      (base, index, list) => base && list.indexOf(base) === index
+    );
+    return bases.map((base) => `${base}/${encoded}`);
+  }
+
+  function bytesToPdfBinaryString(bytes) {
+    let out = "";
+    const chunkSize = 8192;
+    for (let index = 0; index < bytes.length; index += chunkSize) {
+      out += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+    }
+    return out;
+  }
+
+  function setUint32(bytes, offset, value) {
+    bytes[offset] = (value >>> 24) & 255;
+    bytes[offset + 1] = (value >>> 16) & 255;
+    bytes[offset + 2] = (value >>> 8) & 255;
+    bytes[offset + 3] = value & 255;
+  }
+
+  function setUint16(bytes, offset, value) {
+    bytes[offset] = (value >>> 8) & 255;
+    bytes[offset + 1] = value & 255;
+  }
+
+  function align4(value) {
+    return (value + 3) & ~3;
+  }
+
+  async function inflateWoffTable(bytes) {
+    if (!("DecompressionStream" in window)) {
+      throw new Error("DecompressionStream missing");
+    }
+
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate"));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+
+  async function convertWoffToSfnt(buffer) {
+    const view = new DataView(buffer);
+    if (view.getUint32(0) !== 0x774f4646) throw new Error("Unsupported font format");
+
+    const flavor = view.getUint32(4);
+    const numTables = view.getUint16(12);
+    const records = [];
+    let dataOffset = 12 + numTables * 16;
+
+    for (let index = 0; index < numTables; index++) {
+      const offset = 44 + index * 20;
+      const tag =
+        String.fromCharCode(view.getUint8(offset)) +
+        String.fromCharCode(view.getUint8(offset + 1)) +
+        String.fromCharCode(view.getUint8(offset + 2)) +
+        String.fromCharCode(view.getUint8(offset + 3));
+      const srcOffset = view.getUint32(offset + 4);
+      const compLength = view.getUint32(offset + 8);
+      const origLength = view.getUint32(offset + 12);
+      const checksum = view.getUint32(offset + 16);
+      const raw = new Uint8Array(buffer, srcOffset, compLength);
+      const data = compLength === origLength ? new Uint8Array(raw) : await inflateWoffTable(raw);
+
+      records.push({
+        tag,
+        checksum,
+        data,
+        length: origLength,
+        offset: dataOffset
+      });
+
+      dataOffset = align4(dataOffset + origLength);
+    }
+
+    const out = new Uint8Array(dataOffset);
+    setUint32(out, 0, flavor);
+    setUint16(out, 4, numTables);
+
+    const entrySelector = Math.floor(Math.log2(numTables));
+    const searchRange = Math.pow(2, entrySelector) * 16;
+    const rangeShift = numTables * 16 - searchRange;
+    setUint16(out, 6, searchRange);
+    setUint16(out, 8, entrySelector);
+    setUint16(out, 10, rangeShift);
+
+    records.forEach((record, index) => {
+      const offset = 12 + index * 16;
+      out[offset] = record.tag.charCodeAt(0);
+      out[offset + 1] = record.tag.charCodeAt(1);
+      out[offset + 2] = record.tag.charCodeAt(2);
+      out[offset + 3] = record.tag.charCodeAt(3);
+      setUint32(out, offset + 4, record.checksum);
+      setUint32(out, offset + 8, record.offset);
+      setUint32(out, offset + 12, record.length);
+      out.set(record.data.subarray(0, record.length), record.offset);
+    });
+
+    return out;
+  }
+
+  function getSfntTables(sfnt) {
+    const view = new DataView(sfnt.buffer, sfnt.byteOffset, sfnt.byteLength);
+    const numTables = view.getUint16(4);
+    const tables = new Map();
+
+    for (let index = 0; index < numTables; index++) {
+      const offset = 12 + index * 16;
+      const tag =
+        String.fromCharCode(view.getUint8(offset)) +
+        String.fromCharCode(view.getUint8(offset + 1)) +
+        String.fromCharCode(view.getUint8(offset + 2)) +
+        String.fromCharCode(view.getUint8(offset + 3));
+      tables.set(tag, {
+        offset: view.getUint32(offset + 8),
+        length: view.getUint32(offset + 12)
+      });
+    }
+
+    return { view, tables };
+  }
+
+  function readInt16(view, offset) {
+    return view.getInt16(offset);
+  }
+
+  function scaleFontMetric(value, unitsPerEm) {
+    return Math.round((Number(value) || 0) * 1000 / unitsPerEm);
+  }
+
+  function buildPdfByteToUnicodeMap() {
+    const map = new Map();
+    for (let code = 32; code <= 255; code++) {
+      map.set(code, code);
+    }
+    Object.entries(WIN_ANSI_MAP).forEach(([char, byte]) => {
+      map.set(byte, char.codePointAt(0));
+    });
+    return map;
+  }
+
+  const PDF_WIN_ANSI_CODEPOINTS = buildPdfByteToUnicodeMap();
+
+  function createCmapLookup(sfntInfo) {
+    const cmap = sfntInfo.tables.get("cmap");
+    if (!cmap) return () => 0;
+
+    const view = sfntInfo.view;
+    const tableOffset = cmap.offset;
+    const count = view.getUint16(tableOffset + 2);
+    let subtableOffset = 0;
+    let subtableFormat = 0;
+
+    for (let index = 0; index < count; index++) {
+      const recordOffset = tableOffset + 4 + index * 8;
+      const platform = view.getUint16(recordOffset);
+      const encoding = view.getUint16(recordOffset + 2);
+      const offset = view.getUint32(recordOffset + 4);
+      const format = view.getUint16(tableOffset + offset);
+
+      if ((platform === 3 && (encoding === 10 || encoding === 1)) || platform === 0) {
+        subtableOffset = tableOffset + offset;
+        subtableFormat = format;
+        if (format === 12) break;
+      }
+    }
+
+    if (subtableFormat === 12) {
+      const groupCount = view.getUint32(subtableOffset + 12);
+      return (codePoint) => {
+        for (let index = 0; index < groupCount; index++) {
+          const offset = subtableOffset + 16 + index * 12;
+          const start = view.getUint32(offset);
+          const end = view.getUint32(offset + 4);
+          if (codePoint >= start && codePoint <= end) {
+            return view.getUint32(offset + 8) + codePoint - start;
+          }
+        }
+        return 0;
+      };
+    }
+
+    if (subtableFormat === 4) {
+      const segCount = view.getUint16(subtableOffset + 6) / 2;
+      const endCodeOffset = subtableOffset + 14;
+      const startCodeOffset = endCodeOffset + segCount * 2 + 2;
+      const idDeltaOffset = startCodeOffset + segCount * 2;
+      const idRangeOffsetOffset = idDeltaOffset + segCount * 2;
+
+      return (codePoint) => {
+        for (let index = 0; index < segCount; index++) {
+          const end = view.getUint16(endCodeOffset + index * 2);
+          const start = view.getUint16(startCodeOffset + index * 2);
+          if (codePoint < start || codePoint > end) continue;
+
+          const delta = view.getInt16(idDeltaOffset + index * 2);
+          const rangeOffsetPos = idRangeOffsetOffset + index * 2;
+          const rangeOffset = view.getUint16(rangeOffsetPos);
+          if (rangeOffset === 0) return (codePoint + delta) & 0xffff;
+
+          const glyphOffset = rangeOffsetPos + rangeOffset + (codePoint - start) * 2;
+          const glyph = view.getUint16(glyphOffset);
+          return glyph ? (glyph + delta) & 0xffff : 0;
+        }
+        return 0;
+      };
+    }
+
+    return () => 0;
+  }
+
+  function parsePdfFontMetrics(sfnt, fontName, weight) {
+    const info = getSfntTables(sfnt);
+    const view = info.view;
+    const head = info.tables.get("head");
+    const hhea = info.tables.get("hhea");
+    const hmtx = info.tables.get("hmtx");
+    const maxp = info.tables.get("maxp");
+    if (!head || !hhea || !hmtx || !maxp) throw new Error("Font tables missing");
+
+    const unitsPerEm = view.getUint16(head.offset + 18) || 1000;
+    const bbox = [
+      scaleFontMetric(readInt16(view, head.offset + 36), unitsPerEm),
+      scaleFontMetric(readInt16(view, head.offset + 38), unitsPerEm),
+      scaleFontMetric(readInt16(view, head.offset + 40), unitsPerEm),
+      scaleFontMetric(readInt16(view, head.offset + 42), unitsPerEm)
+    ];
+    const ascent = scaleFontMetric(readInt16(view, hhea.offset + 4), unitsPerEm);
+    const descent = scaleFontMetric(readInt16(view, hhea.offset + 6), unitsPerEm);
+    const numberOfHMetrics = view.getUint16(hhea.offset + 34);
+    const glyphCount = view.getUint16(maxp.offset + 4);
+    const cmapLookup = createCmapLookup(info);
+    const advances = [];
+
+    for (let gid = 0; gid < glyphCount; gid++) {
+      const metricIndex = Math.min(gid, Math.max(0, numberOfHMetrics - 1));
+      advances[gid] = view.getUint16(hmtx.offset + metricIndex * 4);
+    }
+
+    const widths = [];
+    for (let byte = 32; byte <= 255; byte++) {
+      const codePoint = PDF_WIN_ANSI_CODEPOINTS.get(byte) || byte;
+      const gid = cmapLookup(codePoint);
+      const advance = advances[gid] || advances[0] || unitsPerEm * 0.5;
+      widths.push(scaleFontMetric(advance, unitsPerEm));
+    }
+
+    return {
+      fontName,
+      weight,
+      bbox,
+      ascent,
+      descent,
+      capHeight: ascent,
+      italicAngle: 0,
+      stemV: weight >= 700 ? 115 : 80,
+      widths,
+      fontData: bytesToPdfBinaryString(sfnt)
+    };
+  }
+
+  async function fetchPdfFontBuffer(fileName) {
+    let lastError = null;
+
+    for (const url of buildPdfFontUrlCandidates(fileName)) {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.arrayBuffer();
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError || new Error(`Font konnte nicht geladen werden: ${fileName}`);
+  }
+
+  async function loadBestenlistePdfFonts() {
+    try {
+      return (
+        await Promise.all(
+          PDF_FONT_DEFS.map(async (fontDef) => {
+            const buffer = await fetchPdfFontBuffer(fontDef.fileName);
+            const sfnt = await convertWoffToSfnt(buffer);
+            return {
+              ...fontDef,
+              ...parsePdfFontMetrics(sfnt, fontDef.fontName, fontDef.weight)
+            };
+          })
+        )
+      );
+    } catch (error) {
+      console.warn("DLRG-Schrift konnte nicht in die PDF eingebettet werden:", error);
+      return [];
+    }
   }
 
   function createPdfWriter(commands, pageHeight) {
@@ -791,17 +1219,52 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  function buildPdfBlob(pageCommands, imageResources = []) {
+  function buildPdfBlob(pageCommands, imageResources = [], fontResources = [], metadata = {}) {
     const pageWidth = 595.28;
     const pageHeight = 841.89;
     const objects = [];
     const pageIds = [];
 
     objects[1] = "<< /Type /Catalog /Pages 2 0 R >>";
-    objects[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>";
-    objects[4] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>";
+    let nextObjectId = 3;
+    const infoId = metadata?.title ? nextObjectId++ : null;
+    const fontResourceRefs = [];
 
-    let nextObjectId = 5;
+    if (infoId) {
+      objects[infoId] =
+        `<< /Title ${pdfText(metadata.title)} /Creator ${pdfText("Lifesaving Baden")} /Producer ${pdfText("Lifesaving Baden")} >>`;
+    }
+
+    if (fontResources.length) {
+      fontResources.forEach((font) => {
+        const fontFileId = nextObjectId++;
+        const descriptorId = nextObjectId++;
+        const fontId = nextObjectId++;
+        const fontName = String(font.fontName || font.resourceName || "DLRG").replace(/[^A-Za-z0-9_-]/g, "");
+
+        objects[fontFileId] =
+          `<< /Length ${font.fontData.length} /Length1 ${font.fontData.length} >>\n` +
+          `stream\n${font.fontData}\nendstream`;
+        objects[descriptorId] =
+          `<< /Type /FontDescriptor /FontName /${fontName} /Flags 32 ` +
+          `/FontBBox [${font.bbox.join(" ")}] /ItalicAngle ${fmtPdfNumber(font.italicAngle || 0)} ` +
+          `/Ascent ${fmtPdfNumber(font.ascent)} /Descent ${fmtPdfNumber(font.descent)} ` +
+          `/CapHeight ${fmtPdfNumber(font.capHeight || font.ascent)} /StemV ${fmtPdfNumber(font.stemV || 80)} ` +
+          `/FontFile2 ${fontFileId} 0 R >>`;
+        objects[fontId] =
+          `<< /Type /Font /Subtype /TrueType /BaseFont /${fontName} /FirstChar 32 /LastChar 255 ` +
+          `/Widths [${font.widths.join(" ")}] /Encoding /WinAnsiEncoding /FontDescriptor ${descriptorId} 0 R >>`;
+        fontResourceRefs.push(`/${font.resourceName} ${fontId} 0 R`);
+      });
+    } else {
+      objects[nextObjectId] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>";
+      fontResourceRefs.push(`/F1 ${nextObjectId} 0 R`);
+      nextObjectId++;
+      objects[nextObjectId] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>";
+      fontResourceRefs.push(`/F2 ${nextObjectId} 0 R`);
+      nextObjectId++;
+    }
+
     imageResources.forEach((image) => {
       image.objectId = nextObjectId++;
       objects[image.objectId] =
@@ -821,7 +1284,7 @@ document.addEventListener("DOMContentLoaded", () => {
       pageIds.push(`${pageId} 0 R`);
       objects[pageId] =
         `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] ` +
-        `/Resources << /ProcSet [/PDF /Text /ImageC] /Font << /F1 3 0 R /F2 4 0 R >>${xObjectResource} >> /Contents ${contentId} 0 R >>`;
+        `/Resources << /ProcSet [/PDF /Text /ImageC] /Font << ${fontResourceRefs.join(" ")} >>${xObjectResource} >> /Contents ${contentId} 0 R >>`;
       objects[contentId] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
     });
 
@@ -839,15 +1302,17 @@ document.addEventListener("DOMContentLoaded", () => {
     for (let id = 1; id < objects.length; id++) {
       pdf += `${String(offsets[id]).padStart(10, "0")} 00000 n \n`;
     }
-    pdf += `trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+    const infoRef = infoId ? ` /Info ${infoId} 0 R` : "";
+    pdf += `trailer\n<< /Size ${objects.length} /Root 1 0 R${infoRef} >>\nstartxref\n${xrefOffset}\n%%EOF`;
 
     const bytes = new Uint8Array(pdf.length);
     for (let i = 0; i < pdf.length; i++) bytes[i] = pdf.charCodeAt(i) & 0xff;
     return new Blob([bytes], { type: "application/pdf" });
   }
 
-  async function createBestenlistePdfBlob(group, data) {
+  async function createBestenlistePdfBlob(group, data, generatedAt = new Date(), fileName = "") {
     const pdfAvatarAssets = await buildPdfAvatarAssets(data);
+    const pdfMetaSummary = `${getBestenlisteSettingsSummary()} | ${getBestenlisteStandSummary(generatedAt)}`;
     const pageWidth = 595.28;
     const pageHeight = 841.89;
     const margin = 28;
@@ -857,13 +1322,14 @@ document.addEventListener("DOMContentLoaded", () => {
       { label: "Pl.", width: 24 },
       { label: "Schwimmer", width: 132 },
       { label: "Zeit", width: 54 },
-      { label: "Gliederung", width: 98 },
-      { label: "Wettkampf", width: 165 },
-      { label: "Datum", width: tableWidth - 24 - 132 - 54 - 98 - 165 }
+      { label: "Gliederung", width: 116 },
+      { label: "Wettkampf", width: 147 },
+      { label: "Datum", width: tableWidth - 24 - 132 - 54 - 116 - 147 }
     ];
     const rowHeight = 13;
     const headHeight = 13;
-    const titleHeight = 15;
+    const titleHeight = 8;
+    const disciplineTopGap = 7;
     const gap = 8;
     const pages = [];
     let commands = [];
@@ -875,14 +1341,14 @@ document.addEventListener("DOMContentLoaded", () => {
       commands = [];
       writer = createPdfWriter(commands, pageHeight);
       y = margin;
-      writer.text(margin, y, group?.label || "Club", 7, "F2", "0.35 0.35 0.4");
+      writer.text(margin, y, `DLRG ${group?.label || "Club"}`, 7, "F2", "0.35 0.35 0.4");
       y += 15;
       writer.text(margin, y, `${group?.name || "Club"} - Bestenliste`, 14, "F2", "0.08 0.08 0.1");
       y += 12;
-      writer.text(margin, y, getBestenlisteSettingsSummary(), 7, "F1", "0.35 0.35 0.4");
+      writer.text(margin, y, pdfMetaSummary, 7, "F1", "0.35 0.35 0.4");
       y += 20;
-      writer.text(margin, y, continued ? `${genderTitle} (Fortsetzung)` : genderTitle, 12, "F2", "0.08 0.08 0.1");
-      y += 11;
+      writer.text(margin, y, genderTitle, 12, "F2", "0.08 0.08 0.1");
+      y += 16;
     };
 
     const ensureSpace = (height, genderTitle) => {
@@ -967,12 +1433,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const renderGender = (genderKey, genderTitle) => {
       addPage(genderTitle);
+      const disciplineTitleColor = genderKey === "women" ? "0.89 0.024 0.075" : "0 0.412 0.706";
 
-      data.forEach((discipline) => {
+      data.forEach((discipline, index) => {
         const entries = genderKey === "women" ? discipline.women : discipline.men;
-        const tableHeight = titleHeight + headHeight + Math.max(1, entries.length) * rowHeight + gap;
+        const topGap = index > 0 ? disciplineTopGap : 0;
+        const tableHeight = topGap + titleHeight + headHeight + Math.max(1, entries.length) * rowHeight + gap;
         ensureSpace(tableHeight, genderTitle);
-        writer.text(margin, y, discipline.label, 10, "F2", "0.82 0 0");
+        y += topGap;
+        writer.text(margin, y, discipline.label, 10, "F2", disciplineTitleColor);
         y += titleHeight;
         drawTableHeader(genderKey);
         drawRows(entries, genderKey);
@@ -983,20 +1452,24 @@ document.addEventListener("DOMContentLoaded", () => {
     renderGender("women", "Frauen");
     renderGender("men", "Männer");
     if (commands.length) pages.push(commands);
-    return buildPdfBlob(pages, pdfAvatarAssets.resources);
+    const pdfFontAssets = await loadBestenlistePdfFonts();
+    return buildPdfBlob(pages, pdfAvatarAssets.resources, pdfFontAssets, {
+      title: fileName ? fileName.replace(/\.pdf$/i, "") : `${group?.name || "Club"} - Bestenliste`
+    });
   }
 
   async function openBestenlistePdf(group) {
-    const ageGroup = BESTS_STATE.ageGroup === "u19" ? "U19" : "Offen";
+    const generatedAt = new Date();
+    const fileName = getBestenlistePdfFileName(group, generatedAt);
     const tab = window.open("", "_blank");
     if (tab) {
-      tab.document.write("<!doctype html><title>PDF wird erstellt</title><body style=\"font-family:sans-serif;padding:24px\">PDF wird erstellt...</body>");
+      tab.document.write(`<!doctype html><title>${fileName}</title><body style="font-family:sans-serif;padding:24px">PDF wird erstellt...</body>`);
     }
 
     try {
       const rows = await getBestenlisteRows();
       const data = buildBestenliste(rows, group, BESTS_STATE);
-      const blob = await createBestenlistePdfBlob(group, data);
+      const blob = await createBestenlistePdfBlob(group, data, generatedAt, fileName);
       const url = URL.createObjectURL(blob);
 
       if (tab) {

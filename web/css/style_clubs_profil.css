@@ -747,15 +747,15 @@ main#content {
 
   .club-profile-tabs {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.1rem;
   }
 
   .club-profile-tab {
     min-width: 0;
-    padding: 0.78rem 0.28rem 0.88rem;
-    font-size: 0.7rem;
-    letter-spacing: 0.04em;
+    padding: 0.78rem 0.18rem 0.88rem;
+    font-size: 0.64rem;
+    letter-spacing: 0.02em;
   }
 
   .club-profile-tab::after {
