@@ -509,7 +509,7 @@ document.addEventListener("DOMContentLoaded", () => {
       {
         class: "club-bests-print-btn",
         type: "button",
-        onclick: () => printBestenliste(group)
+        onclick: () => openBestenlistePdf(group)
       },
       "PDF"
     );
@@ -556,20 +556,462 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  function printBestenliste(group) {
-    const previousTitle = document.title;
-    const ageGroup = BESTS_STATE.ageGroup === "u19" ? "U19" : "Offen";
-    document.title = ["Bestenliste", group?.name, `${BESTS_STATE.pool}m`, ageGroup].filter(Boolean).join(" - ");
+  const WIN_ANSI_MAP = {
+    "\u20ac": 128,
+    "\u201a": 130,
+    "\u0192": 131,
+    "\u201e": 132,
+    "\u2026": 133,
+    "\u2020": 134,
+    "\u2021": 135,
+    "\u02c6": 136,
+    "\u2030": 137,
+    "\u0160": 138,
+    "\u2039": 139,
+    "\u0152": 140,
+    "\u017d": 142,
+    "\u2018": 145,
+    "\u2019": 146,
+    "\u201c": 147,
+    "\u201d": 148,
+    "\u2022": 149,
+    "\u2013": 150,
+    "\u2014": 151,
+    "\u02dc": 152,
+    "\u2122": 153,
+    "\u0161": 154,
+    "\u203a": 155,
+    "\u0153": 156,
+    "\u017e": 158,
+    "\u0178": 159
+  };
 
-    window.addEventListener(
-      "afterprint",
-      () => {
-        document.title = previousTitle;
-      },
-      { once: true }
+  function pdfText(value) {
+    const bytes = [];
+    for (const char of String(value ?? "")) {
+      const mapped = WIN_ANSI_MAP[char];
+      const code = mapped ?? char.charCodeAt(0);
+      bytes.push(code >= 32 && code <= 255 ? code : 63);
+    }
+
+    return `(${bytes
+      .map((byte) => {
+        if (byte === 40 || byte === 41 || byte === 92) return `\\${String.fromCharCode(byte)}`;
+        if (byte < 32 || byte > 126) return `\\${byte.toString(8).padStart(3, "0")}`;
+        return String.fromCharCode(byte);
+      })
+      .join("")})`;
+  }
+
+  function fitPdfText(value, maxWidth, fontSize) {
+    const text = normalize(value);
+    const maxChars = Math.max(4, Math.floor(maxWidth / (fontSize * 0.5)));
+    return text.length > maxChars ? `${text.slice(0, Math.max(1, maxChars - 1))}...` : text;
+  }
+
+  function fmtPdfNumber(value) {
+    return Number(value).toFixed(2).replace(/\.?0+$/, "");
+  }
+
+  const PDF_AVATAR_REMOTE_BASE_URL = "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/assets/svg";
+  const PDF_AVATAR_BASE_URL = "./assets/svg";
+  const PDF_AVATAR_RASTER_SIZE = 72;
+
+  function buildPdfIconUrlCandidates(key) {
+    const value = normalize(key);
+    if (!value) return [];
+
+    const encoded = encodeURIComponent(value);
+    const bases = [PDF_AVATAR_BASE_URL, PDF_AVATAR_REMOTE_BASE_URL].filter(
+      (base, index, list) => base && list.indexOf(base) === index
     );
 
-    window.print();
+    return bases.flatMap((base) => [`${base}/Cap-${encoded}.svg`, `${base}/CAP-${encoded}.svg`]);
+  }
+
+  function loadPdfImageElement(url) {
+    const load = (src) =>
+      new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.decoding = "sync";
+        image.loading = "eager";
+        image.src = src;
+      });
+
+    return fetch(url)
+      .then((response) => {
+        if (!response.ok) throw new Error(`Cap konnte nicht geladen werden: ${url}`);
+        return response.text();
+      })
+      .then((svgText) => load(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgText)}`))
+      .catch(() => load(url));
+  }
+
+  const PDF_HEX = Array.from({ length: 256 }, (_, index) => index.toString(16).padStart(2, "0"));
+
+  function rasterizeSvgForPdf(image) {
+    const canvas = document.createElement("canvas");
+    canvas.width = PDF_AVATAR_RASTER_SIZE;
+    canvas.height = PDF_AVATAR_RASTER_SIZE;
+
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let data = "";
+
+    for (let index = 0; index < pixels.length; index += 4) {
+      const alpha = pixels[index + 3] / 255;
+      const red = Math.round(pixels[index] * alpha + 255 * (1 - alpha));
+      const green = Math.round(pixels[index + 1] * alpha + 255 * (1 - alpha));
+      const blue = Math.round(pixels[index + 2] * alpha + 255 * (1 - alpha));
+      data += PDF_HEX[red] + PDF_HEX[green] + PDF_HEX[blue];
+    }
+
+    return {
+      data: `${data}>`,
+      filter: "ASCIIHexDecode",
+      width: canvas.width,
+      height: canvas.height
+    };
+  }
+
+  async function loadPdfImageResource(url, cache) {
+    if (cache.byUrl.has(url)) return cache.byUrl.get(url);
+
+    const promise = loadPdfImageElement(url)
+      .then((image) => {
+        const resource = {
+          name: `Im${cache.resources.length + 1}`,
+          ...rasterizeSvgForPdf(image)
+        };
+        cache.resources.push(resource);
+        return resource;
+      })
+      .catch(() => null);
+
+    cache.byUrl.set(url, promise);
+    return promise;
+  }
+
+  async function loadPdfImageForKeys(keys, cache) {
+    for (const key of Array.isArray(keys) ? keys : []) {
+      const candidates = buildPdfIconUrlCandidates(key);
+      for (const url of candidates) {
+        const resource = await loadPdfImageResource(url, cache);
+        if (resource) return resource;
+      }
+    }
+
+    for (const url of buildPdfIconUrlCandidates("Baden_light")) {
+      const resource = await loadPdfImageResource(url, cache);
+      if (resource) return resource;
+    }
+
+    return null;
+  }
+
+  function getPdfAvatarKeySets(group) {
+    const avatar = group?.avatar || {};
+
+    if (avatar.mode === "dual") {
+      return [avatar.leftKeys || [], avatar.rightKeys || []];
+    }
+
+    if (avatar.mode === "flip") {
+      return [avatar.frontKeys || [], avatar.backKeys || []];
+    }
+
+    return [avatar.iconKeys || group?.iconKeys || []];
+  }
+
+  async function buildPdfAvatarAssets(data) {
+    const cache = {
+      byUrl: new Map(),
+      resources: []
+    };
+    const groupsById = new Map();
+    const avatarsByGroupId = new Map();
+
+    data.forEach((discipline) => {
+      [...(discipline.women || []), ...(discipline.men || [])].forEach((entry) => {
+        if (entry.affiliationGroup?.id) groupsById.set(entry.affiliationGroup.id, entry.affiliationGroup);
+      });
+    });
+
+    await Promise.all(
+      Array.from(groupsById.values()).map(async (group) => {
+        const images = (
+          await Promise.all(getPdfAvatarKeySets(group).map((keys) => loadPdfImageForKeys(keys, cache)))
+        ).filter(Boolean);
+
+        if (images.length) {
+          avatarsByGroupId.set(group.id, {
+            mode: images.length > 1 ? "pair" : "single",
+            images
+          });
+        }
+      })
+    );
+
+    return {
+      avatarsByGroupId,
+      resources: cache.resources
+    };
+  }
+
+  function createPdfWriter(commands, pageHeight) {
+    const yPdf = (y) => pageHeight - y;
+    return {
+      text(x, y, value, size = 8, font = "F1", rgb = "0 0 0") {
+        commands.push(
+          `BT /${font} ${fmtPdfNumber(size)} Tf ${rgb} rg ${fmtPdfNumber(x)} ${fmtPdfNumber(yPdf(y))} Td ${pdfText(value)} Tj ET`
+        );
+      },
+      rect(x, y, width, height, rgb = "1 1 1") {
+        commands.push(
+          `${rgb} rg ${fmtPdfNumber(x)} ${fmtPdfNumber(pageHeight - y - height)} ${fmtPdfNumber(width)} ${fmtPdfNumber(height)} re f`
+        );
+      },
+      line(x1, y1, x2, y2, rgb = "0.75 0.75 0.75", width = 0.5) {
+        commands.push(
+          `${rgb} RG ${fmtPdfNumber(width)} w ${fmtPdfNumber(x1)} ${fmtPdfNumber(yPdf(y1))} m ${fmtPdfNumber(x2)} ${fmtPdfNumber(yPdf(y2))} l S`
+        );
+      },
+      image(x, y, width, height, resource) {
+        if (!resource?.name) return;
+        commands.push(
+          `q ${fmtPdfNumber(width)} 0 0 ${fmtPdfNumber(height)} ${fmtPdfNumber(x)} ${fmtPdfNumber(pageHeight - y - height)} cm /${resource.name} Do Q`
+        );
+      }
+    };
+  }
+
+  function buildPdfBlob(pageCommands, imageResources = []) {
+    const pageWidth = 595.28;
+    const pageHeight = 841.89;
+    const objects = [];
+    const pageIds = [];
+
+    objects[1] = "<< /Type /Catalog /Pages 2 0 R >>";
+    objects[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>";
+    objects[4] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>";
+
+    let nextObjectId = 5;
+    imageResources.forEach((image) => {
+      image.objectId = nextObjectId++;
+      objects[image.objectId] =
+        `<< /Type /XObject /Subtype /Image /Width ${image.width} /Height ${image.height} ` +
+        `/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /${image.filter || "ASCIIHexDecode"} /Length ${image.data.length} >>\n` +
+        `stream\n${image.data}\nendstream`;
+    });
+
+    const xObjectResource = imageResources.length
+      ? ` /XObject << ${imageResources.map((image) => `/${image.name} ${image.objectId} 0 R`).join(" ")} >>`
+      : "";
+
+    pageCommands.forEach((commands, index) => {
+      const pageId = nextObjectId + index * 2;
+      const contentId = pageId + 1;
+      const stream = commands.join("\n");
+      pageIds.push(`${pageId} 0 R`);
+      objects[pageId] =
+        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] ` +
+        `/Resources << /ProcSet [/PDF /Text /ImageC] /Font << /F1 3 0 R /F2 4 0 R >>${xObjectResource} >> /Contents ${contentId} 0 R >>`;
+      objects[contentId] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
+    });
+
+    objects[2] = `<< /Type /Pages /Kids [${pageIds.join(" ")}] /Count ${pageIds.length} >>`;
+
+    let pdf = "%PDF-1.4\n";
+    const offsets = [0];
+    for (let id = 1; id < objects.length; id++) {
+      offsets[id] = pdf.length;
+      pdf += `${id} 0 obj\n${objects[id]}\nendobj\n`;
+    }
+
+    const xrefOffset = pdf.length;
+    pdf += `xref\n0 ${objects.length}\n0000000000 65535 f \n`;
+    for (let id = 1; id < objects.length; id++) {
+      pdf += `${String(offsets[id]).padStart(10, "0")} 00000 n \n`;
+    }
+    pdf += `trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+
+    const bytes = new Uint8Array(pdf.length);
+    for (let i = 0; i < pdf.length; i++) bytes[i] = pdf.charCodeAt(i) & 0xff;
+    return new Blob([bytes], { type: "application/pdf" });
+  }
+
+  async function createBestenlistePdfBlob(group, data) {
+    const pdfAvatarAssets = await buildPdfAvatarAssets(data);
+    const pageWidth = 595.28;
+    const pageHeight = 841.89;
+    const margin = 28;
+    const tableWidth = pageWidth - margin * 2;
+    const bottom = pageHeight - margin;
+    const columns = [
+      { label: "Pl.", width: 24 },
+      { label: "Schwimmer", width: 132 },
+      { label: "Zeit", width: 54 },
+      { label: "Gliederung", width: 98 },
+      { label: "Wettkampf", width: 165 },
+      { label: "Datum", width: tableWidth - 24 - 132 - 54 - 98 - 165 }
+    ];
+    const rowHeight = 13;
+    const headHeight = 13;
+    const titleHeight = 15;
+    const gap = 8;
+    const pages = [];
+    let commands = [];
+    let writer = createPdfWriter(commands, pageHeight);
+    let y = margin;
+
+    const addPage = (genderTitle, continued = false) => {
+      if (commands.length) pages.push(commands);
+      commands = [];
+      writer = createPdfWriter(commands, pageHeight);
+      y = margin;
+      writer.text(margin, y, group?.label || "Club", 7, "F2", "0.35 0.35 0.4");
+      y += 15;
+      writer.text(margin, y, `${group?.name || "Club"} - Bestenliste`, 14, "F2", "0.08 0.08 0.1");
+      y += 12;
+      writer.text(margin, y, getBestenlisteSettingsSummary(), 7, "F1", "0.35 0.35 0.4");
+      y += 20;
+      writer.text(margin, y, continued ? `${genderTitle} (Fortsetzung)` : genderTitle, 12, "F2", "0.08 0.08 0.1");
+      y += 11;
+    };
+
+    const ensureSpace = (height, genderTitle) => {
+      if (y + height > bottom) addPage(genderTitle, true);
+    };
+
+    const drawTableHeader = (genderKey) => {
+      const swimmerLabel = genderKey === "women" ? "Schwimmerin" : "Schwimmer";
+      let x = margin;
+      writer.rect(margin, y, tableWidth, headHeight, "0.93 0.93 0.93");
+      writer.line(margin, y, margin + tableWidth, y, "0.72 0.72 0.72", 0.5);
+      writer.line(margin, y + headHeight, margin + tableWidth, y + headHeight, "0.72 0.72 0.72", 0.5);
+
+      columns.forEach((column, index) => {
+        const label = index === 1 ? swimmerLabel : column.label;
+        writer.text(x + 3, y + 9, label, 7, "F2", "0.24 0.25 0.28");
+        x += column.width;
+      });
+      y += headHeight;
+    };
+
+    const drawRows = (entries, genderKey) => {
+      if (!entries.length) {
+        writer.text(margin + 3, y + 9, "Keine gültigen Zeiten.", 7, "F1", "0.45 0.45 0.5");
+        y += rowHeight;
+        return;
+      }
+
+      for (const entry of entries) {
+        let x = margin;
+        writer.line(margin, y, margin + tableWidth, y, "0.86 0.86 0.88", 0.35);
+        const name = `${entry.name}${entry.birthYear ? ` (${formatBirthYearShort(entry.birthYear)})` : ""}`;
+        const values = [
+          String(entry.rank),
+          fitPdfText(name, columns[1].width - 6, 7.4),
+          entry.timeLabel,
+          "",
+          fitPdfText(entry.meetName || "-", columns[4].width - 6, 7.2),
+          entry.dateLabel || "-"
+        ];
+
+        values.forEach((value, index) => {
+          if (index === 3) {
+            const avatar = pdfAvatarAssets.avatarsByGroupId.get(entry.affiliationGroup?.id);
+            const iconSize = 10.5;
+            const iconY = y + (rowHeight - iconSize) / 2;
+            let textX = x + 3;
+            let textWidth = columns[3].width - 6;
+
+            if (avatar?.images?.length) {
+              if (avatar.images.length > 1) {
+                writer.image(x + 3, iconY, iconSize, iconSize, avatar.images[0]);
+                writer.image(x + 10, iconY, iconSize, iconSize, avatar.images[1]);
+                textX = x + 23;
+                textWidth = columns[3].width - 26;
+              } else {
+                writer.image(x + 3, iconY, iconSize, iconSize, avatar.images[0]);
+                textX = x + 17.5;
+                textWidth = columns[3].width - 20.5;
+              }
+            }
+
+            writer.text(
+              textX,
+              y + 9,
+              fitPdfText(entry.affiliation || "-", textWidth, 7.2),
+              7.2,
+              "F1",
+              "0.12 0.16 0.21"
+            );
+            x += columns[index].width;
+            return;
+          }
+
+          const font = index === 1 || index === 2 ? "F2" : "F1";
+          writer.text(x + 3, y + 9, value, index === 1 || index === 2 ? 7.4 : 7.2, font, "0.12 0.16 0.21");
+          x += columns[index].width;
+        });
+        y += rowHeight;
+      }
+    };
+
+    const renderGender = (genderKey, genderTitle) => {
+      addPage(genderTitle);
+
+      data.forEach((discipline) => {
+        const entries = genderKey === "women" ? discipline.women : discipline.men;
+        const tableHeight = titleHeight + headHeight + Math.max(1, entries.length) * rowHeight + gap;
+        ensureSpace(tableHeight, genderTitle);
+        writer.text(margin, y, discipline.label, 10, "F2", "0.82 0 0");
+        y += titleHeight;
+        drawTableHeader(genderKey);
+        drawRows(entries, genderKey);
+        y += gap;
+      });
+    };
+
+    renderGender("women", "Frauen");
+    renderGender("men", "Männer");
+    if (commands.length) pages.push(commands);
+    return buildPdfBlob(pages, pdfAvatarAssets.resources);
+  }
+
+  async function openBestenlistePdf(group) {
+    const ageGroup = BESTS_STATE.ageGroup === "u19" ? "U19" : "Offen";
+    const tab = window.open("", "_blank");
+    if (tab) {
+      tab.document.write("<!doctype html><title>PDF wird erstellt</title><body style=\"font-family:sans-serif;padding:24px\">PDF wird erstellt...</body>");
+    }
+
+    try {
+      const rows = await getBestenlisteRows();
+      const data = buildBestenliste(rows, group, BESTS_STATE);
+      const blob = await createBestenlistePdfBlob(group, data);
+      const url = URL.createObjectURL(blob);
+
+      if (tab) {
+        tab.location.href = url;
+      } else {
+        window.open(url, "_blank");
+      }
+
+      setTimeout(() => URL.revokeObjectURL(url), 120000);
+    } catch (error) {
+      console.error("PDF konnte nicht erstellt werden:", error);
+      if (tab) {
+        tab.document.body.textContent = "PDF konnte nicht erstellt werden.";
+      }
+    }
   }
 
   function renderBestRows(entries) {
@@ -842,6 +1284,65 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
+  function renderPrintAffiliation(entry) {
+    return h(
+      "div",
+      { class: "club-bests-print-affiliation" },
+      entry.affiliationGroup
+        ? h("span", { class: "club-bests-print-affiliation-cap", "aria-hidden": "true" }, renderAffiliationAvatar(entry))
+        : null,
+      h("span", { class: "club-bests-print-affiliation-name" }, entry.affiliation || "—")
+    );
+  }
+
+  function renderPrintRows(entries, genderKey) {
+    const swimmerLabel = genderKey === "women" ? "Schwimmerin" : "Schwimmer";
+
+    if (!entries.length) {
+      return h("div", { class: "club-bests-print-empty" }, "Keine gültigen Zeiten.");
+    }
+
+    return h(
+      "table",
+      { class: "club-bests-print-table" },
+      h(
+        "thead",
+        {},
+        h(
+          "tr",
+          {},
+          h("th", { class: "club-bests-print-rank" }, "Pl."),
+          h("th", {}, swimmerLabel),
+          h("th", { class: "club-bests-print-time" }, "Zeit"),
+          h("th", {}, "Gliederung"),
+          h("th", {}, "Wettkampf"),
+          h("th", { class: "club-bests-print-date" }, "Datum")
+        )
+      ),
+      h(
+        "tbody",
+        {},
+        entries.map((entry) =>
+          h(
+            "tr",
+            {},
+            h("td", { class: "club-bests-print-rank" }, String(entry.rank)),
+            h(
+              "td",
+              { class: "club-bests-print-name" },
+              entry.name,
+              entry.birthYear ? ` (${formatBirthYearShort(entry.birthYear)})` : ""
+            ),
+            h("td", { class: "club-bests-print-time" }, entry.timeLabel),
+            h("td", {}, renderPrintAffiliation(entry)),
+            h("td", { class: "club-bests-print-meet" }, entry.meetName || "—"),
+            h("td", { class: "club-bests-print-date" }, entry.dateLabel || "—")
+          )
+        )
+      )
+    );
+  }
+
   function renderBestenlistePrintLayout(data) {
     const renderGenderPage = (genderKey, title) =>
       h(
@@ -854,9 +1355,9 @@ document.addEventListener("DOMContentLoaded", () => {
           data.map((discipline) =>
             h(
               "article",
-              { class: "club-bests-card club-bests-print-card" },
-              h("header", { class: "club-bests-card-head" }, h("h4", {}, discipline.label)),
-              renderBestRows(genderKey === "women" ? discipline.women : discipline.men)
+              { class: "club-bests-print-discipline" },
+              h("h4", { class: "club-bests-print-discipline-title" }, discipline.label),
+              renderPrintRows(genderKey === "women" ? discipline.women : discipline.men, genderKey)
             )
           )
         )

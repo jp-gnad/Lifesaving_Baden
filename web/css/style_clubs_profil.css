@@ -1193,12 +1193,27 @@ main#content {
   }
 
   main#content {
+    height: auto !important;
     min-height: 0 !important;
     margin: 0 !important;
+    background: rgb(255, 255, 255) !important;
   }
 
   #rekorde-profil-section {
     z-index: auto !important;
+    background: rgb(255, 255, 255) !important;
+  }
+
+  #rekorde-profil-container,
+  .club-profile-shell,
+  .club-profile-panels,
+  .club-profile-panel,
+  .club-bests-content,
+  .club-bests-print-layout,
+  .club-bests-print-gender {
+    height: auto !important;
+    min-height: 0 !important;
+    background: rgb(255, 255, 255) !important;
   }
 
   .club-profile-shell {
@@ -1270,7 +1285,135 @@ main#content {
   .club-bests-print-disciplines {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 2.4mm;
+    gap: 3.4mm;
+  }
+
+  .club-bests-print-discipline {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .club-bests-print-discipline-title {
+    margin: 0 0 1.5mm;
+    color: rgb(210, 0, 0);
+    font-size: 10pt;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  .club-bests-print-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    color: rgb(55, 66, 78);
+    font-size: 7.4pt;
+  }
+
+  .club-bests-print-table thead {
+    background: rgb(238, 238, 238);
+  }
+
+  .club-bests-print-table th,
+  .club-bests-print-table td {
+    padding: 0.65mm 1.1mm;
+    border-top: 1px solid rgb(197, 203, 210);
+    text-align: left;
+    vertical-align: middle;
+    line-height: 1.05;
+  }
+
+  .club-bests-print-table th {
+    color: rgb(60, 65, 72);
+    font-size: 7pt;
+    font-weight: 800;
+  }
+
+  .club-bests-print-table th:nth-child(1),
+  .club-bests-print-table td:nth-child(1) {
+    width: 7mm;
+  }
+
+  .club-bests-print-table th:nth-child(2),
+  .club-bests-print-table td:nth-child(2) {
+    width: 47mm;
+  }
+
+  .club-bests-print-table th:nth-child(3),
+  .club-bests-print-table td:nth-child(3) {
+    width: 22mm;
+  }
+
+  .club-bests-print-table th:nth-child(4),
+  .club-bests-print-table td:nth-child(4) {
+    width: 38mm;
+  }
+
+  .club-bests-print-table th:nth-child(6),
+  .club-bests-print-table td:nth-child(6) {
+    width: 20mm;
+  }
+
+  .club-bests-print-rank {
+    text-align: center !important;
+  }
+
+  .club-bests-print-name,
+  .club-bests-print-time {
+    color: rgb(34, 43, 54);
+    font-weight: 700;
+  }
+
+  .club-bests-print-time,
+  .club-bests-print-date {
+    white-space: nowrap;
+  }
+
+  .club-bests-print-affiliation {
+    display: flex;
+    align-items: center;
+    gap: 1.2mm;
+    min-width: 0;
+  }
+
+  .club-bests-print-affiliation-cap {
+    display: inline-flex;
+    flex: 0 0 4mm;
+    align-items: center;
+    justify-content: center;
+    width: 4mm;
+    height: 4mm;
+  }
+
+  .club-bests-print-affiliation-cap .club-bests-cap-wrap,
+  .club-bests-print-affiliation-cap .ath-avatar.club-bests-row-avatar,
+  .club-bests-print-affiliation-cap .rek-avatar-flip.club-bests-row-avatar {
+    width: 4mm;
+    height: 4mm;
+    flex-basis: 4mm;
+  }
+
+  .club-bests-print-affiliation-cap .rek-avatar-dual.club-bests-row-avatar {
+    width: 4.8mm;
+    height: 4mm;
+    flex-basis: 4.8mm;
+  }
+
+  .club-bests-print-affiliation-cap .rek-avatar-dual.club-bests-row-avatar .rek-avatar-dual-cap {
+    width: 3.4mm;
+    height: 4mm;
+  }
+
+  .club-bests-print-affiliation-name,
+  .club-bests-print-meet {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .club-bests-print-empty {
+    padding: 1.4mm;
+    border-top: 1px solid rgb(197, 203, 210);
+    color: rgb(95, 95, 102);
+    font-size: 7pt;
   }
 
   .club-bests-grid {
