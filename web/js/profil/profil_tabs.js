@@ -259,6 +259,9 @@
 
     const out = [];
     if (ogKey) out.push({ key: ogKey, overlay: false });
+    if (ogKey === "Nieder-Olm/Wörrstadt") {
+      out.push({ key: "Nieder-OlmWörrstadt", overlay: false });
+    }
 
     const pushOverlay = (k) => {
       const kk = String(k || "").trim();
