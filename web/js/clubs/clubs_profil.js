@@ -55,6 +55,10 @@ document.addEventListener("DOMContentLoaded", () => {
     p100r: 19,
     p200h: 20,
     pool: 21,
+    land: 23,
+    startrecht: 24,
+    wertung: 25,
+    vorlaeufe: 26,
     bvNatio: 27
   };
   const DISCIPLINES = [
@@ -70,6 +74,22 @@ document.addEventListener("DOMContentLoaded", () => {
     limit: 5,
     personalOnly: true,
     ageGroup: "open"
+  };
+  const LAND_TO_ISO3 = {
+    Deutschland: "GER",
+    Schweiz: "SUI",
+    Italien: "ITA",
+    Frankreich: "FRA",
+    Belgien: "BEL",
+    Niederlande: "NED",
+    Spanien: "ESP",
+    Polen: "POL",
+    Japan: "JPN",
+    Dänemark: "DEN",
+    Ägypten: "EGY",
+    Großbritannien: "GBR",
+    Australien: "AUS",
+    Schweden: "SWE"
   };
   let PROFILE_GROUPS = [];
   const LV_CODES_BY_GROUP = {
@@ -153,6 +173,13 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${String(date.getUTCDate()).padStart(2, "0")}.${String(date.getUTCMonth() + 1).padStart(2, "0")}.${date.getUTCFullYear()}`;
   }
 
+  function formatDateShort(iso) {
+    const date = new Date(String(iso || "").slice(0, 10));
+    if (Number.isNaN(date.getTime())) return "";
+    const months = ["Jan.", "Feb.", "Mär.", "Apr.", "Mai", "Jun.", "Jul.", "Aug.", "Sep.", "Okt.", "Nov.", "Dez."];
+    return `${date.getUTCDate()}. ${months[date.getUTCMonth()]}`;
+  }
+
   function formatBirthYearShort(year) {
     if (!year) return "";
     return String(year).slice(-2).padStart(2, "0");
@@ -169,6 +196,248 @@ document.addEventListener("DOMContentLoaded", () => {
   function getYearFromISO(iso) {
     const year = Number(String(iso || "").slice(0, 4));
     return Number.isFinite(year) ? year : null;
+  }
+
+  function normalizeMeetName(value) {
+    return normalize(value).replace(/\s+-\s+.*$/, "");
+  }
+
+  function normalizeLand(value) {
+    const land = normalize(value);
+    if (!land) return "";
+    return land.toUpperCase() === "GER" ? "Deutschland" : land;
+  }
+
+  function iso3FromLand(landName) {
+    const land = normalizeLand(landName);
+    if (!land) return "";
+    if (/^[A-Z]{3}$/.test(land)) return land;
+    return LAND_TO_ISO3[land] || land.slice(0, 3).toUpperCase();
+  }
+
+  function poolLabel(pool) {
+    const value = normalize(pool);
+    if (value === "25") return "25 m";
+    if (value === "50") return "50 m";
+    return "";
+  }
+
+  function medalForPlace(placeStr) {
+    const place = parseInt(placeStr, 10);
+    if (!Number.isFinite(place)) return null;
+    if (place === 1) return { file: "medal_gold.svg", alt: "Gold" };
+    if (place === 2) return { file: "medal_silver.svg", alt: "Silber" };
+    if (place === 3) return { file: "medal_bronze.svg", alt: "Bronze" };
+    return null;
+  }
+
+  function formatClubMeetPlace(value) {
+    const text = normalize(value);
+    if (!text) return "";
+    const place = parseInt(text, 10);
+    return Number.isFinite(place) ? String(place) : text;
+  }
+
+  function getClubMeetStartrechtCap(row) {
+    const startrecht = normalize(row?.[COLS.startrecht]).toUpperCase();
+
+    if (startrecht === "LV") {
+      const code = normalizeLvCode(row?.[COLS.lvState]);
+      return code ? { key: `LV|${code}`, file: `Cap-${code}.svg`, label: `LV ${code}` } : null;
+    }
+
+    if (startrecht === "BV") {
+      const code = normalizeBvCode(row?.[COLS.bvNatio]);
+      return code ? { key: `BV|${code}`, file: `Cap-${code}.svg`, label: `BV ${code}` } : null;
+    }
+
+    return null;
+  }
+
+  function isClubMeetIndividualScoring(value) {
+    const scoring = normalize(value).toLowerCase().replace(/[\s\-]+/g, "");
+    return !scoring || scoring.includes("einzel");
+  }
+
+  function isSeniorClubMeetName(meetName) {
+    const raw = normalize(meetName);
+    const shortName = normalizeMeetName(raw);
+    return normalizeForCompare(shortName) === "dsm" || /-\s*sen\b/i.test(raw);
+  }
+
+  function ageGroupFromBirthYear(birthYear, meetYear, meetName = "") {
+    const born = Number(birthYear);
+    const year = Number(meetYear);
+    if (!Number.isFinite(born) || !Number.isFinite(year) || born <= 0) return { label: "AK ?", sort: 99 };
+
+    const age = year - born;
+    if (isSeniorClubMeetName(meetName)) {
+      const seniorAge = Math.max(20, Math.floor(age / 5) * 5);
+      return { label: `AK ${seniorAge}`, sort: seniorAge };
+    }
+
+    if (age <= 10) return { label: "AK 10", sort: 10 };
+    if (age <= 12) return { label: "AK 12", sort: 12 };
+    if (age <= 14) return { label: "AK 13/14", sort: 14 };
+    if (age <= 16) return { label: "AK 15/16", sort: 16 };
+    if (age <= 18) return { label: "AK 17/18", sort: 18 };
+    return { label: "Offen", sort: 50 };
+  }
+
+  function genderLabel(gender) {
+    return normalizeGender(gender) === "w" ? "weiblich" : "männlich";
+  }
+
+  function genderSortValue(gender) {
+    return normalizeGender(gender) === "w" ? 0 : 1;
+  }
+
+  function compareClubMeetAthlete(left, right) {
+    const ageDiff = Number(left.ageGroupSort) - Number(right.ageGroupSort);
+    if (ageDiff !== 0) return ageDiff;
+
+    const genderDiff = genderSortValue(left.gender) - genderSortValue(right.gender);
+    if (genderDiff !== 0) return genderDiff;
+
+    const placeDiff = clubMeetPlaceSortValue(left.multiPlace) - clubMeetPlaceSortValue(right.multiPlace);
+    if (placeDiff !== 0) return placeDiff;
+
+    const lastNameCompare = String(left.lastName || "").localeCompare(String(right.lastName || ""), "de", { sensitivity: "base" });
+    if (lastNameCompare !== 0) return lastNameCompare;
+
+    const firstNameCompare = String(left.firstName || "").localeCompare(String(right.firstName || ""), "de", { sensitivity: "base" });
+    if (firstNameCompare !== 0) return firstNameCompare;
+
+    return Number(left.birthYear || 0) - Number(right.birthYear || 0);
+  }
+
+  function clubMeetPlaceSortValue(place) {
+    const parsed = parseInt(place, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 9999;
+  }
+
+  function hasClubMeetStartValue(value) {
+    if (value == null) return false;
+    if (typeof value === "number") return Number.isFinite(value) && value > 0;
+    const text = normalize(value);
+    return !!text && !/^[-—]$/.test(text) && !/^0(?:[,.]0+)?$/.test(text);
+  }
+
+  function formatClubMeetStartTime(value) {
+    const seconds = parseTimeToSec(value);
+    if (Number.isFinite(seconds)) return formatSeconds(seconds);
+    return normalize(value) || "—";
+  }
+
+  function roundLabelFromLauf(laufNummer, maxLauf) {
+    const run = Number(laufNummer);
+    const max = Number(maxLauf);
+    if (!Number.isFinite(run) || !Number.isFinite(max) || max <= 1) return "";
+
+    if (max === 2) return run === 1 ? "Vorlauf" : (run === 2 ? "Finale" : "");
+    if (max === 3) return run === 1 ? "Vorlauf" : (run === 2 ? "Halbfinale" : (run === 3 ? "Finale" : ""));
+    if (max === 4) {
+      if (run === 1) return "Vorlauf";
+      if (run === 2) return "Viertelfinale";
+      if (run === 3) return "Halbfinale";
+      if (run === 4) return "Finale";
+      return "";
+    }
+
+    if (run === max) return "Finale";
+    if (run === max - 1) return "Halbfinale";
+    if (run === max - 2) return "Viertelfinale";
+    return "Vorlauf";
+  }
+
+  function getClubMeetRunNumber(row, athlete) {
+    const raw = normalize(row?.[COLS.vorlaeufe]);
+    const parsed = parseInt(raw, 10);
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+    return Number(athlete?.runRows || 0) + 1;
+  }
+
+  function collectClubMeetStarts(row, runNo) {
+    return DISCIPLINES
+      .map((discipline, index) => {
+        const rawValue = row?.[discipline.col];
+        const rawPlace = row?.[discipline.placeCol];
+        if (!hasClubMeetStartValue(rawValue) && !hasClubMeetStartValue(rawPlace)) return null;
+
+        return {
+          key: discipline.key,
+          label: discipline.label,
+          order: index,
+          runNo,
+          placeLabel: formatClubMeetPlace(rawPlace),
+          showMedal: isClubMeetIndividualScoring(row?.[COLS.wertung]),
+          timeLabel: formatClubMeetStartTime(rawValue)
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function addClubMeetStarts(athlete, starts) {
+    if (!athlete || !Array.isArray(starts) || !starts.length) return;
+    if (!Array.isArray(athlete.starts)) athlete.starts = [];
+    if (!(athlete.startKeys instanceof Set)) athlete.startKeys = new Set();
+
+    starts.forEach((start) => {
+      const key = `${start.key}|${start.runNo || ""}|${start.placeLabel}|${start.timeLabel}`;
+      if (athlete.startKeys.has(key)) return;
+      athlete.startKeys.add(key);
+      athlete.starts.push(start);
+    });
+
+    athlete.starts.sort((left, right) => (Number(left.order) - Number(right.order)) || (Number(left.runNo || 0) - Number(right.runNo || 0)));
+  }
+
+  function addClubMeetStartrechtCap(athlete, row) {
+    const cap = getClubMeetStartrechtCap(row);
+    if (!athlete || !cap) return;
+    if (!Array.isArray(athlete.startrechtCaps)) athlete.startrechtCaps = [];
+    if (!(athlete.startrechtCapKeys instanceof Set)) athlete.startrechtCapKeys = new Set();
+    if (athlete.startrechtCapKeys.has(cap.key)) return;
+    athlete.startrechtCapKeys.add(cap.key);
+    athlete.startrechtCaps.push(cap);
+  }
+
+  function finalizeClubMeetAthlete(athlete) {
+    if (!athlete || !Array.isArray(athlete.starts)) return athlete;
+    const totalRuns = Number.isFinite(Number(athlete.runMax)) ? Number(athlete.runMax) : athlete.starts.length;
+    athlete.starts.forEach((start) => {
+      start.roundLabel = roundLabelFromLauf(start.runNo, totalRuns);
+      start.isFinalRun = totalRuns <= 1 || Number(start.runNo) === totalRuns;
+    });
+    return athlete;
+  }
+
+  function setClubMeetMultiPlace(athlete, rawPlace) {
+    if (!athlete) return;
+    const place = formatClubMeetPlace(rawPlace);
+    if (!place || athlete.multiPlace) return;
+    athlete.multiPlace = place;
+  }
+
+  function renderClubMeetPlace(place, className = "club-meet-place", showMedal = true, suffix = "") {
+    const placeLabel = formatClubMeetPlace(place);
+    const medal = showMedal ? medalForPlace(placeLabel) : null;
+
+    return h(
+      "span",
+      { class: className },
+      h("span", {}, placeLabel ? `${placeLabel}${suffix}` : "—"),
+      medal
+        ? h("img", {
+            class: "club-meet-medal",
+            src: `./assets/svg/${medal.file}`,
+            alt: medal.alt,
+            loading: "lazy",
+            decoding: "async",
+            onerror: (event) => event.currentTarget.remove()
+          })
+        : null
+    );
   }
 
   function matchesAgeGroup(settings, birthYear, dateIso) {
@@ -1887,6 +2156,445 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function buildClubMeetData(rows, group) {
+    const byKey = new Map();
+
+    for (const row of Array.isArray(rows) ? rows : []) {
+      if (!row || !groupMatchesRow(group, row)) continue;
+
+      const rawName = normalize(row[COLS.meetName]);
+      const name = normalizeMeetName(rawName);
+      if (!name) continue;
+
+      const dateIso = excelSerialToISO(row[COLS.excelDate]);
+      const year = getYearFromISO(dateIso);
+      if (!Number.isFinite(year)) continue;
+
+      const land = normalizeLand(row[COLS.land]);
+      const pool = normalize(row[COLS.pool]);
+      const key = [
+        normalizeForCompare(name),
+        dateIso || String(year),
+        normalizeForCompare(land),
+        pool
+      ].join("|");
+
+      if (!byKey.has(key)) {
+        byKey.set(key, {
+          rawName,
+          name,
+          dateIso,
+          year,
+          land,
+          pool,
+          athletes: new Set(),
+          athleteMap: new Map(),
+          rows: 0
+        });
+      }
+
+      const entry = byKey.get(key);
+      entry.rows += 1;
+
+      const athleteName = normalize(row[COLS.name]);
+      if (athleteName) {
+        const gender = normalizeGender(row[COLS.gender]);
+        const birthYear = parseTwoDigitYearWithMeetYear(row[COLS.yy2], dateIso);
+        const athleteId = makeAthleteId(athleteName, gender, birthYear);
+        const ageGroup = ageGroupFromBirthYear(birthYear, year, rawName);
+        entry.athletes.add(athleteId);
+
+        if (!entry.athleteMap.has(athleteId)) {
+          const { lastName, firstName } = splitNameParts(athleteName);
+          entry.athleteMap.set(athleteId, {
+            id: athleteId,
+            name: athleteName,
+            gender,
+            genderLabel: genderLabel(gender),
+            birthYear,
+            ageGroupLabel: ageGroup.label,
+            ageGroupSort: ageGroup.sort,
+            lastName,
+            firstName,
+            multiPlace: "",
+            runRows: 0,
+            runMax: 0,
+            startrechtCaps: [],
+            startrechtCapKeys: new Set(),
+            starts: [],
+            startKeys: new Set()
+          });
+        }
+
+        const athlete = entry.athleteMap.get(athleteId);
+        const runNo = getClubMeetRunNumber(row, athlete);
+        athlete.runRows += 1;
+        athlete.runMax = Math.max(Number(athlete.runMax) || 0, Number(runNo) || 0);
+        setClubMeetMultiPlace(athlete, row[COLS.pMehrkampf]);
+        addClubMeetStartrechtCap(athlete, row);
+        addClubMeetStarts(athlete, collectClubMeetStarts(row, runNo));
+      }
+    }
+
+    const items = Array.from(byKey.values())
+      .map((entry) => ({
+        ...entry,
+        athleteCount: entry.athletes.size,
+        athleteList: Array.from(entry.athleteMap.values()).map(finalizeClubMeetAthlete).sort(compareClubMeetAthlete),
+        dateLabel: formatDateShort(entry.dateIso),
+        fullDateLabel: formatDateDE(entry.dateIso),
+        iso3: iso3FromLand(entry.land),
+        poolLabel: poolLabel(entry.pool)
+      }))
+      .sort((left, right) => {
+        const dateCompare = String(right.dateIso || "").localeCompare(String(left.dateIso || ""));
+        if (dateCompare !== 0) return dateCompare;
+        return String(left.name || "").localeCompare(String(right.name || ""), "de", { sensitivity: "base" });
+      });
+
+    const years = Array.from(new Set(items.map((item) => item.year))).sort((left, right) => right - left);
+    const byYear = new Map(years.map((year) => [year, items.filter((item) => item.year === year)]));
+    return { years, byYear, total: items.length };
+  }
+
+  function groupClubMeetAthletes(athletes) {
+    const groups = [];
+    const byKey = new Map();
+
+    for (const athlete of Array.isArray(athletes) ? athletes : []) {
+      const key = `${athlete.ageGroupLabel}|${athlete.gender}`;
+      if (!byKey.has(key)) {
+        const group = {
+          key,
+          ageGroupLabel: athlete.ageGroupLabel || "AK ?",
+          gender: athlete.gender,
+          genderLabel: athlete.genderLabel || genderLabel(athlete.gender),
+          athletes: []
+        };
+        byKey.set(key, group);
+        groups.push(group);
+      }
+
+      byKey.get(key).athletes.push(athlete);
+    }
+
+    return groups;
+  }
+
+  function formatClubMeetAthleteName(athlete) {
+    const firstName = normalize(athlete?.firstName);
+    const lastName = normalize(athlete?.lastName);
+    const name = firstName || lastName ? normalize(`${firstName} ${lastName}`) : normalize(athlete?.name);
+    const year = formatBirthYearShort(athlete?.birthYear);
+    return `${name || "—"}${year ? ` (${year})` : ""}`;
+  }
+
+  function renderClubMeetAthleteStarts(athlete, detailId) {
+    const starts = Array.isArray(athlete?.starts) ? athlete.starts : [];
+
+    return h(
+      "div",
+      { class: "club-meet-athlete-details", id: detailId, "aria-hidden": "true" },
+      starts.length
+        ? h(
+            "ul",
+            { class: "club-meet-starts" },
+            starts.map((start) =>
+              h(
+                "li",
+                { class: "club-meet-start" },
+                h(
+                  "span",
+                  { class: "club-meet-start-discipline-wrap" },
+                  h("span", { class: "club-meet-start-discipline" }, start.label || "—"),
+                  start.roundLabel ? h("span", { class: "club-meet-start-round" }, start.roundLabel) : null
+                ),
+                renderClubMeetPlace(start.placeLabel, "club-meet-start-place", start.showMedal !== false && start.isFinalRun !== false),
+                h("span", { class: "club-meet-start-time" }, start.timeLabel || "—")
+              )
+            )
+          )
+        : h("div", { class: "club-meet-starts-empty" }, "Keine Disziplinzeiten erfasst.")
+    );
+  }
+
+  function renderClubMeetStartrechtCaps(athlete) {
+    const caps = Array.isArray(athlete?.startrechtCaps) ? athlete.startrechtCaps : [];
+    if (!caps.length) return null;
+
+    return h(
+      "span",
+      { class: "club-meet-startrecht-caps", "aria-label": "Startrecht" },
+      caps.map((cap) =>
+        h("img", {
+          class: "club-meet-startrecht-cap",
+          src: `./assets/svg/${encodeURIComponent(cap.file)}`,
+          alt: cap.label || "Startrecht",
+          title: cap.label || "",
+          loading: "lazy",
+          decoding: "async",
+          onerror: (event) => event.currentTarget.remove()
+        })
+      )
+    );
+  }
+
+  function renderClubMeetAthlete(athlete, parentDetailId) {
+    const athleteDetailId = `${parentDetailId}-ath-${slugPart(athlete?.id || formatClubMeetAthleteName(athlete))}`;
+    const item = h("li", { class: "club-meet-athlete" });
+    const details = renderClubMeetAthleteStarts(athlete, athleteDetailId);
+
+    const toggleDetails = () => {
+      const isOpen = !item.classList.contains("is-open");
+      item.classList.toggle("is-open", isOpen);
+      button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      details.setAttribute("aria-hidden", isOpen ? "false" : "true");
+    };
+
+    const button = h(
+      "button",
+      {
+        class: "club-meet-athlete-button",
+        type: "button",
+        "aria-expanded": "false",
+        "aria-controls": athleteDetailId,
+        onclick: toggleDetails
+      },
+      h(
+        "span",
+        { class: "club-meet-athlete-main" },
+        athlete?.multiPlace
+          ? renderClubMeetPlace(athlete.multiPlace, "club-meet-athlete-place", true, ".")
+          : h("span", { class: "club-meet-athlete-place club-meet-athlete-place--empty", "aria-hidden": "true" }, ""),
+        h("span", { class: "club-meet-athlete-name" }, formatClubMeetAthleteName(athlete))
+      ),
+      renderClubMeetStartrechtCaps(athlete) || h("span", { class: "club-meet-startrecht-caps is-empty", "aria-hidden": "true" }),
+      h("span", { class: "club-meet-athlete-toggle", "aria-hidden": "true" })
+    );
+
+    item.appendChild(button);
+    item.appendChild(details);
+    return item;
+  }
+
+  function renderClubMeetDetails(meet, detailId) {
+    const groups = groupClubMeetAthletes(meet.athleteList || []);
+
+    return h(
+      "div",
+      { class: "club-meet-details", id: detailId, "aria-hidden": "true" },
+      h(
+        "div",
+        { class: "club-meet-details-inner" },
+        groups.length
+          ? h(
+              "div",
+              { class: "club-meet-athlete-groups" },
+              groups.map((group) =>
+                h(
+                  "section",
+                  { class: "club-meet-athlete-group" },
+                  h(
+                    "h4",
+                    {},
+                    h("span", {}, group.ageGroupLabel),
+                    h("span", {}, group.genderLabel)
+                  ),
+                  h(
+                    "ul",
+                    {},
+                    group.athletes.map((athlete) => renderClubMeetAthlete(athlete, detailId))
+                  )
+                )
+              )
+            )
+          : h("div", { class: "club-meet-details-empty" }, "Keine Sportlerdaten verfügbar.")
+      )
+    );
+  }
+
+  function renderClubMeetRow(meet, index = 0, canExpand = true) {
+    const eventName = meet.rawName || meet.name;
+    const swimmerLabel = String(meet.athleteCount || 0);
+    const detailId = `club-meet-details-${slugPart(meet.key || `${meet.year}-${index}`)}`;
+    const item = h("article", { class: `club-meet-item${canExpand ? "" : " club-meet-item--static"}` });
+    const details = canExpand ? renderClubMeetDetails(meet, detailId) : null;
+
+    const toggleDetails = () => {
+      if (!canExpand || !details) return;
+      const isOpen = !item.classList.contains("is-open");
+      item.classList.toggle("is-open", isOpen);
+      row.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      details.setAttribute("aria-hidden", isOpen ? "false" : "true");
+    };
+
+    const row = h(
+      canExpand ? "button" : "div",
+      canExpand
+        ? {
+            class: "club-meet-row",
+            type: "button",
+            "aria-expanded": "false",
+            "aria-controls": detailId,
+            onclick: toggleDetails
+          }
+        : {
+            class: "club-meet-row club-meet-row--static"
+          },
+      h(
+        "time",
+        { class: "club-meet-date", datetime: meet.dateIso || "" },
+        meet.dateLabel || "—"
+      ),
+      h(
+        "span",
+        { class: "club-meet-event-cell", "aria-hidden": "true" },
+        eventName
+          ? h("img", {
+              class: "club-meet-event-icon",
+              src: `./assets/png/events/${encodeURIComponent(eventName)}.png`,
+              alt: "",
+              loading: "lazy",
+              decoding: "async",
+              onerror: (event) => {
+                const img = event.currentTarget;
+                if (!img.dataset.fallback) {
+                  img.dataset.fallback = "1";
+                  img.src = "./assets/png/events/DLRG.png";
+                } else {
+                  img.remove();
+                }
+              }
+            })
+          : null
+      ),
+      h(
+        "span",
+        { class: "club-meet-name" },
+        h("span", { class: "club-meet-name-main" }, meet.name || "—"),
+        meet.fullDateLabel ? h("span", { class: "club-meet-date-full" }, meet.fullDateLabel) : null
+      ),
+      h(
+        "span",
+        { class: "club-meet-country" },
+        meet.land
+          ? h("img", {
+              class: "club-meet-flag",
+              src: `./assets/svg/${encodeURIComponent(meet.land)}.svg`,
+              alt: meet.land,
+              loading: "lazy",
+              decoding: "async",
+              onerror: (event) => event.currentTarget.remove()
+            })
+          : null,
+        h("span", { class: "club-meet-iso" }, meet.iso3 || "—")
+      ),
+      h("span", { class: "club-meet-pool" }, meet.poolLabel || "—"),
+      h(
+        "span",
+        { class: "club-meet-count" },
+        h("span", {}, swimmerLabel),
+        canExpand ? h("span", { class: "club-meet-toggle", "aria-hidden": "true" }) : null
+      )
+    );
+
+    item.appendChild(row);
+    if (details) item.appendChild(details);
+    return item;
+  }
+
+  function renderClubMeetHeader() {
+    return h(
+      "div",
+      { class: "club-meet-header", "aria-hidden": "true" },
+      h("span", { class: "club-meet-header-date" }, "Datum"),
+      h("span", { class: "club-meet-header-name" }, "Wettkampf"),
+      h("span", { class: "club-meet-header-land" }, "Land"),
+      h("span", { class: "club-meet-header-pool" }, "Bahn"),
+      h("span", { class: "club-meet-header-count" }, "Sportler")
+    );
+  }
+
+  async function renderClubMeets(panel, group) {
+    if (!panel || !group) return;
+
+    panel.innerHTML = "";
+    const box = h("section", { class: "club-meets-section" });
+    const title = h("h3", {}, "");
+    const olderButton = h("button", {
+      class: "club-meets-nav-btn",
+      type: "button",
+      "aria-label": "Vorheriges Wettkampfjahr",
+      onclick: () => changeYear(1)
+    }, "‹");
+    const newerButton = h("button", {
+      class: "club-meets-nav-btn",
+      type: "button",
+      "aria-label": "Nächstes Wettkampfjahr",
+      onclick: () => changeYear(-1)
+    }, "›");
+    const header = h("div", { class: "club-meets-head" }, olderButton, title, newerButton);
+    const list = h("div", { class: "club-meets-list" }, h("div", { class: "club-bests-status" }, "Wettkämpfe werden geladen ..."));
+
+    box.appendChild(header);
+    box.appendChild(list);
+    panel.appendChild(box);
+
+    let years = [];
+    let byYear = new Map();
+    let activeIndex = 0;
+    const canExpandMeets = group.kind === "og";
+
+    try {
+      const rows = await getBestenlisteRows();
+      const data = buildClubMeetData(rows, group);
+      years = data.years;
+      byYear = data.byYear;
+
+      if (!years.length) {
+        title.textContent = "—";
+        olderButton.disabled = true;
+        newerButton.disabled = true;
+        list.innerHTML = "";
+        list.appendChild(h("div", { class: "club-bests-empty" }, "Keine Wettkämpfe erfasst."));
+        return;
+      }
+
+      paint();
+    } catch (error) {
+      console.error("Club-Wettkämpfe konnten nicht geladen werden:", error);
+      title.textContent = "—";
+      olderButton.disabled = true;
+      newerButton.disabled = true;
+      list.innerHTML = "";
+      list.appendChild(h("div", { class: "club-bests-status club-bests-status--error" }, "Wettkämpfe konnten nicht geladen werden."));
+    }
+
+    function changeYear(delta) {
+      const next = activeIndex + delta;
+      if (next < 0 || next >= years.length) return;
+      activeIndex = next;
+      paint();
+    }
+
+    function paint() {
+      const year = years[activeIndex];
+      const meets = byYear.get(year) || [];
+      title.textContent = String(year);
+      olderButton.disabled = activeIndex >= years.length - 1;
+      newerButton.disabled = activeIndex <= 0;
+
+      list.innerHTML = "";
+      if (!meets.length) {
+        list.appendChild(h("div", { class: "club-bests-empty" }, "Keine Wettkämpfe in diesem Jahr."));
+        return;
+      }
+
+      list.appendChild(renderClubMeetHeader());
+      meets.forEach((meet, index) => list.appendChild(renderClubMeetRow(meet, index, canExpandMeets)));
+    }
+  }
+
   function getActiveTabKey() {
     const hash = String(window.location.hash || "").replace(/^#/, "").trim().toLowerCase();
     return PROFILE_TABS.some((tab) => tab.key === hash) ? hash : PROFILE_TABS[0].key;
@@ -1983,6 +2691,7 @@ document.addEventListener("DOMContentLoaded", () => {
     mount.appendChild(shell);
     activateProfileTab(shell, getActiveTabKey(), false);
     renderBestenliste(panels.querySelector('[data-key="bestenliste"]'), group);
+    renderClubMeets(panels.querySelector('[data-key="wettkaempfe"]'), group);
   }
 
   function openGroup(group) {
