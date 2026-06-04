@@ -2156,6 +2156,31 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function renderStatsPanel(panel, group) {
+    if (window.ClubsProfileStats && typeof window.ClubsProfileStats.render === "function") {
+      window.ClubsProfileStats.render(panel, group, {
+        COLS,
+        h,
+        normalize,
+        normalizeForCompare,
+        groupMatchesRow,
+        excelSerialToISO,
+        getYearFromISO,
+        normalizeMeetName,
+        normalizeGender,
+        parseTwoDigitYearWithMeetYear,
+        makeAthleteId,
+        getBestenlisteRows
+      });
+      return;
+    }
+
+    if (panel) {
+      panel.innerHTML = "";
+      panel.appendChild(h("div", { class: "club-bests-status club-bests-status--error" }, "Stats-Modul konnte nicht geladen werden."));
+    }
+  }
+
   function buildClubMeetData(rows, group) {
     const byKey = new Map();
 
@@ -2691,6 +2716,7 @@ document.addEventListener("DOMContentLoaded", () => {
     mount.appendChild(shell);
     activateProfileTab(shell, getActiveTabKey(), false);
     renderBestenliste(panels.querySelector('[data-key="bestenliste"]'), group);
+    renderStatsPanel(panels.querySelector('[data-key="stats"]'), group);
     renderClubMeets(panels.querySelector('[data-key="wettkaempfe"]'), group);
   }
 

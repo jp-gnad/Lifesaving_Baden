@@ -215,6 +215,254 @@ main#content {
   display: block;
 }
 
+.club-stats-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.club-stats-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.club-stats-summary {
+  display: inline-flex;
+  align-items: baseline;
+  align-self: flex-start;
+  gap: 0.45rem;
+  min-height: 2rem;
+  padding: 0.42rem 0.65rem;
+  border-left: 2px solid rgba(255, 237, 0, 0.88);
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.club-stats-summary-value {
+  color: rgba(255, 237, 0, 0.94);
+  font-variant-numeric: tabular-nums;
+}
+
+.club-stats-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2rem;
+  padding: 0.38rem 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.club-stats-toggle:hover,
+.club-stats-toggle:focus-within {
+  border-color: rgba(255, 237, 0, 0.42);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.club-stats-toggle input {
+  width: 0.95rem;
+  height: 0.95rem;
+  accent-color: rgba(255, 237, 0, 0.95);
+  cursor: pointer;
+}
+
+.club-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  min-width: 0;
+}
+
+.club-stats-card {
+  --club-stat-accent: rgba(255, 237, 0, 0.94);
+  --club-stat-soft: rgba(255, 237, 0, 0.16);
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 2px solid var(--club-stat-accent);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, var(--club-stat-soft), rgba(255, 255, 255, 0.025) 42%),
+    rgba(255, 255, 255, 0.035);
+  padding: 1rem;
+}
+
+.club-stats-card--athletes {
+  --club-stat-accent: rgba(52, 211, 153, 0.94);
+  --club-stat-soft: rgba(52, 211, 153, 0.14);
+}
+
+.club-stats-card--gender {
+  --club-stat-accent: rgba(96, 165, 250, 0.94);
+  --club-stat-soft: rgba(96, 165, 250, 0.13);
+}
+
+.club-stats-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.club-stats-title-group {
+  min-width: 0;
+}
+
+.club-stats-title-group h3 {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.18;
+}
+
+.club-stats-title-group p {
+  margin: 0.28rem 0 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.club-stats-value {
+  flex: 0 0 auto;
+  color: var(--club-stat-accent);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 900;
+  line-height: 0.95;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.club-stats-latest {
+  margin-top: 0.65rem;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.club-stats-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.75rem;
+  margin-top: 0.65rem;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.club-stats-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+}
+
+.club-stats-legend-swatch {
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 999px;
+}
+
+.club-stats-legend-swatch--female {
+  background: rgba(244, 114, 182, 0.95);
+}
+
+.club-stats-legend-swatch--male {
+  background: rgba(96, 165, 250, 0.95);
+}
+
+.club-stats-chart-wrap {
+  margin-top: 0.8rem;
+  min-height: 11rem;
+}
+
+.club-stats-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.club-stats-grid-line {
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 1;
+}
+
+.club-stats-axis {
+  stroke: rgba(255, 255, 255, 0.28);
+  stroke-width: 1.2;
+}
+
+.club-stats-y-label,
+.club-stats-x-label {
+  fill: rgba(255, 255, 255, 0.45);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.club-stats-bar {
+  fill: var(--club-stat-accent);
+  opacity: 0.86;
+}
+
+.club-stats-line {
+  fill: none;
+  stroke: var(--club-stat-accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.club-stats-dot {
+  fill: rgb(15, 15, 18);
+  stroke: var(--club-stat-accent);
+  stroke-width: 2.3;
+}
+
+.club-stats-gender-bar--female {
+  fill: rgba(244, 114, 182, 0.92);
+}
+
+.club-stats-gender-bar--male {
+  fill: rgba(96, 165, 250, 0.92);
+}
+
+.club-stats-gender-total-line {
+  stroke: rgba(255, 237, 0, 0.96);
+  stroke-dasharray: 5 4;
+  stroke-linecap: round;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.club-stats-gender-total-label {
+  fill: rgba(255, 237, 0, 0.96);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0;
+  paint-order: stroke;
+  stroke: rgb(15, 15, 18);
+  stroke-linejoin: round;
+  stroke-width: 3px;
+}
+
 .club-bests-controls {
   display: flex;
   flex-wrap: wrap;
@@ -1242,6 +1490,84 @@ main#content {
     padding-top: 1rem;
   }
 
+  .club-stats-section {
+    gap: 0.75rem;
+  }
+
+  .club-stats-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .club-stats-summary {
+    width: 100%;
+    min-height: 1.85rem;
+    box-sizing: border-box;
+    justify-content: space-between;
+    padding: 0.38rem 0.55rem;
+    font-size: 0.66rem;
+  }
+
+  .club-stats-toggle {
+    width: 100%;
+    min-height: 1.9rem;
+    box-sizing: border-box;
+    justify-content: flex-start;
+    padding: 0.38rem 0.55rem;
+    font-size: 0.7rem;
+  }
+
+  .club-stats-toggle input {
+    width: 0.88rem;
+    height: 0.88rem;
+  }
+
+  .club-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .club-stats-card {
+    padding: 0.85rem;
+  }
+
+  .club-stats-card-head {
+    gap: 0.65rem;
+  }
+
+  .club-stats-title-group h3 {
+    font-size: 0.9rem;
+  }
+
+  .club-stats-title-group p {
+    font-size: 0.62rem;
+  }
+
+  .club-stats-value {
+    font-size: clamp(1.8rem, 12vw, 2.7rem);
+  }
+
+  .club-stats-latest {
+    margin-top: 0.5rem;
+    font-size: 0.72rem;
+  }
+
+  .club-stats-legend {
+    margin-top: 0.5rem;
+    font-size: 0.68rem;
+  }
+
+  .club-stats-chart-wrap {
+    margin-top: 0.55rem;
+    min-height: 9.4rem;
+  }
+
+  .club-stats-y-label,
+  .club-stats-x-label {
+    font-size: 9px;
+  }
+
   .club-bests-controls {
     align-items: flex-start;
     flex-direction: column;
@@ -1798,6 +2124,12 @@ main#content {
     width: 3.4rem;
     height: 3.4rem;
     flex-basis: 3.4rem;
+  }
+}
+
+@media (min-width: 720px) {
+  .club-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
