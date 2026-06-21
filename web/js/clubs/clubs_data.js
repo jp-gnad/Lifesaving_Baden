@@ -362,7 +362,7 @@
         name === "Baden-Württemberg"
           ? createFlipAvatar(["BA", "Baden"], ["WÜ", "WU", "WUE", "Württemberg"])
           : name === "Nordrhein-Westfalen"
-          ? createFlipAvatar(["NR", "NW", "NO", "NRH", "Nordrhein"], ["WF", "WL", "WE", "Westfalen"])
+          ? createFlipAvatar(["NR", "NW", "NO", "NRH", "Nordrhein"], ["WE", "WF", "WL", "Westfalen"])
           : createSingleAvatar([
               ...buildCapKeyVariants(code),
               ...buildCapKeyVariants(name),

@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
     Brandenburg: ["BB"],
     Hessen: ["HE"],
     Nordrhein: ["NR", "NW", "NO", "NRH"],
-    "Nordrhein-Westfalen": ["NR", "NW", "NO", "NRH", "WF", "WE", "WL"],
+    "Nordrhein-Westfalen": ["NR", "NW", "NO", "NRH", "WE", "WF", "WL"],
     "Rheinland-Pfalz": ["RP"],
     Saarland: ["SL"],
     Württemberg: ["WÜ", "WU", "WUE"]
