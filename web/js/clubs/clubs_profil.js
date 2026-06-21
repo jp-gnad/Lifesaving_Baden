@@ -238,8 +238,21 @@ document.addEventListener("DOMContentLoaded", () => {
     return Number.isFinite(place) ? String(place) : text;
   }
 
+  function capFileFromOrtsgruppe(rawOG) {
+    const og = normalize(rawOG).replace(/^og\s+/i, "");
+    if (!og) return "";
+    if (og === "Nieder-Olm/Wörrstadt") return "Cap-Nieder-OlmWörrstadt.svg";
+    return `Cap-${og}.svg`;
+  }
+
   function getClubMeetStartrechtCap(row) {
     const startrecht = normalize(row?.[COLS.startrecht]).toUpperCase();
+
+    if (startrecht === "OG") {
+      const ogName = normalize(row?.[COLS.ortsgruppe]).replace(/^og\s+/i, "");
+      const file = capFileFromOrtsgruppe(ogName);
+      return file ? { key: `OG|${ogName}`, file, label: `OG ${ogName}` } : null;
+    }
 
     if (startrecht === "LV") {
       const code = normalizeLvCode(row?.[COLS.lvState]);
