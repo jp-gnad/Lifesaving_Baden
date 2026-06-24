@@ -305,7 +305,7 @@ main#content {
   --club-stat-soft: rgba(52, 211, 153, 0.14);
 }
 
-.club-stats-card--gender {
+.club-stats-card--starts {
   --club-stat-accent: rgba(96, 165, 250, 0.94);
   --club-stat-soft: rgba(96, 165, 250, 0.13);
 }
@@ -346,6 +346,48 @@ main#content {
   line-height: 0.95;
   font-variant-numeric: tabular-nums;
   text-align: right;
+}
+
+.club-stats-mode-toggle {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.15rem;
+  width: min(100%, 15rem);
+  margin-top: 0.75rem;
+  padding: 0.18rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.club-stats-mode-btn {
+  min-width: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.62);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+  padding: 0.5rem 0.6rem;
+}
+
+.club-stats-mode-btn:hover,
+.club-stats-mode-btn:focus-visible {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.club-stats-mode-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 2px;
+}
+
+.club-stats-mode-btn.is-active {
+  background: var(--club-stat-accent);
+  color: rgb(15, 15, 18);
 }
 
 .club-stats-latest {
@@ -442,25 +484,6 @@ main#content {
 
 .club-stats-gender-bar--male {
   fill: rgba(96, 165, 250, 0.92);
-}
-
-.club-stats-gender-total-line {
-  stroke: rgba(255, 237, 0, 0.96);
-  stroke-dasharray: 5 4;
-  stroke-linecap: round;
-  stroke-width: 2;
-  vector-effect: non-scaling-stroke;
-}
-
-.club-stats-gender-total-label {
-  fill: rgba(255, 237, 0, 0.96);
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0;
-  paint-order: stroke;
-  stroke: rgb(15, 15, 18);
-  stroke-linejoin: round;
-  stroke-width: 3px;
 }
 
 .club-bests-controls {
