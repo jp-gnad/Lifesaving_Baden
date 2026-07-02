@@ -11,6 +11,10 @@ const JRP_MAX_YEAR = new Date().getFullYear() + 1;
 const JRP_EXTS = [".jpg"];
 
 const JRP_SLIDE_SETTINGS = {
+  "2026": {
+    text: "LV-Gesamtwertung: 9. Platz",
+    bgPos: "center 70%",
+  },
   "2025": {
     text: "ausgefallen - FILCOW Cup",
     cta: { label: "Mehr Infos!", href: "https://www.liveheats.com/events/389513" },
