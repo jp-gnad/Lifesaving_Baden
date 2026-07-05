@@ -3,8 +3,18 @@
 
   const CLUB_STATS_STATE = {
     includeOms: true,
-    athleteMode: "count"
+    athleteMode: "count",
+    athleteChartScale: "count"
   };
+  const CLUB_STATS_AGE_CLASSES = [
+    { key: "u10", label: "10 und jünger", shortLabel: "≤10", className: "u10" },
+    { key: "ak11_12", label: "11/12", shortLabel: "11/12", className: "ak11-12" },
+    { key: "ak13_14", label: "13/14", shortLabel: "13/14", className: "ak13-14" },
+    { key: "ak15_16", label: "15/16", shortLabel: "15/16", className: "ak15-16" },
+    { key: "ak17_18", label: "17/18", shortLabel: "17/18", className: "ak17-18" },
+    { key: "ak19_plus", label: "19 und älter", shortLabel: "19+", className: "ak19-plus" },
+    { key: "unknown", label: "unbekannt", shortLabel: "?", className: "unknown" }
+  ];
 
   const COLS = new Proxy({}, {
     get(_target, key) {
@@ -64,8 +74,16 @@
     return getShared("getBestenlisteRows")();
   }
 
-  function formatClubStatsNumber(value) {
-    return Number(value || 0).toLocaleString("de-DE");
+  function formatClubStatsNumber(value, options) {
+    return Number(value || 0).toLocaleString("de-DE", options);
+  }
+
+  function formatClubStatsAge(value) {
+    const number = Number(value) || 0;
+    return formatClubStatsNumber(number, {
+      minimumFractionDigits: Number.isInteger(number) ? 0 : 1,
+      maximumFractionDigits: 1
+    });
   }
 
   function isOmsMeetName(value) {
@@ -98,6 +116,85 @@
     }, 0);
   }
 
+  function getClubStatsAverageAge(ages) {
+    const values = (Array.isArray(ages) ? ages : [])
+      .map((age) => Number(age))
+      .filter(Number.isFinite);
+
+    return values.length
+      ? values.reduce((sum, age) => sum + age, 0) / values.length
+      : 0;
+  }
+
+  function createClubStatsAgeClassCounts() {
+    return Object.fromEntries(CLUB_STATS_AGE_CLASSES.map((ageClass) => [ageClass.key, 0]));
+  }
+
+  function getClubStatsAgeClassKey(age) {
+    if (age == null || String(age).trim() === "") return "unknown";
+    const value = Number(age);
+    if (!Number.isFinite(value)) return "unknown";
+    if (value <= 10) return "u10";
+    if (value <= 12) return "ak11_12";
+    if (value <= 14) return "ak13_14";
+    if (value <= 16) return "ak15_16";
+    if (value <= 18) return "ak17_18";
+    return "ak19_plus";
+  }
+
+  function isClubStatsUnknownBirthYear(value) {
+    const text = normalize(value);
+    return !text || text === "\"\"";
+  }
+
+  function getClubStatsAgeClassCounts(athletes, athleteAges, unknownAgeAthletes) {
+    const counts = createClubStatsAgeClassCounts();
+    const athleteIds = athletes instanceof Set ? athletes : new Set();
+    const ageMap = athleteAges instanceof Map ? athleteAges : new Map();
+    const unknownIds = unknownAgeAthletes instanceof Set ? unknownAgeAthletes : new Set();
+
+    athleteIds.forEach((athleteId) => {
+      const key = unknownIds.has(athleteId) ? "unknown" : getClubStatsAgeClassKey(ageMap.get(athleteId));
+      counts[key] = (counts[key] || 0) + 1;
+    });
+
+    return counts;
+  }
+
+  function getClubStatsAgeClassTotal(counts) {
+    return CLUB_STATS_AGE_CLASSES.reduce((sum, ageClass) => sum + (Number(counts?.[ageClass.key]) || 0), 0);
+  }
+
+  function getClubStatsDominantAgeClass(counts) {
+    let dominant = CLUB_STATS_AGE_CLASSES[0];
+    let maxValue = -1;
+
+    CLUB_STATS_AGE_CLASSES.forEach((ageClass) => {
+      const value = Number(counts?.[ageClass.key]) || 0;
+      if (value > maxValue) {
+        dominant = ageClass;
+        maxValue = value;
+      }
+    });
+
+    return { ageClass: dominant, value: Math.max(0, maxValue) };
+  }
+
+  function formatClubStatsAgeClassLatestLabel(point) {
+    const total = getClubStatsAgeClassTotal(point?.ageClassCounts);
+    if (!point || !total) return "";
+
+    const dominant = getClubStatsDominantAgeClass(point.ageClassCounts);
+    return `${point.year}: ${formatClubStatsNumber(total)} Sportler, stärkste AK ${dominant.ageClass.label} (${formatClubStatsNumber(dominant.value)})`;
+  }
+
+  function mergeClubStatsAgeClassCounts(target, source) {
+    CLUB_STATS_AGE_CLASSES.forEach((ageClass) => {
+      target[ageClass.key] = (Number(target[ageClass.key]) || 0) + (Number(source?.[ageClass.key]) || 0);
+    });
+    return target;
+  }
+
   function buildClubStatsData(rows, group, settings = {}) {
     const byYear = new Map();
     const allAthletes = new Set();
@@ -111,6 +208,8 @@
           athletes: new Set(),
           femaleAthletes: new Set(),
           maleAthletes: new Set(),
+          athleteAges: new Map(),
+          unknownAgeAthletes: new Set(),
           starts: 0
         });
       }
@@ -141,7 +240,8 @@
       const athleteName = normalize(row[COLS.name]);
       if (athleteName) {
         const gender = normalizeGender(row[COLS.gender]);
-        const birthYear = parseTwoDigitYearWithMeetYear(row[COLS.yy2], dateIso);
+        const hasUnknownBirthYear = isClubStatsUnknownBirthYear(row[COLS.yy2]);
+        const birthYear = hasUnknownBirthYear ? "" : parseTwoDigitYearWithMeetYear(row[COLS.yy2], dateIso);
         const athleteId = makeAthleteId(athleteName, gender, birthYear);
 
         yearEntry.athletes.add(athleteId);
@@ -149,6 +249,14 @@
           yearEntry.femaleAthletes.add(athleteId);
         } else {
           yearEntry.maleAthletes.add(athleteId);
+        }
+        if (hasUnknownBirthYear) {
+          yearEntry.unknownAgeAthletes.add(athleteId);
+        } else if (Number.isFinite(birthYear)) {
+          const athleteAge = year - birthYear;
+          if (athleteAge >= 0 && athleteAge <= 120 && !yearEntry.athleteAges.has(athleteId)) {
+            yearEntry.athleteAges.set(athleteId, athleteAge);
+          }
         }
         allAthletes.add(athleteId);
       }
@@ -162,22 +270,34 @@
       : [];
     const series = years.map((year) => {
       const entry = byYear.get(year);
+      const ages = entry?.athleteAges ? Array.from(entry.athleteAges.values()) : [];
+      const ageClassCounts = getClubStatsAgeClassCounts(entry?.athletes, entry?.athleteAges, entry?.unknownAgeAthletes);
       return {
         year,
         competitions: entry?.meetKeys?.size || 0,
         athletes: entry?.athletes?.size || 0,
         femaleAthletes: entry?.femaleAthletes?.size || 0,
         maleAthletes: entry?.maleAthletes?.size || 0,
-        starts: entry?.starts || 0
+        starts: entry?.starts || 0,
+        averageAge: getClubStatsAverageAge(ages),
+        ageClassCounts
       };
     });
 
     const femaleAthletes = new Set();
     const maleAthletes = new Set();
+    const totalAgeClassCounts = createClubStatsAgeClassCounts();
+    let totalAgeSum = 0;
+    let totalAgeCount = 0;
     series.forEach((point) => {
       const entry = byYear.get(point.year);
       entry?.femaleAthletes?.forEach((id) => femaleAthletes.add(id));
       entry?.maleAthletes?.forEach((id) => maleAthletes.add(id));
+      mergeClubStatsAgeClassCounts(totalAgeClassCounts, point.ageClassCounts);
+      entry?.athleteAges?.forEach((age) => {
+        totalAgeSum += age;
+        totalAgeCount += 1;
+      });
     });
 
     return {
@@ -188,7 +308,9 @@
         athletes: allAthletes.size,
         femaleAthletes: femaleAthletes.size,
         maleAthletes: maleAthletes.size,
-        starts: series.reduce((sum, point) => sum + point.starts, 0)
+        starts: series.reduce((sum, point) => sum + point.starts, 0),
+        averageAge: totalAgeCount ? totalAgeSum / totalAgeCount : 0,
+        ageClassCounts: totalAgeClassCounts
       }
     };
   }
@@ -215,9 +337,9 @@
     return labels.plural || labels.singular || "";
   }
 
-  function formatClubStatsPointLabel(point, key, labels) {
+  function formatClubStatsPointLabel(point, key, labels, valueFormatter = formatClubStatsNumber) {
     const value = point[key];
-    return `${point.year}: ${formatClubStatsNumber(value)} ${getClubStatsUnitLabel(value, labels)}`;
+    return `${point.year}: ${valueFormatter(value)} ${getClubStatsUnitLabel(value, labels)}`;
   }
 
   function renderClubStatsChart(series, valueKey, options = {}) {
@@ -225,6 +347,7 @@
     const chartLabel = options.chartLabel || "Jahresverlauf";
     const unitLabels = options.unitLabels || {};
     const chartType = options.type || "bar";
+    const valueFormatter = options.valueFormatter || formatClubStatsNumber;
     const W = 520;
     const H = 178;
     const m = { t: 18, r: 14, b: 30, l: 34 };
@@ -246,7 +369,7 @@
     tickValues.forEach((tick) => {
       const y = yForValue(tick);
       grid.appendChild(s("line", { x1: m.l, y1: y, x2: W - m.r, y2: y, class: "club-stats-grid-line" }));
-      grid.appendChild(s("text", { x: m.l - 8, y: y + 4, class: "club-stats-y-label", "text-anchor": "end" }, formatClubStatsNumber(tick)));
+      grid.appendChild(s("text", { x: m.l - 8, y: y + 4, class: "club-stats-y-label", "text-anchor": "end" }, valueFormatter(tick)));
     });
     svg.appendChild(grid);
 
@@ -280,7 +403,7 @@
           s(
             "circle",
             { cx: xForIndex(index), cy: yForValue(point[valueKey]), r: 3.2, class: "club-stats-dot" },
-            s("title", {}, formatClubStatsPointLabel(point, valueKey, unitLabels))
+            s("title", {}, formatClubStatsPointLabel(point, valueKey, unitLabels, valueFormatter))
           )
         );
       });
@@ -299,7 +422,7 @@
           s(
             "rect",
             { x, y, width: barWidth, height, rx: 2, class: "club-stats-bar" },
-            s("title", {}, formatClubStatsPointLabel(point, valueKey, unitLabels))
+            s("title", {}, formatClubStatsPointLabel(point, valueKey, unitLabels, valueFormatter))
           )
         );
       });
@@ -314,20 +437,42 @@
     return `${((Number(value) / Number(total)) * 100).toFixed(1).replace(".", ",")}%`;
   }
 
+  function formatClubStatsPercentNumber(value, total, maximumFractionDigits = 1) {
+    if (!total) return "0";
+    return ((Number(value) / Number(total)) * 100).toLocaleString("de-DE", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits
+    });
+  }
+
   function formatClubStatsGenderShortPercentLabel(female, male) {
     const total = (Number(female) || 0) + (Number(male) || 0);
     return `${formatClubStatsPercent(male, total)} m / ${formatClubStatsPercent(female, total)} w`;
   }
 
-  function renderClubStatsGenderChart(series) {
+  function formatClubStatsGenderCompactPercentLabel(female, male) {
+    const total = (Number(female) || 0) + (Number(male) || 0);
+    return `m/w ${formatClubStatsPercentNumber(male, total)}/${formatClubStatsPercentNumber(female, total)}%`;
+  }
+
+  function formatClubStatsScaleTick(value, scale) {
+    return scale === "percent" ? `${formatClubStatsNumber(value)}%` : formatClubStatsNumber(value);
+  }
+
+  function renderClubStatsGenderChart(series, options = {}) {
     const points = Array.isArray(series) ? series : [];
+    const scale = options.scale === "percent" ? "percent" : "count";
     const W = 520;
     const H = 178;
     const m = { t: 18, r: 14, b: 30, l: 34 };
     const cw = W - m.l - m.r;
     const ch = H - m.t - m.b;
-    const maxValue = Math.max(1, ...points.map((point) => (Number(point.femaleAthletes) || 0) + (Number(point.maleAthletes) || 0)));
-    const tickValues = Array.from(new Set([0, Math.ceil(maxValue / 2), maxValue]));
+    const maxValue = scale === "percent"
+      ? 100
+      : Math.max(1, ...points.map((point) => (Number(point.femaleAthletes) || 0) + (Number(point.maleAthletes) || 0)));
+    const tickValues = scale === "percent"
+      ? [0, 50, 100]
+      : Array.from(new Set([0, Math.ceil(maxValue / 2), maxValue]));
     const xForIndex = (index) => points.length <= 1 ? m.l + cw / 2 : m.l + (index / (points.length - 1)) * cw;
     const yForValue = (value) => m.t + ch - ((Number(value) || 0) / maxValue) * ch;
     const svg = s("svg", {
@@ -342,7 +487,7 @@
     tickValues.forEach((tick) => {
       const y = yForValue(tick);
       grid.appendChild(s("line", { x1: m.l, y1: y, x2: W - m.r, y2: y, class: "club-stats-grid-line" }));
-      grid.appendChild(s("text", { x: m.l - 8, y: y + 4, class: "club-stats-y-label", "text-anchor": "end" }, formatClubStatsNumber(tick)));
+      grid.appendChild(s("text", { x: m.l - 8, y: y + 4, class: "club-stats-y-label", "text-anchor": "end" }, formatClubStatsScaleTick(tick, scale)));
     });
     svg.appendChild(grid);
     svg.appendChild(s("line", { x1: m.l, y1: m.t + ch, x2: W - m.r, y2: m.t + ch, class: "club-stats-axis" }));
@@ -365,10 +510,13 @@
     points.forEach((point, index) => {
       const female = Number(point.femaleAthletes) || 0;
       const male = Number(point.maleAthletes) || 0;
+      const total = female + male;
       const x = xForIndex(index) - barWidth / 2;
       const base = m.t + ch;
-      const femaleHeight = female ? Math.max(1, (female / maxValue) * ch) : 0;
-      const maleHeight = male ? Math.max(1, (male / maxValue) * ch) : 0;
+      const femaleValue = scale === "percent" && total ? (female / total) * 100 : female;
+      const maleValue = scale === "percent" && total ? (male / total) * 100 : male;
+      const femaleHeight = femaleValue ? Math.max(1, (femaleValue / maxValue) * ch) : 0;
+      const maleHeight = maleValue ? Math.max(1, (maleValue / maxValue) * ch) : 0;
       const femaleY = base - femaleHeight;
       const maleY = femaleY - maleHeight;
       const title = `${point.year}: ${formatClubStatsGenderShortPercentLabel(female, male)}`;
@@ -398,6 +546,89 @@
     return svg;
   }
 
+  function renderClubStatsAgeClassChart(series, options = {}) {
+    const points = Array.isArray(series) ? series : [];
+    const scale = options.scale === "percent" ? "percent" : "count";
+    const W = 520;
+    const H = 178;
+    const m = { t: 18, r: 14, b: 30, l: 34 };
+    const cw = W - m.l - m.r;
+    const ch = H - m.t - m.b;
+    const maxValue = scale === "percent"
+      ? 100
+      : Math.max(1, ...points.map((point) => getClubStatsAgeClassTotal(point.ageClassCounts)));
+    const tickValues = scale === "percent"
+      ? [0, 50, 100]
+      : Array.from(new Set([0, Math.ceil(maxValue / 2), maxValue]));
+    const xForIndex = (index) => points.length <= 1 ? m.l + cw / 2 : m.l + (index / (points.length - 1)) * cw;
+    const yForValue = (value) => m.t + ch - ((Number(value) || 0) / maxValue) * ch;
+    const svg = s("svg", {
+      class: "club-stats-chart club-stats-chart--age-classes",
+      viewBox: `0 0 ${W} ${H}`,
+      role: "img",
+      "aria-label": "Altersklassen nach Jahren",
+      focusable: "false"
+    });
+
+    const grid = s("g", { class: "club-stats-chart-grid" });
+    tickValues.forEach((tick) => {
+      const y = yForValue(tick);
+      grid.appendChild(s("line", { x1: m.l, y1: y, x2: W - m.r, y2: y, class: "club-stats-grid-line" }));
+      grid.appendChild(s("text", { x: m.l - 8, y: y + 4, class: "club-stats-y-label", "text-anchor": "end" }, formatClubStatsScaleTick(tick, scale)));
+    });
+    svg.appendChild(grid);
+    svg.appendChild(s("line", { x1: m.l, y1: m.t + ch, x2: W - m.r, y2: m.t + ch, class: "club-stats-axis" }));
+
+    if (points.length) {
+      const step = points.length > 7 ? Math.ceil(points.length / 6) : 1;
+      const xAxis = s("g", { class: "club-stats-x-axis" });
+      points.forEach((point, index) => {
+        const showTick = index === 0 || index === points.length - 1 || index % step === 0;
+        if (!showTick) return;
+        const x = xForIndex(index);
+        xAxis.appendChild(s("text", { x, y: H - 8, class: "club-stats-x-label", "text-anchor": "middle" }, String(point.year)));
+      });
+      svg.appendChild(xAxis);
+    }
+
+    const bars = s("g", { class: "club-stats-age-class-bars" });
+    const barWidth = Math.max(7, Math.min(22, cw / Math.max(1, points.length * 1.9)));
+
+    points.forEach((point, index) => {
+      const total = getClubStatsAgeClassTotal(point.ageClassCounts);
+      const x = xForIndex(index) - barWidth / 2;
+      let accumulated = 0;
+
+      CLUB_STATS_AGE_CLASSES.forEach((ageClass) => {
+        const value = Number(point.ageClassCounts?.[ageClass.key]) || 0;
+        if (!value) return;
+
+        const yBottom = yForValue(accumulated);
+        accumulated += scale === "percent" && total ? (value / total) * 100 : value;
+        const yTop = yForValue(accumulated);
+        const label = `${point.year}: ${ageClass.label}: ${formatClubStatsNumber(value)} ${getClubStatsUnitLabel(value, { singular: "Sportler", plural: "Sportler" })} (${formatClubStatsPercent(value, total)})`;
+
+        bars.appendChild(
+          s(
+            "rect",
+            {
+              x,
+              y: yTop,
+              width: barWidth,
+              height: Math.max(1, yBottom - yTop),
+              rx: 2,
+              class: `club-stats-age-class-segment club-stats-age-class-segment--${ageClass.className}`
+            },
+            s("title", {}, label)
+          )
+        );
+      });
+    });
+
+    svg.appendChild(bars);
+    return svg;
+  }
+
   function getClubStatsRangeLabel(data) {
     const years = Array.isArray(data?.years) ? data.years : [];
     if (!years.length) return "";
@@ -405,11 +636,11 @@
     return `${years[0]}-${years[years.length - 1]}`;
   }
 
-  function getClubStatsLatestLabel(series, valueKey, unitLabels) {
+  function getClubStatsLatestLabel(series, valueKey, unitLabels, valueFormatter = formatClubStatsNumber) {
     const points = Array.isArray(series) ? series : [];
     if (!points.length) return "";
     const latest = points[points.length - 1];
-    return `${latest.year}: ${formatClubStatsNumber(latest[valueKey])} ${getClubStatsUnitLabel(latest[valueKey], unitLabels)}`;
+    return `${latest.year}: ${valueFormatter(latest[valueKey])} ${getClubStatsUnitLabel(latest[valueKey], unitLabels)}`;
   }
 
   function renderClubStatCard(config, data) {
@@ -417,7 +648,8 @@
       singular: config.unitSingular,
       plural: config.unitPlural
     };
-    const latestLabel = getClubStatsLatestLabel(data.series, config.key, unitLabels);
+    const valueFormatter = config.valueFormatter || formatClubStatsNumber;
+    const latestLabel = getClubStatsLatestLabel(data.series, config.key, unitLabels, valueFormatter);
 
     return h(
       "section",
@@ -431,7 +663,7 @@
           h("h3", {}, config.title),
           h("p", {}, "Gesamt")
         ),
-        h("strong", { class: "club-stats-value" }, formatClubStatsNumber(data.totals[config.key]))
+        h("strong", { class: "club-stats-value" }, valueFormatter(data.totals[config.key]))
       ),
       latestLabel ? h("div", { class: "club-stats-latest" }, latestLabel) : null,
       h(
@@ -440,7 +672,8 @@
         renderClubStatsChart(data.series, config.key, {
           type: config.chartType,
           chartLabel: `${config.title} nach Jahren`,
-          unitLabels
+          unitLabels,
+          valueFormatter
         })
       )
     );
@@ -449,7 +682,8 @@
   function renderClubAthleteModeToggle(activeMode, onChange) {
     const modes = [
       { key: "count", label: "Anzahl" },
-      { key: "gender", label: "Geschlecht" }
+      { key: "gender", label: "Geschlecht" },
+      { key: "age", label: "Altersklasse" }
     ];
 
     return h(
@@ -474,19 +708,66 @@
     );
   }
 
+  function renderClubAthleteScaleToggle(activeScale, onChange, stateKey = "athleteChartScale") {
+    const scales = [
+      { key: "count", label: "Anzahl" },
+      { key: "percent", label: "%" }
+    ];
+
+    return h(
+      "div",
+      { class: "club-stats-chart-options", role: "group", "aria-label": "Diagramm-Skala" },
+      h(
+        "div",
+        { class: "club-stats-scale-toggle" },
+        scales.map((scale) =>
+          h(
+            "button",
+            {
+              class: `club-stats-scale-btn${activeScale === scale.key ? " is-active" : ""}`,
+              type: "button",
+              "aria-pressed": activeScale === scale.key ? "true" : "false",
+              onclick: () => {
+                if (CLUB_STATS_STATE[stateKey] === scale.key) return;
+                CLUB_STATS_STATE[stateKey] = scale.key;
+                if (typeof onChange === "function") onChange();
+              }
+            },
+            scale.label
+          )
+        )
+      )
+    );
+  }
+
+  function getClubAthletesStatsValue(data, activeMode) {
+    if (activeMode === "gender") {
+      return formatClubStatsGenderCompactPercentLabel(data?.totals?.femaleAthletes, data?.totals?.maleAthletes);
+    }
+    if (activeMode === "age") {
+      return `${formatClubStatsAge(data?.totals?.averageAge)} J.`;
+    }
+    return formatClubStatsNumber(data?.totals?.athletes);
+  }
+
   function renderClubAthletesStatsCard(data, onModeChange) {
-    const activeMode = CLUB_STATS_STATE.athleteMode === "gender" ? "gender" : "count";
+    const activeMode = ["gender", "age"].includes(CLUB_STATS_STATE.athleteMode) ? CLUB_STATS_STATE.athleteMode : "count";
+    const chartScale = CLUB_STATS_STATE.athleteChartScale === "percent" ? "percent" : "count";
     const unitLabels = {
       singular: "Sportler",
       plural: "Sportler"
     };
     const points = Array.isArray(data?.series) ? data.series : [];
     const latest = points[points.length - 1] || null;
-    const latestLabel = activeMode === "gender"
-      ? latest
-        ? `${latest.year}: ${formatClubStatsGenderShortPercentLabel(latest.femaleAthletes, latest.maleAthletes)}`
-        : ""
-      : getClubStatsLatestLabel(data.series, "athletes", unitLabels);
+    const latestLabel = activeMode === "age"
+      ? formatClubStatsAgeClassLatestLabel(latest)
+      : activeMode === "gender"
+        ? latest
+          ? `${latest.year}: ${formatClubStatsGenderShortPercentLabel(latest.femaleAthletes, latest.maleAthletes)}`
+          : ""
+        : getClubStatsLatestLabel(data.series, "athletes", unitLabels);
+    const subtitle = activeMode === "age" ? "Altersklassen" : activeMode === "gender" ? "nach Geschlecht" : "Anzahl";
+    const totalValue = getClubAthletesStatsValue(data, activeMode);
 
     return h(
       "section",
@@ -498,9 +779,9 @@
           "div",
           { class: "club-stats-title-group" },
           h("h3", {}, "Sportler"),
-          h("p", {}, activeMode === "gender" ? "nach Geschlecht" : "Anzahl")
+          h("p", {}, subtitle)
         ),
-        h("strong", { class: "club-stats-value" }, formatClubStatsNumber(data?.totals?.athletes))
+        h("strong", { class: "club-stats-value" }, totalValue)
       ),
       renderClubAthleteModeToggle(activeMode, onModeChange),
       latestLabel ? h("div", { class: "club-stats-latest" }, latestLabel) : null,
@@ -509,17 +790,31 @@
         { class: "club-stats-legend", "aria-hidden": "true" },
         h("span", { class: "club-stats-legend-item" }, h("span", { class: "club-stats-legend-swatch club-stats-legend-swatch--female" }), "weiblich"),
         h("span", { class: "club-stats-legend-item" }, h("span", { class: "club-stats-legend-swatch club-stats-legend-swatch--male" }), "m\u00e4nnlich")
+      ) : activeMode === "age" ? h(
+        "div",
+        { class: "club-stats-legend", "aria-hidden": "true" },
+        CLUB_STATS_AGE_CLASSES.map((ageClass) =>
+          h(
+            "span",
+            { class: "club-stats-legend-item" },
+            h("span", { class: `club-stats-legend-swatch club-stats-legend-swatch--age-${ageClass.className}` }),
+            ageClass.shortLabel
+          )
+        )
       ) : null,
+      activeMode !== "count" ? renderClubAthleteScaleToggle(chartScale, onModeChange) : null,
       h(
         "div",
         { class: "club-stats-chart-wrap" },
-        activeMode === "gender"
-          ? renderClubStatsGenderChart(data.series)
-          : renderClubStatsChart(data.series, "athletes", {
-            type: "line",
-            chartLabel: "Sportler Anzahl nach Jahren",
-            unitLabels
-          })
+        activeMode === "age"
+          ? renderClubStatsAgeClassChart(data.series, { scale: chartScale })
+          : activeMode === "gender"
+            ? renderClubStatsGenderChart(data.series, { scale: chartScale })
+            : renderClubStatsChart(data.series, "athletes", {
+              type: "line",
+              chartLabel: "Sportler Anzahl nach Jahren",
+              unitLabels
+            })
       )
     );
   }

@@ -348,11 +348,22 @@ main#content {
   text-align: right;
 }
 
+.club-stats-card--athletes-gender .club-stats-value {
+  max-width: 10rem;
+  font-size: clamp(1rem, 1.8vw, 1.35rem);
+  line-height: 1.08;
+  white-space: nowrap;
+}
+
+.club-stats-card--athletes-age .club-stats-value {
+  font-size: clamp(1.7rem, 3.2vw, 2.35rem);
+}
+
 .club-stats-mode-toggle {
   display: inline-grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.15rem;
-  width: min(100%, 15rem);
+  width: min(100%, 21rem);
   margin-top: 0.75rem;
   padding: 0.18rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -387,6 +398,54 @@ main#content {
 
 .club-stats-mode-btn.is-active {
   background: var(--club-stat-accent);
+  color: rgb(15, 15, 18);
+}
+
+.club-stats-chart-options {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.5rem;
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 0.64rem;
+  font-weight: 800;
+}
+
+.club-stats-scale-toggle {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.1rem;
+  padding: 0.12rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.club-stats-scale-btn {
+  min-width: 2.65rem;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.62);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.62rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0.28rem 0.4rem;
+}
+
+.club-stats-scale-btn:hover,
+.club-stats-scale-btn:focus-visible {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.club-stats-scale-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 2px;
+}
+
+.club-stats-scale-btn.is-active {
+  background: rgba(255, 255, 255, 0.86);
   color: rgb(15, 15, 18);
 }
 
@@ -484,6 +543,66 @@ main#content {
 
 .club-stats-gender-bar--male {
   fill: rgba(96, 165, 250, 0.92);
+}
+
+.club-stats-age-class-segment {
+  opacity: 0.92;
+}
+
+.club-stats-age-class-segment--u10 {
+  fill: rgba(52, 211, 153, 0.92);
+}
+
+.club-stats-age-class-segment--ak11-12 {
+  fill: rgba(163, 230, 53, 0.9);
+}
+
+.club-stats-age-class-segment--ak13-14 {
+  fill: rgba(250, 204, 21, 0.9);
+}
+
+.club-stats-age-class-segment--ak15-16 {
+  fill: rgba(251, 146, 60, 0.9);
+}
+
+.club-stats-age-class-segment--ak17-18 {
+  fill: rgba(244, 114, 182, 0.9);
+}
+
+.club-stats-age-class-segment--ak19-plus {
+  fill: rgba(167, 139, 250, 0.9);
+}
+
+.club-stats-age-class-segment--unknown {
+  fill: rgba(148, 163, 184, 0.76);
+}
+
+.club-stats-legend-swatch--age-u10 {
+  background: rgba(52, 211, 153, 0.92);
+}
+
+.club-stats-legend-swatch--age-ak11-12 {
+  background: rgba(163, 230, 53, 0.9);
+}
+
+.club-stats-legend-swatch--age-ak13-14 {
+  background: rgba(250, 204, 21, 0.9);
+}
+
+.club-stats-legend-swatch--age-ak15-16 {
+  background: rgba(251, 146, 60, 0.9);
+}
+
+.club-stats-legend-swatch--age-ak17-18 {
+  background: rgba(244, 114, 182, 0.9);
+}
+
+.club-stats-legend-swatch--age-ak19-plus {
+  background: rgba(167, 139, 250, 0.9);
+}
+
+.club-stats-legend-swatch--age-unknown {
+  background: rgba(148, 163, 184, 0.76);
 }
 
 .club-bests-controls {
