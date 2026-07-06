@@ -2,17 +2,39 @@
   const COLS = {
     gender: 0,
     name: 1,
+    z100l: 3,
+    z50r: 4,
+    z200s: 5,
+    z100k: 6,
+    z100r: 7,
+    z200h: 8,
     excelDate: 9,
     meetName: 10,
     yy2: 11,
     ortsgruppe: 12,
+    p100l: 15,
+    p50r: 16,
+    p200s: 17,
+    p100k: 18,
+    p100r: 19,
+    p200h: 20,
     pool: 21,
     land: 23,
     startrecht: 24
   };
 
+  const DISCIPLINES = [
+    { key: "z50r", col: COLS.z50r, placeCol: COLS.p50r },
+    { key: "z100r", col: COLS.z100r, placeCol: COLS.p100r },
+    { key: "z100k", col: COLS.z100k, placeCol: COLS.p100k },
+    { key: "z100l", col: COLS.z100l, placeCol: COLS.p100l },
+    { key: "z200s", col: COLS.z200s, placeCol: COLS.p200s },
+    { key: "z200h", col: COLS.z200h, placeCol: COLS.p200h }
+  ];
+
   const TOP10_GROUPS = [
     { key: "competition_presence", label: "Wettkämpfe besucht" },
+    { key: "start_count", label: "Starts je Ortsgruppe" },
     { key: "athlete_count", label: "Sportler je Ortsgruppe" },
     { key: "foreign_competitions", label: "Wettkämpfe im Ausland" },
     { key: "pool50_competitions", label: "Wettkämpfe auf 50m-Bahn" },
@@ -22,6 +44,7 @@
 
   const GROUP_VALUE_LABEL = {
     competition_presence: "Wettkämpfe",
+    start_count: "Starts",
     athlete_count: "Sportler",
     foreign_competitions: "Wettkämpfe",
     pool50_competitions: "Wettkämpfe",
@@ -32,6 +55,8 @@
   const GROUP_NOTES = {
     competition_presence:
       "Gezählt werden eindeutige Wettkämpfe pro Ortsgruppe. Mehrere Sportler derselben Ortsgruppe bei einem Wettkampf werden nur einmal gewertet. Ettlingen und Wettersbach zählen dabei gemeinsam als eine Ortsgruppe.",
+    start_count:
+      "Gezählt wird jede Disziplin pro Ortsgruppe, sobald dort eine Zeit, eine Platzierung oder ein DQ-/Strafmarker vorhanden ist. Eine Tabellenzeile kann mehrere Starts enthalten, wenn mehrere Disziplinen erfasst sind. Ettlingen und Wettersbach zählen dabei gemeinsam als eine Ortsgruppe.",
     athlete_count:
       "Gezählt werden eindeutige Sportler pro Ortsgruppe. Mehrere Starts derselben Person für dieselbe Ortsgruppe zählen nur einmal.",
     foreign_competitions:
@@ -71,6 +96,10 @@
     currentKey: "competition_presence",
     openProfile: null
   };
+
+  function getTop10GroupLabel(key) {
+    return TOP10_GROUPS.find((group) => group.key === key)?.label || key;
+  }
 
   function normalizeText(value) {
     return String(value || "")
@@ -174,6 +203,21 @@
     const num = Number(value);
     if (!Number.isFinite(num)) return "0,0";
     return num.toFixed(1).replace(".", ",");
+  }
+
+  function hasDisciplineStartMarker(value) {
+    if (value == null) return false;
+    if (typeof value === "number") return Number.isFinite(value) && value > 0;
+    const text = String(value || "").replace(/\s+/g, " ").trim();
+    return !!text && !/^[-\u2014]$/.test(text) && !/^0(?:[,.]0+)?$/.test(text);
+  }
+
+  function countRowStarts(row) {
+    return DISCIPLINES.reduce((sum, discipline) => {
+      const hasResultOrStatus = hasDisciplineStartMarker(row?.[discipline.col]);
+      const hasPlace = hasDisciplineStartMarker(row?.[discipline.placeCol]);
+      return sum + (hasResultOrStatus || hasPlace ? 1 : 0);
+    }, 0);
   }
 
   function tieKeyFromValue(value) {
@@ -475,10 +519,59 @@
   function buildCompetitionPresenceGroup(rows, allGroups) {
     return buildMeetCountGroup(rows, allGroups, {
       key: "competition_presence",
-      label: TOP10_GROUPS[0].label,
+      label: getTop10GroupLabel("competition_presence"),
       valueLabel: GROUP_VALUE_LABEL.competition_presence,
       note: GROUP_NOTES.competition_presence
     });
+  }
+
+  function buildStartCountGroup(rows, allGroups) {
+    const groupByName = new Map(
+      (Array.isArray(allGroups) ? allGroups : [])
+        .filter((group) => group?.kind === "og")
+        .map((group) => [String(group.name || "").trim(), group])
+    );
+
+    const counts = new Map();
+    const startIndex = rows.length && isHeaderRow(rows[0]) ? 1 : 0;
+
+    for (let index = startIndex; index < rows.length; index++) {
+      const row = rows[index] || [];
+      const ogName = window.ClubsData?.normalizeOrtsgruppeName
+        ? window.ClubsData.normalizeOrtsgruppeName(row[COLS.ortsgruppe])
+        : String(row[COLS.ortsgruppe] || "").trim();
+      const startCount = countRowStarts(row);
+
+      if (!ogName || startCount <= 0) continue;
+
+      counts.set(ogName, (counts.get(ogName) || 0) + startCount);
+    }
+
+    const sortedRows = Array.from(counts.entries())
+      .map(([name, value]) => {
+        const group = groupByName.get(name) || null;
+        return {
+          name,
+          subtitle: group?.subtitle || "Ortsgruppe",
+          value,
+          group
+        };
+      })
+      .sort((left, right) => {
+        const diff = Number(right.value) - Number(left.value);
+        if (diff !== 0) return diff;
+        return String(left.name || "").localeCompare(String(right.name || ""), "de", { sensitivity: "base" });
+      })
+      .slice(0, 10)
+      .map((row, index) => ({ ...row, rank: index + 1 }));
+
+    return {
+      key: "start_count",
+      label: getTop10GroupLabel("start_count"),
+      valueLabel: GROUP_VALUE_LABEL.start_count,
+      note: GROUP_NOTES.start_count,
+      rows: applyRanks(sortedRows)
+    };
   }
 
   function buildAthleteCountGroup(rows, allGroups) {
@@ -531,7 +624,7 @@
 
     return {
       key: "athlete_count",
-      label: TOP10_GROUPS[1].label,
+      label: getTop10GroupLabel("athlete_count"),
       valueLabel: GROUP_VALUE_LABEL.athlete_count,
       note: GROUP_NOTES.athlete_count,
       rows: applyRanks(sortedRows)
@@ -541,7 +634,7 @@
   function buildForeignCompetitionGroup(rows, allGroups) {
     return buildMeetCountGroup(rows, allGroups, {
       key: "foreign_competitions",
-      label: TOP10_GROUPS[2].label,
+      label: getTop10GroupLabel("foreign_competitions"),
       valueLabel: GROUP_VALUE_LABEL.foreign_competitions,
       note: GROUP_NOTES.foreign_competitions,
       filter: (row) => {
@@ -554,7 +647,7 @@
   function buildPool50CompetitionGroup(rows, allGroups) {
     return buildMeetCountGroup(rows, allGroups, {
       key: "pool50_competitions",
-      label: TOP10_GROUPS[3].label,
+      label: getTop10GroupLabel("pool50_competitions"),
       valueLabel: GROUP_VALUE_LABEL.pool50_competitions,
       note: GROUP_NOTES.pool50_competitions,
       filter: (row) => String(row?.[COLS.pool] || "").trim() === "50"
@@ -615,7 +708,7 @@
 
     return {
       key: "bv_startrecht",
-      label: TOP10_GROUPS[4].label,
+      label: getTop10GroupLabel("bv_startrecht"),
       valueLabel: GROUP_VALUE_LABEL.bv_startrecht,
       note: GROUP_NOTES.bv_startrecht,
       rows: applyRanks(sortedRows)
@@ -685,7 +778,7 @@
 
     return {
       key: "loyalty_average",
-      label: TOP10_GROUPS[5].label,
+      label: getTop10GroupLabel("loyalty_average"),
       valueLabel: GROUP_VALUE_LABEL.loyalty_average,
       note: `${GROUP_NOTES.loyalty_average} Berücksichtigt werden nur Ortsgruppen mit mindestens 10 Sportlern.`,
       rows: applyRanks(sortedRows)
@@ -698,6 +791,7 @@
 
     return {
       competition_presence: buildCompetitionPresenceGroup(rows, allGroups),
+      start_count: buildStartCountGroup(rows, allGroups),
       athlete_count: buildAthleteCountGroup(rows, allGroups),
       foreign_competitions: buildForeignCompetitionGroup(rows, allGroups),
       pool50_competitions: buildPool50CompetitionGroup(rows, allGroups),
