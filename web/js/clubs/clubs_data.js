@@ -43,6 +43,32 @@
   const State = {
     groupsBySource: new Map()
   };
+  const ETTLINGEN_WETTERSBACH_KEY = "Ettlingen/Wettersbach";
+  const ETTLINGEN_DISPLAY_NAME = "Ettlingen";
+  const WETTERSBACH_SUPPORT_POINT = {
+    name: "Wettersbach",
+    label: "St\u00fctzpunkt Wettersbach",
+    iconKeys: ["Wettersbach", ETTLINGEN_DISPLAY_NAME],
+    searchKeys: ["Wettersbach", "Stuetzpunkt Wettersbach", "DLRG St\u00fctzpunkt Wettersbach"]
+  };
+  const SUPPORT_CLUBS = {
+    Durlach: {
+      supportPoints: [
+        {
+          name: "S\u00f6llingen",
+          label: "St\u00fctzpunkt S\u00f6llingen",
+          iconKeys: ["S\u00f6llingen", "Soellingen", "Durlach"],
+          searchKeys: ["S\u00f6llingen", "Soellingen", "Stuetzpunkt S\u00f6llingen", "St\u00fctzpunkt Soellingen"]
+        },
+        {
+          name: "Gr\u00f6tzingen",
+          label: "St\u00fctzpunkt Gr\u00f6tzingen",
+          iconKeys: ["Gr\u00f6tzingen", "Groetzingen", "Durlach"],
+          searchKeys: ["Gr\u00f6tzingen", "Groetzingen", "Stuetzpunkt Gr\u00f6tzingen", "St\u00fctzpunkt Groetzingen"]
+        }
+      ]
+    }
+  };
 
   const normalize = (value) => String(value ?? "").replace(/\s+/g, " ").trim();
 
@@ -106,7 +132,16 @@
 
     const folded = normalizeForSearch(trimmed);
     if (folded === normalizeForSearch("Ettlingen") || folded === normalizeForSearch("Wettersbach")) {
-      return "Ettlingen/Wettersbach";
+      return ETTLINGEN_WETTERSBACH_KEY;
+    }
+
+    if (
+      folded === normalizeForSearch("S\u00f6llingen") ||
+      folded === normalizeForSearch("Soellingen") ||
+      folded === normalizeForSearch("Gr\u00f6tzingen") ||
+      folded === normalizeForSearch("Groetzingen")
+    ) {
+      return "Durlach";
     }
 
     return trimmed;
@@ -197,16 +232,78 @@
     return `group_${kind}_${slugify(name)}`;
   }
 
-  function createGroupRecord({ kind, name, subtitle, searchKeys, parentName = "", parentCode = "" }) {
+  function isEttlingenWettersbachGroup(name) {
+    return normalize(name) === ETTLINGEN_WETTERSBACH_KEY;
+  }
+
+  function getDisplayNameForGroup(name) {
+    return isEttlingenWettersbachGroup(name) ? ETTLINGEN_DISPLAY_NAME : normalize(name);
+  }
+
+  function getSupportPointsForGroup(name) {
+    const supportPoints = [];
+
+    if (isEttlingenWettersbachGroup(name)) {
+      supportPoints.push(WETTERSBACH_SUPPORT_POINT);
+    }
+
+    const clubConfig = SUPPORT_CLUBS[normalize(name)];
+    if (clubConfig?.supportPoints?.length) {
+      supportPoints.push(...clubConfig.supportPoints);
+    }
+
+    return supportPoints.map((point) => ({
+      ...point,
+      iconKeys: [...(point.iconKeys || [])],
+      searchKeys: [...(point.searchKeys || [])]
+    }));
+  }
+
+  function normalizeSupportPoint(point) {
+    const name = normalize(point?.name);
+    const label = normalize(point?.label) || name;
+    if (!name && !label) return null;
+
+    return {
+      name,
+      label,
+      iconKeys: makeSearchKeys(point?.iconKeys || [name]),
+      searchKeys: makeSearchKeys([name, label, ...(point?.searchKeys || [])])
+    };
+  }
+
+  function createGroupRecord({
+    kind,
+    name,
+    displayName,
+    subtitle,
+    searchSubtitle,
+    searchKeys,
+    supportPoints,
+    parentName = "",
+    parentCode = ""
+  }) {
+    const normalizedSupportPoints = (Array.isArray(supportPoints) ? supportPoints : [])
+      .map(normalizeSupportPoint)
+      .filter(Boolean);
+    const supportSearchKeys = normalizedSupportPoints.flatMap((point) => [
+      point.name,
+      point.label,
+      ...(Array.isArray(point.searchKeys) ? point.searchKeys : [])
+    ]);
+
     return {
       id: createGroupId(kind, name),
       kind,
       name,
+      displayName: normalize(displayName) || normalize(name),
       label: kindLabel(kind),
       subtitle,
+      searchSubtitle: normalize(searchSubtitle),
       parentName: normalize(parentName),
       parentCode: normalize(parentCode),
-      searchKeys: makeSearchKeys([name, ...(searchKeys || [])])
+      supportPoints: normalizedSupportPoints,
+      searchKeys: makeSearchKeys([name, displayName, ...(searchKeys || []), ...supportSearchKeys])
     };
   }
 
@@ -260,10 +357,15 @@
 
         const ogEntry = ogMap.get(ogName);
         ogEntry.rawNames.add(normalize(row[COLS.ortsgruppe]));
-        if (ogName === "Ettlingen/Wettersbach") {
+        if (isEttlingenWettersbachGroup(ogName)) {
           ogEntry.rawNames.add("Ettlingen");
           ogEntry.rawNames.add("Wettersbach");
         }
+        const supportConfig = SUPPORT_CLUBS[ogName];
+        supportConfig?.supportPoints?.forEach((point) => {
+          ogEntry.rawNames.add(point.name);
+          (point.searchKeys || []).forEach((key) => ogEntry.rawNames.add(key));
+        });
         if (lv.name) ogEntry.lvNames.add(lv.name);
         if (lv.code) ogEntry.lvCodes.add(lv.code);
         if (bv.name) ogEntry.bvNames.add(bv.name);
@@ -328,10 +430,13 @@
       const lvCode = Array.from(entry.lvCodes)[0] || "";
       const bvName = Array.from(entry.bvNames)[0] || "";
       const bvCode = Array.from(entry.bvCodes)[0] || "";
+      const subtitle = lvName ? `Ortsgruppe · ${lvName}` : "Ortsgruppe";
+      const displayName = getDisplayNameForGroup(name);
+      const supportPoints = getSupportPointsForGroup(name);
 
       const avatar =
-        name === "Ettlingen/Wettersbach"
-          ? createFlipAvatar(["Ettlingen"], ["Wettersbach"])
+        isEttlingenWettersbachGroup(name)
+          ? createSingleAvatar(["Ettlingen"])
           : createSingleAvatar([
               ...buildCapKeyVariants(name),
               ...buildCapKeyVariants(lvName),
@@ -344,10 +449,15 @@
         ...createGroupRecord({
           kind: "og",
           name,
-          subtitle: lvName ? `Ortsgruppe · ${lvName}` : "Ortsgruppe",
+          displayName,
+          subtitle,
+          searchSubtitle: supportPoints.length
+            ? [subtitle, supportPoints.map((point) => point.label).join(" · ")].filter(Boolean).join(" · ")
+            : "",
           parentName: lvName || bvName,
           parentCode: lvCode || bvCode,
-          searchKeys: [...entry.rawNames]
+          searchKeys: [...entry.rawNames],
+          supportPoints
         }),
         avatar
       });
@@ -448,6 +558,7 @@
     loadGroupsAndStats,
     findGroupById,
     kindLabel,
+    getDisplayNameForGroup,
     normalizeOrtsgruppeName: mapOrtsgruppe
   };
 

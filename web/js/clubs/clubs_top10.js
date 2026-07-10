@@ -54,9 +54,9 @@
 
   const GROUP_NOTES = {
     competition_presence:
-      "Gezählt werden eindeutige Wettkämpfe pro Ortsgruppe. Mehrere Sportler derselben Ortsgruppe bei einem Wettkampf werden nur einmal gewertet. Ettlingen und Wettersbach zählen dabei gemeinsam als eine Ortsgruppe.",
+      "Gezählt werden eindeutige Wettkämpfe pro Ortsgruppe. Mehrere Sportler derselben Ortsgruppe bei einem Wettkampf werden nur einmal gewertet. Ettlingen und der St\u00fctzpunkt Wettersbach zählen dabei gemeinsam als eine Ortsgruppe.",
     start_count:
-      "Gezählt wird jede Disziplin pro Ortsgruppe, sobald dort eine Zeit, eine Platzierung oder ein DQ-/Strafmarker vorhanden ist. Eine Tabellenzeile kann mehrere Starts enthalten, wenn mehrere Disziplinen erfasst sind. Ettlingen und Wettersbach zählen dabei gemeinsam als eine Ortsgruppe.",
+      "Gezählt wird jede Disziplin pro Ortsgruppe, sobald dort eine Zeit, eine Platzierung oder ein DQ-/Strafmarker vorhanden ist. Eine Tabellenzeile kann mehrere Starts enthalten, wenn mehrere Disziplinen erfasst sind. Ettlingen und der St\u00fctzpunkt Wettersbach zählen dabei gemeinsam als eine Ortsgruppe.",
     athlete_count:
       "Gezählt werden eindeutige Sportler pro Ortsgruppe. Mehrere Starts derselben Person für dieselbe Ortsgruppe zählen nur einmal.",
     foreign_competitions:
@@ -66,7 +66,7 @@
     bv_startrecht:
       "Gezählt werden eindeutige Kombinationen aus Sportler und Wettkampf pro Ortsgruppe, sobald das Startrecht auf `BV` steht. Mehrere Zeilen derselben Person beim selben Wettkampf zählen dabei nur einmal.",
     loyalty_average:
-      "Pro Ortsgruppe wird für jede Person gezählt, auf wie vielen eindeutigen Wettkämpfen sie dort gestartet ist. Diese Werte werden anschließend pro Ortsgruppe gemittelt. Ettlingen und Wettersbach werden dabei gemeinsam als `Ettlingen/Wettersbach` behandelt."
+      "Pro Ortsgruppe wird für jede Person gezählt, auf wie vielen eindeutigen Wettkämpfen sie dort gestartet ist. Diese Werte werden anschließend pro Ortsgruppe gemittelt. Ettlingen und der St\u00fctzpunkt Wettersbach zählen dabei gemeinsam als eine Ortsgruppe."
   };
 
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -88,6 +88,14 @@
     }
 
     return el;
+  }
+
+  function getGroupDisplayName(group, fallback = "") {
+    return String(group?.displayName || fallback || group?.name || "").trim();
+  }
+
+  function getRowDisplayName(row) {
+    return getGroupDisplayName(row?.group, row?.name) || "—";
   }
 
   const State = {
@@ -342,7 +350,7 @@
           h(
             "div",
             { class: "ath10-podium-meta" },
-            h("div", { class: "ath10-podium-name" }, row.name || "—"),
+            h("div", { class: "ath10-podium-name" }, getRowDisplayName(row)),
             h("div", { class: "ath10-podium-og" }, row.subtitle || "Ortsgruppe")
           )
         ),
@@ -416,7 +424,7 @@
                     h(
                       "div",
                       { class: "ath10-athlete-meta" },
-                      h("div", { class: "ath10-athlete-name" }, row.name || "—"),
+                      h("div", { class: "ath10-athlete-name" }, getRowDisplayName(row)),
                       h("div", { class: "ath10-athlete-og" }, row.subtitle || "Ortsgruppe")
                     )
                   )

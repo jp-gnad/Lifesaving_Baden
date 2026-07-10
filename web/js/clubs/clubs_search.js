@@ -7,7 +7,7 @@
     "AUS", "BA", "Baden", "Baden_light", "BB", "BE", "BEL", "Bietigheim-Bissingen", "BRA", "BUL", "Bühl-Bühlertal", "BY",
     "CAN", "CZE", "DEN", "Deutschland", "Durlach", "EGY", "ESP", "Ettlingen", "FRA", "GBR", "GER", "HE",
     "HH", "HKG", "ITA", "JPN", "Karlsruhe", "Kelkheim", "Luckenwalde", "Malsch", "MV", "Neckargemünd", "Neustadt an der Weinstraße", "NED", "NI", "Nieder-Olm/Wörrstadt", "Nieder-OlmWörrstadt",
-    "none", "NOR", "NR", "NZL", "Pankow", "POL", "Rheinböllen", "RP", "Schwerte", "SH", "SIN", "SL", "SN", "ST", "SUI", "SWE", "TH",
+    "none", "NOR", "NR", "NZL", "Pankow", "POL", "Rheinböllen", "RP", "Schwerte", "SH", "SIN", "SL", "SN", "ST", "Grötzingen", "Groetzingen", "Söllingen", "Soellingen", "SUI", "SWE", "TH",
     "USA", "Wadgassen", "Waghäusel", "Weil am Rhein", "Wettersbach", "WE", "WF", "WÜ"
   ]);
   const IS_COARSE_POINTER = window.matchMedia?.("(pointer: coarse)").matches ?? false;
@@ -60,6 +60,29 @@
       .replace(/ß/g, "ss")
       .replace(/\s+/g, " ")
       .trim();
+
+  function getGroupDisplayName(group) {
+    return String(group?.displayName || group?.name || "").trim();
+  }
+
+  function getGroupSuggestionSubtitle(group) {
+    return String(group?.searchSubtitle || group?.subtitle || group?.label || "").trim();
+  }
+
+  function getGroupSearchValues(group) {
+    const supportValues = (Array.isArray(group?.supportPoints) ? group.supportPoints : []).flatMap((point) => [
+      point?.name,
+      point?.label,
+      ...(Array.isArray(point?.searchKeys) ? point.searchKeys : [])
+    ]);
+
+    return [
+      getGroupDisplayName(group),
+      group?.name,
+      ...(Array.isArray(group?.searchKeys) ? group.searchKeys : []),
+      ...supportValues
+    ];
+  }
 
   function highlight(text, query) {
     const source = String(text || "");
@@ -223,7 +246,7 @@
 
   function renderCapAvatar(group, size = "sm", extraClass = "") {
     const avatar = group?.avatar || {};
-    const alt = `${String(group?.label || "Gliederung")} ${String(group?.name || "").trim()}`;
+    const alt = `${String(group?.label || "Gliederung")} ${getGroupDisplayName(group)}`;
 
     if (avatar.mode === "dual") {
       const wrap = h("div", { class: `rek-avatar-dual ${size} ${extraClass}` });
@@ -295,7 +318,7 @@
 
     const ranked = state.groups
       .map((group) => {
-        const haystack = [group.name, ...(group.searchKeys || [])].map(normalize);
+        const haystack = getGroupSearchValues(group).map(normalize);
         const matchIndex = haystack.findIndex((entry) => entry.includes(nq));
         const startsWith = haystack.some((entry) => entry.startsWith(nq));
         const isExact = haystack.some((entry) => entry === nq);
@@ -312,7 +335,7 @@
       const startCompare = Number(right.startsWith) - Number(left.startsWith);
       if (startCompare !== 0) return startCompare;
 
-      return normalize(left.group.name).localeCompare(normalize(right.group.name), "de");
+      return normalize(getGroupDisplayName(left.group)).localeCompare(normalize(getGroupDisplayName(right.group)), "de");
     });
 
     state.suggestions = visible.map((entry) => entry.group).slice(0, 10);
@@ -422,9 +445,10 @@
       item.appendChild(renderCapAvatar(group, "sm", "ath-suggest-avatar"));
 
       const nameEl = h("div", { class: "ath-suggest-name" });
-      nameEl.innerHTML = highlight(group.name, query);
+      nameEl.innerHTML = highlight(getGroupDisplayName(group), query);
 
-      const sub = h("div", { class: "ath-suggest-sub" }, group.subtitle || group.label || "");
+      const sub = h("div", { class: "ath-suggest-sub" });
+      sub.innerHTML = highlight(getGroupSuggestionSubtitle(group), query);
       const text = h("div", { class: "ath-suggest-text" }, nameEl, sub);
 
       item.appendChild(text);

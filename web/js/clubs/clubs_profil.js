@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <h1 id="rek-hero-title">Clubs</h1>
             <p id="rek-hero-meta" class="hero-meta"></p>
           </div>
+          <div id="rek-hero-support-points" class="hero-support-points" aria-label="St\u00fctzpunkte" hidden></div>
         </div>
       </div>
     </section>
@@ -122,6 +123,59 @@ document.addEventListener("DOMContentLoaded", () => {
 
     return el;
   };
+
+  function getGroupDisplayName(group, fallback = "Club") {
+    return normalize(group?.displayName || group?.name || fallback) || fallback;
+  }
+
+  function getGroupSupportPoints(group) {
+    return (Array.isArray(group?.supportPoints) ? group.supportPoints : []).filter(
+      (point) => normalize(point?.label || point?.name)
+    );
+  }
+
+  function renderHeroSupportPointIcon(point) {
+    const iconKeys = Array.isArray(point?.iconKeys) ? point.iconKeys : [point?.name];
+    if (window.ClubsSearch && typeof window.ClubsSearch.renderAvatar === "function") {
+      return window.ClubsSearch.renderAvatar(
+        {
+          kind: "og",
+          label: "St\u00fctzpunkt",
+          name: normalize(point?.name),
+          displayName: normalize(point?.label || point?.name),
+          avatar: {
+            mode: "single",
+            iconKeys
+          }
+        },
+        "sm",
+        "hero-support-point-avatar"
+      );
+    }
+
+    const iconKey = normalize(iconKeys[0] || point?.name);
+    return iconKey
+      ? h("img", {
+          class: "hero-support-point-cap",
+          src: `./assets/svg/Cap-${encodeURIComponent(iconKey)}.svg`,
+          alt: "",
+          "aria-hidden": "true",
+          draggable: "false",
+          onerror: (event) => {
+            event.currentTarget.hidden = true;
+          }
+        })
+      : null;
+  }
+
+  function renderHeroSupportPoint(point) {
+    return h(
+      "div",
+      { class: "hero-support-point" },
+      renderHeroSupportPointIcon(point),
+      h("span", { class: "hero-support-point-label" }, normalize(point?.label || point?.name))
+    );
+  }
 
   function getGroupIdFromUrl() {
     const params = new URLSearchParams(window.location.search);
@@ -538,15 +592,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const kicker = $("#rek-hero-kicker");
     const title = $("#rek-hero-title");
     const meta = $("#rek-hero-meta");
+    const supportMount = $("#rek-hero-support-points");
 
     if (!group) {
       if (avatarMount) avatarMount.innerHTML = "";
       if (kicker) kicker.textContent = "Clubs";
       if (title) title.textContent = "Gliederung nicht gefunden";
       if (meta) meta.textContent = "";
+      if (supportMount) {
+        supportMount.innerHTML = "";
+        supportMount.hidden = true;
+      }
       document.title = "Lifesaving Baden - Clubs";
       return;
     }
+
+    const displayName = getGroupDisplayName(group, "Clubs");
 
     if (avatarMount) {
       avatarMount.innerHTML = "";
@@ -556,9 +617,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (kicker) kicker.textContent = group.label || "Gliederung";
-    if (title) title.textContent = group.name || "Clubs";
+    if (title) title.textContent = displayName;
     if (meta) meta.textContent = group.subtitle || "";
-    document.title = `Lifesaving Baden - ${group.name || "Clubs"}`;
+    if (supportMount) {
+      const supportPoints = getGroupSupportPoints(group);
+      supportMount.innerHTML = "";
+      supportMount.hidden = !supportPoints.length;
+      supportMount.dataset.count = String(supportPoints.length);
+      supportPoints.forEach((point) => supportMount.appendChild(renderHeroSupportPoint(point)));
+    }
+    document.title = `Lifesaving Baden - ${displayName}`;
   }
 
   function groupMatchesRow(group, row) {
@@ -897,7 +965,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return [
       "Bestenliste",
       `${BESTS_STATE.pool}m`,
-      sanitizePdfFileNamePart(group?.name || "Club"),
+      sanitizePdfFileNamePart(getGroupDisplayName(group)),
       formatDateLocalDE(date).replace(/[<>:"/\\|?*]+/g, "-")
     ].join("_") + ".pdf";
   }
@@ -907,7 +975,7 @@ document.addEventListener("DOMContentLoaded", () => {
       "header",
       { class: "club-bests-print-header" },
       h("p", { class: "club-bests-print-kicker" }, group?.label || "Club"),
-      h("h2", {}, `${group?.name || "Club"} - Bestenliste`),
+      h("h2", {}, `${getGroupDisplayName(group)} - Bestenliste`),
       h("p", { class: "club-bests-print-meta" }, getBestenlisteSettingsSummary())
     );
   }
@@ -1129,7 +1197,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const primaryKeys = [];
 
     if (group?.kind === "og") {
-      [group.name, ...(Array.isArray(group.searchKeys) ? group.searchKeys : [])].forEach((value) => {
+      [getGroupDisplayName(group, ""), group.name, ...(Array.isArray(group.searchKeys) ? group.searchKeys : [])].forEach((value) => {
         buildPdfCapKeyVariants(value).forEach((key) => pushPdfUnique(primaryKeys, key));
       });
     }
@@ -1607,6 +1675,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function createBestenlistePdfBlob(group, data, generatedAt = new Date(), fileName = "", standDate = generatedAt) {
     const pdfAvatarAssets = await buildPdfAvatarAssets(data);
     const pdfMetaSummary = `${getBestenlisteSettingsSummary()} | ${getBestenlisteStandSummary(standDate)}`;
+    const displayName = getGroupDisplayName(group);
     const pageWidth = 595.28;
     const pageHeight = 841.89;
     const margin = 28;
@@ -1637,7 +1706,7 @@ document.addEventListener("DOMContentLoaded", () => {
       y = margin;
       writer.text(margin, y, `DLRG ${group?.label || "Club"}`, 7, "F2", "0.35 0.35 0.4");
       y += 15;
-      writer.text(margin, y, `${group?.name || "Club"} - Bestenliste`, 14, "F2", "0.08 0.08 0.1");
+      writer.text(margin, y, `${displayName} - Bestenliste`, 14, "F2", "0.08 0.08 0.1");
       y += 12;
       writer.text(margin, y, pdfMetaSummary, 7, "F1", "0.35 0.35 0.4");
       y += 20;
@@ -1748,7 +1817,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (commands.length) pages.push(commands);
     const pdfFontAssets = await loadBestenlistePdfFonts();
     return buildPdfBlob(pages, pdfAvatarAssets.resources, pdfFontAssets, {
-      title: fileName ? fileName.replace(/\.pdf$/i, "") : `${group?.name || "Club"} - Bestenliste`
+      title: fileName ? fileName.replace(/\.pdf$/i, "") : `${displayName} - Bestenliste`
     });
   }
 

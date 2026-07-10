@@ -67,14 +67,21 @@ main#content {
 }
 
 .rek-hero-layout {
-  display: flex;
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 760px);
+  grid-template-areas:
+    "avatar copy"
+    ". support";
   align-items: center;
-  gap: 1.5rem;
-  margin-left: 8rem;
-  margin-top: 6rem;
+  column-gap: 1.45rem;
+  row-gap: 0.75rem;
+  max-width: 980px;
+  margin-left: clamp(2rem, 7vw, 8rem);
+  margin-top: 5.8rem;
 }
 
 .rek-hero-copy {
+  grid-area: copy;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -82,14 +89,15 @@ main#content {
 }
 
 .rek-hero-avatar-wrap {
+  grid-area: avatar;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 6rem;
-  width: 6rem;
-  height: 6rem;
-  min-width: 6rem;
-  min-height: 6rem;
+  align-self: center;
+  width: 7rem;
+  height: 7rem;
+  min-width: 7rem;
+  min-height: 7rem;
 }
 
 #rek-search-layer {
@@ -118,6 +126,7 @@ main#content {
   margin: 0;
   font-size: 4em;
   line-height: 1.05;
+  overflow-wrap: anywhere;
 }
 
 .hero-meta {
@@ -126,6 +135,59 @@ main#content {
   font-size: 1rem;
   line-height: 1.45;
   color: rgba(255, 255, 255, 0.78);
+}
+
+.hero-support-points {
+  grid-area: support;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12.5rem, max-content));
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+.hero-support-points[hidden] {
+  display: none;
+}
+
+.hero-support-points[data-count="1"] {
+  grid-template-columns: max-content;
+}
+
+.hero-support-point {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.45rem;
+  width: fit-content;
+  padding: 0.36rem 0.55rem 0.36rem 0.42rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(15, 15, 18, 0.26);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+  text-shadow: none;
+}
+
+.hero-support-point-cap {
+  width: 1.55rem;
+  height: 1.55rem;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.28));
+}
+
+.ath-avatar.hero-support-point-avatar.sm {
+  width: 1.55rem;
+  height: 1.55rem;
+  flex: 0 0 1.55rem;
+}
+
+.hero-support-point-label {
+  font-weight: 600;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 #rekorde-profil-section {
@@ -1622,25 +1684,25 @@ main#content {
 }
 
 .ath-avatar.rek-hero-avatar.xl {
-  width: 6rem;
-  height: 6rem;
+  width: 7rem;
+  height: 7rem;
 }
 
 .rek-avatar-dual.xl {
-  width: 6.7rem;
-  height: 6rem;
-  flex-basis: 6.7rem;
+  width: 7.7rem;
+  height: 7rem;
+  flex-basis: 7.7rem;
 }
 
 .rek-avatar-dual.xl .rek-avatar-dual-cap {
-  width: 4.55rem;
-  height: 6rem;
+  width: 5.25rem;
+  height: 7rem;
 }
 
 .rek-avatar-flip.xl {
-  width: 6rem;
-  height: 6rem;
-  flex-basis: 6rem;
+  width: 7rem;
+  height: 7rem;
+  flex-basis: 7rem;
 }
 
 @media (max-width: 720px) {
@@ -1659,21 +1721,28 @@ main#content {
   }
 
   .rek-hero-layout {
-    gap: 0.8rem;
+    grid-template-columns: 4.4rem minmax(0, 1fr);
+    grid-template-areas:
+      "avatar copy"
+      "support support";
+    align-items: start;
+    column-gap: 0.85rem;
+    row-gap: 0.72rem;
     margin-left: 0;
-    margin-top: 4.8rem;
+    margin-top: 4.2rem;
+    max-width: none;
   }
 
   .rek-hero-avatar-wrap {
-    flex-basis: 3.6rem;
-    width: 3.6rem;
-    height: 3.6rem;
-    min-width: 3.6rem;
-    min-height: 3.6rem;
+    width: 4.4rem;
+    height: 4.4rem;
+    min-width: 4.4rem;
+    min-height: 4.4rem;
+    margin-top: 0.12rem;
   }
 
   .hero h1 {
-    font-size: 2em;
+    font-size: 2.15rem;
     line-height: 1.1;
   }
 
@@ -1681,6 +1750,55 @@ main#content {
     margin-left: 0;
     font-size: 0.84rem;
     line-height: 1.4;
+  }
+
+  .hero-support-points {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 0.45rem;
+    width: 100%;
+    margin-top: 0;
+    font-size: 0.78rem;
+  }
+
+  .hero-support-points[data-count="1"] {
+    grid-template-columns: minmax(0, 18rem);
+  }
+
+  .hero-support-point {
+    gap: 0.35rem;
+    width: auto;
+    min-height: 2.15rem;
+    padding: 0.34rem 0.45rem;
+  }
+
+  .hero-support-point-cap {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+
+  .ath-avatar.hero-support-point-avatar.sm {
+    width: 1.2rem;
+    height: 1.2rem;
+    flex-basis: 1.2rem;
+  }
+
+  .ath-avatar.rek-hero-avatar.xl,
+  .rek-avatar-flip.xl {
+    width: 4.4rem;
+    height: 4.4rem;
+    flex-basis: 4.4rem;
+  }
+
+  .rek-avatar-dual.xl {
+    width: 4.9rem;
+    height: 4.4rem;
+    flex-basis: 4.9rem;
+  }
+
+  .rek-avatar-dual.xl .rek-avatar-dual-cap {
+    width: 3.3rem;
+    height: 4.4rem;
   }
 
   .container {
