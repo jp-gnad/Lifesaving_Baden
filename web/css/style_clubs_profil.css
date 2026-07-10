@@ -68,9 +68,11 @@ main#content {
 
 .rek-hero-layout {
   display: grid;
+  width: 100%;
   grid-template-columns: 7rem minmax(0, 760px);
   grid-template-areas:
     "avatar copy"
+    ". score"
     ". support";
   align-items: center;
   column-gap: 1.45rem;
@@ -137,9 +139,127 @@ main#content {
   color: rgba(255, 255, 255, 0.78);
 }
 
+.hero-lsc-score {
+  grid-area: score;
+  min-width: 0;
+}
+
+.hero-lsc-score[hidden] {
+  display: none;
+}
+
+.hero-lsc-score-card {
+  display: grid;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 0.34rem;
+  width: max-content;
+  max-width: 100%;
+  padding: 0.48rem 0.58rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(12, 12, 16, 0.34);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: none;
+}
+
+.hero-lsc-score-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  min-width: 0;
+  gap: 0.5rem;
+}
+
+.hero-lsc-score-label {
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.15;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.hero-lsc-score-value {
+  color: rgba(255, 237, 0, 0.96);
+  font-size: 1.42rem;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.hero-lsc-score-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  flex: 0 0 auto;
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 1px solid rgba(255, 237, 0, 0.48);
+  border-radius: 999px;
+  background: rgba(255, 237, 0, 0.08);
+  color: rgba(255, 237, 0, 0.95);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0;
+  transform: translateY(-0.08rem);
+}
+
+.hero-lsc-score-info:hover,
+.hero-lsc-score-info:focus-visible,
+.hero-lsc-score-info[aria-expanded="true"] {
+  background: rgba(255, 237, 0, 0.92);
+  color: rgb(15, 15, 18);
+}
+
+.hero-lsc-score-info:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.72);
+  outline-offset: 2px;
+}
+
+.hero-lsc-score-details {
+  display: grid;
+  gap: 0.12rem;
+  padding-top: 0.12rem;
+}
+
+.hero-lsc-score-details[hidden] {
+  display: none;
+}
+
+.hero-lsc-score-settings,
+.hero-lsc-score-meta {
+  min-width: 0;
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.hero-lsc-score-settings {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.hero-lsc-score-meta {
+  color: rgba(255, 255, 255, 0.58);
+  text-align: right;
+}
+
+.hero-lsc-score-card--loading .hero-lsc-score-value,
+.hero-lsc-score-card--error .hero-lsc-score-value {
+  color: rgba(255, 255, 255, 0.72);
+}
+
 .hero-support-points {
   grid-area: support;
   display: grid;
+  min-width: 0;
   grid-template-columns: repeat(auto-fit, minmax(12.5rem, max-content));
   align-items: center;
   gap: 0.5rem;
@@ -1724,6 +1844,7 @@ main#content {
     grid-template-columns: 4.4rem minmax(0, 1fr);
     grid-template-areas:
       "avatar copy"
+      "score score"
       "support support";
     align-items: start;
     column-gap: 0.85rem;
@@ -1752,8 +1873,34 @@ main#content {
     line-height: 1.4;
   }
 
+  .hero-lsc-score-card {
+    width: fit-content;
+    max-width: 100%;
+    gap: 0.28rem;
+    padding: 0.52rem 0.58rem;
+  }
+
+  .hero-lsc-score-main {
+    gap: 0.45rem;
+  }
+
+  .hero-lsc-score-label {
+    font-size: 0.64rem;
+  }
+
+  .hero-lsc-score-value {
+    font-size: 1.18rem;
+  }
+
+  .hero-lsc-score-settings,
+  .hero-lsc-score-meta {
+    font-size: 0.66rem;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+
   .hero-support-points {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     align-items: stretch;
     gap: 0.45rem;
     width: 100%;
@@ -1762,7 +1909,7 @@ main#content {
   }
 
   .hero-support-points[data-count="1"] {
-    grid-template-columns: minmax(0, 18rem);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .hero-support-point {
@@ -1770,6 +1917,11 @@ main#content {
     width: auto;
     min-height: 2.15rem;
     padding: 0.34rem 0.45rem;
+  }
+
+  .hero-support-point-label {
+    flex: 1 1 auto;
+    line-height: 1.15;
   }
 
   .hero-support-point-cap {

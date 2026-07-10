@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <h1 id="rek-hero-title">Clubs</h1>
             <p id="rek-hero-meta" class="hero-meta"></p>
           </div>
+          <div id="rek-hero-lsc-score" class="hero-lsc-score" hidden></div>
           <div id="rek-hero-support-points" class="hero-support-points" aria-label="St\u00fctzpunkte" hidden></div>
         </div>
       </div>
@@ -63,12 +64,12 @@ document.addEventListener("DOMContentLoaded", () => {
     bvNatio: 27
   };
   const DISCIPLINES = [
-    { key: "z50r", label: "50m Retten", col: COLS.z50r, placeCol: COLS.p50r },
-    { key: "z100r", label: "100m Retten mit Flossen", col: COLS.z100r, placeCol: COLS.p100r },
-    { key: "z100k", label: "100m Kombi", col: COLS.z100k, placeCol: COLS.p100k },
-    { key: "z100l", label: "100m Lifesaver", col: COLS.z100l, placeCol: COLS.p100l },
-    { key: "z200s", label: "200m Super-Lifesaver", col: COLS.z200s, placeCol: COLS.p200s },
-    { key: "z200h", label: "200m Hindernis", col: COLS.z200h, placeCol: COLS.p200h }
+    { key: "z50r", label: "50m Retten", worldRecordLabels: ["50m Retten"], col: COLS.z50r, placeCol: COLS.p50r },
+    { key: "z100r", label: "100m Retten mit Flossen", worldRecordLabels: ["100m Retten", "100m Retten mit Flossen"], col: COLS.z100r, placeCol: COLS.p100r },
+    { key: "z100k", label: "100m Kombi", worldRecordLabels: ["100m Kombi"], col: COLS.z100k, placeCol: COLS.p100k },
+    { key: "z100l", label: "100m Lifesaver", worldRecordLabels: ["100m Lifesaver"], col: COLS.z100l, placeCol: COLS.p100l },
+    { key: "z200s", label: "200m Super-Lifesaver", worldRecordLabels: ["200m Superlifesaver", "200m Super Lifesaver", "200m Super-Lifesaver"], col: COLS.z200s, placeCol: COLS.p200s },
+    { key: "z200h", label: "200m Hindernis", worldRecordLabels: ["200m Hindernis", "200m Hindernisschwimmen"], col: COLS.z200h, placeCol: COLS.p200h }
   ];
   const BESTS_STATE = {
     pool: "50",
@@ -76,6 +77,20 @@ document.addEventListener("DOMContentLoaded", () => {
     personalOnly: true,
     ageGroup: "open"
   };
+  const CLUB_LSC_STATE = {
+    promiseByGroupId: new Map()
+  };
+  const CLUB_LSC_SETTINGS = Object.freeze({
+    pool: "50",
+    limit: 5,
+    personalOnly: true,
+    ageGroup: "open"
+  });
+  const CLUB_LSC_DENOMINATOR = 60;
+  const CLUB_LSC_WR_SHEET_NAME = "WR-Open";
+  const CLUB_LSC_WR_HEADER_ROW = 3;
+  const CLUB_LSC_WR_FIRST_DATA_ROW = 4;
+  const CLUB_LSC_WR_SOURCE_STAND = "10.07.2026";
   const LAND_TO_ISO3 = {
     Deutschland: "GER",
     Schweiz: "SUI",
@@ -175,6 +190,343 @@ document.addEventListener("DOMContentLoaded", () => {
       renderHeroSupportPointIcon(point),
       h("span", { class: "hero-support-point-label" }, normalize(point?.label || point?.name))
     );
+  }
+
+  function formatClubLscScoreValue(value) {
+    if (!Number.isFinite(value)) return "—";
+    return new Intl.NumberFormat("de-DE", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value);
+  }
+
+  function getClubLscScoreLine(scoreData) {
+    return Number.isFinite(scoreData?.score)
+      ? `Lifesaving-Club-Score: ${formatClubLscScoreValue(scoreData.score)} P`
+      : "";
+  }
+
+  function getBestenlisteHeaderKicker(group, scoreData = null) {
+    const parts = [`DLRG ${group?.label || "Club"}`];
+    const scoreLine = getClubLscScoreLine(scoreData);
+    if (scoreLine) parts.push(scoreLine);
+    return parts.join(" | ");
+  }
+
+  function renderClubLscScoreShell(state = "loading", data = {}) {
+    const valueText =
+      state === "ready"
+        ? formatClubLscScoreValue(data.score)
+        : state === "error"
+        ? "—"
+        : "...";
+    const detailMeta =
+      state === "ready"
+        ? `${data.count}/${CLUB_LSC_DENOMINATOR} Zeiten · WR Open · Stand ${data.sourceStand || CLUB_LSC_WR_SOURCE_STAND}`
+        : state === "error"
+        ? "WR-Werte konnten nicht geladen werden"
+        : "wird berechnet";
+    const detailsId = `hero-lsc-score-details-${state}`;
+
+    const infoButton = h(
+      "button",
+      {
+        class: "hero-lsc-score-info",
+        type: "button",
+        title: "Score-Details anzeigen",
+        "aria-label": "Details zum Lifesaving Club Score anzeigen",
+        "aria-expanded": "false",
+        "aria-controls": detailsId,
+        onclick: (event) => {
+          const button = event.currentTarget;
+          const card = button.closest(".hero-lsc-score-card");
+          const details = card?.querySelector(`#${detailsId}`);
+          const expanded = button.getAttribute("aria-expanded") === "true";
+
+          button.setAttribute("aria-expanded", expanded ? "false" : "true");
+          button.title = expanded ? "Score-Details anzeigen" : "Score-Details ausblenden";
+          card?.classList.toggle("is-open", !expanded);
+          if (details) details.hidden = expanded;
+        }
+      },
+      "i"
+    );
+
+    return h(
+      "div",
+      { class: `hero-lsc-score-card hero-lsc-score-card--${state}` },
+      h(
+        "div",
+        { class: "hero-lsc-score-main" },
+        h("span", { class: "hero-lsc-score-label" }, "Lifesaving Club Score"),
+        h("strong", { class: "hero-lsc-score-value" }, valueText),
+        infoButton
+      ),
+      h(
+        "div",
+        { id: detailsId, class: "hero-lsc-score-details", hidden: true },
+        h("div", { class: "hero-lsc-score-settings" }, "50m · Offen · Top 5 · Bestzeiten"),
+        h("div", { class: "hero-lsc-score-meta" }, detailMeta)
+      )
+    );
+  }
+
+  function clubLscPointsFromTime(timeSec, recSec) {
+    if (!Number.isFinite(timeSec) || !Number.isFinite(recSec) || timeSec <= 0 || recSec <= 0) return 0;
+    const ratio = timeSec / recSec;
+    if (ratio < 2) {
+      return Math.max(0, 467 * Math.pow(ratio, 2) - 2001 * ratio + 2534);
+    }
+    if (ratio <= 5) {
+      return Math.max(0, 2000 / 3 - (400 / 3) * ratio);
+    }
+    return 0;
+  }
+
+  function normalizeClubLscRecordKey(value) {
+    return String(value || "")
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[×*]/g, "x")
+      .replace(/[-_/]+/g, " ")
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function canonicalClubLscRecordKey(value) {
+    return normalizeClubLscRecordKey(value)
+      .replace(/\bhindernisschwimmen\b/g, "hindernis")
+      .replace(/\bsuper lifesaver\b/g, "superlifesaver")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function getClubLscCell(sheet, xlsx, row, col) {
+    return sheet?.[xlsx.utils.encode_cell({ r: row, c: col })] || null;
+  }
+
+  function clubLscExcelCellToSeconds(cell) {
+    if (!cell) return NaN;
+
+    if (typeof cell.v === "number") {
+      return cell.v >= 0 && cell.v < 1 ? cell.v * 86400 : cell.v;
+    }
+
+    if (cell.v instanceof Date) {
+      return (cell.v.getHours() * 3600) + (cell.v.getMinutes() * 60) + cell.v.getSeconds() + (cell.v.getMilliseconds() / 1000);
+    }
+
+    const parsed = parseTimeToSec(String(cell.w || cell.v || "").trim());
+    return Number.isFinite(parsed) ? parsed : NaN;
+  }
+
+  function buildClubLscWorldRecordColumnIndex(sheet, xlsx, range) {
+    const index = new Map();
+
+    for (let col = 1; col <= range.e.c; col += 1) {
+      const cell = getClubLscCell(sheet, xlsx, CLUB_LSC_WR_HEADER_ROW, col);
+      let header = canonicalClubLscRecordKey(cell?.w || cell?.v || "");
+      if (!header || header === canonicalClubLscRecordKey(CLUB_LSC_WR_SHEET_NAME)) continue;
+
+      let gender = "w";
+      if (/\d$/.test(header)) {
+        const suffix = header.slice(-1);
+        header = header.slice(0, -1).trim();
+        if (suffix === "2") gender = "m";
+      }
+
+      index.set(`${header}|${gender}`, col);
+    }
+
+    return index;
+  }
+
+  function getClubLscWorldRecordYearRows(sheet, xlsx, range) {
+    const rows = [];
+
+    for (let row = CLUB_LSC_WR_FIRST_DATA_ROW; row <= range.e.r; row += 1) {
+      const cell = getClubLscCell(sheet, xlsx, row, 0);
+      const year = parseInt(cell?.w || cell?.v, 10);
+      if (Number.isFinite(year)) {
+        rows.push({ year, row });
+      }
+    }
+
+    return rows;
+  }
+
+  function readClubLscWorldRecordSeconds(sheet, xlsx, columnIndex, yearRows, discipline, gender) {
+    const labels = Array.isArray(discipline.worldRecordLabels) ? discipline.worldRecordLabels : [discipline.label];
+
+    for (const label of labels) {
+      const col = columnIndex.get(`${canonicalClubLscRecordKey(label)}|${gender}`);
+      if (col == null) continue;
+
+      for (const item of yearRows.slice().reverse()) {
+        const seconds = clubLscExcelCellToSeconds(getClubLscCell(sheet, xlsx, item.row, col));
+        if (Number.isFinite(seconds) && seconds > 0) {
+          return {
+            seconds,
+            year: item.year
+          };
+        }
+      }
+    }
+
+    return null;
+  }
+
+  async function ensureClubLscWorldRecords() {
+    if (!CLUB_LSC_STATE.worldRecordPromise) {
+      CLUB_LSC_STATE.worldRecordPromise = (async () => {
+        if (!window.ExcelLoader || typeof window.ExcelLoader.getWorkbook !== "function") {
+          throw new Error("ExcelLoader fehlt für die WR-Werte.");
+        }
+
+        const workbook = await window.ExcelLoader.getWorkbook({ urlKey: "recordsCriteria" });
+        const xlsx = window.XLSX;
+        const sheet = workbook?.Sheets?.[CLUB_LSC_WR_SHEET_NAME] || null;
+        if (!sheet || !xlsx) {
+          throw new Error(`${CLUB_LSC_WR_SHEET_NAME} konnte nicht geladen werden.`);
+        }
+
+        const range = xlsx.utils.decode_range(sheet["!ref"] || "A1:A1");
+        const columnIndex = buildClubLscWorldRecordColumnIndex(sheet, xlsx, range);
+        const yearRows = getClubLscWorldRecordYearRows(sheet, xlsx, range);
+        if (!yearRows.length) {
+          throw new Error("Keine WR-Open-Jahreszeilen gefunden.");
+        }
+
+        const records = {};
+        const missing = [];
+        const usedYears = [];
+
+        DISCIPLINES.forEach((discipline) => {
+          records[discipline.key] = { w: NaN, m: NaN };
+
+          ["w", "m"].forEach((gender) => {
+            const hit = readClubLscWorldRecordSeconds(sheet, xlsx, columnIndex, yearRows, discipline, gender);
+            if (hit) {
+              records[discipline.key][gender] = hit.seconds;
+              usedYears.push(hit.year);
+            } else {
+              missing.push(`${discipline.label}|${gender}`);
+            }
+          });
+        });
+
+        if (missing.length) {
+          throw new Error(`WR-Werte fehlen: ${missing.join(", ")}`);
+        }
+
+        return {
+          source: "recordsCriteria",
+          sourceYear: usedYears.length ? Math.max(...usedYears) : yearRows[yearRows.length - 1].year,
+          sourceStand: CLUB_LSC_WR_SOURCE_STAND,
+          records
+        };
+      })();
+    }
+
+    return CLUB_LSC_STATE.worldRecordPromise;
+  }
+
+  function getClubLscRecordSeconds(discipline, gender, worldRecords) {
+    return Number(worldRecords?.[discipline.key]?.[gender]);
+  }
+
+  async function calculateClubLscScore(group) {
+    const [rows, worldRecordData] = await Promise.all([getBestenlisteRows(), ensureClubLscWorldRecords()]);
+    const bests = buildBestenliste(rows, group, CLUB_LSC_SETTINGS);
+    const entries = [];
+    const missingRecords = [];
+
+    for (const discipline of bests) {
+      for (const bucket of ["women", "men"]) {
+        const gender = bucket === "women" ? "w" : "m";
+        const recSeconds = getClubLscRecordSeconds(discipline, gender, worldRecordData.records);
+
+        if (!Number.isFinite(recSeconds)) {
+          missingRecords.push(`${discipline.label}|${gender}`);
+          continue;
+        }
+
+        const rowsForBucket = (Array.isArray(discipline[bucket]) ? discipline[bucket] : [])
+          .slice(0, CLUB_LSC_SETTINGS.limit);
+        rowsForBucket.forEach((entry) => {
+          const points = clubLscPointsFromTime(entry.seconds, recSeconds);
+          entries.push({
+            disciplineKey: discipline.key,
+            gender,
+            seconds: entry.seconds,
+            recSeconds,
+            points
+          });
+        });
+      }
+    }
+
+    const total = entries.reduce((sum, entry) => sum + entry.points, 0);
+    return {
+      score: total / CLUB_LSC_DENOMINATOR,
+      total,
+      count: entries.length,
+      source: worldRecordData.source,
+      sourceYear: worldRecordData.sourceYear,
+      sourceStand: worldRecordData.sourceStand,
+      missingRecords
+    };
+  }
+
+  function getClubLscScorePromise(group) {
+    const key = String(group?.id || group?.name || "");
+    if (!key) return Promise.reject(new Error("Club fehlt."));
+
+    if (!CLUB_LSC_STATE.promiseByGroupId.has(key)) {
+      const promise = calculateClubLscScore(group).catch((error) => {
+        CLUB_LSC_STATE.promiseByGroupId.delete(key);
+        throw error;
+      });
+      CLUB_LSC_STATE.promiseByGroupId.set(key, promise);
+    }
+
+    return CLUB_LSC_STATE.promiseByGroupId.get(key);
+  }
+
+  function renderHeroClubLscScore(group) {
+    const mount = $("#rek-hero-lsc-score");
+    if (!mount) return;
+
+    const token = Symbol("club-lsc");
+    CLUB_LSC_STATE.renderToken = token;
+
+    if (!group || !["og", "lv", "bv"].includes(group.kind)) {
+      mount.hidden = true;
+      mount.innerHTML = "";
+      return;
+    }
+
+    mount.hidden = false;
+    mount.innerHTML = "";
+    mount.appendChild(renderClubLscScoreShell("loading"));
+
+    getClubLscScorePromise(group)
+      .then((result) => {
+        if (CLUB_LSC_STATE.renderToken !== token) return;
+        if (Array.isArray(result.missingRecords) && result.missingRecords.length) {
+          console.warn("Club-LSC: Rekordwerte fehlen:", result.missingRecords);
+        }
+        mount.innerHTML = "";
+        mount.appendChild(renderClubLscScoreShell("ready", result));
+      })
+      .catch((error) => {
+        if (CLUB_LSC_STATE.renderToken !== token) return;
+        console.warn("Club-LSC konnte nicht berechnet werden:", error);
+        mount.innerHTML = "";
+        mount.appendChild(renderClubLscScoreShell("error"));
+      });
   }
 
   function getGroupIdFromUrl() {
@@ -592,6 +944,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const kicker = $("#rek-hero-kicker");
     const title = $("#rek-hero-title");
     const meta = $("#rek-hero-meta");
+    const lscMount = $("#rek-hero-lsc-score");
     const supportMount = $("#rek-hero-support-points");
 
     if (!group) {
@@ -599,6 +952,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (kicker) kicker.textContent = "Clubs";
       if (title) title.textContent = "Gliederung nicht gefunden";
       if (meta) meta.textContent = "";
+      if (lscMount) {
+        lscMount.innerHTML = "";
+        lscMount.hidden = true;
+      }
       if (supportMount) {
         supportMount.innerHTML = "";
         supportMount.hidden = true;
@@ -619,6 +976,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (kicker) kicker.textContent = group.label || "Gliederung";
     if (title) title.textContent = displayName;
     if (meta) meta.textContent = group.subtitle || "";
+    renderHeroClubLscScore(group);
     if (supportMount) {
       const supportPoints = getGroupSupportPoints(group);
       supportMount.innerHTML = "";
@@ -970,11 +1328,11 @@ document.addEventListener("DOMContentLoaded", () => {
     ].join("_") + ".pdf";
   }
 
-  function renderBestenlistePrintHeader(group) {
+  function renderBestenlistePrintHeader(group, scoreData = null) {
     return h(
       "header",
       { class: "club-bests-print-header" },
-      h("p", { class: "club-bests-print-kicker" }, group?.label || "Club"),
+      h("p", { class: "club-bests-print-kicker" }, getBestenlisteHeaderKicker(group, scoreData)),
       h("h2", {}, `${getGroupDisplayName(group)} - Bestenliste`),
       h("p", { class: "club-bests-print-meta" }, getBestenlisteSettingsSummary())
     );
@@ -1672,9 +2030,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return new Blob([bytes], { type: "application/pdf" });
   }
 
-  async function createBestenlistePdfBlob(group, data, generatedAt = new Date(), fileName = "", standDate = generatedAt) {
+  async function createBestenlistePdfBlob(group, data, generatedAt = new Date(), fileName = "", standDate = generatedAt, scoreData = null) {
     const pdfAvatarAssets = await buildPdfAvatarAssets(data);
     const pdfMetaSummary = `${getBestenlisteSettingsSummary()} | ${getBestenlisteStandSummary(standDate)}`;
+    const pdfKicker = getBestenlisteHeaderKicker(group, scoreData);
     const displayName = getGroupDisplayName(group);
     const pageWidth = 595.28;
     const pageHeight = 841.89;
@@ -1704,7 +2063,7 @@ document.addEventListener("DOMContentLoaded", () => {
       commands = [];
       writer = createPdfWriter(commands, pageHeight);
       y = margin;
-      writer.text(margin, y, `DLRG ${group?.label || "Club"}`, 7, "F2", "0.35 0.35 0.4");
+      writer.text(margin, y, pdfKicker, 7, "F2", "0.35 0.35 0.4");
       y += 15;
       writer.text(margin, y, `${displayName} - Bestenliste`, 14, "F2", "0.08 0.08 0.1");
       y += 12;
@@ -1832,8 +2191,14 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const rows = await getBestenlisteRows();
       const standDate = getLatestDatabaseMeetDateIso(rows) || generatedAt;
-      const data = buildBestenliste(rows, group, BESTS_STATE);
-      const blob = await createBestenlistePdfBlob(group, data, generatedAt, fileName, standDate);
+      const [data, scoreData] = await Promise.all([
+        Promise.resolve(buildBestenliste(rows, group, BESTS_STATE)),
+        getClubLscScorePromise(group).catch((error) => {
+          console.warn("Club-LSC konnte für die PDF nicht berechnet werden:", error);
+          return null;
+        })
+      ]);
+      const blob = await createBestenlistePdfBlob(group, data, generatedAt, fileName, standDate, scoreData);
       const url = URL.createObjectURL(blob);
 
       if (tab) {
@@ -2219,7 +2584,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!panel || !group) return;
 
     panel.innerHTML = "";
-    panel.appendChild(renderBestenlistePrintHeader(group));
+    const printHeader = renderBestenlistePrintHeader(group);
+    panel.appendChild(printHeader);
     panel.appendChild(createBestenlisteControls(panel, group));
     const content = h("div", { class: "club-bests-content" }, h("div", { class: "club-bests-status" }, "Bestenliste wird geladen ..."));
     panel.appendChild(content);
@@ -2227,6 +2593,13 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const rows = await getBestenlisteRows();
       const data = buildBestenliste(rows, group, BESTS_STATE);
+      getClubLscScorePromise(group)
+        .then((scoreData) => {
+          printHeader.replaceWith(renderBestenlistePrintHeader(group, scoreData));
+        })
+        .catch((error) => {
+          console.warn("Club-LSC konnte für den Bestenlisten-Druckkopf nicht berechnet werden:", error);
+        });
       content.innerHTML = "";
       content.appendChild(renderBestenlisteGrid(data));
       initGenderPagers(content);
