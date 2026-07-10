@@ -12,6 +12,7 @@
     meetName: 10,
     yy2: 11,
     ortsgruppe: 12,
+    pMehrkampf: 14,
     p100l: 15,
     p50r: 16,
     p200s: 17,
@@ -24,18 +25,33 @@
   };
 
   const DISCIPLINES = [
-    { key: "z50r", col: COLS.z50r, placeCol: COLS.p50r },
-    { key: "z100r", col: COLS.z100r, placeCol: COLS.p100r },
-    { key: "z100k", col: COLS.z100k, placeCol: COLS.p100k },
-    { key: "z100l", col: COLS.z100l, placeCol: COLS.p100l },
-    { key: "z200s", col: COLS.z200s, placeCol: COLS.p200s },
-    { key: "z200h", col: COLS.z200h, placeCol: COLS.p200h }
+    { key: "z50r", label: "50m Retten", worldRecordLabels: ["50m Retten"], col: COLS.z50r, placeCol: COLS.p50r },
+    { key: "z100r", label: "100m Retten mit Flossen", worldRecordLabels: ["100m Retten", "100m Retten mit Flossen"], col: COLS.z100r, placeCol: COLS.p100r },
+    { key: "z100k", label: "100m Kombi", worldRecordLabels: ["100m Kombi"], col: COLS.z100k, placeCol: COLS.p100k },
+    { key: "z100l", label: "100m Lifesaver", worldRecordLabels: ["100m Lifesaver"], col: COLS.z100l, placeCol: COLS.p100l },
+    { key: "z200s", label: "200m Super-Lifesaver", worldRecordLabels: ["200m Superlifesaver", "200m Super Lifesaver", "200m Super-Lifesaver"], col: COLS.z200s, placeCol: COLS.p200s },
+    { key: "z200h", label: "200m Hindernis", worldRecordLabels: ["200m Hindernis", "200m Hindernisschwimmen"], col: COLS.z200h, placeCol: COLS.p200h }
   ];
+
+  const CLUB_LSC_SETTINGS = Object.freeze({
+    pool: "50",
+    limit: 5,
+    personalOnly: true,
+    ageGroup: "open"
+  });
+  const CLUB_LSC_DENOMINATOR = 60;
+  const CLUB_LSC_WR_SHEET_NAME = "WR-Open";
+  const CLUB_LSC_WR_HEADER_ROW = 3;
+  const CLUB_LSC_WR_FIRST_DATA_ROW = 4;
+  const CLUB_LSC_STATE = {
+    worldRecordPromise: null
+  };
 
   const TOP10_GROUPS = [
     { key: "competition_presence", label: "Wettkämpfe besucht" },
     { key: "start_count", label: "Starts je Ortsgruppe" },
     { key: "athlete_count", label: "Sportler je Ortsgruppe" },
+    { key: "club_score", label: "Bester Club-Score" },
     { key: "foreign_competitions", label: "Wettkämpfe im Ausland" },
     { key: "pool50_competitions", label: "Wettkämpfe auf 50m-Bahn" },
     { key: "bv_startrecht", label: "Startrecht Bundesverband" },
@@ -43,6 +59,7 @@
   ];
 
   const GROUP_VALUE_LABEL = {
+    club_score: "Punkte",
     competition_presence: "Wettkämpfe",
     start_count: "Starts",
     athlete_count: "Sportler",
@@ -53,6 +70,8 @@
   };
 
   const GROUP_NOTES = {
+    club_score:
+      "Berechnet aus der Club-Bestenliste mit 50m, Offen, Top 5 und nur Bestzeiten pro Sportler. Gewertet werden maximal 60 Zeiten (6 Disziplinen x 2 Geschlechter x Top 5), die Summe wird immer durch 60 geteilt. Grundlage sind die aktuellen WR-Open-Werte.",
     competition_presence:
       "Gezählt werden eindeutige Wettkämpfe pro Ortsgruppe. Mehrere Sportler derselben Ortsgruppe bei einem Wettkampf werden nur einmal gewertet. Ettlingen und der St\u00fctzpunkt Wettersbach zählen dabei gemeinsam als eine Ortsgruppe.",
     start_count:
@@ -211,6 +230,218 @@
     const num = Number(value);
     if (!Number.isFinite(num)) return "0,0";
     return num.toFixed(1).replace(".", ",");
+  }
+
+  function formatClubScore(value) {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return "0,00";
+    return new Intl.NumberFormat("de-DE", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(num);
+  }
+
+  function normalizeGender(value) {
+    return String(value || "").toLowerCase().startsWith("w") ? "w" : "m";
+  }
+
+  function normalizePool(value) {
+    const pool = String(value || "").trim();
+    return pool === "25" || pool === "50" ? pool : "";
+  }
+
+  function getYearFromISO(iso) {
+    const year = Number(String(iso || "").slice(0, 4));
+    return Number.isFinite(year) ? year : null;
+  }
+
+  function parseTimeToSec(raw) {
+    if (raw == null) return null;
+    if (typeof raw === "number") {
+      if (!Number.isFinite(raw) || raw <= 0) return null;
+      return raw < 1 ? raw * 86400 : raw;
+    }
+
+    const value = String(raw).trim();
+    if (!value || /^(dq|dsq|disq|ausg\.?|na|n\/a|-|\u2014)$/i.test(value)) return null;
+    if (/(dq|dsq|disq|ausg)/i.test(value)) return null;
+
+    const cleaned = value.replace(/\s+/g, "").replace(",", ".");
+    const parts = cleaned.split(":").map((part) => Number(part));
+
+    if (parts.length === 2 && parts.every(Number.isFinite)) {
+      return (parts[0] * 60) + parts[1];
+    }
+
+    const num = Number(cleaned);
+    if (!Number.isFinite(num) || num <= 0) return null;
+    return num < 1 ? num * 86400 : num;
+  }
+
+  function isInvalidResultMark(value) {
+    return /(dq|dsq|disq|ausg)/i.test(String(value || "").trim());
+  }
+
+  function compareClubScoreEntry(left, right) {
+    const diff = Number(left.seconds) - Number(right.seconds);
+    if (Math.abs(diff) > 1e-9) return diff;
+    return String(left.athleteId || "").localeCompare(String(right.athleteId || ""), "de", { sensitivity: "base" });
+  }
+
+  function clubLscPointsFromTime(timeSec, recSec) {
+    if (!Number.isFinite(timeSec) || !Number.isFinite(recSec) || timeSec <= 0 || recSec <= 0) return 0;
+    const ratio = timeSec / recSec;
+    if (ratio < 2) {
+      return Math.max(0, 467 * Math.pow(ratio, 2) - 2001 * ratio + 2534);
+    }
+    if (ratio <= 5) {
+      return Math.max(0, (2000 / 3) - ((400 / 3) * ratio));
+    }
+    return 0;
+  }
+
+  function normalizeClubLscRecordKey(value) {
+    return String(value || "")
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[\u00d7*]/g, "x")
+      .replace(/[-_/]+/g, " ")
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function canonicalClubLscRecordKey(value) {
+    return normalizeClubLscRecordKey(value)
+      .replace(/\bhindernisschwimmen\b/g, "hindernis")
+      .replace(/\bsuper lifesaver\b/g, "superlifesaver")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function getClubLscCell(sheet, xlsx, row, col) {
+    return sheet?.[xlsx.utils.encode_cell({ r: row, c: col })] || null;
+  }
+
+  function clubLscExcelCellToSeconds(cell) {
+    if (!cell) return NaN;
+
+    if (typeof cell.v === "number") {
+      return cell.v >= 0 && cell.v < 1 ? cell.v * 86400 : cell.v;
+    }
+
+    if (cell.v instanceof Date) {
+      return (cell.v.getHours() * 3600) + (cell.v.getMinutes() * 60) + cell.v.getSeconds() + (cell.v.getMilliseconds() / 1000);
+    }
+
+    const parsed = parseTimeToSec(String(cell.w || cell.v || "").trim());
+    return Number.isFinite(parsed) ? parsed : NaN;
+  }
+
+  function buildClubLscWorldRecordColumnIndex(sheet, xlsx, range) {
+    const index = new Map();
+
+    for (let col = 1; col <= range.e.c; col += 1) {
+      const cell = getClubLscCell(sheet, xlsx, CLUB_LSC_WR_HEADER_ROW, col);
+      let header = canonicalClubLscRecordKey(cell?.w || cell?.v || "");
+      if (!header || header === canonicalClubLscRecordKey(CLUB_LSC_WR_SHEET_NAME)) continue;
+
+      let gender = "w";
+      if (/\d$/.test(header)) {
+        const suffix = header.slice(-1);
+        header = header.slice(0, -1).trim();
+        if (suffix === "2") gender = "m";
+      }
+
+      index.set(`${header}|${gender}`, col);
+    }
+
+    return index;
+  }
+
+  function getClubLscWorldRecordYearRows(sheet, xlsx, range) {
+    const rows = [];
+
+    for (let row = CLUB_LSC_WR_FIRST_DATA_ROW; row <= range.e.r; row += 1) {
+      const cell = getClubLscCell(sheet, xlsx, row, 0);
+      const year = parseInt(cell?.w || cell?.v, 10);
+      if (Number.isFinite(year)) {
+        rows.push({ year, row });
+      }
+    }
+
+    return rows;
+  }
+
+  function readClubLscWorldRecordSeconds(sheet, xlsx, columnIndex, yearRows, discipline, gender) {
+    const labels = Array.isArray(discipline.worldRecordLabels) ? discipline.worldRecordLabels : [discipline.label];
+
+    for (const label of labels) {
+      const col = columnIndex.get(`${canonicalClubLscRecordKey(label)}|${gender}`);
+      if (col == null) continue;
+
+      for (const item of yearRows.slice().reverse()) {
+        const seconds = clubLscExcelCellToSeconds(getClubLscCell(sheet, xlsx, item.row, col));
+        if (Number.isFinite(seconds) && seconds > 0) {
+          return { seconds, year: item.year };
+        }
+      }
+    }
+
+    return null;
+  }
+
+  async function ensureClubLscWorldRecords() {
+    if (!CLUB_LSC_STATE.worldRecordPromise) {
+      CLUB_LSC_STATE.worldRecordPromise = (async () => {
+        if (!window.ExcelLoader || typeof window.ExcelLoader.getWorkbook !== "function") {
+          throw new Error("ExcelLoader fehlt fuer die WR-Werte.");
+        }
+
+        const workbook = await window.ExcelLoader.getWorkbook({ urlKey: "recordsCriteria" });
+        const xlsx = window.XLSX;
+        const sheet = workbook?.Sheets?.[CLUB_LSC_WR_SHEET_NAME] || null;
+        if (!sheet || !xlsx) {
+          throw new Error(`${CLUB_LSC_WR_SHEET_NAME} konnte nicht geladen werden.`);
+        }
+
+        const range = xlsx.utils.decode_range(sheet["!ref"] || "A1:A1");
+        const columnIndex = buildClubLscWorldRecordColumnIndex(sheet, xlsx, range);
+        const yearRows = getClubLscWorldRecordYearRows(sheet, xlsx, range);
+        if (!yearRows.length) {
+          throw new Error("Keine WR-Open-Jahreszeilen gefunden.");
+        }
+
+        const records = {};
+        const missing = [];
+
+        DISCIPLINES.forEach((discipline) => {
+          records[discipline.key] = { w: NaN, m: NaN };
+
+          ["w", "m"].forEach((gender) => {
+            const hit = readClubLscWorldRecordSeconds(sheet, xlsx, columnIndex, yearRows, discipline, gender);
+            if (hit) {
+              records[discipline.key][gender] = hit.seconds;
+            } else {
+              missing.push(`${discipline.label}|${gender}`);
+            }
+          });
+        });
+
+        if (missing.length) {
+          throw new Error(`WR-Werte fehlen: ${missing.join(", ")}`);
+        }
+
+        return records;
+      })();
+    }
+
+    return CLUB_LSC_STATE.worldRecordPromise;
+  }
+
+  function getClubLscRecordSeconds(discipline, gender, worldRecords) {
+    return Number(worldRecords?.[discipline.key]?.[gender]);
   }
 
   function hasDisciplineStartMarker(value) {
@@ -793,11 +1024,131 @@
     };
   }
 
+  async function buildClubScoreGroup(rows, allGroups) {
+    const groupByName = new Map(
+      (Array.isArray(allGroups) ? allGroups : [])
+        .filter((group) => group?.kind === "og")
+        .map((group) => [String(group.name || "").trim(), group])
+    );
+    const worldRecords = await ensureClubLscWorldRecords();
+    const groupBuckets = new Map();
+    const startIndex = rows.length && isHeaderRow(rows[0]) ? 1 : 0;
+
+    function getBucket(groupName, disciplineKey, gender) {
+      if (!groupBuckets.has(groupName)) {
+        groupBuckets.set(groupName, new Map());
+      }
+
+      const byBucket = groupBuckets.get(groupName);
+      const key = `${disciplineKey}|${gender}`;
+      if (!byBucket.has(key)) {
+        byBucket.set(key, new Map());
+      }
+
+      return byBucket.get(key);
+    }
+
+    for (let index = startIndex; index < rows.length; index++) {
+      const row = rows[index] || [];
+      const ogName = window.ClubsData?.normalizeOrtsgruppeName
+        ? window.ClubsData.normalizeOrtsgruppeName(row[COLS.ortsgruppe])
+        : String(row[COLS.ortsgruppe] || "").trim();
+
+      if (!ogName || !groupByName.has(ogName)) continue;
+      if (normalizePool(row[COLS.pool]) !== CLUB_LSC_SETTINGS.pool) continue;
+      if (isInvalidResultMark(row[COLS.pMehrkampf])) continue;
+
+      const name = String(row[COLS.name] || "").trim();
+      if (!name) continue;
+
+      const gender = normalizeGender(row[COLS.gender]);
+      const meetISO = excelSerialToISO(row[COLS.excelDate]);
+      const birthYear = parseTwoDigitYearWithMeetYear(row[COLS.yy2], meetISO);
+      const athleteId = makeAthleteId(name, gender, birthYear);
+
+      for (const discipline of DISCIPLINES) {
+        if (isInvalidResultMark(row[discipline.placeCol])) continue;
+
+        if (discipline.key === "z100k") {
+          const meetYear = getYearFromISO(meetISO);
+          if (Number.isFinite(meetYear) && meetYear < 2007) continue;
+        }
+
+        const seconds = parseTimeToSec(row[discipline.col]);
+        if (!Number.isFinite(seconds)) continue;
+
+        const bucket = getBucket(ogName, discipline.key, gender);
+        const entry = { athleteId, seconds };
+        const previous = bucket.get(athleteId);
+        if (!previous || compareClubScoreEntry(entry, previous) < 0) {
+          bucket.set(athleteId, entry);
+        }
+      }
+    }
+
+    const sortedRows = Array.from(groupBuckets.entries())
+      .map(([name, bucketMap]) => {
+        const group = groupByName.get(name) || null;
+        let total = 0;
+        let count = 0;
+
+        DISCIPLINES.forEach((discipline) => {
+          ["w", "m"].forEach((gender) => {
+            const recSeconds = getClubLscRecordSeconds(discipline, gender, worldRecords);
+            if (!Number.isFinite(recSeconds)) return;
+
+            const entries = Array.from((bucketMap.get(`${discipline.key}|${gender}`) || new Map()).values())
+              .sort(compareClubScoreEntry)
+              .slice(0, CLUB_LSC_SETTINGS.limit);
+
+            entries.forEach((entry) => {
+              total += clubLscPointsFromTime(entry.seconds, recSeconds);
+              count += 1;
+            });
+          });
+        });
+
+        const score = total / CLUB_LSC_DENOMINATOR;
+        return {
+          name,
+          subtitle: group?.subtitle || "Ortsgruppe",
+          count,
+          value: Number(score.toFixed(6)),
+          displayValue: formatClubScore(score),
+          group
+        };
+      })
+      .filter((row) => row.count > 0)
+      .sort((left, right) => {
+        const diff = Number(right.value) - Number(left.value);
+        if (diff !== 0) return diff;
+        return String(left.name || "").localeCompare(String(right.name || ""), "de", { sensitivity: "base" });
+      })
+      .slice(0, 10)
+      .map((row, index) => ({ ...row, rank: index + 1 }));
+
+    return {
+      key: "club_score",
+      label: getTop10GroupLabel("club_score"),
+      valueLabel: GROUP_VALUE_LABEL.club_score,
+      note: GROUP_NOTES.club_score,
+      rows: applyRanks(sortedRows)
+    };
+  }
+
   async function buildGroups() {
     const rows = await window.ClubsData.loadWorkbookArray("Tabelle2");
     const { groups: allGroups } = await window.ClubsData.loadGroupsAndStats({ sheetName: "Tabelle2" });
 
+    let clubScoreGroup = null;
+    try {
+      clubScoreGroup = await buildClubScoreGroup(rows, allGroups);
+    } catch (error) {
+      console.warn("Club-Score Top10 konnte nicht berechnet werden:", error);
+    }
+
     return {
+      club_score: clubScoreGroup,
       competition_presence: buildCompetitionPresenceGroup(rows, allGroups),
       start_count: buildStartCountGroup(rows, allGroups),
       athlete_count: buildAthleteCountGroup(rows, allGroups),
