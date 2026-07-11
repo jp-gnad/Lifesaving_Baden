@@ -34,12 +34,12 @@
   ];
 
   const CLUB_LSC_SETTINGS = Object.freeze({
-    pool: "50",
+    pools: ["50", "25"],
     limit: 5,
     personalOnly: true,
     ageGroup: "open"
   });
-  const CLUB_LSC_DENOMINATOR = 60;
+  const CLUB_LSC_DENOMINATOR = 120;
   const CLUB_LSC_WR_SHEET_NAME = "WR-Open";
   const CLUB_LSC_WR_HEADER_ROW = 3;
   const CLUB_LSC_WR_FIRST_DATA_ROW = 4;
@@ -71,7 +71,7 @@
 
   const GROUP_NOTES = {
     club_score:
-      "Berechnet aus der Club-Bestenliste mit 50m, Offen, Top 5 und nur Bestzeiten pro Sportler. Gewertet werden maximal 60 Zeiten (6 Disziplinen x 2 Geschlechter x Top 5), die Summe wird immer durch 60 geteilt. Grundlage sind die aktuellen WR-Open-Werte.",
+      "Berechnet aus der Club-Bestenliste mit 25m und 50m, Offen, Top 5 und nur Bestzeiten pro Sportler. Gewertet werden maximal 120 Zeiten (2 Bahnlängen x 6 Disziplinen x 2 Geschlechter x Top 5), die Summe wird immer durch 120 geteilt. Grundlage sind die aktuellen WR-Open-Werte.",
     competition_presence:
       "Gezählt werden eindeutige Wettkämpfe pro Ortsgruppe. Mehrere Sportler derselben Ortsgruppe bei einem Wettkampf werden nur einmal gewertet. Ettlingen und der St\u00fctzpunkt Wettersbach zählen dabei gemeinsam als eine Ortsgruppe.",
     start_count:
@@ -1034,13 +1034,13 @@
     const groupBuckets = new Map();
     const startIndex = rows.length && isHeaderRow(rows[0]) ? 1 : 0;
 
-    function getBucket(groupName, disciplineKey, gender) {
+    function getBucket(groupName, pool, disciplineKey, gender) {
       if (!groupBuckets.has(groupName)) {
         groupBuckets.set(groupName, new Map());
       }
 
       const byBucket = groupBuckets.get(groupName);
-      const key = `${disciplineKey}|${gender}`;
+      const key = `${pool}|${disciplineKey}|${gender}`;
       if (!byBucket.has(key)) {
         byBucket.set(key, new Map());
       }
@@ -1055,7 +1055,8 @@
         : String(row[COLS.ortsgruppe] || "").trim();
 
       if (!ogName || !groupByName.has(ogName)) continue;
-      if (normalizePool(row[COLS.pool]) !== CLUB_LSC_SETTINGS.pool) continue;
+      const pool = normalizePool(row[COLS.pool]);
+      if (!CLUB_LSC_SETTINGS.pools.includes(pool)) continue;
       if (isInvalidResultMark(row[COLS.pMehrkampf])) continue;
 
       const name = String(row[COLS.name] || "").trim();
@@ -1077,7 +1078,7 @@
         const seconds = parseTimeToSec(row[discipline.col]);
         if (!Number.isFinite(seconds)) continue;
 
-        const bucket = getBucket(ogName, discipline.key, gender);
+        const bucket = getBucket(ogName, pool, discipline.key, gender);
         const entry = { athleteId, seconds };
         const previous = bucket.get(athleteId);
         if (!previous || compareClubScoreEntry(entry, previous) < 0) {
@@ -1092,18 +1093,20 @@
         let total = 0;
         let count = 0;
 
-        DISCIPLINES.forEach((discipline) => {
-          ["w", "m"].forEach((gender) => {
-            const recSeconds = getClubLscRecordSeconds(discipline, gender, worldRecords);
-            if (!Number.isFinite(recSeconds)) return;
+        CLUB_LSC_SETTINGS.pools.forEach((pool) => {
+          DISCIPLINES.forEach((discipline) => {
+            ["w", "m"].forEach((gender) => {
+              const recSeconds = getClubLscRecordSeconds(discipline, gender, worldRecords);
+              if (!Number.isFinite(recSeconds)) return;
 
-            const entries = Array.from((bucketMap.get(`${discipline.key}|${gender}`) || new Map()).values())
-              .sort(compareClubScoreEntry)
-              .slice(0, CLUB_LSC_SETTINGS.limit);
+              const entries = Array.from((bucketMap.get(`${pool}|${discipline.key}|${gender}`) || new Map()).values())
+                .sort(compareClubScoreEntry)
+                .slice(0, CLUB_LSC_SETTINGS.limit);
 
-            entries.forEach((entry) => {
-              total += clubLscPointsFromTime(entry.seconds, recSeconds);
-              count += 1;
+              entries.forEach((entry) => {
+                total += clubLscPointsFromTime(entry.seconds, recSeconds);
+                count += 1;
+              });
             });
           });
         });

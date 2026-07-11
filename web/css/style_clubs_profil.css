@@ -155,11 +155,10 @@ main#content {
   gap: 0.34rem;
   width: max-content;
   max-width: 100%;
-  padding: 0.48rem 0.58rem;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 8px;
-  background: rgba(12, 12, 16, 0.34);
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
   color: rgba(255, 255, 255, 0.9);
   text-shadow: none;
 }
@@ -248,7 +247,7 @@ main#content {
 
 .hero-lsc-score-meta {
   color: rgba(255, 255, 255, 0.58);
-  text-align: right;
+  text-align: left;
 }
 
 .hero-lsc-score-card--loading .hero-lsc-score-value,
@@ -1877,7 +1876,7 @@ main#content {
     width: fit-content;
     max-width: 100%;
     gap: 0.28rem;
-    padding: 0.52rem 0.58rem;
+    padding: 0;
   }
 
   .hero-lsc-score-main {
