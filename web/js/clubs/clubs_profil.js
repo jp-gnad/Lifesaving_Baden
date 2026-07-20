@@ -81,16 +81,15 @@ document.addEventListener("DOMContentLoaded", () => {
     promiseByGroupId: new Map()
   };
   const CLUB_LSC_SETTINGS = Object.freeze({
-    pool: "50",
+    pools: ["50", "25"],
     limit: 5,
     personalOnly: true,
     ageGroup: "open"
   });
-  const CLUB_LSC_DENOMINATOR = 60;
+  const CLUB_LSC_DENOMINATOR = 120;
   const CLUB_LSC_WR_SHEET_NAME = "WR-Open";
   const CLUB_LSC_WR_HEADER_ROW = 3;
   const CLUB_LSC_WR_FIRST_DATA_ROW = 4;
-  const CLUB_LSC_WR_SOURCE_STAND = "10.07.2026";
   const LAND_TO_ISO3 = {
     Deutschland: "GER",
     Schweiz: "SUI",
@@ -222,7 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
         : "...";
     const detailMeta =
       state === "ready"
-        ? `${data.count}/${CLUB_LSC_DENOMINATOR} Zeiten · WR Open · Stand ${data.sourceStand || CLUB_LSC_WR_SOURCE_STAND}`
+        ? `${data.count}/${CLUB_LSC_DENOMINATOR} Zeiten · WR Open · Stand ${data.sourceStand || "-"}`
         : state === "error"
         ? "WR-Werte konnten nicht geladen werden"
         : "wird berechnet";
@@ -265,7 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
       h(
         "div",
         { id: detailsId, class: "hero-lsc-score-details", hidden: true },
-        h("div", { class: "hero-lsc-score-settings" }, "50m · Offen · Top 5 · Bestzeiten"),
+        h("div", { class: "hero-lsc-score-settings" }, "25m + 50m · Offen · Top 5 · Bestzeiten"),
         h("div", { class: "hero-lsc-score-meta" }, detailMeta)
       )
     );
@@ -424,7 +423,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return {
           source: "recordsCriteria",
           sourceYear: usedYears.length ? Math.max(...usedYears) : yearRows[yearRows.length - 1].year,
-          sourceStand: CLUB_LSC_WR_SOURCE_STAND,
           records
         };
       })();
@@ -439,32 +437,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function calculateClubLscScore(group) {
     const [rows, worldRecordData] = await Promise.all([getBestenlisteRows(), ensureClubLscWorldRecords()]);
-    const bests = buildBestenliste(rows, group, CLUB_LSC_SETTINGS);
     const entries = [];
     const missingRecords = [];
 
-    for (const discipline of bests) {
-      for (const bucket of ["women", "men"]) {
-        const gender = bucket === "women" ? "w" : "m";
-        const recSeconds = getClubLscRecordSeconds(discipline, gender, worldRecordData.records);
+    for (const pool of CLUB_LSC_SETTINGS.pools) {
+      const bests = buildBestenliste(rows, group, { ...CLUB_LSC_SETTINGS, pool });
 
-        if (!Number.isFinite(recSeconds)) {
-          missingRecords.push(`${discipline.label}|${gender}`);
-          continue;
-        }
+      for (const discipline of bests) {
+        for (const bucket of ["women", "men"]) {
+          const gender = bucket === "women" ? "w" : "m";
+          const recSeconds = getClubLscRecordSeconds(discipline, gender, worldRecordData.records);
 
-        const rowsForBucket = (Array.isArray(discipline[bucket]) ? discipline[bucket] : [])
-          .slice(0, CLUB_LSC_SETTINGS.limit);
-        rowsForBucket.forEach((entry) => {
-          const points = clubLscPointsFromTime(entry.seconds, recSeconds);
-          entries.push({
-            disciplineKey: discipline.key,
-            gender,
-            seconds: entry.seconds,
-            recSeconds,
-            points
+          if (!Number.isFinite(recSeconds)) {
+            missingRecords.push(`${discipline.label}|${gender}`);
+            continue;
+          }
+
+          const rowsForBucket = (Array.isArray(discipline[bucket]) ? discipline[bucket] : [])
+            .slice(0, CLUB_LSC_SETTINGS.limit);
+          rowsForBucket.forEach((entry) => {
+            const points = clubLscPointsFromTime(entry.seconds, recSeconds);
+            entries.push({
+              pool,
+              disciplineKey: discipline.key,
+              gender,
+              seconds: entry.seconds,
+              recSeconds,
+              points
+            });
           });
-        });
+        }
       }
     }
 
@@ -475,7 +477,7 @@ document.addEventListener("DOMContentLoaded", () => {
       count: entries.length,
       source: worldRecordData.source,
       sourceYear: worldRecordData.sourceYear,
-      sourceStand: worldRecordData.sourceStand,
+      sourceStand: getLatestWorkbookDateStand(rows),
       missingRecords
     };
   }
@@ -577,6 +579,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const date = new Date(String(iso || "").slice(0, 10));
     if (Number.isNaN(date.getTime())) return "";
     return `${String(date.getUTCDate()).padStart(2, "0")}.${String(date.getUTCMonth() + 1).padStart(2, "0")}.${date.getUTCFullYear()}`;
+  }
+
+  function getLatestWorkbookDateStand(rows) {
+    let latestIso = "";
+
+    for (const row of Array.isArray(rows) ? rows : []) {
+      const iso = excelSerialToISO(row?.[COLS.excelDate]);
+      if (iso && (!latestIso || iso > latestIso)) {
+        latestIso = iso;
+      }
+    }
+
+    return formatDateDE(latestIso);
   }
 
   function formatDateShort(iso) {

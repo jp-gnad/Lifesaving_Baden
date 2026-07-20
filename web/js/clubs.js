@@ -21,6 +21,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 (function () {
   const $ = (selector, root = document) => root.querySelector(selector);
+  const CLUBS_TOP10_SCRIPT_URL = "./js/clubs/clubs_top10.js?v=20260711-1";
+  let top10ScriptPromise = null;
 
   const h = (tag, props = {}, ...children) => {
     const el = document.createElement(tag);
@@ -115,7 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderApp() {
     const mount = $("#rekorde-container");
-    if (!mount) return;
+    if (!mount) return null;
 
     mount.innerHTML = "";
 
@@ -136,13 +138,67 @@ document.addEventListener("DOMContentLoaded", () => {
     ui.appendChild(top10Mount);
     mount.appendChild(ui);
 
+    return top10Mount;
+  }
+
+  function loadTop10Script() {
+    if (window.ClubsTop10 && typeof window.ClubsTop10.mount === "function") {
+      return Promise.resolve();
+    }
+
+    if (!top10ScriptPromise) {
+      top10ScriptPromise = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = CLUBS_TOP10_SCRIPT_URL;
+        script.async = true;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error("clubs_top10.js konnte nicht geladen werden."));
+        document.head.appendChild(script);
+      });
+    }
+
+    return top10ScriptPromise;
+  }
+
+  async function mountTop10(top10Mount) {
+    if (!top10Mount) return;
+    top10Mount.innerHTML = '<div class="ath10-status ath10-status--loading">Top-10 wird geladen ...</div>';
+    await loadTop10Script();
+
     if (window.ClubsTop10 && typeof window.ClubsTop10.mount === "function") {
       window.ClubsTop10.mount(top10Mount, { openProfile: openGroup });
+      return;
     }
+
+    throw new Error("ClubsTop10 missing");
+  }
+
+  function scheduleTop10(top10Mount) {
+    if (!top10Mount) return;
+
+    let started = false;
+    const start = () => {
+      if (started) return;
+      started = true;
+      mountTop10(top10Mount).catch((error) => {
+        console.error(error);
+        top10Mount.innerHTML = '<div class="ath10-status ath10-status--error">Top-10 konnten nicht geladen werden.</div>';
+      });
+    };
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (typeof window.requestIdleCallback === "function") {
+          window.requestIdleCallback(start, { timeout: 1500 });
+        } else {
+          window.setTimeout(start, 250);
+        }
+      });
+    });
   }
 
   document.addEventListener("DOMContentLoaded", async () => {
-    renderApp();
+    const top10Mount = renderApp();
     renderOverviewChipsSkeleton();
     await new Promise(requestAnimationFrame);
 
@@ -169,5 +225,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.ClubsSearch.showError("Fehler beim Laden der Daten.");
       }
     }
+
+    scheduleTop10(top10Mount);
   });
 })();

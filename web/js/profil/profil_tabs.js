@@ -1831,26 +1831,36 @@
       if (lbl === activeLabel) activeBtn = btn;
     });
 
+    list.appendChild(ul);
     bar.appendChild(list);
-    bar.appendChild(ul);
 
     function positionUnderline(btn) {
-      const r = btn.getBoundingClientRect();
-      const p = list.getBoundingClientRect();
-      ul.style.width = r.width + "px";
-      ul.style.left = (r.left - p.left) + "px";
+      ul.style.width = btn.offsetWidth + "px";
+      ul.style.left = btn.offsetLeft + "px";
+    }
+    function scrollTabIntoView(btn, behavior = "smooth") {
+      try {
+        btn.scrollIntoView({ block: "nearest", inline: "center", behavior });
+      } catch (e) {}
     }
     function setActive(btn, key) {
       list.querySelectorAll(".ath-tab").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
+      scrollTabIntoView(btn);
       positionUnderline(btn);
       onChange?.(key);
     }
 
-    requestAnimationFrame(() => activeBtn && positionUnderline(activeBtn));
+    requestAnimationFrame(() => {
+      if (!activeBtn) return;
+      scrollTabIntoView(activeBtn, "auto");
+      positionUnderline(activeBtn);
+    });
     window.addEventListener("resize", () => {
       const cur = list.querySelector(".ath-tab.active");
-      cur && positionUnderline(cur);
+      if (!cur) return;
+      scrollTabIntoView(cur, "auto");
+      positionUnderline(cur);
     });
 
     return bar;
@@ -1902,11 +1912,11 @@
       const activeBtn = wrap.querySelector(".ath-tab.active") || wrap.querySelector(".ath-tab");
       if (activeBtn) {
         const ul = wrap.querySelector(".ath-tabs-underline");
-        const lst = wrap.querySelector(".ath-tabs-list");
-        const pr = lst.getBoundingClientRect();
-        const tr = activeBtn.getBoundingClientRect();
-        ul.style.width = tr.width + "px";
-        ul.style.left = (tr.left - pr.left) + "px";
+        try {
+          activeBtn.scrollIntoView({ block: "nearest", inline: "center", behavior: "auto" });
+        } catch (e) {}
+        ul.style.width = activeBtn.offsetWidth + "px";
+        ul.style.left = activeBtn.offsetLeft + "px";
       }
     });
 

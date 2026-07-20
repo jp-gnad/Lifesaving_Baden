@@ -21,6 +21,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 (function () {
   const $ = (s, r = document) => r.querySelector(s);
+  const ATH_TOP10_SCRIPT_URL = "./js/athleten/ath_top10.js?v=20260621-1";
+  let top10ScriptPromise = null;
 
   const h = (tag, props = {}, ...children) => {
     const el = document.createElement(tag);
@@ -126,7 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderApp() {
     const mount = $("#athleten-container");
-    if (!mount) return;
+    if (!mount) return null;
 
     mount.innerHTML = "";
 
@@ -144,6 +146,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const top10Mount = h("div", { id: "ath-top10", class: "ath-top10" });
     ui.appendChild(top10Mount);
+    mount.appendChild(ui);
+
+    return top10Mount;
+  }
+
+  function loadTop10Script() {
+    if (window.AthTop10 && typeof window.AthTop10.mount === "function") {
+      return Promise.resolve();
+    }
+
+    if (!top10ScriptPromise) {
+      top10ScriptPromise = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = ATH_TOP10_SCRIPT_URL;
+        script.async = true;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error("ath_top10.js konnte nicht geladen werden."));
+        document.head.appendChild(script);
+      });
+    }
+
+    return top10ScriptPromise;
+  }
+
+  async function mountTop10(top10Mount) {
+    if (!top10Mount) return;
+    top10Mount.innerHTML = '<div class="ath10-status ath10-status--loading">Top-10 wird geladen ...</div>';
+    await loadTop10Script();
 
     const openByName = (name) =>
       (typeof window.AthSearch?.openByName === "function" && window.AthSearch.openByName(name)) ||
@@ -151,13 +181,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (window.AthTop10 && typeof window.AthTop10.mount === "function") {
       window.AthTop10.mount(top10Mount, { openByName });
+      return;
     }
 
-    mount.appendChild(ui);
+    throw new Error("AthTop10 missing");
+  }
+
+  function scheduleTop10(top10Mount) {
+    if (!top10Mount) return;
+
+    let started = false;
+    const start = () => {
+      if (started) return;
+      started = true;
+      mountTop10(top10Mount).catch((error) => {
+        console.error(error);
+        top10Mount.innerHTML = '<div class="ath10-status ath10-status--error">Top-10 konnten nicht geladen werden.</div>';
+      });
+    };
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (typeof window.requestIdleCallback === "function") {
+          window.requestIdleCallback(start, { timeout: 1500 });
+        } else {
+          window.setTimeout(start, 250);
+        }
+      });
+    });
   }
 
   document.addEventListener("DOMContentLoaded", async () => {
-    renderApp();
+    const top10Mount = renderApp();
     renderOverviewChipsSkeleton();
     await new Promise(requestAnimationFrame);
 
@@ -187,5 +242,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.AthSearch.showError("Fehler beim Laden der Daten.");
       }
     }
+
+    scheduleTop10(top10Mount);
   });
 })();

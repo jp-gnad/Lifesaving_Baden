@@ -620,14 +620,27 @@ main#content {
 .ath-tabs {
   position: relative;
   border-bottom: 1px solid #e5e7eb;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+  scrollbar-width: none;
+}
+
+.ath-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .ath-tabs-list {
+  position: relative;
   display: flex;
   gap: 0.2rem;
+  min-width: max-content;
 }
 
 .ath-tab {
+  flex: 0 0 auto;
   position: relative;
   border: none;
   background: transparent;
@@ -638,6 +651,7 @@ main#content {
   color: #6b7280;
   cursor: pointer;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .ath-tab.active {
@@ -2150,8 +2164,17 @@ main#content {
 .meets-list {
   margin-top: 0.35rem;
   background: #f9fafb;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   border-top: 2px solid #e5e7eb;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+  scrollbar-width: none;
+}
+
+.meets-list::-webkit-scrollbar {
+  display: none;
 }
 
 .meet-row:last-of-type {
@@ -2275,6 +2298,13 @@ main#content {
   padding-bottom: 6px;
   padding-left: 5px;
   min-height: 4rem;
+  min-width: 48rem;
+  box-sizing: border-box;
+}
+
+.meet-details {
+  min-width: 48rem;
+  box-sizing: border-box;
 }
 
 .meet-row > * {
@@ -2421,6 +2451,11 @@ main#content {
       minmax(8.5rem, 1fr)
       3.5rem
       2.5rem;
+    min-width: 38rem;
+  }
+
+  .meet-details {
+    min-width: 38rem;
   }
 }
 
@@ -2598,6 +2633,11 @@ main#content {
       0rem
       3.25rem
       2rem;
+    min-width: 24rem;
+  }
+
+  .meet-details {
+    min-width: 24rem;
   }
 
   .m-og {
