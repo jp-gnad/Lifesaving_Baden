@@ -65,6 +65,7 @@ Die folgende Spaltenbelegung ist aus dem aktuellen Code abgeleitet, vor allem au
 - Wettkampf- und Leistungsdaten
 - LSC-Historie
 - neu berechneter LSC inklusive Herleitung
+- Landesplatzierungen der Bestzeiten nach aktuellem LV, Geschlecht, Bahnlänge und Disziplin; pro Person zählt nur die beste Nicht-OMS-Zeit. Eine eigene Bestzeit aus einem mit `OMS-` beginnenden Wettkampf wird in diese OMS-freie Vergleichsliste einsortiert, erhält auf Platz 1 bis 3 jedoch keine Medaille. Die Anzeige ist auf LV mit mindestens 500 eindeutigen Athleten begrenzt, für `100m Kombi` gelten ausschließlich Leistungen ab dem 01.01.2007.
 
 ### Clubsbereich
 

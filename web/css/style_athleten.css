@@ -736,7 +736,7 @@ main#content {
 
 .ath-bests-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 0.9rem;
 }
 
@@ -767,8 +767,8 @@ main#content {
   inset: 0;
   border-radius: inherit;
   padding: 0.85rem 0.95rem;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: #fcfcfd;
+  border: 1px solid #edf0f3;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -782,6 +782,75 @@ main#content {
 .tile-front {
   z-index: 2;
   transform: rotateY(0deg);
+}
+
+.best-tile.has-lv-rank .tile-front {
+  display: grid;
+  grid-template-columns: 2.8rem minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.best-tile.has-lv-rank .tile-inner {
+  min-height: 92px;
+}
+
+.best-tile.has-lv-rank .best-label {
+  min-height: 1.68rem;
+  white-space: normal !important;
+  line-height: 1.05;
+}
+
+.best-tile.has-lv-rank .best-meet {
+  margin-top: -0.15rem;
+}
+
+.best-lv-rank {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  min-width: 0;
+  padding: 0.55rem 0.35rem;
+  background: #f2f5f8;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.best-lv-rank.is-gold {
+  background: linear-gradient(160deg, rgba(252, 210, 116, 0.4), rgba(252, 209, 116, 0.08));
+}
+
+.best-lv-rank.is-silver {
+  background: linear-gradient(160deg, rgba(221, 222, 222, 0.46), rgba(221, 222, 222, 0.11));
+}
+
+.best-lv-rank.is-bronze {
+  background: linear-gradient(180deg, rgba(199, 183, 142, 0.4), rgba(199, 183, 142, 0.09));
+}
+
+.best-lv-medal {
+  display: block;
+  width: 1.55rem;
+  height: 1.55rem;
+  object-fit: contain;
+}
+
+.best-lv-main {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  padding: 0.55rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.15rem;
 }
 
 .tile-back {
@@ -812,6 +881,9 @@ main#content {
   font-size: 0.8rem;
   opacity: 0.3;
   margin-top: -6px;
+  min-width: 0;
+  white-space: nowrap;
+  line-height: 1.05;
 }
 
 .tile-stats {
@@ -2472,7 +2544,7 @@ main#content {
   }
 
   .ath-bests-grid {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
   }
 
   .pie-wrap {

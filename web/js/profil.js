@@ -337,6 +337,7 @@ document.addEventListener("DOMContentLoaded", () => {
     for (const [id, min] of minimalById.entries()) {
       const list = meetsById.get(id) || [];
       let lastOG = String(min.ortsgruppe || "").trim();
+      let lastLV = String(min.LV_state || "").trim().toUpperCase();
 
       if (list.length) {
         const sorted = list.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -344,12 +345,13 @@ document.addEventListener("DOMContentLoaded", () => {
           const og = String(m?.Ortsgruppe ?? "").trim();
           if (og) {
             lastOG = og;
+            lastLV = String(m?.LV_state ?? "").trim().toUpperCase();
             break;
           }
         }
       }
 
-      minimalById.set(id, { ...min, ortsgruppe: lastOG });
+      minimalById.set(id, { ...min, ortsgruppe: lastOG, LV_state: lastLV });
     }
 
     AllMeetsByAthleteId = meetsById;
