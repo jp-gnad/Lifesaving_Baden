@@ -18,8 +18,85 @@
     parseTimeToSec,
     formatSeconds,
     fmtDateShort,
+    getBaBestTimeDistributionValues,
     getAthletesPool,
   } = internals;
+
+  const BA_DISTRIBUTION_LV = "BA";
+  const BA_DISTRIBUTION_BIN_COUNT = 100;
+  const BA_DISTRIBUTION_COMBINATION_CUTOFF = "2007-01-01";
+  let distributionPatternCounter = 0;
+
+  function normalizeDistributionGender(raw) {
+    return String(raw || "").trim().toLowerCase().startsWith("w") ? "w" : "m";
+  }
+
+  function distributionLaneKey(lanes) {
+    if (lanes.has("25") && lanes.has("50")) return "both";
+    return lanes.has("25") ? "25" : "50";
+  }
+
+  function getOwnDistributionBest(athlete, lanes, discipline) {
+    if (!athlete || !discipline) return NaN;
+    let best = Infinity;
+
+    for (const meet of athlete.meets || []) {
+      if (!meet) continue;
+      const runs = Array.isArray(meet._runs) && meet._runs.length ? meet._runs : [meet];
+
+      for (const run of runs) {
+        const lane = String(run?.pool || meet.pool || "").trim();
+        if (!lanes.has(lane)) continue;
+
+        const dateISO = String(run?.date || meet.date || "").slice(0, 10);
+        if (
+          discipline.key === "100_kombi" &&
+          (!dateISO || dateISO < BA_DISTRIBUTION_COMBINATION_CUTOFF)
+        ) {
+          continue;
+        }
+
+        const seconds = parseTimeToSec(
+          run?.[discipline.meetZeit] ?? meet?.[discipline.meetZeit]
+        );
+        if (Number.isFinite(seconds) && seconds < best) best = seconds;
+      }
+    }
+
+    return Number.isFinite(best) ? best : NaN;
+  }
+
+  function buildDistributionHistogram(values, ownSeconds, comparisonSeconds) {
+    if (!values.length) return null;
+
+    const fastest = values[0];
+    const percentileIndex = Math.max(0, Math.ceil(values.length * 0.95) - 1);
+    const percentile95 = values[Math.min(percentileIndex, values.length - 1)];
+    const rawWidth = Math.max(0, percentile95 - fastest) / BA_DISTRIBUTION_BIN_COUNT;
+    const binWidth = Math.max(0.01, Math.round((rawWidth + Number.EPSILON) * 100) / 100);
+    const counts = Array(BA_DISTRIBUTION_BIN_COUNT).fill(0);
+
+    const indexForSeconds = (seconds) => {
+      if (!Number.isFinite(seconds) || seconds <= fastest) return 0;
+      const index = Math.floor(((seconds - fastest) + 1e-9) / binWidth);
+      return Math.max(0, Math.min(BA_DISTRIBUTION_BIN_COUNT - 1, index));
+    };
+
+    values.forEach((seconds) => { counts[indexForSeconds(seconds)] += 1; });
+
+    return {
+      counts,
+      fastest,
+      slowest: values[values.length - 1],
+      percentile95,
+      binWidth,
+      total: values.length,
+      ownIndex: Number.isFinite(ownSeconds) ? indexForSeconds(ownSeconds) : null,
+      ownSeconds,
+      comparisonIndex: Number.isFinite(comparisonSeconds) ? indexForSeconds(comparisonSeconds) : null,
+      comparisonSeconds
+    };
+  }
   function renderDisciplinePieCard(a) {
     const counts = countStartsPerDisciplineAll(a);
 
@@ -871,7 +948,7 @@
     return card;
   }
 
-  function renderTimeChart(a) {
+  function renderTimeChart(a, comparisonState) {
     const sLocal = (tag, attrs = {}, ...children) => {
       const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
       Object.entries(attrs || {}).forEach(([k, v]) => v != null && el.setAttribute(k, String(v)));
@@ -1050,6 +1127,7 @@
       const merged = mergeDuplicateMeets(full.meets);
 
       cmpAth = { ...full, meets: merged };
+      comparisonState?.set?.(cmpAth);
       recomputeSeries();
       paint();
 
@@ -1079,6 +1157,7 @@
     document.addEventListener("click", (e) => { if (!cmpWrap.contains(e.target)) hideCmpSuggest(); });
     clearBtn.addEventListener("click", () => {
       cmpAth = null; cmpPts = null;
+      comparisonState?.set?.(null);
       clearBtn.classList.add("hidden");
       legend.querySelector(".time-key--cmp")?.remove();
       recomputeSeries();
@@ -1298,9 +1377,415 @@
   }
 
 
+  function renderBestTimeDistributionChart(a, comparisonState) {
+    if (String(a?.LV_state || "").trim().toUpperCase() !== BA_DISTRIBUTION_LV) return null;
+
+    const sLocal = (tag, attrs = {}, ...children) => {
+      const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      Object.entries(attrs || {}).forEach(([key, value]) => {
+        if (value != null) node.setAttribute(key, String(value));
+      });
+      children.flat().forEach((child) => {
+        if (child != null) node.appendChild(
+          typeof child === "string" ? document.createTextNode(child) : child
+        );
+      });
+      return node;
+    };
+
+    const el = (tag, attrs = {}, ...children) => {
+      const node = document.createElement(tag);
+      Object.entries(attrs || {}).forEach(([key, value]) => {
+        if (key === "class") node.className = value;
+        else if (key.startsWith("on") && typeof value === "function") {
+          node.addEventListener(key.slice(2), value);
+        } else if (value !== false && value != null) {
+          node.setAttribute(key, value === true ? "" : value);
+        }
+      });
+      children.flat().forEach((child) => {
+        if (child != null) node.appendChild(
+          typeof child === "string" ? document.createTextNode(child) : child
+        );
+      });
+      return node;
+    };
+
+    const gender = normalizeDistributionGender(a?.geschlecht);
+    const lanes = new Set(["50"]);
+    let comparisonAthlete = comparisonState?.get?.() || null;
+    const overlapPatternId = `distribution-overlap-${++distributionPatternCounter}`;
+    const firstWithOwnTime = DISCIPLINES.find((discipline) =>
+      Number.isFinite(getOwnDistributionBest(a, lanes, discipline))
+    );
+    let disciplineKey = (firstWithOwnTime || DISCIPLINES[0]).key;
+    let histogram = null;
+    let activeIndex = null;
+    let barNodes = [];
+    let plotLayout = null;
+
+    const card = el("div", { class: "ath-time-card ath-distribution-card" });
+    const btn50 = el("button", {
+      class: "seg-btn active",
+      type: "button",
+      "aria-pressed": "true",
+      onclick: () => selectLane("50")
+    }, "50m");
+    const btn25 = el("button", {
+      class: "seg-btn",
+      type: "button",
+      "aria-pressed": "false",
+      onclick: () => selectLane("25")
+    }, "25m");
+    const laneSeg = el("div", {
+      class: "seg time-lanes",
+      role: "group",
+      "aria-label": "Bahnlänge der badischen Zeitverteilung"
+    }, btn50, btn25);
+
+    const select = el("select", {
+      class: "time-disc",
+      "aria-label": "Disziplin der badischen Zeitverteilung"
+    });
+    DISCIPLINES.forEach((discipline) => {
+      select.appendChild(el("option", {
+        value: discipline.key,
+        selected: discipline.key === disciplineKey
+      }, discipline.label));
+    });
+
+    const head = el("div", { class: "time-head" },
+      el("h4", {}, "Badische Zeitverteilung"),
+      select,
+      laneSeg
+    );
+    const meta = el("div", { class: "distribution-meta", "aria-live": "polite" });
+    const viewport = el("div", { class: "time-viewport distribution-viewport" });
+    const svg = sLocal("svg", {
+      class: "time-svg distribution-svg",
+      role: "img",
+      "aria-label": "Verteilung der badischen Bestzeiten"
+    });
+    const description = sLocal("desc", {},
+      "Balkendiagramm mit 100 Zeitbereichen. Die Höhe zeigt die Anzahl der Personen. " +
+      "Die eigene Bestzeit ist rot und die Bestzeit der Vergleichsperson blau markiert. " +
+      "Treffen beide denselben Zeitbereich, wird der Balken rot-blau gestreift."
+    );
+    svg.appendChild(description);
+    viewport.appendChild(svg);
+
+    const tooltip = el("div", {
+      class: "time-tooltip distribution-tooltip",
+      "aria-hidden": "true"
+    },
+      el("div", { class: "tt-l1" }),
+      el("div", { class: "tt-l2" }),
+      el("div", { class: "tt-l3" }),
+      el("div", { class: "tt-l4" }),
+      el("div", { class: "tt-l5" })
+    );
+
+    const legendBase = el("span", { class: "time-key" },
+      el("span", { class: "time-key-dot distribution-key-dot" }),
+      el("span", {}, "BA-Bestzeiten")
+    );
+    const legendOwn = el("span", { class: "time-key" },
+      el("span", { class: "time-key-dot distribution-key-dot is-own" }),
+      el("span", {}, "Eigene Bestzeit")
+    );
+    const legendComparisonLabel = el("span", {}, "Vergleichsperson");
+    const legendComparison = el("span", { class: "time-key", hidden: true },
+      el("span", { class: "time-key-dot distribution-key-dot is-compare" }),
+      legendComparisonLabel
+    );
+    const legend = el("div", { class: "time-legend distribution-legend" },
+      legendBase,
+      legendOwn,
+      legendComparison
+    );
+
+    card.append(head, meta, viewport, tooltip, legend);
+
+    function setButtonState(button, on) {
+      button.classList.toggle("active", on);
+      button.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+
+    function selectLane(code) {
+      if (lanes.has(code)) return;
+      lanes.clear();
+      lanes.add(code);
+      setButtonState(btn50, code === "50");
+      setButtonState(btn25, code === "25");
+      recompute();
+      paint();
+    }
+
+    function recompute() {
+      const discipline = DISCIPLINES.find((item) => item.key === disciplineKey) || DISCIPLINES[0];
+      const values = getBaBestTimeDistributionValues(gender, lanes, discipline.key);
+      const ownSeconds = getOwnDistributionBest(a, lanes, discipline);
+      const comparisonSeconds = getOwnDistributionBest(comparisonAthlete, lanes, discipline);
+      histogram = buildDistributionHistogram(values, ownSeconds, comparisonSeconds);
+      activeIndex = null;
+
+      if (!histogram) {
+        meta.textContent = `Keine BA-Vergleichsdaten für ${discipline.label}.`;
+        legendOwn.hidden = true;
+        legendComparison.hidden = true;
+        delete card.dataset.total;
+        return;
+      }
+
+      meta.textContent = `${histogram.total.toLocaleString("de-DE")} Bestzeiten`;
+      legendOwn.hidden = !Number.isFinite(ownSeconds);
+      legendComparison.hidden = !Number.isFinite(comparisonSeconds);
+      legendComparisonLabel.textContent = comparisonAthlete?.name || "Vergleichsperson";
+      card.dataset.total = String(histogram.total);
+      card.dataset.fastest = histogram.fastest.toFixed(2);
+      card.dataset.percentile95 = histogram.percentile95.toFixed(2);
+      card.dataset.binWidth = histogram.binWidth.toFixed(2);
+      card.dataset.ownTime = Number.isFinite(ownSeconds) ? ownSeconds.toFixed(2) : "";
+      card.dataset.ownBin = histogram.ownIndex == null ? "" : String(histogram.ownIndex);
+      card.dataset.comparisonTime = Number.isFinite(comparisonSeconds) ? comparisonSeconds.toFixed(2) : "";
+      card.dataset.comparisonBin = histogram.comparisonIndex == null ? "" : String(histogram.comparisonIndex);
+      card.dataset.comparisonAthlete = comparisonAthlete?.id || "";
+      card.dataset.lanes = distributionLaneKey(lanes);
+      card.dataset.discipline = discipline.key;
+    }
+
+    function rangeLabel(index) {
+      if (!histogram) return "";
+      const lower = histogram.fastest + (index * histogram.binWidth);
+      if (index === BA_DISTRIBUTION_BIN_COUNT - 1) {
+        return `${formatSeconds(lower)} bis ${formatSeconds(Math.max(lower, histogram.slowest))}`;
+      }
+      const upper = lower + histogram.binWidth;
+      return `${formatSeconds(lower)} bis ${formatSeconds(upper)}`;
+    }
+
+    function topPercentage(index) {
+      if (!histogram?.total) return 0;
+      const cumulative = histogram.counts
+        .slice(0, index + 1)
+        .reduce((sum, count) => sum + count, 0);
+      return Math.min(100, Math.max(0.1, (cumulative / histogram.total) * 100));
+    }
+
+    function niceYAxis(maxValue) {
+      const rawStep = Math.max(1, maxValue / 5);
+      const magnitude = 10 ** Math.floor(Math.log10(rawStep));
+      const normalized = rawStep / magnitude;
+      const factor = normalized <= 1 ? 1 : (normalized <= 2 ? 2 : (normalized <= 5 ? 5 : 10));
+      const step = Math.max(1, factor * magnitude);
+      return { step, max: Math.max(step, Math.ceil(maxValue / step) * step) };
+    }
+
+    function hideTooltip() {
+      activeIndex = null;
+      barNodes.forEach((bar) => bar.removeAttribute("data-active"));
+      tooltip.style.opacity = "0";
+      tooltip.style.transform = "translate(-9999px,-9999px)";
+      tooltip.setAttribute("aria-hidden", "true");
+    }
+
+    function showTooltip(index) {
+      if (!histogram || !barNodes[index]) return;
+      activeIndex = index;
+      barNodes.forEach((bar, barIndex) => {
+        if (barIndex === index) bar.setAttribute("data-active", "1");
+        else bar.removeAttribute("data-active");
+      });
+
+      const count = histogram.counts[index];
+      const topPercent = topPercentage(index);
+      tooltip.querySelector(".tt-l1").textContent = rangeLabel(index);
+      tooltip.querySelector(".tt-l2").textContent =
+        `${count.toLocaleString("de-DE")} ${count === 1 ? "Person" : "Personen"}`;
+      tooltip.querySelector(".tt-l3").textContent =
+        `Top ${topPercent.toLocaleString("de-DE", { maximumFractionDigits: 1 })} % in Baden`;
+      tooltip.querySelector(".tt-l4").textContent = index === histogram.ownIndex &&
+        Number.isFinite(histogram.ownSeconds)
+        ? `Eigene Bestzeit: ${formatSeconds(histogram.ownSeconds)}`
+        : "";
+      tooltip.querySelector(".tt-l4").hidden = !tooltip.querySelector(".tt-l4").textContent;
+      tooltip.querySelector(".tt-l5").textContent = index === histogram.comparisonIndex &&
+        Number.isFinite(histogram.comparisonSeconds)
+        ? `${comparisonAthlete?.name || "Vergleich"}: ${formatSeconds(histogram.comparisonSeconds)}`
+        : "";
+      tooltip.querySelector(".tt-l5").hidden = !tooltip.querySelector(".tt-l5").textContent;
+      tooltip.style.opacity = "1";
+      tooltip.style.transform = "translate(0,0)";
+      tooltip.setAttribute("aria-hidden", "false");
+
+      const barRect = barNodes[index].getBoundingClientRect();
+      const cardRect = card.getBoundingClientRect();
+      tooltip.style.left = "0px";
+      tooltip.style.top = "0px";
+      const tooltipRect = tooltip.getBoundingClientRect();
+      let left = (barRect.left - cardRect.left) + (barRect.width / 2) - (tooltipRect.width / 2);
+      let top = (barRect.top - cardRect.top) - tooltipRect.height - 9;
+      left = Math.max(8, Math.min(left, card.clientWidth - tooltipRect.width - 8));
+      if (top < 8) top = (barRect.bottom - cardRect.top) + 9;
+      tooltip.style.left = `${Math.round(left)}px`;
+      tooltip.style.top = `${Math.round(top)}px`;
+    }
+
+    function paint() {
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      svg.appendChild(description);
+      hideTooltip();
+      barNodes = [];
+
+      const rect = viewport.getBoundingClientRect();
+      const width = Math.max(320, Math.floor(rect.width));
+      const height = window.innerWidth <= 480 ? 340 : (window.innerWidth <= 720 ? 370 : 420);
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      svg.setAttribute("width", width);
+      svg.setAttribute("height", height);
+
+      if (!histogram) {
+        svg.appendChild(sLocal("text", {
+          x: width / 2,
+          y: height / 2,
+          class: "distribution-empty-label",
+          "text-anchor": "middle"
+        }, "Keine Vergleichsdaten vorhanden."));
+        return;
+      }
+
+      const margin = { left: 42, right: 8, top: 22, bottom: 18 };
+      const chartWidth = width - margin.left - margin.right;
+      const chartHeight = height - margin.top - margin.bottom;
+      const maxCount = Math.max(1, ...histogram.counts);
+      const yAxis = niceYAxis(maxCount);
+      const y = (value) => margin.top + chartHeight - ((value / yAxis.max) * chartHeight);
+      const stepWidth = chartWidth / BA_DISTRIBUTION_BIN_COUNT;
+      const gap = Math.min(1.8, stepWidth * 0.24);
+      const barWidth = Math.max(0.8, stepWidth - gap);
+      plotLayout = { left: margin.left, width: chartWidth, stepWidth };
+
+      const defs = sLocal("defs");
+      const overlapPattern = sLocal("pattern", {
+        id: overlapPatternId,
+        width: 8,
+        height: 8,
+        patternUnits: "userSpaceOnUse",
+        patternTransform: "rotate(45)"
+      },
+        sLocal("rect", { width: 4, height: 8, fill: "rgb(227, 6, 19)" }),
+        sLocal("rect", { x: 4, width: 4, height: 8, fill: "rgb(5, 105, 180)" })
+      );
+      defs.appendChild(overlapPattern);
+      svg.appendChild(defs);
+
+      const grid = sLocal("g", { class: "distribution-grid" });
+      for (let value = 0; value <= yAxis.max + 1e-9; value += yAxis.step) {
+        const lineY = y(value);
+        grid.appendChild(sLocal("line", {
+          x1: margin.left,
+          y1: lineY,
+          x2: width - margin.right,
+          y2: lineY,
+          class: value === 0 ? "hline0" : "hline"
+        }));
+        grid.appendChild(sLocal("text", {
+          x: margin.left - 7,
+          y: lineY,
+          "text-anchor": "end",
+          "dominant-baseline": "middle"
+        }, String(value)));
+      }
+      grid.appendChild(sLocal("text", {
+        x: margin.left,
+        y: margin.top - 7,
+        class: "distribution-axis-title",
+        "text-anchor": "start"
+      }, "Personen"));
+      svg.appendChild(grid);
+
+      const bars = sLocal("g", { class: "distribution-bars" });
+      histogram.counts.forEach((count, index) => {
+        const barHeight = (count / yAxis.max) * chartHeight;
+        const x = margin.left + (index * stepWidth) + (gap / 2);
+        const isOwn = index === histogram.ownIndex;
+        const isComparison = index === histogram.comparisonIndex;
+        const isOverlap = isOwn && isComparison;
+        const visualBarHeight = Math.max(isOwn || isComparison ? 2 : 0, barHeight);
+        const barY = margin.top + chartHeight - visualBarHeight;
+        const label = `${rangeLabel(index)}: ${count} ${count === 1 ? "Person" : "Personen"}. ` +
+          `Top ${topPercentage(index).toLocaleString("de-DE", { maximumFractionDigits: 1 })} % in Baden` +
+          (isOwn && Number.isFinite(histogram.ownSeconds)
+            ? `. Eigene Bestzeit ${formatSeconds(histogram.ownSeconds)}`
+            : "") +
+          (isComparison && Number.isFinite(histogram.comparisonSeconds)
+            ? `. ${comparisonAthlete?.name || "Vergleich"} ${formatSeconds(histogram.comparisonSeconds)}`
+            : "");
+        const bar = sLocal("rect", {
+          x,
+          y: barY,
+          width: barWidth,
+          height: visualBarHeight,
+          rx: Math.min(1.5, barWidth / 2),
+          class: `distribution-bar${isOwn ? " is-own" : ""}${isComparison ? " is-compare" : ""}${isOverlap ? " is-overlap" : ""}`,
+          style: isOverlap ? `fill:url(#${overlapPatternId})` : null,
+          "data-index": index,
+          role: "graphics-symbol",
+          "aria-label": label,
+          tabindex: count > 0 || isOwn || isComparison ? "0" : null
+        });
+        bar.addEventListener("focus", () => showTooltip(index));
+        bar.addEventListener("blur", hideTooltip);
+        bars.appendChild(bar);
+        barNodes.push(bar);
+      });
+      svg.appendChild(bars);
+    }
+
+    select.addEventListener("change", () => {
+      disciplineKey = select.value;
+      recompute();
+      paint();
+    });
+
+    svg.addEventListener("pointermove", (event) => {
+      if (!histogram || !plotLayout || !svg.getScreenCTM()) return;
+      const point = svg.createSVGPoint();
+      point.x = event.clientX;
+      point.y = event.clientY;
+      const local = point.matrixTransform(svg.getScreenCTM().inverse());
+      if (local.x < plotLayout.left || local.x > plotLayout.left + plotLayout.width) {
+        hideTooltip();
+        return;
+      }
+      const index = Math.max(0, Math.min(
+        BA_DISTRIBUTION_BIN_COUNT - 1,
+        Math.floor((local.x - plotLayout.left) / plotLayout.stepWidth)
+      ));
+      if (activeIndex !== index) showTooltip(index);
+    });
+    svg.addEventListener("pointerleave", hideTooltip);
+    svg.addEventListener("pointerdown", (event) => {
+      event.stopPropagation();
+    });
+
+    const resizeObserver = new ResizeObserver(paint);
+    resizeObserver.observe(viewport);
+    comparisonState?.subscribe?.((nextAthlete) => {
+      comparisonAthlete = nextAthlete || null;
+      recompute();
+      paint();
+    });
+    recompute();
+    requestAnimationFrame(paint);
+    return card;
+  }
+
+
   ProfileTabsCharts.renderDisciplinePieCard = renderDisciplinePieCard;
   ProfileTabsCharts.renderLSCChart = renderLSCChart;
   ProfileTabsCharts.renderTimeChart = renderTimeChart;
+  ProfileTabsCharts.renderBestTimeDistributionChart = renderBestTimeDistributionChart;
   ProfileTabsCharts.deriveFromMeets = deriveFromMeets;
   global.ProfileTabsCharts = ProfileTabsCharts;
 })(window);

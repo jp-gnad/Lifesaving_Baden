@@ -1966,6 +1966,131 @@ main#content {
   margin-bottom: 10px;
 }
 
+.ath-distribution-card {
+  margin-top: 2.75rem;
+  padding-top: 0.2rem;
+}
+
+.distribution-meta {
+  min-height: 1.15rem;
+  margin-top: 0.45rem;
+  color: #64748b;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.distribution-viewport {
+  margin-top: 0.15rem;
+}
+
+.distribution-svg {
+  overflow: visible;
+  touch-action: pan-y;
+}
+
+.distribution-grid .hline0 {
+  stroke: #d8dde3;
+  stroke-width: 1.5;
+}
+
+.distribution-grid .hline {
+  stroke: #f0f2f5;
+  stroke-width: 1;
+}
+
+.distribution-grid text {
+  fill: #64748b;
+  font-size: 10px;
+}
+
+.distribution-grid .distribution-axis-title {
+  fill: #475569;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.distribution-bar {
+  fill: #dbe1e8;
+  cursor: crosshair;
+  transition: fill 0.12s ease, opacity 0.12s ease, filter 0.12s ease;
+  vector-effect: non-scaling-stroke;
+}
+
+.distribution-bar:hover,
+.distribution-bar[data-active="1"] {
+  fill: #9aa8b8;
+}
+
+.distribution-bar.is-own {
+  fill: rgb(227, 6, 19);
+  filter: none;
+}
+
+.distribution-bar.is-own:hover,
+.distribution-bar.is-own[data-active="1"] {
+  fill: #b91c1c;
+}
+
+.distribution-bar.is-compare {
+  fill: rgb(5, 105, 180);
+}
+
+.distribution-bar.is-compare:hover,
+.distribution-bar.is-compare[data-active="1"] {
+  fill: #075985;
+}
+
+.distribution-bar.is-overlap:hover,
+.distribution-bar.is-overlap[data-active="1"] {
+  filter: brightness(0.84);
+}
+
+.distribution-bar:focus,
+.distribution-bar:focus-visible {
+  outline: none;
+  stroke: #334155;
+  stroke-width: 1.5;
+}
+
+.distribution-tooltip .tt-l3 {
+  margin-top: 0.14rem;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.distribution-tooltip .tt-l4 {
+  margin-top: 0.14rem;
+  color: #fecaca;
+  font-weight: 600;
+}
+
+.distribution-tooltip .tt-l5 {
+  margin-top: 0.14rem;
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+.distribution-legend {
+  margin-top: -0.2rem;
+}
+
+.distribution-key-dot {
+  background: #dbe1e8;
+}
+
+.distribution-key-dot.is-own {
+  background: rgb(227, 6, 19);
+}
+
+.distribution-key-dot.is-compare {
+  background: rgb(5, 105, 180);
+}
+
+.distribution-empty-label {
+  fill: #64748b;
+  font-size: 12px;
+}
+
 .time-key {
   display: inline-flex;
   align-items: center;

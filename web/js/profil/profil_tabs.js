@@ -599,6 +599,15 @@
     return `${lvCode}|${gender}|${lane}|${disciplineKey}`;
   }
 
+  function baDistributionBucketKey(gender, laneKey, disciplineKey) {
+    return `${gender}|${laneKey}|${disciplineKey}`;
+  }
+
+  function baDistributionLaneKey(lanes) {
+    if (lanes.has("25") && lanes.has("50")) return "both";
+    return lanes.has("25") ? "25" : "50";
+  }
+
   function buildBestTimeLvRankIndex() {
     const athleteCountByLv = new Map();
     const seenAthletes = new Set();
@@ -618,29 +627,34 @@
     );
 
     const entriesByBucket = new Map();
+    const baDistributionBuckets = new Map();
 
     for (const athlete of AthletesPool) {
       const athleteId = String(athlete?.id || "").trim();
       const lvCode = String(athlete?.LV_state ?? athlete?.lv_state ?? "").trim().toUpperCase();
-      if (!athleteId || !eligibleLvCodes.has(lvCode)) continue;
+      if (!athleteId) continue;
 
       const gender = normalizeRankingGender(athlete?.geschlecht);
       const meets = AllMeetsByAthleteId.get(athleteId) || athlete?.meets || [];
       const personalBests = new Map();
+      const baPersonalBests = new Map();
+      const rankingEligible = eligibleLvCodes.has(lvCode);
 
       for (const meet of meets) {
         if (!meet) continue;
-        const lane = meet.pool === "25" ? "25" : (meet.pool === "50" ? "50" : "");
-        if (!lane) continue;
-
         const runs = Array.isArray(meet._runs) && meet._runs.length ? meet._runs : [meet];
         for (const run of runs) {
+          const laneRaw = String(run?.pool || meet.pool || "").trim();
+          const lane = laneRaw === "25" || laneRaw === "50" ? laneRaw : "";
+          if (!lane) continue;
+
           const meetName = String(
             run?.meet_name || run?.meet || meet.meet_name || meet.meet || ""
           ).trim();
           if (isOmsMeetName(meetName)) continue;
 
           const dateISO = String(run?.date || meet.date || "").slice(0, 10);
+          const runLvCode = String(run?.LV_state ?? meet.LV_state ?? "").trim().toUpperCase();
 
           for (const discipline of DISCIPLINES) {
             if (
@@ -654,17 +668,46 @@
             if (!Number.isFinite(seconds)) continue;
 
             const bestKey = `${lane}|${discipline.key}`;
-            const previous = personalBests.get(bestKey);
-            if (previous == null || seconds < previous) personalBests.set(bestKey, seconds);
+            if (rankingEligible) {
+              const previous = personalBests.get(bestKey);
+              if (previous == null || seconds < previous) personalBests.set(bestKey, seconds);
+            }
+            if (runLvCode === "BA") {
+              const previousBa = baPersonalBests.get(bestKey);
+              if (previousBa == null || seconds < previousBa) {
+                baPersonalBests.set(bestKey, seconds);
+              }
+            }
           }
         }
       }
 
-      for (const [bestKey, seconds] of personalBests.entries()) {
-        const [lane, disciplineKey] = bestKey.split("|");
-        const bucketKey = lvRankBucketKey(lvCode, gender, lane, disciplineKey);
-        if (!entriesByBucket.has(bucketKey)) entriesByBucket.set(bucketKey, []);
-        entriesByBucket.get(bucketKey).push({ athleteId, seconds });
+      if (rankingEligible) {
+        for (const [bestKey, seconds] of personalBests.entries()) {
+          const [lane, disciplineKey] = bestKey.split("|");
+          const bucketKey = lvRankBucketKey(lvCode, gender, lane, disciplineKey);
+          if (!entriesByBucket.has(bucketKey)) entriesByBucket.set(bucketKey, []);
+          entriesByBucket.get(bucketKey).push({ athleteId, seconds });
+        }
+      }
+
+      for (const discipline of DISCIPLINES) {
+        const best25 = baPersonalBests.get(`25|${discipline.key}`);
+        const best50 = baPersonalBests.get(`50|${discipline.key}`);
+        const bestBoth = Number.isFinite(best25) && Number.isFinite(best50)
+          ? Math.min(best25, best50)
+          : (Number.isFinite(best25) ? best25 : best50);
+
+        const addBaValue = (laneKey, seconds) => {
+          if (!Number.isFinite(seconds)) return;
+          const key = baDistributionBucketKey(gender, laneKey, discipline.key);
+          if (!baDistributionBuckets.has(key)) baDistributionBuckets.set(key, []);
+          baDistributionBuckets.get(key).push(seconds);
+        };
+
+        addBaValue("25", best25);
+        addBaValue("50", best50);
+        addBaValue("both", bestBoth);
       }
     }
 
@@ -693,12 +736,25 @@
       });
     }
 
+    for (const values of baDistributionBuckets.values()) {
+      values.sort((left, right) => left - right);
+    }
+
     return {
       athleteCountByLv,
       eligibleLvCodes,
       rankByAthleteKey,
-      sortedSecondsByBucket
+      sortedSecondsByBucket,
+      baDistributionBuckets
     };
+  }
+
+  function getBaBestTimeDistributionValues(gender, lanes, disciplineKey) {
+    if (!BestTimeLvRankCache) BestTimeLvRankCache = buildBestTimeLvRankIndex();
+    const normalizedGender = normalizeRankingGender(gender);
+    const laneKey = baDistributionLaneKey(lanes);
+    const bucketKey = baDistributionBucketKey(normalizedGender, laneKey, disciplineKey);
+    return BestTimeLvRankCache.baDistributionBuckets.get(bucketKey) || [];
   }
 
   function getBestTimeLvRank(
@@ -1142,6 +1198,7 @@
     parseTimeToSec,
     formatSeconds,
     fmtDateShort,
+    getBaBestTimeDistributionValues,
     getAthletesPool: () => AthletesPool
   });
 
@@ -1153,8 +1210,29 @@
     return global.ProfileTabsCharts.renderLSCChart(a);
   }
 
-  function renderTimeChart(a) {
-    return global.ProfileTabsCharts.renderTimeChart(a);
+  function renderTimeChart(a, comparisonState) {
+    return global.ProfileTabsCharts.renderTimeChart(a, comparisonState);
+  }
+
+  function renderBestTimeDistributionChart(a, comparisonState) {
+    return global.ProfileTabsCharts.renderBestTimeDistributionChart(a, comparisonState);
+  }
+
+  function createChartComparisonState() {
+    let athlete = null;
+    const listeners = new Set();
+    return {
+      get: () => athlete,
+      set: (nextAthlete) => {
+        athlete = nextAthlete || null;
+        listeners.forEach((listener) => listener(athlete));
+      },
+      subscribe: (listener) => {
+        if (typeof listener !== "function") return () => {};
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      }
+    };
   }
 
   function deriveFromMeets(a) {
@@ -1195,6 +1273,7 @@
   }
 
   function renderBestzeitenSection(athlete, refs) {
+    const comparisonState = createChartComparisonState();
     const header = h("div", { class: "ath-bests-header" },
       h("h3", {}, ""),
       renderBahnSwitch(athlete, refs)
@@ -1203,7 +1282,10 @@
     refs.bestGrid = grid;
     const section = h("div", { class: "ath-profile-section bests" }, header, grid);
     paintBestzeitenGrid(athlete, refs);
-    section.appendChild(renderTimeChart(athlete));
+    section.appendChild(renderTimeChart(athlete, comparisonState));
+    if (String(athlete?.LV_state || "").trim().toUpperCase() === "BA") {
+      section.appendChild(renderBestTimeDistributionChart(athlete, comparisonState));
+    }
     return section;
   }
 
