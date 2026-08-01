@@ -373,14 +373,29 @@
     const years = recordedYears.length
       ? Array.from({ length: lastYear - firstYear + 1 }, (_value, index) => firstYear + index)
       : [];
+    const previouslySeenAthletes = new Set();
     const series = years.map((year) => {
       const entry = byYear.get(year);
       const ages = entry?.athleteAges ? Array.from(entry.athleteAges.values()) : [];
       const ageClassCounts = getClubStatsAgeClassCounts(entry?.athletes, entry?.athleteAges, entry?.unknownAgeAthletes);
+      let newAthletes = 0;
+      let returningAthletes = 0;
+
+      entry?.athletes?.forEach((athleteId) => {
+        if (previouslySeenAthletes.has(athleteId)) {
+          returningAthletes += 1;
+        } else {
+          newAthletes += 1;
+        }
+      });
+      entry?.athletes?.forEach((athleteId) => previouslySeenAthletes.add(athleteId));
+
       return {
         year,
         competitions: entry?.meetKeys?.size || 0,
         athletes: entry?.athletes?.size || 0,
+        newAthletes,
+        returningAthletes,
         femaleAthletes: entry?.femaleAthletes?.size || 0,
         maleAthletes: entry?.maleAthletes?.size || 0,
         starts: entry?.starts || 0,
@@ -752,6 +767,94 @@
     return svg;
   }
 
+  function renderClubStatsHistoryChart(series, options = {}) {
+    const points = Array.isArray(series) ? series : [];
+    const scale = options.scale === "percent" ? "percent" : "count";
+    const chartLabel = options.chartLabel || "Neue und bereits bekannte Sportler nach Jahr";
+    const W = 520;
+    const H = 178;
+    const m = { t: 18, r: 14, b: 30, l: 34 };
+    const cw = W - m.l - m.r;
+    const ch = H - m.t - m.b;
+    const maxValue = scale === "percent"
+      ? 100
+      : Math.max(1, ...points.map((point) => (Number(point.newAthletes) || 0) + (Number(point.returningAthletes) || 0)));
+    const tickValues = scale === "percent"
+      ? [0, 50, 100]
+      : Array.from(new Set([0, Math.ceil(maxValue / 2), maxValue]));
+    const xForIndex = (index) => points.length <= 1 ? m.l + cw / 2 : m.l + (index / (points.length - 1)) * cw;
+    const yForValue = (value) => m.t + ch - ((Number(value) || 0) / maxValue) * ch;
+    const svg = s("svg", {
+      class: "club-stats-chart club-stats-chart--history",
+      viewBox: `0 0 ${W} ${H}`,
+      role: "img",
+      "aria-label": chartLabel,
+      focusable: "false"
+    });
+
+    const grid = s("g", { class: "club-stats-chart-grid" });
+    tickValues.forEach((tick) => {
+      const y = yForValue(tick);
+      grid.appendChild(s("line", { x1: m.l, y1: y, x2: W - m.r, y2: y, class: "club-stats-grid-line" }));
+      grid.appendChild(s("text", { x: m.l - 8, y: y + 4, class: "club-stats-y-label", "text-anchor": "end" }, formatClubStatsScaleTick(tick, scale)));
+    });
+    svg.appendChild(grid);
+    svg.appendChild(s("line", { x1: m.l, y1: m.t + ch, x2: W - m.r, y2: m.t + ch, class: "club-stats-axis" }));
+
+    if (points.length) {
+      const step = points.length > 7 ? Math.ceil(points.length / 6) : 1;
+      const xAxis = s("g", { class: "club-stats-x-axis" });
+      points.forEach((point, index) => {
+        const showTick = index === 0 || index === points.length - 1 || index % step === 0;
+        if (!showTick) return;
+        const x = xForIndex(index);
+        xAxis.appendChild(s("text", { x, y: H - 8, class: "club-stats-x-label", "text-anchor": "middle" }, String(point.year)));
+      });
+      svg.appendChild(xAxis);
+    }
+
+    const bars = s("g", { class: "club-stats-history-bars" });
+    const barWidth = Math.max(6, Math.min(20, cw / Math.max(1, points.length * 1.9)));
+
+    points.forEach((point, index) => {
+      const newAthletes = Number(point.newAthletes) || 0;
+      const returningAthletes = Number(point.returningAthletes) || 0;
+      const total = newAthletes + returningAthletes;
+      const newValue = scale === "percent" && total ? (newAthletes / total) * 100 : newAthletes;
+      const returningValue = scale === "percent" && total ? (returningAthletes / total) * 100 : returningAthletes;
+      const x = xForIndex(index) - barWidth / 2;
+      const base = m.t + ch;
+      const returningHeight = returningValue ? Math.max(1, (returningValue / maxValue) * ch) : 0;
+      const newHeight = newValue ? Math.max(1, (newValue / maxValue) * ch) : 0;
+      const returningY = base - returningHeight;
+      const newY = returningY - newHeight;
+      const title = `${point.year}: ${formatClubStatsNumber(newAthletes)} neu (${formatClubStatsPercent(newAthletes, total)}) / ${formatClubStatsNumber(returningAthletes)} bereits dabei (${formatClubStatsPercent(returningAthletes, total)})`;
+
+      if (returningAthletes > 0) {
+        bars.appendChild(
+          s(
+            "rect",
+            { x, y: returningY, width: barWidth, height: returningHeight, rx: 2, class: "club-stats-history-bar club-stats-history-bar--returning" },
+            s("title", {}, title)
+          )
+        );
+      }
+
+      if (newAthletes > 0) {
+        bars.appendChild(
+          s(
+            "rect",
+            { x, y: newY, width: barWidth, height: newHeight, rx: 2, class: "club-stats-history-bar club-stats-history-bar--new" },
+            s("title", {}, title)
+          )
+        );
+      }
+    });
+
+    svg.appendChild(bars);
+    return svg;
+  }
+
   function renderClubStatsAgeClassChart(series, options = {}) {
     const points = Array.isArray(series) ? series : [];
     const scale = options.scale === "percent" ? "percent" : "count";
@@ -1021,12 +1124,13 @@
     const modes = [
       { key: "count", label: "Anzahl" },
       { key: "gender", label: "Geschlecht" },
-      { key: "age", label: "Altersklasse" }
+      { key: "age", label: "Altersklasse" },
+      { key: "history", label: "Zulauf" }
     ];
 
     return h(
       "div",
-      { class: "club-stats-mode-toggle", role: "group", "aria-label": "Sportler Statistikmodus" },
+      { class: "club-stats-mode-toggle club-stats-mode-toggle--athletes", role: "group", "aria-label": "Sportler Statistikmodus" },
       modes.map((mode) =>
         h(
           "button",
@@ -1457,7 +1561,7 @@
   }
 
   function renderClubAthletesStatsCard(data, onModeChange) {
-    const activeMode = ["gender", "age"].includes(CLUB_STATS_STATE.athleteMode) ? CLUB_STATS_STATE.athleteMode : "count";
+    const activeMode = ["gender", "age", "history"].includes(CLUB_STATS_STATE.athleteMode) ? CLUB_STATS_STATE.athleteMode : "count";
     const chartScale = CLUB_STATS_STATE.athleteChartScale === "percent" ? "percent" : "count";
     const unitLabels = {
       singular: "Sportler",
@@ -1471,8 +1575,18 @@
         ? latest
           ? `${latest.year}: ${formatClubStatsGenderShortPercentLabel(latest.femaleAthletes, latest.maleAthletes)}`
           : ""
+        : activeMode === "history"
+          ? latest
+            ? `${latest.year}: ${formatClubStatsNumber(latest.newAthletes)} neu / ${formatClubStatsNumber(latest.returningAthletes)} bereits dabei`
+            : ""
         : getClubStatsLatestLabel(data.series, "athletes", unitLabels);
-    const subtitle = activeMode === "age" ? "Altersklassen" : activeMode === "gender" ? "nach Geschlecht" : "Anzahl";
+    const subtitle = activeMode === "age"
+      ? "Altersklassen"
+      : activeMode === "gender"
+        ? "nach Geschlecht"
+        : activeMode === "history"
+          ? "neu oder bereits dabei"
+          : "Anzahl";
     const totalValue = getClubAthletesStatsValue(data, activeMode);
 
     return h(
@@ -1507,6 +1621,11 @@
             ageClass.shortLabel
           )
         )
+      ) : activeMode === "history" ? h(
+        "div",
+        { class: "club-stats-legend", "aria-hidden": "true" },
+        h("span", { class: "club-stats-legend-item" }, h("span", { class: "club-stats-legend-swatch club-stats-legend-swatch--history-new" }), "neu"),
+        h("span", { class: "club-stats-legend-item" }, h("span", { class: "club-stats-legend-swatch club-stats-legend-swatch--history-returning" }), "bereits dabei")
       ) : null,
       activeMode !== "count" ? renderClubStatsScaleToggle(chartScale, onModeChange) : null,
       h(
@@ -1516,6 +1635,8 @@
           ? renderClubStatsAgeClassChart(data.series, { scale: chartScale })
           : activeMode === "gender"
             ? renderClubStatsGenderChart(data.series, { scale: chartScale })
+            : activeMode === "history"
+              ? renderClubStatsHistoryChart(data.series, { scale: chartScale })
             : renderClubStatsChart(data.series, "athletes", {
               type: "line",
               chartLabel: "Sportler Anzahl nach Jahren",

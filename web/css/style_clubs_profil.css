@@ -599,6 +599,19 @@ main#content {
   width: min(100%, 25rem);
 }
 
+.club-stats-mode-toggle--athletes {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: min(100%, 25rem);
+}
+
+.club-stats-mode-toggle--athletes .club-stats-mode-btn {
+  font-size: 0.66rem;
+  line-height: 1.05;
+  min-height: 2rem;
+  overflow-wrap: anywhere;
+  padding: 0.5rem 0.34rem;
+}
+
 .club-stats-mode-toggle--starts .club-stats-mode-btn {
   font-size: 0.64rem;
   line-height: 1.05;
@@ -699,6 +712,14 @@ main#content {
   background: rgba(96, 165, 250, 0.95);
 }
 
+.club-stats-legend-swatch--history-new {
+  background: rgba(52, 211, 153, 0.95);
+}
+
+.club-stats-legend-swatch--history-returning {
+  background: rgba(96, 165, 250, 0.92);
+}
+
 .club-stats-chart-wrap {
   margin-top: 0.8rem;
   min-height: 11rem;
@@ -754,6 +775,14 @@ main#content {
 }
 
 .club-stats-gender-bar--male {
+  fill: rgba(96, 165, 250, 0.92);
+}
+
+.club-stats-history-bar--new {
+  fill: rgba(52, 211, 153, 0.95);
+}
+
+.club-stats-history-bar--returning {
   fill: rgba(96, 165, 250, 0.92);
 }
 
