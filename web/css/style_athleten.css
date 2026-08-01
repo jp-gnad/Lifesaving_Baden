@@ -2045,13 +2045,6 @@ main#content {
   filter: brightness(0.84);
 }
 
-.distribution-bar:focus,
-.distribution-bar:focus-visible {
-  outline: none;
-  stroke: #334155;
-  stroke-width: 1.5;
-}
-
 .distribution-tooltip .tt-l3 {
   margin-top: 0.14rem;
   color: #cbd5e1;

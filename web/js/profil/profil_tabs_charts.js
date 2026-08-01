@@ -1429,13 +1429,13 @@
       class: "seg-btn active",
       type: "button",
       "aria-pressed": "true",
-      onclick: () => selectLane("50")
+      onclick: () => toggleLane("50", btn50)
     }, "50m");
     const btn25 = el("button", {
       class: "seg-btn",
       type: "button",
       "aria-pressed": "false",
-      onclick: () => selectLane("25")
+      onclick: () => toggleLane("25", btn25)
     }, "25m");
     const laneSeg = el("div", {
       class: "seg time-lanes",
@@ -1511,12 +1511,12 @@
       button.setAttribute("aria-pressed", on ? "true" : "false");
     }
 
-    function selectLane(code) {
-      if (lanes.has(code)) return;
-      lanes.clear();
-      lanes.add(code);
-      setButtonState(btn50, code === "50");
-      setButtonState(btn25, code === "25");
+    function toggleLane(code, button) {
+      const isActive = lanes.has(code);
+      if (isActive && lanes.size === 1) return;
+      if (isActive) lanes.delete(code);
+      else lanes.add(code);
+      setButtonState(button, lanes.has(code));
       recompute();
       paint();
     }
@@ -1731,11 +1731,8 @@
           style: isOverlap ? `fill:url(#${overlapPatternId})` : null,
           "data-index": index,
           role: "graphics-symbol",
-          "aria-label": label,
-          tabindex: count > 0 || isOwn || isComparison ? "0" : null
+          "aria-label": label
         });
-        bar.addEventListener("focus", () => showTooltip(index));
-        bar.addEventListener("blur", hideTooltip);
         bars.appendChild(bar);
         barNodes.push(bar);
       });
@@ -1766,7 +1763,9 @@
     });
     svg.addEventListener("pointerleave", hideTooltip);
     svg.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
       event.stopPropagation();
+      hideTooltip();
     });
 
     const resizeObserver = new ResizeObserver(paint);
