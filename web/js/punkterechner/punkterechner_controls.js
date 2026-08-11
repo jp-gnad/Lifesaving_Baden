@@ -515,9 +515,14 @@ function prUpdateControlsBodyHeight() {
   const controlsGrid = document.getElementById("pr-controls-grid");
   if (!controlsBody || !controlsGrid) return;
 
+  const gridHeight = Math.max(
+    controlsGrid.scrollHeight,
+    controlsGrid.getBoundingClientRect().height
+  );
+
   controlsBody.style.setProperty(
     "--pr-controls-body-height",
-    `${Math.ceil(controlsGrid.scrollHeight)}px`
+    `${Math.ceil(gridHeight)}px`
   );
 }
 

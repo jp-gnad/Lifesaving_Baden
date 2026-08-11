@@ -220,27 +220,26 @@ main#content {
     background: rgba(15, 15, 18, 0.75);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
     overflow-anchor: none;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
   }
 
   .pr-controls-head {
     justify-content: space-between;
-    transition:
-      margin-bottom 0.58s cubic-bezier(0.4, 0, 0.2, 1),
-      padding-bottom 0.58s cubic-bezier(0.4, 0, 0.2, 1),
-      border-bottom-width 0.58s cubic-bezier(0.4, 0, 0.2, 1),
-      border-bottom-color 0.3s ease;
+    min-height: 1.95rem;
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: 0;
   }
 
   .pr-controls-head-copy {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
-    transition: gap 0.48s cubic-bezier(0.4, 0, 0.2, 1);
+    align-self: stretch;
+    flex: 1 1 auto;
+    gap: 0;
+    min-height: 1.95rem;
+    overflow: hidden;
   }
 
   .pr-controls-toggle {
@@ -248,8 +247,9 @@ main#content {
   }
 
   .pr-controls-compact-summary {
+    position: absolute;
+    inset: 1.08rem 0 auto;
     display: block;
-    max-height: 1.2rem;
     overflow: hidden;
     color: rgba(224, 224, 230, 0.86);
     font-size: 0.72rem;
@@ -261,7 +261,6 @@ main#content {
     visibility: visible;
     white-space: nowrap;
     transition:
-      max-height 0.48s cubic-bezier(0.4, 0, 0.2, 1),
       opacity 0.42s ease,
       transform 0.48s cubic-bezier(0.4, 0, 0.2, 1),
       visibility 0s linear;
@@ -272,19 +271,13 @@ main#content {
   }
 
   .pr-controls-wrapper:not(.is-collapsed) .pr-controls-compact-summary {
-    max-height: 0;
     opacity: 0;
     transform: translateY(-0.3rem);
     visibility: hidden;
     transition:
-      max-height 0.48s cubic-bezier(0.4, 0, 0.2, 1),
       opacity 0.42s ease,
       transform 0.48s cubic-bezier(0.4, 0, 0.2, 1),
       visibility 0s linear 0.48s;
-  }
-
-  .pr-controls-wrapper:not(.is-collapsed) .pr-controls-head-copy {
-    gap: 0;
   }
 
   .pr-controls-wrapper:not(.is-collapsed) .pr-controls-title {
@@ -309,13 +302,6 @@ main#content {
     color: rgba(238, 238, 242, 0.92);
   }
 
-  .pr-controls-wrapper.is-collapsed .pr-controls-head {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom-width: 0;
-    border-bottom-color: transparent;
-  }
-
   .pr-controls-body {
     display: block;
     max-height: var(--pr-controls-body-height, 32rem);
@@ -324,8 +310,6 @@ main#content {
     opacity: 1;
     visibility: visible;
     will-change: max-height, opacity;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
     transition:
       max-height 0.58s cubic-bezier(0.4, 0, 0.2, 1),
       opacity 0.38s ease,
@@ -334,11 +318,9 @@ main#content {
 
   .pr-controls-grid {
     min-height: 0;
+    padding-top: 0.35rem;
     overflow: hidden;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
   }
 
   .pr-controls-wrapper.is-collapsed .pr-controls-body {
@@ -349,6 +331,16 @@ main#content {
       max-height 0.58s cubic-bezier(0.4, 0, 0.2, 1),
       opacity 0.3s ease,
       visibility 0s linear 0.58s;
+  }
+}
+
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 1279px) {
+    .pr-controls-wrapper {
+      background: rgba(15, 15, 18, 0.82);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
   }
 }
 
