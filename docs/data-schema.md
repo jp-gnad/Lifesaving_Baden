@@ -7,7 +7,8 @@ Diese Datei dokumentiert die wichtigsten Laufzeitdaten der Anwendung. Schwerpunk
 | Quelle | Pfad | Zweck | Hauptnutzer |
 | --- | --- | --- | --- |
 | Haupt-Workbook | `web/data/test (1).xlsx` | Wettkampf- und Athletendaten | Athleten, Profil, Clubs, Punkterechner, Kaderstatus, Wettbewerbsseiten |
-| Rekord-/Konfig-Workbook | `web/data/records_kriterien.xlsx` | Rekorde, Referenzwerte, Konfigurationstabellen, Kaderkalender | Punkterechner, Profil-LSC, Kaderstatus, DP/BP/JRP/DEM, Landeskader |
+| Rekord-/Konfig-Workbook | `web/data/records_kriterien.xlsx` | Rekorde, Referenzwerte, Konfigurationstabellen, Kaderkalender | Profil-LSC, Kaderstatus, DP/BP/JRP/DEM, Landeskader |
+| ILS-Weltrekorde | `https://ils-records.jp-gnad.workers.dev/` | Live-Weltrekorde aus der offiziellen ILS-Uebersicht | Punkterechner |
 | Legacy-Fallback | `web/data/top10.json` | Teilweise statische Athleten-Top-10 | `web/js/athleten/ath_top10.js` |
 | Dokumentbibliothek | `content/Infoschreiben/` | PDF-Infoschreiben | `web/js/info.js` ueber `DocumentLibraryPage` |
 | Dokumentbibliothek | `content/kaderkriterien/` | PDF-Kaderrichtlinien | `web/js/kriterien.js` ueber `DocumentLibraryPage` |
@@ -78,8 +79,8 @@ Die folgende Spaltenbelegung ist aus dem aktuellen Code abgeleitet, vor allem au
 ### Punkterechner
 
 - Athleten-Suche fuer automatische Uebernahme
-- historische Ergebnisdaten fuer Verlaufstabelle und Chart
-- Kombination mit Rekordwerten aus `records_kriterien.xlsx`
+- Deutsche Rekordwerte aus dem bestehenden externen Rechner-Bundle
+- Live-Weltrekorde ueber den Cloudflare ILS-Records-Worker
 
 ### Wettbewerbs- und Kaderseiten
 
@@ -95,7 +96,6 @@ Dieses Workbook erfuellt mehrere Rollen gleichzeitig.
 
 Wird unter anderem genutzt von:
 
-- `web/js/punkterechner/punkterechner_data_collection.js`
 - `web/js/profil/profil_lsc.js`
 
 Relevante Sheets laut aktuellem Code:
@@ -105,6 +105,14 @@ Relevante Sheets laut aktuellem Code:
 - `WR-Youth`
 - `WR-Team-Open`
 - `WR-Team-Youth`
+
+Der Punkterechner greift nicht mehr auf diese WR-Sheets zu. Andere Bereiche des Projekts bleiben unveraendert.
+
+## Live-Quelle fuer ILS-Weltrekorde
+
+`cloudflare/ils-records-worker/src/index.js` ruft bei jeder Anfrage die offizielle Uebersicht unter `https://sport.ilsf.org/records` ab. Der Worker erkennt aktuelle Einzel-, Mannschafts- und Mixed-Rekorde sowie Open-, Youth- und Masters-Klassen und gibt normalisierte JSON-Daten mit deaktiviertem Cache zurueck.
+
+Der Browser-Client liegt in `web/js/punkterechner/punkterechner_ils_records.js`. Er speichert die Antwort nur fuer den laufenden Seitenaufruf im Arbeitsspeicher. Bei einem Fehler wird kein alter Excel-Wert als Ersatz verwendet.
 
 ### 2. Konfiguration fuer Wettbewerbs- und Kaderseiten
 

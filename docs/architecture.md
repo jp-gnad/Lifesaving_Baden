@@ -13,6 +13,7 @@ Die Anwendung ist eine statische Mehrseiten-Webseite ohne Build-Schritt, bei der
 - Vanilla-JavaScript ohne Bundler
 - Clientseitiges Laden von Excel-Dateien via `xlsx.full.min.js`
 - Teilweise externe Datenquellen ueber `fetch()`
+- Eigenstaendiger Cloudflare Worker fuer live geladene ILS-Weltrekorde
 - PWA-Metadaten ueber `web/site.webmanifest`
 
 ## Hauptschichten
@@ -64,7 +65,9 @@ Fast alle Seiten nutzen dieselben Grundbausteine:
 - `web/js/clubs/`
   - Club-Daten, Suche, Profilansicht, Top-10
 - `web/js/punkterechner/`
-  - Rechnerlogik, Controls, Verlaufstabelle, Chart, Athletenuebernahme
+  - Rechnerlogik, Controls, Athletenuebernahme und Client fuer ILS-Weltrekorde
+- `cloudflare/ils-records-worker/`
+  - Liest die offizielle ILS-Rekordseite bei jedem Aufruf serverseitig und liefert normalisierte JSON-Daten
 - `web/js/0_gadges/`
   - Aeltere, aber zentrale generische Engines fuer Tabellen, Passwort-Gate und Karussells
 
@@ -113,6 +116,8 @@ Ein grosser Teil der Fachlogik arbeitet direkt auf Excel-Daten:
 - Wettbewerbs- und Pflichtzeiten-Tabellen
 
 Damit ist das Datenschema in `Tabelle2` faktisch ein Kernbestandteil der Anwendungsarchitektur.
+
+Die Weltrekordberechnung des Punkterechners ist davon getrennt: Sie nutzt bei jedem Seitenaufruf den Cloudflare Worker `ils-records.jp-gnad.workers.dev`, der die aktuelle ILS-Weltrekorduebersicht ohne dauerhaften Cache ausliest.
 
 ## Architektur-Hotspots
 

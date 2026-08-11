@@ -1,12 +1,10 @@
 function prCreateHeroMarkup() {
   return `
-    <section class="hero">
+    <section class="pr-search-area" aria-label="Athletensuche">
       <div id="pr-ath-search-slot"></div>
+    </section>
+    <section class="hero">
       <div class="hero-head">
-        <button id="pr-lang-switch" class="pr-lang-switch" type="button">
-          <img id="pr-lang-switch-icon" src="./assets/svg/Großbritannien.svg" alt="English">
-          <span id="pr-lang-switch-text">English</span>
-        </button>
         <h1 id="pr-page-title">Punkterechner</h1>
       </div>
     </section>
@@ -42,29 +40,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
   prApplyLanguage();
 
-  if (typeof XLSX === "undefined") {
-    prSetInfo("xlsxMissing");
-    prInitEvents();
-    prRenderCurrentSelection();
-    return;
-  }
+  window.prEnsureIlsRecords({ force: true }).catch(error => {
+    console.warn("ILS-Weltrekorde konnten beim Seitenaufruf nicht geladen werden:", error);
+  });
 
-  Promise.all([
-    prEnsureNationalRecords(),
-    prEnsureRecordsWorkbook()
-  ])
+  prEnsureNationalRecords()
     .then(() => {
       if (prNationalRecords.latestYear != null) {
         prSetInfo("nationalLoaded", { latestYear: prNationalRecords.latestYear });
       } else {
         prSetInfo("loadFail");
       }
-      prInitEvents();
-      prRenderCurrentSelection();
     })
-    .catch(err => {
-      console.error(err);
+    .catch(error => {
+      console.error(error);
       prSetInfo("loadError");
+    })
+    .finally(() => {
       prInitEvents();
       prRenderCurrentSelection();
     });

@@ -14,7 +14,7 @@ Diese Datei ordnet jede HTML-Seite ihrem fachlichen Zweck, ihren Hauptskripten u
 | --- | --- | --- | --- | --- |
 | `web/index.html` | Redirect auf die Startseite | Inline-Redirect | keine | Kein eigener Fachcode |
 | `web/startseite.html` | Startseite mit Hero-Carousel und Einstiegskarten | `web/js/startseite.js`, `web/js/startseite/startseite_content.js`, `web/js/startseite/startseite_carousel.js` | statische Inhalte, MP4 aus GitHub Raw | `web/js/header.js` zeigt die reale Navigation |
-| `web/punkterechner.html` | Punkterechner mit Historie, Chart und Athletenuebernahme | `web/js/punkterechner.js`, `web/js/punkterechner/` | `Chart.js`, `ExcelLoader`, `Tabelle2`, `records_kriterien.xlsx` | zentraler datengetriebener Bereich |
+| `web/punkterechner.html` | Punkterechner mit Athletenuebernahme | `web/js/punkterechner.js`, `web/js/punkterechner/` | `ExcelLoader`, `Tabelle2`, Live-Weltrekorde ueber den ILS-Records-Worker | zentraler datengetriebener Bereich |
 | `web/wettkaempfe.html` | Landing-Page fuer Wettbewerbe | `web/js/wettkaempfe.js` | statische Karten + Bildrotation | verweist auf DP, BP, JRP und DEM |
 | `web/clubs.html` | Clubs-Overview mit Suche und Top-10 | `web/js/clubs.js`, `web/js/clubs/clubs_data.js`, `web/js/clubs/clubs_search.js`, `web/js/clubs/clubs_top10.js` | `ExcelLoader`, `Tabelle2` | nutzt eigene Datenaufbereitung fuer Gliederungen |
 | `web/athleten.html` | Athletensuche, Statistiken und Top-10 | `web/js/athleten.js`, `web/js/athleten/ath_data_smal.js`, `web/js/athleten/ath_search.js`, `web/js/athleten/ath_top10.js` | `ExcelLoader`, `Tabelle2`, teilweise `top10.json` | nutzt bereits `profil_lsc.js` fuer Live-Top-10 |
