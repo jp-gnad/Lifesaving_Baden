@@ -7,7 +7,8 @@ Diese Datei dokumentiert die wichtigsten Laufzeitdaten der Anwendung. Schwerpunk
 | Quelle | Pfad | Zweck | Hauptnutzer |
 | --- | --- | --- | --- |
 | Haupt-Workbook | `web/data/test (1).xlsx` | Wettkampf- und Athletendaten | Athleten, Profil, Clubs, Punkterechner, Kaderstatus, Wettbewerbsseiten |
-| Rekord-/Konfig-Workbook | `web/data/records_kriterien.xlsx` | Rekorde, Referenzwerte, Konfigurationstabellen, Kaderkalender | Punkterechner, Profil-LSC, Kaderstatus, DP/BP/JRP/DEM, Landeskader |
+| Rekord-/Konfig-Workbook | `web/data/records_kriterien.xlsx` | Rekorde, Referenzwerte, Konfigurationstabellen, Kaderkalender | Profil-LSC, Kaderstatus, DP/BP/JRP/DEM, Landeskader |
+| ILS-Weltrekorde | `https://ils-records.jp-gnad.workers.dev/` | Live-Weltrekorde aus der offiziellen ILS-Uebersicht | Punkterechner |
 | Legacy-Fallback | `web/data/top10.json` | Teilweise statische Athleten-Top-10 | `web/js/athleten/ath_top10.js` |
 | Dokumentbibliothek | `content/Infoschreiben/` | PDF-Infoschreiben | `web/js/info.js` ueber `DocumentLibraryPage` |
 | Dokumentbibliothek | `content/kaderkriterien/` | PDF-Kaderrichtlinien | `web/js/kriterien.js` ueber `DocumentLibraryPage` |
@@ -65,6 +66,8 @@ Die folgende Spaltenbelegung ist aus dem aktuellen Code abgeleitet, vor allem au
 - Wettkampf- und Leistungsdaten
 - LSC-Historie
 - neu berechneter LSC inklusive Herleitung
+- Landesplatzierungen der Bestzeiten nach aktuellem LV, Geschlecht, Bahnlänge und Disziplin; pro Person zählt nur die beste Nicht-OMS-Zeit. Eine eigene Bestzeit aus einem mit `OMS-` beginnenden Wettkampf wird in diese OMS-freie Vergleichsliste einsortiert, erhält auf Platz 1 bis 3 jedoch keine Medaille. Die Anzeige ist auf LV mit mindestens 500 eindeutigen Athleten begrenzt, für `100m Kombi` gelten ausschließlich Leistungen ab dem 01.01.2007.
+- Bei Profilen mit aktuellem LV `BA` zeigt eine Zeitverteilung 100 gleich breite Klassen auf Basis der persönlichen Nicht-OMS-Bestzeiten, die während einer BA-Zugehörigkeit erzielt wurden. Geschlecht, Disziplin und Bahnlänge werden gefiltert; 25 m und 50 m lassen sich einzeln oder gemeinsam auswählen, voreingestellt sind 50 m. Bei gemeinsamer Auswahl zählt pro Person nur die schnellere gefilterte Bestzeit. Die Klassenbreite ergibt sich aus dem Abstand zwischen schnellster Zeit und 95-%-Grenze, der letzte Balken sammelt alle verbleibenden langsameren Zeiten. Die eigene Bestzeit darf aus einem OMS-Wettkampf stammen und wird kräftig rot hervorgehoben. Die im Zeit-Verlauf ausgewählte Vergleichsperson gilt zugleich für die Zeitverteilung und wird dort mit ihrer gefilterten Bestzeit blau markiert; liegen beide Zeiten im selben Bereich, erscheint der Balken rot-blau gestreift. Die Balken besitzen ausschließlich eine flüchtige Hover-Interaktion und lassen sich nicht durch Anklicken aktivieren. Im Hover-Kontext wird zusätzlich der kumulierte Anteil der schnellsten badischen Bestzeiten bis zum jeweiligen Zeitbereich angegeben.
 
 ### Clubsbereich
 
@@ -76,8 +79,8 @@ Die folgende Spaltenbelegung ist aus dem aktuellen Code abgeleitet, vor allem au
 ### Punkterechner
 
 - Athleten-Suche fuer automatische Uebernahme
-- historische Ergebnisdaten fuer Verlaufstabelle und Chart
-- Kombination mit Rekordwerten aus `records_kriterien.xlsx`
+- Deutsche Rekordwerte aus dem bestehenden externen Rechner-Bundle
+- Live-Weltrekorde ueber den Cloudflare ILS-Records-Worker
 
 ### Wettbewerbs- und Kaderseiten
 
@@ -93,7 +96,6 @@ Dieses Workbook erfuellt mehrere Rollen gleichzeitig.
 
 Wird unter anderem genutzt von:
 
-- `web/js/punkterechner/punkterechner_data_collection.js`
 - `web/js/profil/profil_lsc.js`
 
 Relevante Sheets laut aktuellem Code:
@@ -103,6 +105,14 @@ Relevante Sheets laut aktuellem Code:
 - `WR-Youth`
 - `WR-Team-Open`
 - `WR-Team-Youth`
+
+Der Punkterechner greift nicht mehr auf diese WR-Sheets zu. Andere Bereiche des Projekts bleiben unveraendert.
+
+## Live-Quelle fuer ILS-Weltrekorde
+
+`cloudflare/ils-records-worker/src/index.js` ruft bei jeder Anfrage die offizielle Uebersicht unter `https://sport.ilsf.org/records` ab. Der Worker erkennt aktuelle Einzel-, Mannschafts- und Mixed-Rekorde sowie Open-, Youth- und Masters-Klassen und gibt normalisierte JSON-Daten mit deaktiviertem Cache zurueck.
+
+Der Browser-Client liegt in `web/js/punkterechner/punkterechner_ils_records.js`. Er speichert die Antwort nur fuer den laufenden Seitenaufruf im Arbeitsspeicher. Bei einem Fehler wird kein alter Excel-Wert als Ersatz verwendet.
 
 ### 2. Konfiguration fuer Wettbewerbs- und Kaderseiten
 

@@ -14,7 +14,8 @@
     z_100r: 7,
     z_200h: 8,
     excelDate: 9,
-    yy2: 11
+    yy2: 11,
+    pool: 21
   };
 
   const TIME_FIELD_BY_DISCIPLINE = {
@@ -52,7 +53,7 @@
 
     state.initStarted = true;
 
-    prSetSearchMeta("Athlet auswählen, um Bestzeiten direkt in den Rechner zu übernehmen.");
+    prSetSearchMeta("Athlet auswählen, um Zeiten direkt in den Rechner zu übernehmen.");
 
     if (window.AthSearch && typeof window.AthSearch.mount === "function") {
       window.AthSearch.mount(mount, { openProfile: prApplyAthleteSelection });
@@ -124,7 +125,7 @@
         window.AthSearch.setAthletes(state.athletes);
       }
 
-      prSetSearchMeta("Athlet auswählen, um Bestzeiten direkt in den Rechner zu übernehmen.");
+      prSetSearchMeta("Athlet auswählen, um Zeiten direkt in den Rechner zu übernehmen.");
     } catch (error) {
       console.error("Athleten-Suche im Punkterechner konnte nicht geladen werden:", error);
 
@@ -148,6 +149,15 @@
       return;
     }
 
+    const availablePools = prGetAvailablePoolsForAthlete(athlete);
+    const onlyPool = availablePools.length === 1 ? availablePools[0] : null;
+    const importOptions = !availablePools.length
+      ? { poolChoice: "any", timeMode: "best-all" }
+      : onlyPool && !prHasRecentTimesForPool(athlete, onlyPool)
+        ? { poolChoice: onlyPool, timeMode: "best-all" }
+        : await prRequestImportOptions(athlete, availablePools);
+    if (!importOptions) return;
+
     const modeSel = document.getElementById("pr-mode");
     const ruleSel = document.getElementById("pr-rule");
     const ageSel = document.getElementById("pr-age");
@@ -156,15 +166,25 @@
     if (!modeSel || !ruleSel || !ageSel || !genderSel) return;
 
     modeSel.value = "Einzel";
+    if (typeof prRenderSegmentedControl === "function") {
+      prRenderSegmentedControl(modeSel);
+    }
 
     const ageValue = prMapAgeToCalculatorAge(age, ruleSel.value);
     prRenderAgeOptions(ageValue);
     ageSel.value = ageValue;
     genderSel.value = prMapAthleteGender(athlete.geschlecht);
+    if (typeof prRenderSegmentedControl === "function") {
+      prRenderSegmentedControl(genderSel);
+    }
 
     await prRenderCurrentSelection();
 
-    const bestTimes = prBuildBestTimesForAthlete(athlete);
+    const bestTimes = prBuildTimesForAthlete(
+      athlete,
+      importOptions.poolChoice,
+      importOptions.timeMode
+    );
     const disciplines = typeof prGetDisciplines === "function" ? prGetDisciplines(modeSel.value, ageSel.value) : [];
     const restoredValues = prBuildRestoreMap(bestTimes, disciplines);
     prRestoreTimes(restoredValues);
@@ -251,27 +271,311 @@
     return `ath_${base}_${birthYear || "x"}_${g}`;
   }
 
-  function prBuildBestTimesForAthlete(athlete) {
+  function prRequestImportOptions(athlete, availablePools) {
+    return new Promise(resolve => {
+      const dialog = document.createElement("dialog");
+      dialog.className = "pr-pool-dialog";
+      dialog.tabIndex = -1;
+      dialog.setAttribute("aria-labelledby", "pr-pool-dialog-title");
+      dialog.innerHTML = `
+        <div class="pr-pool-dialog-panel">
+          <button class="pr-pool-dialog-close" type="button" aria-label=""></button>
+          <p class="pr-pool-dialog-athlete"></p>
+          <div class="pr-import-progress" aria-hidden="true">
+            <span data-progress-step="pool"></span>
+            <span data-progress-step="time"></span>
+          </div>
+          <h2 id="pr-pool-dialog-title" tabindex="-1" aria-live="polite"></h2>
+          <section class="pr-import-step" data-import-step="pool">
+            <div class="pr-pool-options pr-import-options" role="group" aria-labelledby="pr-pool-dialog-title"></div>
+          </section>
+          <section class="pr-import-step" data-import-step="time" hidden>
+            <div class="pr-time-mode-options pr-import-options" role="group" aria-labelledby="pr-pool-dialog-title"></div>
+          </section>
+          <div class="pr-pool-dialog-actions">
+            <button class="pr-pool-dialog-back" type="button" hidden></button>
+          </div>
+        </div>
+      `.trim();
+
+      const athleteLabel = dialog.querySelector(".pr-pool-dialog-athlete");
+      const title = dialog.querySelector("#pr-pool-dialog-title");
+      const poolStep = dialog.querySelector('[data-import-step="pool"]');
+      const timeStep = dialog.querySelector('[data-import-step="time"]');
+      const poolOptions = dialog.querySelector(".pr-pool-options");
+      const timeOptions = dialog.querySelector(".pr-time-mode-options");
+      const closeButton = dialog.querySelector(".pr-pool-dialog-close");
+      const actions = dialog.querySelector(".pr-pool-dialog-actions");
+      const backButton = dialog.querySelector(".pr-pool-dialog-back");
+      const progressSteps = Array.from(dialog.querySelectorAll("[data-progress-step]"));
+
+      athleteLabel.textContent = `${String(athlete.name || "").trim()} · ${String(athlete.jahrgang || "").trim()}`;
+      closeButton.textContent = "×";
+      closeButton.setAttribute("aria-label", prT("athletePoolClose"));
+      backButton.textContent = prT("athleteImportBack");
+
+      const poolChoices = [
+        { value: "25", title: prT("athletePool25Title") },
+        { value: "50", title: prT("athletePool50Title") },
+        { value: "any", title: prT("athletePoolAnyTitle") }
+      ];
+
+      const createChoiceButton = (choice, dataKey) => {
+        const button = document.createElement("button");
+        const heading = document.createElement("strong");
+
+        button.type = "button";
+        button.className = "pr-pool-option";
+        button.dataset[dataKey] = choice.value;
+        button.setAttribute("aria-pressed", "false");
+        heading.textContent = choice.title;
+        button.appendChild(heading);
+        if (choice.subtitle) {
+          const subtitle = document.createElement("span");
+          subtitle.textContent = choice.subtitle;
+          button.appendChild(subtitle);
+        }
+        return button;
+      };
+
+      const buildTimeChoices = selectedPool => {
+        const bestOverall = {
+          value: "best-all",
+          title: prT("athleteTimeBestAllTitle"),
+          subtitle: prT("athleteTimeBestAllText")
+        };
+
+        if (!prGetPoolTimeCoverage(athlete, selectedPool).hasOlder) {
+          return [
+            bestOverall,
+            {
+              value: "average-all",
+              title: prT("athleteTimeAverageAllTitle"),
+              subtitle: prT("athleteTimeAverageAllText")
+            }
+          ];
+        }
+
+        return [
+          bestOverall,
+          {
+            value: "best-recent",
+            title: prT("athleteTimeBestRecentTitle"),
+            subtitle: prT("athleteTimeBestRecentText")
+          },
+          {
+            value: "average-recent",
+            title: prT("athleteTimeAverageRecentTitle"),
+            subtitle: prT("athleteTimeAverageRecentText")
+          }
+        ];
+      };
+
+      const renderTimeChoices = selectedPool => {
+        timeOptions.replaceChildren();
+        buildTimeChoices(selectedPool).forEach(choice => {
+          timeOptions.appendChild(createChoiceButton(choice, "timeMode"));
+        });
+      };
+
+      const normalizedPools = ["25", "50"].filter(pool => availablePools.includes(pool));
+      const hasPoolStep = normalizedPools.length > 1;
+      let currentStep = hasPoolStep ? "pool" : "time";
+      let poolChoice = hasPoolStep ? null : normalizedPools[0];
+      let timeMode = null;
+
+      if (hasPoolStep) {
+        poolChoices.forEach(choice => {
+          poolOptions.appendChild(createChoiceButton(choice, "poolChoice"));
+        });
+      }
+
+      if (!hasPoolStep) renderTimeChoices(poolChoice);
+
+      const markSelected = (container, selector, value) => {
+        container.querySelectorAll(selector).forEach(button => {
+          const selected = button.dataset.poolChoice === value || button.dataset.timeMode === value;
+          button.classList.toggle("is-selected", selected);
+          button.setAttribute("aria-pressed", String(selected));
+        });
+      };
+
+      const renderStep = (moveFocus = false) => {
+        const isPoolStep = currentStep === "pool";
+        poolStep.hidden = !isPoolStep;
+        timeStep.hidden = isPoolStep;
+        title.textContent = prT(isPoolStep ? "athletePoolQuestion" : "athleteTimeQuestion");
+        backButton.hidden = isPoolStep || !hasPoolStep;
+        actions.hidden = backButton.hidden;
+
+        progressSteps.forEach(step => {
+          const isActive = step.dataset.progressStep === currentStep;
+          const isComplete = currentStep === "time" && step.dataset.progressStep === "pool";
+          step.classList.toggle("is-active", isActive);
+          step.classList.toggle("is-complete", isComplete);
+        });
+
+        if (moveFocus) title.focus({ preventScroll: true });
+      };
+
+      let settled = false;
+      const finish = value => {
+        if (settled) return;
+        settled = true;
+        if (dialog.open) dialog.close();
+        dialog.remove();
+        resolve(value);
+      };
+
+      poolOptions.addEventListener("click", event => {
+        const button = event.target.closest("[data-pool-choice]");
+        if (!button) return;
+        poolChoice = button.dataset.poolChoice || null;
+        markSelected(poolOptions, "[data-pool-choice]", poolChoice);
+        if (!prHasRecentTimesForPool(athlete, poolChoice)) {
+          finish({ poolChoice, timeMode: "best-all" });
+          return;
+        }
+        renderTimeChoices(poolChoice);
+        currentStep = "time";
+        renderStep(true);
+      });
+
+      timeOptions.addEventListener("click", event => {
+        const button = event.target.closest("[data-time-mode]");
+        if (!button) return;
+        timeMode = button.dataset.timeMode || null;
+        markSelected(timeOptions, "[data-time-mode]", timeMode);
+        if (poolChoice && timeMode) finish({ poolChoice, timeMode });
+      });
+
+      backButton.addEventListener("click", () => {
+        if (!hasPoolStep) return;
+        currentStep = "pool";
+        renderStep(true);
+      });
+      closeButton.addEventListener("click", () => finish(null));
+      dialog.addEventListener("cancel", event => {
+        event.preventDefault();
+        finish(null);
+      });
+      dialog.addEventListener("click", event => {
+        if (event.target === dialog) finish(null);
+      });
+
+      document.body.appendChild(dialog);
+      renderStep();
+      if (typeof dialog.showModal === "function") {
+        dialog.showModal();
+      } else {
+        dialog.setAttribute("open", "");
+      }
+
+      dialog.focus({ preventScroll: true });
+    });
+  }
+
+  function prNormalizePoolLength(raw) {
+    const match = String(raw ?? "").trim().match(/(?:^|\D)(25|50)(?:\D|$)/);
+    return match ? match[1] : "";
+  }
+
+  function prGetAvailablePoolsForAthlete(athlete) {
     const rows = state.rowsById.get(String(athlete.id || "")) || [];
-    const bestByField = {};
+    const availablePools = new Set();
 
     rows.forEach(row => {
-      Object.values(COLS)
-        .filter(value => typeof value === "number" && value >= COLS.z_100l && value <= COLS.z_200h)
-        .forEach(index => {
-          if (index < COLS.z_100l || index > COLS.z_200h) return;
+      const rowPool = prNormalizePoolLength(row[COLS.pool]);
+      if (rowPool !== "25" && rowPool !== "50") return;
 
+      const hasValidTime = Object.values(TIME_FIELD_BY_DISCIPLINE)
+        .some(index => Number.isFinite(prParseBestTimeSeconds(row[index])));
+
+      if (hasValidTime) availablePools.add(rowPool);
+    });
+
+    return ["25", "50"].filter(pool => availablePools.has(pool));
+  }
+
+  function prGetTwoYearCutoffExcelSerial(referenceDate = new Date()) {
+    const baseUtc = Date.UTC(1899, 11, 30);
+    const cutoffUtc = Date.UTC(
+      referenceDate.getFullYear() - 2,
+      referenceDate.getMonth(),
+      referenceDate.getDate()
+    );
+    return (cutoffUtc - baseUtc) / 86400000;
+  }
+
+  function prHasRecentTimesForPool(athlete, poolChoice) {
+    return prGetPoolTimeCoverage(athlete, poolChoice).hasRecent;
+  }
+
+  function prGetPoolTimeCoverage(athlete, poolChoice) {
+    const rows = state.rowsById.get(String(athlete.id || "")) || [];
+    const selectedPool = poolChoice === "25" || poolChoice === "50" ? poolChoice : "any";
+    const cutoffSerial = prGetTwoYearCutoffExcelSerial();
+    let hasRecent = false;
+    let hasOlder = false;
+
+    rows.forEach(row => {
+      const rowPool = prNormalizePoolLength(row[COLS.pool]);
+      if (rowPool !== "25" && rowPool !== "50") return;
+      if (selectedPool !== "any" && rowPool !== selectedPool) return;
+
+      const hasValidTime = Array.from(new Set(Object.values(TIME_FIELD_BY_DISCIPLINE)))
+        .some(index => Number.isFinite(prParseBestTimeSeconds(row[index])));
+      if (!hasValidTime) return;
+
+      const meetDate = Number(row[COLS.excelDate]);
+      if (Number.isFinite(meetDate) && meetDate >= cutoffSerial) {
+        hasRecent = true;
+      } else {
+        hasOlder = true;
+      }
+    });
+
+    return { hasRecent, hasOlder };
+  }
+
+  function prBuildTimesForAthlete(athlete, poolChoice = "any", timeMode = "best-all") {
+    const rows = state.rowsById.get(String(athlete.id || "")) || [];
+    const valuesByField = {};
+    const selectedPool = poolChoice === "25" || poolChoice === "50" ? poolChoice : "any";
+    const selectedTimeMode = ["best-all", "best-recent", "average-all", "average-recent"].includes(timeMode)
+      ? timeMode
+      : "best-all";
+    const recentOnly = selectedTimeMode === "best-recent" || selectedTimeMode === "average-recent";
+    const cutoffSerial = recentOnly ? prGetTwoYearCutoffExcelSerial() : null;
+
+    rows.forEach(row => {
+      const rowPool = prNormalizePoolLength(row[COLS.pool]);
+      if (rowPool !== "25" && rowPool !== "50") return;
+      if (selectedPool !== "any" && rowPool !== selectedPool) return;
+
+      if (recentOnly) {
+        const meetDate = Number(row[COLS.excelDate]);
+        if (!Number.isFinite(meetDate) || meetDate < cutoffSerial) return;
+      }
+
+      Array.from(new Set(Object.values(TIME_FIELD_BY_DISCIPLINE)))
+        .forEach(index => {
           const seconds = prParseBestTimeSeconds(row[index]);
           if (!Number.isFinite(seconds)) return;
 
-          const current = bestByField[index];
-          if (!Number.isFinite(current) || seconds < current) {
-            bestByField[index] = seconds;
-          }
+          if (!valuesByField[index]) valuesByField[index] = [];
+          valuesByField[index].push(seconds);
         });
     });
 
-    return bestByField;
+    return Object.fromEntries(
+      Object.entries(valuesByField).map(([index, values]) => {
+        const result = selectedTimeMode === "average-all" || selectedTimeMode === "average-recent"
+          ? values.reduce((sum, value) => sum + value, 0) / values.length
+          : Math.min(...values);
+        return [index, result];
+      })
+    );
   }
 
   function prParseBestTimeSeconds(raw) {
@@ -279,7 +583,7 @@
     if (!value || /^dq$/i.test(value)) return null;
 
     const seconds = prParseTimeString(value);
-    return Number.isFinite(seconds) ? seconds : null;
+    return Number.isFinite(seconds) && seconds > 0 ? seconds : null;
   }
 
   function prBuildRestoreMap(bestTimes, disciplines) {
@@ -340,7 +644,15 @@
 
   function prMapAgeToCalculatorAge(age, rule) {
     if (rule === "International") {
-      return age <= 18 ? "Junioren" : "Offen";
+      if (age <= 18) return "Youth";
+      if (age < 30) return "Offen";
+
+      const mastersAge = String(Math.floor(age / 5) * 5);
+      const availableMasters = typeof window.prGetIlsMasterAgeValues === "function"
+        ? window.prGetIlsMasterAgeValues()
+        : [];
+
+      return availableMasters.includes(mastersAge) ? mastersAge : "Offen";
     }
 
     if (age <= 12) return "12";

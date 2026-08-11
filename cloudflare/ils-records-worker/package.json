@@ -1,0 +1,13 @@
+{
+  "name": "lifesaving-baden-ils-records-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "test": "node test/parser.test.mjs && node test/worker-cache.test.mjs && node test/frontend-records.test.mjs && node test/controls.test.mjs && node test/discipline-order.test.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

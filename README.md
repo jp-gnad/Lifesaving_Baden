@@ -18,7 +18,7 @@ Die README ist als schneller Einstieg fuer Menschen und KI gedacht. Sie beantwor
 
 - Der Web-Root ist `web/`.
 - `web/index.html` leitet direkt auf `web/startseite.html` weiter.
-- Es gibt aktuell keinen Build-Prozess, keinen Bundler und kein `package.json`.
+- Die statische Webseite hat keinen Build-Prozess und keinen Bundler. Nur der eigenstaendige Cloudflare Worker unter `cloudflare/ils-records-worker/` besitzt ein eigenes `package.json`.
 - Die Seite basiert auf statischem HTML, CSS und Vanilla-JavaScript.
 - Viele Features laden ihre Daten clientseitig aus Excel-Dateien und externen URLs.
 - Bei lokalem Arbeiten moeglichst nicht per `file://` oeffnen, weil Browser Excel-/JSON-Fetches aus Sicherheitsgruenden blockieren koennen.
@@ -34,12 +34,14 @@ Die README ist als schneller Einstieg fuer Menschen und KI gedacht. Sie beantwor
   - Profil: `web/profil.html`, `web/js/profil.js`, `web/js/profil/`
   - Clubs: `web/clubs.html`, `web/js/clubs.js`, `web/js/clubs/`
   - Punkterechner: `web/punkterechner.html`, `web/js/punkterechner.js`, `web/js/punkterechner/`
+- Live-Weltrekorde: `cloudflare/ils-records-worker/`
 
 ## Repo-Struktur
 
 ```text
 .
 |-- README.md
+|-- cloudflare/
 |-- content/
 |-- docs/
 |-- scripts/

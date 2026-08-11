@@ -187,7 +187,74 @@ const PR_DISCIPLINES = {
 PR_DISCIPLINES.Einzel.Junioren = PR_DISCIPLINES.Einzel["17/18"];
 PR_DISCIPLINES.Mannschaft.Junioren = PR_DISCIPLINES.Mannschaft["17/18"];
 
+function prNormalizeDisciplineOrderKey(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[×*]/g, "x")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function prGetNationalDisciplineOrder(mode, ak) {
+  const disciplinesByAge = PR_DISCIPLINES[mode];
+  if (!disciplinesByAge) return [];
+
+  const rawAge = String(ak || "");
+  let nationalAge = rawAge;
+
+  if (rawAge === "Youth" || rawAge === "Junioren") {
+    nationalAge = "17/18";
+  } else if (rawAge === "Open") {
+    nationalAge = "Offen";
+  }
+
+  return disciplinesByAge[nationalAge] || disciplinesByAge.Offen || [];
+}
+
+function prSortDisciplinesByNationalOrder(disciplines, mode, ak) {
+  if (!Array.isArray(disciplines)) return [];
+
+  const nationalOrder = new Map();
+  prGetNationalDisciplineOrder(mode, ak).forEach((discipline, index) => {
+    const key = prNormalizeDisciplineOrderKey(discipline.label);
+    if (key && !nationalOrder.has(key)) {
+      nationalOrder.set(key, index);
+    }
+  });
+
+  return disciplines
+    .map((discipline, sourceIndex) => {
+      const key = prNormalizeDisciplineOrderKey(discipline?.label);
+      const nationalIndex = nationalOrder.has(key)
+        ? nationalOrder.get(key)
+        : Number.MAX_SAFE_INTEGER;
+
+      return { discipline, sourceIndex, nationalIndex };
+    })
+    .sort((a, b) => {
+      if (a.nationalIndex !== b.nationalIndex) {
+        return a.nationalIndex - b.nationalIndex;
+      }
+      return a.sourceIndex - b.sourceIndex;
+    })
+    .map(entry => entry.discipline);
+}
+
 function prGetDisciplines(mode, ak) {
+  if (
+    typeof prGetRule === "function" &&
+    prGetRule() === "International" &&
+    typeof window.prGetIlsDisciplines === "function"
+  ) {
+    const genderSel = document.getElementById("pr-gender");
+    const gender = genderSel ? genderSel.value : "weiblich";
+    const ilsDisciplines = window.prGetIlsDisciplines(mode, ak, gender);
+    return prSortDisciplinesByNationalOrder(ilsDisciplines, mode, ak);
+  }
+
   const m = PR_DISCIPLINES[mode];
   if (!m) return [];
   return m[ak] || [];
@@ -283,13 +350,41 @@ async function prRenderCurrentSelection() {
   const genderElem = document.getElementById("pr-gender");
   if (!modeElem || !ageElem || !genderElem) return;
 
-  const mode = modeElem.value;
-  const ak = ageElem.value;
-  const gender = genderElem.value;
+  let mode = modeElem.value;
+  let ak = ageElem.value;
+  let gender = genderElem.value;
   const rule = prGetRule();
 
-  if (rule === "International" && mode === "Einzel") {
-    await prEnsureRecordsWorkbook();
+  if (loading) loading.classList.remove("is-error");
+
+  if (rule === "International") {
+    table.hidden = true;
+    if (loading) {
+      loading.textContent = prT("ilsLoading");
+      loading.style.display = "";
+    }
+
+    try {
+      await window.prEnsureIlsRecords();
+    } catch (error) {
+      console.error("ILS-Weltrekorde konnten nicht geladen werden:", error);
+      if (loading) {
+        loading.textContent = prT("ilsLoadError");
+        loading.classList.add("is-error");
+        loading.style.display = "";
+      }
+      return;
+    }
+
+    const scoreSel = document.getElementById("pr-score");
+    const scoreValue = scoreSel ? scoreSel.value : "3";
+    prRenderAgeOptions(ak);
+    prRenderGenderOptions(gender);
+
+    mode = modeElem.value;
+    ak = ageElem.value;
+    gender = genderElem.value;
+    prRenderScoringOptions(scoreValue);
   }
 
   prUpdateSummaryLabel();
@@ -350,9 +445,10 @@ async function prRenderCurrentSelection() {
           );
         }
       } else {
-        if (prRecords.latestYear != null) {
-          recSeconds = prGetDRRecordSeconds(prRecords.latestYear, ak, gender, disc);
-        }
+        const liveRecordSeconds = Number(disc.recordSeconds);
+        recSeconds = Number.isFinite(liveRecordSeconds) && liveRecordSeconds > 0
+          ? liveRecordSeconds
+          : null;
       }
 
       if (recSeconds != null) {
@@ -425,6 +521,7 @@ function prUpdateTotalPointsDe() {
 });
 
   entries.forEach(e => {
+    e.row.classList.remove("pr-row-counted");
     if (e.cell) {
       e.cell.classList.remove("pr-points-de-top3", "pr-points-de-top4", "pr-points-de-top5-6", "pr-points-de-counted");
     }
@@ -449,6 +546,7 @@ function prUpdateTotalPointsDe() {
 
   entriesSorted.slice(0, scoringCount).forEach(e => {
     if (e.cell && e.val > 0) {
+      e.row.classList.add("pr-row-counted");
       e.cell.classList.add("pr-points-de-counted");
     }
   });

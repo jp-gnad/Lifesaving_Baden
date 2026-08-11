@@ -26,6 +26,8 @@ const PR_DISCIPLINE_LABELS_EN = {
   "4×25m Puppenstaffel": "4×25m manikin relay",
   "4×50m Gurtretterstaffel": "4×50m medley relay",
   "4×50m Rettungsstaffel": "4×50m pool lifesaver relay",
+  "4×50m Lifesavingstaffel": "4×50m lifesaving relay",
+  "Leinenwurf": "Line throw",
   "50m Freistilschwimmen": "50m freestyle swim",
   "25m Schleppen einer Puppe": "25m manikin",
   "4×50m Freistilstaffel": "4×50m freestyle relay"
@@ -34,9 +36,11 @@ const PR_DISCIPLINE_LABELS_EN = {
 const prI18n = {
   de: {
     title: "Punkterechner",
-    switchText: "English",
-    switchFlag: "./assets/svg/Großbritannien.svg",
-    switchAlt: "English",
+    switchText: "Deutsch",
+    switchFlag: "./assets/svg/Deutschland.svg",
+    switchAlt: "Deutsch",
+    settingsTitle: "Einstellungen",
+    languageLabel: "Sprache",
     modeLabel: "Disziplinen",
     modeIndividual: "Einzel",
     modeTeam: "Mannschaft",
@@ -45,37 +49,39 @@ const prI18n = {
     genderLabel: "Geschlecht",
     genderFemale: "Weiblich",
     genderMale: "Männlich",
+    genderMixed: "Mixed",
     ruleLabel: "Rekordwerte",
     ruleNational: "Deutschland",
     ruleInternational: "Weltrekord",
-    age12: "AK 12",
-    age1314: "AK 13/14",
-    age1516: "AK 15/16",
-    age1718: "AK 17/18",
-    ageOpen: "AK Offen",
-    age25: "AK 25",
-    age30: "AK 30",
-    age35: "AK 35",
-    age40: "AK 40",
-    age45: "AK 45",
-    age50: "AK 50",
-    age55: "AK 55",
-    age60: "AK 60",
-    age65: "AK 65",
-    age70: "AK 70",
-    age75: "AK 75",
-    age80: "AK 80",
-    age85: "AK 85",
-    age90: "AK 90",
-    age100: "AK 100",
-    age120: "AK 120",
-    age140: "AK 140",
-    age170: "AK 170",
-    age200: "AK 200",
-    age240: "AK 240",
-    age280: "AK 280+",
+    age12: "12",
+    age1314: "13/14",
+    age1516: "15/16",
+    age1718: "17/18",
+    ageOpen: "Offen",
+    age25: "25",
+    age30: "30",
+    age35: "35",
+    age40: "40",
+    age45: "45",
+    age50: "50",
+    age55: "55",
+    age60: "60",
+    age65: "65",
+    age70: "70",
+    age75: "75",
+    age80: "80",
+    age85: "85",
+    age90: "90",
+    age100: "100",
+    age120: "120",
+    age140: "140",
+    age170: "170",
+    age200: "200",
+    age240: "240",
+    age280: "280+",
     ageOpenShort: "Offen",
     ageJunior: "Junioren",
+    ageYouth: "Youth",
     tableDiscipline: "Disziplinen",
     tableTime: "Zeit",
     points: "Punkte",
@@ -86,14 +92,35 @@ const prI18n = {
     nationalLoaded: "Deutsche Rekordwerte 2007–{latestYear} geladen.",
     workbookLoadFail: "Deutsche Rekordwerte konnten nicht geladen werden.",
     workbookLoadError: "Fehler beim Laden der Rekordwerte – Daten werden nicht angezeigt.",
+    ilsLoading: "Offizielle ILS-Weltrekorde werden geladen …",
+    ilsLoadError: "Die offiziellen ILS-Weltrekorde sind derzeit nicht erreichbar. Bitte versuche es später erneut.",
     sourceNote: "Quellenhinweis: Die Rekordwerte und die fachliche Orientierung basieren unter anderem auf den öffentlich verfügbaren Informationen von",
-    sourceLinkText: "Dennis Fabri"
+    sourceLinkText: "Dennis Fabri",
+    sourceNoteInternational: "Quellenhinweis: Die Weltrekorde werden live abgerufen von",
+    sourceLinkInternational: "ILS Lifesaving Sport",
+    athletePoolQuestion: "Welche Bahnlänge?",
+    athletePool25Title: "25m Bahn",
+    athletePool50Title: "50m Bahn",
+    athletePoolAnyTitle: "25m & 50m",
+    athleteTimeQuestion: "Welche Zeiten?",
+    athleteTimeBestAllTitle: "Bestzeit",
+    athleteTimeBestAllText: "insgesamt",
+    athleteTimeBestRecentTitle: "Bestzeit",
+    athleteTimeBestRecentText: "letzten 2 Jahre",
+    athleteTimeAverageAllTitle: "Durchschnittszeit",
+    athleteTimeAverageAllText: "insgesamt",
+    athleteTimeAverageRecentTitle: "Durchschnittszeit",
+    athleteTimeAverageRecentText: "letzten 2 Jahre",
+    athleteImportBack: "Zurück",
+    athletePoolClose: "Auswahl schließen"
   },
   en: {
     title: "Points Calculator",
-    switchText: "Deutsch",
-    switchFlag: "./assets/svg/Deutschland.svg",
-    switchAlt: "Deutsch",
+    switchText: "English",
+    switchFlag: "./assets/svg/Großbritannien.svg",
+    switchAlt: "English",
+    settingsTitle: "Settings",
+    languageLabel: "Language",
     modeLabel: "Disciplines",
     modeIndividual: "Individual",
     modeTeam: "Team",
@@ -102,37 +129,39 @@ const prI18n = {
     genderLabel: "Gender",
     genderFemale: "Female",
     genderMale: "Male",
+    genderMixed: "Mixed",
     ruleLabel: "Record values",
     ruleNational: "Germany",
     ruleInternational: "World record",
-    age12: "Age 12",
-    age1314: "Age 13/14",
-    age1516: "Age 15/16",
-    age1718: "Age 17/18",
+    age12: "12",
+    age1314: "13/14",
+    age1516: "15/16",
+    age1718: "17/18",
     ageOpen: "Open",
-    age25: "Age 25",
-    age30: "Age 30",
-    age35: "Age 35",
-    age40: "Age 40",
-    age45: "Age 45",
-    age50: "Age 50",
-    age55: "Age 55",
-    age60: "Age 60",
-    age65: "Age 65",
-    age70: "Age 70",
-    age75: "Age 75",
-    age80: "Age 80",
-    age85: "Age 85",
-    age90: "Age 90",
-    age100: "Age 100",
-    age120: "Age 120",
-    age140: "Age 140",
-    age170: "Age 170",
-    age200: "Age 200",
-    age240: "Age 240",
-    age280: "Age 280+",
+    age25: "25",
+    age30: "30",
+    age35: "35",
+    age40: "40",
+    age45: "45",
+    age50: "50",
+    age55: "55",
+    age60: "60",
+    age65: "65",
+    age70: "70",
+    age75: "75",
+    age80: "80",
+    age85: "85",
+    age90: "90",
+    age100: "100",
+    age120: "120",
+    age140: "140",
+    age170: "170",
+    age200: "200",
+    age240: "240",
+    age280: "280+",
     ageOpenShort: "Open",
     ageJunior: "Youth",
+    ageYouth: "Youth",
     tableDiscipline: "Disciplines",
     tableTime: "Time",
     points: "Points",
@@ -143,8 +172,27 @@ const prI18n = {
     nationalLoaded: "German record values 2007–{latestYear} loaded.",
     workbookLoadFail: "German record values could not be loaded.",
     workbookLoadError: "Error while loading the record values – data is not displayed.",
+    ilsLoading: "Official ILS world records are being loaded …",
+    ilsLoadError: "The official ILS world records are currently unavailable. Please try again later.",
     sourceNote: "Source note: The record values and the technical orientation are based in part on the publicly available information provided by",
-    sourceLinkText: "Dennis Fabri"
+    sourceLinkText: "Dennis Fabri",
+    sourceNoteInternational: "Source note: World records are loaded live from",
+    sourceLinkInternational: "ILS Lifesaving Sport",
+    athletePoolQuestion: "Which pool length?",
+    athletePool25Title: "25m pool",
+    athletePool50Title: "50m pool",
+    athletePoolAnyTitle: "25m & 50m",
+    athleteTimeQuestion: "Which times?",
+    athleteTimeBestAllTitle: "Personal best",
+    athleteTimeBestAllText: "overall",
+    athleteTimeBestRecentTitle: "Personal best",
+    athleteTimeBestRecentText: "last 2 years",
+    athleteTimeAverageAllTitle: "Average time",
+    athleteTimeAverageAllText: "overall",
+    athleteTimeAverageRecentTitle: "Average time",
+    athleteTimeAverageRecentText: "last 2 years",
+    athleteImportBack: "Back",
+    athletePoolClose: "Close selection"
   }
 };
 
@@ -158,9 +206,41 @@ function prT(key, vars = {}) {
 
 function prGetDisciplineLabel(disc) {
   if (prLangState.current === "en") {
-    return PR_DISCIPLINE_LABELS_EN[disc.label] || disc.label;
+    return disc.labelEn || PR_DISCIPLINE_LABELS_EN[disc.label] || disc.label;
   }
   return disc.label;
+}
+
+function prRenderSegmentedControl(select) {
+  if (!select || typeof document.querySelector !== "function") return;
+
+  const group = document.querySelector(`[data-pr-select="${select.id}"]`);
+  if (!group) return;
+
+  const options = Array.from(select.options || []);
+  group.replaceChildren();
+  group.style.setProperty("--pr-choice-count", String(Math.max(options.length, 1)));
+
+  options.forEach(option => {
+    const button = document.createElement("button");
+    const isSelected = option.value === select.value;
+
+    button.type = "button";
+    button.className = "pr-choice-option";
+    button.dataset.value = option.value;
+    button.textContent = option.textContent;
+    button.setAttribute("aria-pressed", String(isSelected));
+    button.classList.toggle("is-selected", isSelected);
+
+    button.addEventListener("click", () => {
+      if (select.value === option.value) return;
+      select.value = option.value;
+      prRenderSegmentedControl(select);
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+    group.appendChild(button);
+  });
 }
 
 function prBuildOptions(select, options, selectedValue) {
@@ -174,14 +254,27 @@ function prBuildOptions(select, options, selectedValue) {
   } else if (options.length) {
     select.value = options[0].value;
   }
+
+  prRenderSegmentedControl(select);
 }
 
 function prGetAgeOptions(rule, mode) {
   if (rule === "International") {
-    return [
-      { value: "Junioren", label: prT("ageJunior") },
-      { value: "Offen", label: prT("ageOpenShort") }
+    const options = [
+      { value: "Offen", label: prT("ageOpenShort") },
+      { value: "Youth", label: prT("ageYouth") }
     ];
+
+    if (mode === "Einzel" && typeof window.prGetIlsMasterAgeValues === "function") {
+      window.prGetIlsMasterAgeValues().forEach(age => {
+        options.push({
+          value: String(age),
+          label: String(age)
+        });
+      });
+    }
+
+    return options;
   }
 
   if (mode === "Mannschaft") {
@@ -222,6 +315,35 @@ function prGetAgeOptions(rule, mode) {
     { value: "85", label: prT("age85") },
     { value: "90", label: prT("age90") }
   ];
+}
+
+function prGetGenderOptions(rule, mode) {
+  const options = [
+    { value: "weiblich", label: prT("genderFemale") },
+    { value: "männlich", label: prT("genderMale") }
+  ];
+
+  if (rule === "International" && mode === "Mannschaft") {
+    options.push({ value: "mixed", label: prT("genderMixed") });
+  }
+
+  return options;
+}
+
+function prRenderGenderOptions(selectedValue) {
+  const genderSel = document.getElementById("pr-gender");
+  const modeSel = document.getElementById("pr-mode");
+  const ruleSel = document.getElementById("pr-rule");
+  if (!genderSel) return;
+
+  const mode = modeSel ? modeSel.value : "Einzel";
+  const rule = ruleSel ? ruleSel.value : "National";
+  const options = prGetGenderOptions(rule, mode);
+  const targetValue = options.some(option => option.value === selectedValue)
+    ? selectedValue
+    : options[0]?.value;
+
+  prBuildOptions(genderSel, options, targetValue);
 }
 
 function prRenderAgeOptions(selectedValue) {
@@ -341,6 +463,23 @@ function prUpdatePointsHeader() {
   pointsHeader.textContent = prT("points");
 }
 
+function prUpdateSourceNote() {
+  const sourceNoteText = document.getElementById("pr-source-note-text");
+  const sourceNoteLink = document.getElementById("pr-source-note-link");
+  const useIls = prGetRule() === "International";
+
+  if (sourceNoteText) {
+    sourceNoteText.textContent = prT(useIls ? "sourceNoteInternational" : "sourceNote");
+  }
+
+  if (sourceNoteLink) {
+    sourceNoteLink.textContent = prT(useIls ? "sourceLinkInternational" : "sourceLinkText");
+    sourceNoteLink.href = useIls
+      ? "https://sport.ilsf.org/records"
+      : "https://www.dennisfabri.de/rettungssport/punkterechner.html";
+  }
+}
+
 function prApplyLanguage() {
   const modeSel = document.getElementById("pr-mode");
   const ageSel = document.getElementById("pr-age");
@@ -355,6 +494,8 @@ function prApplyLanguage() {
   const scoreValue = scoreSel ? scoreSel.value : "3";
 
   const title = document.getElementById("pr-page-title");
+  const settingsTitle = document.getElementById("pr-settings-title");
+  const languageLabel = document.getElementById("pr-language-label");
   const modeLabel = document.getElementById("pr-mode-label");
   const scoreLabel = document.getElementById("pr-score-label");
   const ageLabel = document.getElementById("pr-age-label");
@@ -363,10 +504,10 @@ function prApplyLanguage() {
   const disciplineHeader = document.getElementById("pr-discipline-header");
   const timeHeader = document.getElementById("pr-time-header");
   const loading = document.getElementById("pr-loading");
-  const sourceNoteText = document.getElementById("pr-source-note-text");
-  const sourceNoteLink = document.getElementById("pr-source-note-link");
 
   if (title) title.textContent = prT("title");
+  if (settingsTitle) settingsTitle.textContent = prT("settingsTitle");
+  if (languageLabel) languageLabel.textContent = prT("languageLabel");
   if (modeLabel) modeLabel.textContent = prT("modeLabel");
   if (scoreLabel) scoreLabel.textContent = prT("scoreLabel");
   if (ageLabel) ageLabel.textContent = prT("ageLabel");
@@ -383,18 +524,10 @@ function prApplyLanguage() {
   }
 
   if (loading) loading.textContent = prT("loading");
-  if (sourceNoteText) sourceNoteText.textContent = prT("sourceNote");
-  if (sourceNoteLink) sourceNoteLink.textContent = prT("sourceLinkText");
-
   prBuildOptions(modeSel, [
     { value: "Einzel", label: prT("modeIndividual") },
     { value: "Mannschaft", label: prT("modeTeam") }
   ], modeValue);
-
-  prBuildOptions(genderSel, [
-    { value: "weiblich", label: prT("genderFemale") },
-    { value: "männlich", label: prT("genderMale") }
-  ], genderValue);
 
   prBuildOptions(ruleSel, [
     { value: "National", label: prT("ruleNational") },
@@ -402,10 +535,12 @@ function prApplyLanguage() {
   ], ruleValue);
 
   prRenderAgeOptions(ageValue);
+  prRenderGenderOptions(genderValue);
   prRenderScoringOptions(scoreValue);
   prUpdateLanguageSwitch();
   prUpdatePointsHeader();
   prUpdateSummaryLabel();
+  prUpdateSourceNote();
 
   if (prState.infoStatus) {
     prSetInfo(prState.infoStatus, prState.infoData);
@@ -543,13 +678,38 @@ async function prToggleLanguage() {
 
 function prCreateControlsMarkup() {
   return `
-    <section class="pr-controls-wrapper">
-      <div class="pr-controls-grid">
-        <div class="pr-control">
-          <label for="pr-mode" id="pr-mode-label">Disziplinen</label>
-          <select id="pr-mode">
+    <aside class="pr-controls-wrapper" aria-labelledby="pr-settings-title">
+      <div class="pr-controls-surface">
+        <div class="pr-controls-head">
+          <h2 id="pr-settings-title" class="pr-controls-title">Einstellungen</h2>
+        </div>
+        <div class="pr-controls-grid">
+        <div class="pr-control pr-choice-control">
+          <span class="pr-control-label" id="pr-mode-label">Disziplinen</span>
+          <select id="pr-mode" class="pr-choice-native" hidden aria-hidden="true" tabindex="-1">
             <option value="Einzel">Einzel</option>
             <option value="Mannschaft">Mannschaft</option>
+          </select>
+          <div class="pr-choice-group" data-pr-select="pr-mode" role="group" aria-labelledby="pr-mode-label"></div>
+        </div>
+
+        <div class="pr-control pr-choice-control">
+          <span class="pr-control-label" id="pr-gender-label">Geschlecht</span>
+          <select id="pr-gender" class="pr-choice-native" hidden aria-hidden="true" tabindex="-1">
+            <option value="weiblich">Weiblich</option>
+            <option value="männlich">Männlich</option>
+          </select>
+          <div class="pr-choice-group" data-pr-select="pr-gender" role="group" aria-labelledby="pr-gender-label"></div>
+        </div>
+
+        <div class="pr-control">
+          <label for="pr-age" id="pr-age-label">Altersklasse</label>
+          <select id="pr-age">
+            <option value="12">12</option>
+            <option value="13/14">13/14</option>
+            <option value="15/16">15/16</option>
+            <option value="17/18">17/18</option>
+            <option value="Offen" selected>Offen</option>
           </select>
         </div>
 
@@ -562,34 +722,25 @@ function prCreateControlsMarkup() {
           </select>
         </div>
 
-        <div class="pr-control">
-          <label for="pr-age" id="pr-age-label">Altersklasse</label>
-          <select id="pr-age">
-            <option value="12">AK 12</option>
-            <option value="13/14">AK 13/14</option>
-            <option value="15/16">AK 15/16</option>
-            <option value="17/18">AK 17/18</option>
-            <option value="Offen" selected>AK Offen</option>
-          </select>
-        </div>
-
-        <div class="pr-control">
-          <label for="pr-gender" id="pr-gender-label">Geschlecht</label>
-          <select id="pr-gender">
-            <option value="weiblich">Weiblich</option>
-            <option value="männlich">Männlich</option>
-          </select>
-        </div>
-
-        <div class="pr-control">
-          <label for="pr-rule" id="pr-rule-label">Rekordwerte</label>
-          <select id="pr-rule">
+        <div class="pr-control pr-choice-control">
+          <span class="pr-control-label" id="pr-rule-label">Rekordwerte</span>
+          <select id="pr-rule" class="pr-choice-native" hidden aria-hidden="true" tabindex="-1">
             <option value="National">Deutschland</option>
             <option value="International">Weltrekord</option>
           </select>
+          <div class="pr-choice-group" data-pr-select="pr-rule" role="group" aria-labelledby="pr-rule-label"></div>
+        </div>
+
+        <div class="pr-control pr-language-control">
+          <label for="pr-lang-switch" id="pr-language-label">Sprache</label>
+          <button id="pr-lang-switch" class="pr-lang-switch" type="button">
+            <img id="pr-lang-switch-icon" src="./assets/svg/Deutschland.svg" alt="Deutsch">
+            <span id="pr-lang-switch-text">Deutsch</span>
+          </button>
+        </div>
         </div>
       </div>
-    </section>
+    </aside>
   `;
 }
 
@@ -604,10 +755,12 @@ function prInitEvents() {
     modeSel.addEventListener("change", () => {
       const ageElement = document.getElementById("pr-age");
       const ageValue = ageElement ? ageElement.value : "Offen";
+      const genderValue = genderSel ? genderSel.value : "weiblich";
       const scoreValue = scoreSel ? scoreSel.value : "3";
 
       prRenderSelectionPreservingTimes(() => {
         prRenderAgeOptions(ageValue);
+        prRenderGenderOptions(genderValue);
         prRenderScoringOptions(scoreValue);
         prUpdateSummaryLabel();
       });
@@ -618,9 +771,6 @@ function prInitEvents() {
     scoreSel.addEventListener("change", () => {
       prUpdateSummaryLabel();
       prUpdateTotalPointsDe();
-      if (typeof window.prRenderPastTable === "function") {
-        window.prRenderPastTable();
-      }
     });
   }
 
@@ -643,13 +793,16 @@ function prInitEvents() {
     ruleSel.addEventListener("change", () => {
       const ageElement = document.getElementById("pr-age");
       const ageValue = ageElement ? ageElement.value : "Offen";
+      const genderValue = genderSel ? genderSel.value : "weiblich";
       const scoreValue = scoreSel ? scoreSel.value : "3";
 
       prRenderSelectionPreservingTimes(() => {
         prRenderAgeOptions(ageValue);
+        prRenderGenderOptions(genderValue);
         prRenderScoringOptions(scoreValue);
         prUpdateSummaryLabel();
         prUpdatePointsHeader();
+        prUpdateSourceNote();
       });
     });
   }
