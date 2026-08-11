@@ -53,8 +53,6 @@
 
     state.initStarted = true;
 
-    prSetSearchMeta("Athlet auswählen, um Zeiten direkt in den Rechner zu übernehmen.");
-
     if (window.AthSearch && typeof window.AthSearch.mount === "function") {
       window.AthSearch.mount(mount, { openProfile: prApplyAthleteSelection });
     }
@@ -75,7 +73,6 @@
     wrapper.innerHTML = `
       <section id="pr-ath-search-section" class="pr-ath-search-section">
         <div id="pr-ath-search-mount"></div>
-        <p id="pr-ath-search-meta" class="pr-ath-search-meta" aria-live="polite"></p>
       </section>
     `.trim();
 
@@ -91,20 +88,6 @@
     }
 
     return section.querySelector("#pr-ath-search-mount");
-  }
-
-  function prSetSearchMeta(message, tone = "") {
-    const meta = document.getElementById("pr-ath-search-meta");
-    if (!meta) return;
-
-    meta.textContent = String(message || "");
-    meta.classList.remove("is-warning", "is-error");
-
-    if (tone === "warning") {
-      meta.classList.add("is-warning");
-    } else if (tone === "error") {
-      meta.classList.add("is-error");
-    }
   }
 
   async function prLoadAthleteSearchData() {
@@ -124,93 +107,75 @@
       if (window.AthSearch && typeof window.AthSearch.setAthletes === "function") {
         window.AthSearch.setAthletes(state.athletes);
       }
-
-      prSetSearchMeta("Athlet auswählen, um Zeiten direkt in den Rechner zu übernehmen.");
     } catch (error) {
       console.error("Athleten-Suche im Punkterechner konnte nicht geladen werden:", error);
 
       if (window.AthSearch && typeof window.AthSearch.showError === "function") {
         window.AthSearch.showError("Fehler beim Laden der Athletendaten.");
       }
-
-      prSetSearchMeta("Die Athletendaten konnten nicht geladen werden.", "error");
     }
   }
 
   async function prApplyAthleteSelection(athlete) {
     if (!athlete) return;
 
-    const birthYear = Number(athlete.jahrgang);
-    const currentYear = new Date().getFullYear();
-    const age = Number.isFinite(birthYear) ? currentYear - birthYear : NaN;
+    const searchWrap = document.querySelector("#pr-ath-search-section .ath-search-wrap");
+    searchWrap?.classList.add("is-importing-athlete");
 
-    if (!Number.isFinite(age)) {
-      prSetSearchMeta(`${athlete.name}: Der Jahrgang konnte nicht eindeutig ausgewertet werden.`, "warning");
-      return;
-    }
+    try {
+      const birthYear = Number(athlete.jahrgang);
+      const currentYear = new Date().getFullYear();
+      const age = Number.isFinite(birthYear) ? currentYear - birthYear : NaN;
 
-    const availablePools = prGetAvailablePoolsForAthlete(athlete);
-    const onlyPool = availablePools.length === 1 ? availablePools[0] : null;
-    const importOptions = !availablePools.length
-      ? { poolChoice: "any", timeMode: "best-all" }
-      : onlyPool && !prHasRecentTimesForPool(athlete, onlyPool)
-        ? { poolChoice: onlyPool, timeMode: "best-all" }
-        : await prRequestImportOptions(athlete, availablePools);
-    if (!importOptions) return;
+      if (!Number.isFinite(age)) {
+        return;
+      }
 
-    const modeSel = document.getElementById("pr-mode");
-    const ruleSel = document.getElementById("pr-rule");
-    const ageSel = document.getElementById("pr-age");
-    const genderSel = document.getElementById("pr-gender");
+      const availablePools = prGetAvailablePoolsForAthlete(athlete);
+      const onlyPool = availablePools.length === 1 ? availablePools[0] : null;
+      const importOptions = !availablePools.length
+        ? { poolChoice: "any", timeMode: "best-all" }
+        : onlyPool && !prHasRecentTimesForPool(athlete, onlyPool)
+          ? { poolChoice: onlyPool, timeMode: "best-all" }
+          : await prRequestImportOptions(athlete, availablePools);
+      if (!importOptions) return;
 
-    if (!modeSel || !ruleSel || !ageSel || !genderSel) return;
+      const modeSel = document.getElementById("pr-mode");
+      const ruleSel = document.getElementById("pr-rule");
+      const ageSel = document.getElementById("pr-age");
+      const genderSel = document.getElementById("pr-gender");
 
-    modeSel.value = "Einzel";
-    if (typeof prRenderSegmentedControl === "function") {
-      prRenderSegmentedControl(modeSel);
-    }
+      if (!modeSel || !ruleSel || !ageSel || !genderSel) return;
 
-    const ageValue = prMapAgeToCalculatorAge(age, ruleSel.value);
-    prRenderAgeOptions(ageValue);
-    ageSel.value = ageValue;
-    genderSel.value = prMapAthleteGender(athlete.geschlecht);
-    if (typeof prRenderSegmentedControl === "function") {
-      prRenderSegmentedControl(genderSel);
-    }
+      modeSel.value = "Einzel";
+      if (typeof prRenderSegmentedControl === "function") {
+        prRenderSegmentedControl(modeSel);
+      }
 
-    await prRenderCurrentSelection();
+      const ageValue = prMapAgeToCalculatorAge(age, ruleSel.value);
+      prRenderAgeOptions(ageValue);
+      ageSel.value = ageValue;
+      genderSel.value = prMapAthleteGender(athlete.geschlecht);
+      if (typeof prRenderSegmentedControl === "function") {
+        prRenderSegmentedControl(genderSel);
+      }
+      if (typeof prUpdateControlsCompactSummary === "function") {
+        prUpdateControlsCompactSummary();
+      }
 
-    const bestTimes = prBuildTimesForAthlete(
-      athlete,
-      importOptions.poolChoice,
-      importOptions.timeMode
-    );
-    const disciplines = typeof prGetDisciplines === "function" ? prGetDisciplines(modeSel.value, ageSel.value) : [];
-    const restoredValues = prBuildRestoreMap(bestTimes, disciplines);
-    prRestoreTimes(restoredValues);
+      await prRenderCurrentSelection();
 
-    const displayGroup = String(athlete.ortsgruppe || "").trim();
-    const groupText = displayGroup ? ` · DLRG ${displayGroup}` : "";
-    const importedCount = Object.keys(restoredValues).length;
-    const totalCount = disciplines.length;
-
-    if (!importedCount) {
-      prSetSearchMeta(
-        `${athlete.name} (${birthYear})${groupText}: Für die aktuelle Altersklasse konnten aus den vorhandenen Athletendaten keine passenden Zeiten übernommen werden.`,
-        "warning"
+      const bestTimes = prBuildTimesForAthlete(
+        athlete,
+        importOptions.poolChoice,
+        importOptions.timeMode
       );
-      return;
+      const disciplines = typeof prGetDisciplines === "function" ? prGetDisciplines(modeSel.value, ageSel.value) : [];
+      const restoredValues = prBuildRestoreMap(bestTimes, disciplines);
+      prRestoreTimes(restoredValues);
+    } finally {
+      searchWrap?.classList.remove("is-importing-athlete");
     }
-
-    if (importedCount < totalCount) {
-      prSetSearchMeta(
-        `${athlete.name} (${birthYear})${groupText} wurde teilweise in den Rechner übernommen (${importedCount}/${totalCount} Disziplinen).`,
-        "warning"
-      );
-      return;
-    }
-
-    prSetSearchMeta(`${athlete.name} (${birthYear})${groupText} wurde in den Rechner übernommen.`);
   }
 
   function prBuildRowsByAthleteId(rows) {
@@ -279,7 +244,9 @@
       dialog.setAttribute("aria-labelledby", "pr-pool-dialog-title");
       dialog.innerHTML = `
         <div class="pr-pool-dialog-panel">
-          <button class="pr-pool-dialog-close" type="button" aria-label=""></button>
+          <button class="pr-pool-dialog-close" type="button" aria-label="">
+            <span aria-hidden="true">×</span>
+          </button>
           <p class="pr-pool-dialog-athlete"></p>
           <div class="pr-import-progress" aria-hidden="true">
             <span data-progress-step="pool"></span>
@@ -310,7 +277,6 @@
       const progressSteps = Array.from(dialog.querySelectorAll("[data-progress-step]"));
 
       athleteLabel.textContent = `${String(athlete.name || "").trim()} · ${String(athlete.jahrgang || "").trim()}`;
-      closeButton.textContent = "×";
       closeButton.setAttribute("aria-label", prT("athletePoolClose"));
       backButton.textContent = prT("athleteImportBack");
 
@@ -402,6 +368,7 @@
 
       const renderStep = (moveFocus = false) => {
         const isPoolStep = currentStep === "pool";
+        dialog.dataset.importStep = currentStep;
         poolStep.hidden = !isPoolStep;
         timeStep.hidden = isPoolStep;
         title.textContent = prT(isPoolStep ? "athletePoolQuestion" : "athleteTimeQuestion");

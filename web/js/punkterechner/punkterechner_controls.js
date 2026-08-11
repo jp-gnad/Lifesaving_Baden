@@ -40,6 +40,8 @@ const prI18n = {
     switchFlag: "./assets/svg/Deutschland.svg",
     switchAlt: "Deutsch",
     settingsTitle: "Einstellungen",
+    settingsExpand: "Einstellungen ausklappen",
+    settingsCollapse: "Einstellungen einklappen",
     languageLabel: "Sprache",
     modeLabel: "Disziplinen",
     modeIndividual: "Einzel",
@@ -120,6 +122,8 @@ const prI18n = {
     switchFlag: "./assets/svg/Großbritannien.svg",
     switchAlt: "English",
     settingsTitle: "Settings",
+    settingsExpand: "Expand settings",
+    settingsCollapse: "Collapse settings",
     languageLabel: "Language",
     modeLabel: "Disciplines",
     modeIndividual: "Individual",
@@ -241,6 +245,10 @@ function prRenderSegmentedControl(select) {
 
     group.appendChild(button);
   });
+
+  if (select.id === "pr-gender" || select.id === "pr-rule") {
+    prUpdateControlsCompactSummary();
+  }
 }
 
 function prBuildOptions(select, options, selectedValue) {
@@ -317,6 +325,14 @@ function prGetAgeOptions(rule, mode) {
   ];
 }
 
+function prMapAgeForRuleChange(ageValue, nextRule) {
+  if (nextRule !== "International") return ageValue;
+
+  return ["12", "13/14", "15/16", "17/18"].includes(String(ageValue))
+    ? "Youth"
+    : "Offen";
+}
+
 function prGetGenderOptions(rule, mode) {
   const options = [
     { value: "weiblich", label: prT("genderFemale") },
@@ -365,6 +381,7 @@ function prRenderAgeOptions(selectedValue) {
   }
 
   prBuildOptions(ageSel, options, targetValue);
+  prUpdateControlsCompactSummary();
 }
 
 function prUpdateLanguageSwitch() {
@@ -457,6 +474,78 @@ function prUpdateSummaryLabel() {
   cell.textContent = prGetSummaryLabelText(prGetScoringCount());
 }
 
+function prGetCompactGenderLabel(value) {
+  if (value === "weiblich") return prLangState.current === "en" ? "female" : "weiblich";
+  if (value === "männlich") return prLangState.current === "en" ? "male" : "männlich";
+  return "mixed";
+}
+
+function prUpdateControlsCompactSummary() {
+  const summary = document.getElementById("pr-controls-compact-summary");
+  if (!summary) return;
+
+  const ruleSel = document.getElementById("pr-rule");
+  const ageSel = document.getElementById("pr-age");
+  const genderSel = document.getElementById("pr-gender");
+
+  const ruleCode = ruleSel?.value === "International"
+    ? "WR"
+    : prLangState.current === "en" ? "GER" : "DE";
+  const ageLabel = ageSel?.selectedOptions?.[0]?.textContent?.trim() || ageSel?.value || "–";
+  const genderLabel = prGetCompactGenderLabel(genderSel?.value || "");
+
+  summary.textContent = `${ruleCode} · ${ageLabel} · ${genderLabel}`;
+}
+
+function prUpdateControlsDisclosureState() {
+  const wrapper = document.querySelector(".pr-controls-wrapper");
+  const toggle = document.getElementById("pr-controls-toggle");
+  if (!wrapper || !toggle) return;
+
+  const expanded = !wrapper.classList.contains("is-collapsed");
+  toggle.setAttribute("aria-expanded", String(expanded));
+  toggle.setAttribute("aria-label", prT(expanded ? "settingsCollapse" : "settingsExpand"));
+  toggle.title = prT(expanded ? "settingsCollapse" : "settingsExpand");
+}
+
+function prSetControlsCollapsed(collapsed) {
+  const wrapper = document.querySelector(".pr-controls-wrapper");
+  const controlsGrid = document.getElementById("pr-controls-grid");
+  if (!wrapper) return;
+
+  wrapper.classList.toggle("is-collapsed", !!collapsed);
+  if (controlsGrid) {
+    controlsGrid.toggleAttribute("inert", !!collapsed);
+    controlsGrid.setAttribute("aria-hidden", String(!!collapsed));
+  }
+  prUpdateControlsDisclosureState();
+}
+
+function prInitControlsDisclosure() {
+  const toggle = document.getElementById("pr-controls-toggle");
+  if (!toggle) return;
+
+  const compactViewport = window.matchMedia("(max-width: 1279px)");
+
+  toggle.addEventListener("click", () => {
+    const wrapper = document.querySelector(".pr-controls-wrapper");
+    if (!wrapper || !compactViewport.matches) return;
+    prSetControlsCollapsed(!wrapper.classList.contains("is-collapsed"));
+  });
+
+  const syncViewportState = event => {
+    prSetControlsCollapsed(!!event.matches);
+  };
+
+  if (typeof compactViewport.addEventListener === "function") {
+    compactViewport.addEventListener("change", syncViewportState);
+  } else if (typeof compactViewport.addListener === "function") {
+    compactViewport.addListener(syncViewportState);
+  }
+
+  syncViewportState(compactViewport);
+}
+
 function prUpdatePointsHeader() {
   const pointsHeader = document.getElementById("pr-points-header");
   if (!pointsHeader) return;
@@ -541,6 +630,8 @@ function prApplyLanguage() {
   prUpdatePointsHeader();
   prUpdateSummaryLabel();
   prUpdateSourceNote();
+  prUpdateControlsCompactSummary();
+  prUpdateControlsDisclosureState();
 
   if (prState.infoStatus) {
     prSetInfo(prState.infoStatus, prState.infoData);
@@ -678,12 +769,24 @@ async function prToggleLanguage() {
 
 function prCreateControlsMarkup() {
   return `
-    <aside class="pr-controls-wrapper" aria-labelledby="pr-settings-title">
+    <aside class="pr-controls-wrapper is-collapsed" aria-labelledby="pr-settings-title">
       <div class="pr-controls-surface">
         <div class="pr-controls-head">
-          <h2 id="pr-settings-title" class="pr-controls-title">Einstellungen</h2>
+          <div class="pr-controls-head-copy">
+            <h2 id="pr-settings-title" class="pr-controls-title">Einstellungen</h2>
+            <span id="pr-controls-compact-summary" class="pr-controls-compact-summary">DE · Offen · weiblich</span>
+          </div>
+          <button
+            id="pr-controls-toggle"
+            class="pr-controls-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="pr-controls-grid"
+            aria-label="Einstellungen ausklappen"
+          ><span aria-hidden="true"></span></button>
         </div>
-        <div class="pr-controls-grid">
+        <div id="pr-controls-body" class="pr-controls-body">
+        <div id="pr-controls-grid" class="pr-controls-grid" aria-hidden="true" inert>
         <div class="pr-control pr-choice-control">
           <span class="pr-control-label" id="pr-mode-label">Disziplinen</span>
           <select id="pr-mode" class="pr-choice-native" hidden aria-hidden="true" tabindex="-1">
@@ -739,6 +842,7 @@ function prCreateControlsMarkup() {
           </button>
         </div>
         </div>
+        </div>
       </div>
     </aside>
   `;
@@ -763,6 +867,7 @@ function prInitEvents() {
         prRenderGenderOptions(genderValue);
         prRenderScoringOptions(scoreValue);
         prUpdateSummaryLabel();
+        prUpdateControlsCompactSummary();
       });
     });
   }
@@ -775,7 +880,10 @@ function prInitEvents() {
   }
 
   if (genderSel) {
-    genderSel.addEventListener("change", () => prRenderSelectionPreservingTimes());
+    genderSel.addEventListener("change", () => {
+      prUpdateControlsCompactSummary();
+      prRenderSelectionPreservingTimes();
+    });
   }
 
   if (ageSel) {
@@ -785,6 +893,7 @@ function prInitEvents() {
       prRenderSelectionPreservingTimes(() => {
         prRenderScoringOptions(scoreValue);
         prUpdateSummaryLabel();
+        prUpdateControlsCompactSummary();
       });
     });
   }
@@ -793,16 +902,18 @@ function prInitEvents() {
     ruleSel.addEventListener("change", () => {
       const ageElement = document.getElementById("pr-age");
       const ageValue = ageElement ? ageElement.value : "Offen";
+      const nextAgeValue = prMapAgeForRuleChange(ageValue, ruleSel.value);
       const genderValue = genderSel ? genderSel.value : "weiblich";
       const scoreValue = scoreSel ? scoreSel.value : "3";
 
       prRenderSelectionPreservingTimes(() => {
-        prRenderAgeOptions(ageValue);
+        prRenderAgeOptions(nextAgeValue);
         prRenderGenderOptions(genderValue);
         prRenderScoringOptions(scoreValue);
         prUpdateSummaryLabel();
         prUpdatePointsHeader();
         prUpdateSourceNote();
+        prUpdateControlsCompactSummary();
       });
     });
   }

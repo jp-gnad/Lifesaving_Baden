@@ -79,6 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <span class="placeholder">DLRG - Daniel Reinelt</span><br>
           <span class="placeholder">DLRG - Toma Unverzagt</span><br>
           <span class="placeholder">DLRG - Denis Foemer</span><br>
+          <span class="placeholder">DLRG - Rebekka Krillwitz</span><br>
           <span class="placeholder">GettyImages - Matthias Hangst</span><br>
         </p>
       </section>
