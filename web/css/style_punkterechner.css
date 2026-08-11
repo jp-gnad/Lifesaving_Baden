@@ -340,6 +340,28 @@ main#content {
       backdrop-filter: none;
       -webkit-backdrop-filter: none;
     }
+
+    .pr-controls-head-copy {
+      contain: layout paint;
+    }
+
+    .pr-controls-compact-summary,
+    .pr-controls-wrapper:not(.is-collapsed) .pr-controls-compact-summary {
+      transform: none;
+      transition: none;
+    }
+
+    .pr-controls-body {
+      contain: layout paint;
+    }
+
+    .pr-controls-grid {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      transform: translate3d(0, 0, 0);
+      -webkit-transform: translate3d(0, 0, 0);
+      will-change: transform;
+    }
   }
 }
 
