@@ -356,11 +356,26 @@ main#content {
     }
 
     .pr-controls-grid {
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
-      transform: translate3d(0, 0, 0);
-      -webkit-transform: translate3d(0, 0, 0);
-      will-change: transform;
+      opacity: 1;
+      visibility: visible;
+      transition:
+        opacity 0.16s ease 0.58s,
+        visibility 0s linear 0.58s;
+      will-change: opacity;
+    }
+
+    .pr-controls-wrapper.is-collapsed .pr-controls-grid {
+      opacity: 0;
+      visibility: hidden;
+      transition:
+        opacity 0.12s ease,
+        visibility 0s linear 0.12s;
+    }
+
+    .pr-controls-wrapper.is-collapsed .pr-controls-body {
+      transition:
+        height 0.58s cubic-bezier(0.4, 0, 0.2, 1) 0.12s,
+        visibility 0s linear 0.7s;
     }
   }
 }
