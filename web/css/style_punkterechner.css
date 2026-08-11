@@ -220,6 +220,11 @@ main#content {
     background: rgba(15, 15, 18, 0.75);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    overflow-anchor: none;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
   }
 
   .pr-controls-head {
@@ -312,13 +317,17 @@ main#content {
   }
 
   .pr-controls-body {
-    display: grid;
-    grid-template-rows: 1fr;
+    display: block;
+    max-height: var(--pr-controls-body-height, 32rem);
     min-height: 0;
+    overflow: hidden;
     opacity: 1;
     visibility: visible;
+    will-change: max-height, opacity;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
     transition:
-      grid-template-rows 0.58s cubic-bezier(0.4, 0, 0.2, 1),
+      max-height 0.58s cubic-bezier(0.4, 0, 0.2, 1),
       opacity 0.38s ease,
       visibility 0s linear;
   }
@@ -326,14 +335,18 @@ main#content {
   .pr-controls-grid {
     min-height: 0;
     overflow: hidden;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
   }
 
   .pr-controls-wrapper.is-collapsed .pr-controls-body {
-    grid-template-rows: 0fr;
+    max-height: 0;
     opacity: 0;
     visibility: hidden;
     transition:
-      grid-template-rows 0.58s cubic-bezier(0.4, 0, 0.2, 1),
+      max-height 0.58s cubic-bezier(0.4, 0, 0.2, 1),
       opacity 0.3s ease,
       visibility 0s linear 0.58s;
   }

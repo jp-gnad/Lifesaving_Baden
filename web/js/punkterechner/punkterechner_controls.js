@@ -4,6 +4,8 @@ const prLangState = {
   current: localStorage.getItem(PR_LANG_KEY) === "en" ? "en" : "de"
 };
 
+let prControlsResizeObserver = null;
+
 const PR_DISCIPLINE_LABELS_EN = {
   "50m Hindernisschwimmen": "50m obstacle swim",
   "50m Hindernisschwimmen ": "50m obstacle swim",
@@ -508,11 +510,23 @@ function prUpdateControlsDisclosureState() {
   toggle.title = prT(expanded ? "settingsCollapse" : "settingsExpand");
 }
 
+function prUpdateControlsBodyHeight() {
+  const controlsBody = document.getElementById("pr-controls-body");
+  const controlsGrid = document.getElementById("pr-controls-grid");
+  if (!controlsBody || !controlsGrid) return;
+
+  controlsBody.style.setProperty(
+    "--pr-controls-body-height",
+    `${Math.ceil(controlsGrid.scrollHeight)}px`
+  );
+}
+
 function prSetControlsCollapsed(collapsed) {
   const wrapper = document.querySelector(".pr-controls-wrapper");
   const controlsGrid = document.getElementById("pr-controls-grid");
   if (!wrapper) return;
 
+  prUpdateControlsBodyHeight();
   wrapper.classList.toggle("is-collapsed", !!collapsed);
   if (controlsGrid) {
     controlsGrid.toggleAttribute("inert", !!collapsed);
@@ -526,6 +540,16 @@ function prInitControlsDisclosure() {
   if (!toggle) return;
 
   const compactViewport = window.matchMedia("(max-width: 1279px)");
+  const controlsGrid = document.getElementById("pr-controls-grid");
+
+  prUpdateControlsBodyHeight();
+  if (controlsGrid && typeof ResizeObserver === "function") {
+    prControlsResizeObserver?.disconnect();
+    prControlsResizeObserver = new ResizeObserver(prUpdateControlsBodyHeight);
+    prControlsResizeObserver.observe(controlsGrid);
+  }
+
+  window.addEventListener("resize", prUpdateControlsBodyHeight, { passive: true });
 
   toggle.addEventListener("click", () => {
     const wrapper = document.querySelector(".pr-controls-wrapper");
@@ -544,6 +568,7 @@ function prInitControlsDisclosure() {
   }
 
   syncViewportState(compactViewport);
+  requestAnimationFrame(prUpdateControlsBodyHeight);
 }
 
 function prUpdatePointsHeader() {
