@@ -359,7 +359,7 @@ main#content {
       opacity: 1;
       visibility: visible;
       transition:
-        opacity 0.16s ease 0.58s,
+        opacity 0.38s ease 0.58s,
         visibility 0s linear 0.58s;
       will-change: opacity;
     }
@@ -368,14 +368,14 @@ main#content {
       opacity: 0;
       visibility: hidden;
       transition:
-        opacity 0.12s ease,
-        visibility 0s linear 0.12s;
+        opacity 0.32s ease,
+        visibility 0s linear 0.32s;
     }
 
     .pr-controls-wrapper.is-collapsed .pr-controls-body {
       transition:
-        height 0.58s cubic-bezier(0.4, 0, 0.2, 1) 0.12s,
-        visibility 0s linear 0.7s;
+        height 0.58s cubic-bezier(0.4, 0, 0.2, 1) 0.32s,
+        visibility 0s linear 0.9s;
     }
   }
 }
