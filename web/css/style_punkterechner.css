@@ -349,8 +349,8 @@ main#content {
       opacity: 1;
       visibility: visible;
       transition:
-        opacity 0.24s ease 0.4s,
-        visibility 0s linear 0.4s;
+        opacity 0.24s ease 0.24s,
+        visibility 0s linear 0.24s;
       will-change: opacity;
     }
 
@@ -1343,6 +1343,10 @@ main#content {
 
   .pr-disc-name {
     grid-area: name;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
     min-width: 0;
     line-height: 1.2;
     font-size: 0.82rem;
@@ -1351,6 +1355,8 @@ main#content {
   .pr-disc-label,
   .pr-disc-record {
     display: block;
+    flex: 0 0 auto;
+    width: 100%;
   }
 
   .pr-disc-label {
