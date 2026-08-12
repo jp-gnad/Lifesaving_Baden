@@ -247,6 +247,12 @@ main#content {
     display: grid;
   }
 
+  .pr-controls-title {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+  }
+
   .pr-controls-compact-summary {
     position: absolute;
     inset: 1.2rem 0 auto;
