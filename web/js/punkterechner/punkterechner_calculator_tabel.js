@@ -304,8 +304,18 @@ function prUpdateDisciplineRecordDisplay() {
   const cells = document.querySelectorAll(".pr-disc-name");
 
   cells.forEach(cell => {
-    const baseLabel = cell.dataset.baseLabel || cell.textContent;
+    const labelElement = cell.querySelector(".pr-disc-label");
+    const recordElement = cell.querySelector(".pr-disc-record");
+    const baseLabel = cell.dataset.baseLabel || labelElement?.textContent || cell.textContent;
     const rec = cell.dataset.recDisplay || "";
+
+    if (labelElement && recordElement) {
+      labelElement.textContent = baseLabel;
+      recordElement.textContent = rec ? `(${rec})` : "";
+      recordElement.hidden = !rec;
+      return;
+    }
+
     cell.textContent = rec ? `${baseLabel} (${rec})` : baseLabel;
   });
 }
@@ -411,7 +421,16 @@ async function prRenderCurrentSelection() {
       tdName.className = "pr-disc-name";
       const discLabel = prGetDisciplineLabel(disc);
       tdName.dataset.baseLabel = discLabel;
-      tdName.textContent = discLabel;
+
+      const disciplineLabel = document.createElement("span");
+      disciplineLabel.className = "pr-disc-label";
+      disciplineLabel.textContent = discLabel;
+
+      const disciplineRecord = document.createElement("span");
+      disciplineRecord.className = "pr-disc-record";
+      disciplineRecord.hidden = true;
+
+      tdName.append(disciplineLabel, disciplineRecord);
       tr.appendChild(tdName);
 
       const tdInput = document.createElement("td");

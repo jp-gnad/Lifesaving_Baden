@@ -504,7 +504,8 @@ function prUpdateControlsDisclosureState() {
   const toggle = document.getElementById("pr-controls-toggle");
   if (!wrapper || !toggle) return;
 
-  const expanded = !wrapper.classList.contains("is-collapsed");
+  const compactViewport = window.matchMedia("(max-width: 1279px)").matches;
+  const expanded = !compactViewport || !wrapper.classList.contains("is-collapsed");
   toggle.setAttribute("aria-expanded", String(expanded));
   toggle.setAttribute("aria-label", prT(expanded ? "settingsCollapse" : "settingsExpand"));
   toggle.title = prT(expanded ? "settingsCollapse" : "settingsExpand");
@@ -540,6 +541,21 @@ function prSetControlsCollapsed(collapsed) {
   prUpdateControlsDisclosureState();
 }
 
+function prPrepareControlsForDesktop() {
+  const wrapper = document.querySelector(".pr-controls-wrapper");
+  const controlsGrid = document.getElementById("pr-controls-grid");
+  if (!wrapper) return;
+
+  // Desktop zeigt die Seitenleiste unabhängig von is-collapsed. Die Klasse
+  // bleibt gesetzt, damit sie beim nächsten schmalen Viewport sofort minimiert ist.
+  wrapper.classList.add("is-collapsed");
+  if (controlsGrid) {
+    controlsGrid.removeAttribute("inert");
+    controlsGrid.setAttribute("aria-hidden", "false");
+  }
+  prUpdateControlsDisclosureState();
+}
+
 function prInitControlsDisclosure() {
   const toggle = document.getElementById("pr-controls-toggle");
   if (!toggle) return;
@@ -563,7 +579,11 @@ function prInitControlsDisclosure() {
   });
 
   const syncViewportState = event => {
-    prSetControlsCollapsed(!!event.matches);
+    if (event.matches) {
+      prSetControlsCollapsed(true);
+    } else {
+      prPrepareControlsForDesktop();
+    }
   };
 
   if (typeof compactViewport.addEventListener === "function") {

@@ -217,6 +217,7 @@ main#content {
 
 @media (max-width: 1279px) {
   .pr-controls-wrapper {
+    padding: 0.75rem;
     background: rgba(15, 15, 18, 0.75);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -225,7 +226,7 @@ main#content {
 
   .pr-controls-head {
     justify-content: space-between;
-    min-height: 1.95rem;
+    min-height: 2.03rem;
     margin-bottom: 0;
     padding-bottom: 0;
     border-bottom: 0;
@@ -238,7 +239,7 @@ main#content {
     align-self: stretch;
     flex: 1 1 auto;
     gap: 0;
-    min-height: 1.95rem;
+    min-height: 2.03rem;
     overflow: hidden;
   }
 
@@ -248,7 +249,7 @@ main#content {
 
   .pr-controls-compact-summary {
     position: absolute;
-    inset: 1.08rem 0 auto;
+    inset: 1.2rem 0 auto;
     display: block;
     overflow: hidden;
     color: rgba(224, 224, 230, 0.86);
@@ -257,12 +258,10 @@ main#content {
     line-height: 1.15;
     opacity: 1;
     text-overflow: ellipsis;
-    transform: translateY(0);
     visibility: visible;
     white-space: nowrap;
     transition:
-      opacity 0.42s ease,
-      transform 0.48s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.28s ease,
       visibility 0s linear;
   }
 
@@ -272,12 +271,10 @@ main#content {
 
   .pr-controls-wrapper:not(.is-collapsed) .pr-controls-compact-summary {
     opacity: 0;
-    transform: translateY(-0.3rem);
     visibility: hidden;
     transition:
-      opacity 0.42s ease,
-      transform 0.48s cubic-bezier(0.4, 0, 0.2, 1),
-      visibility 0s linear 0.48s;
+      opacity 0.28s ease,
+      visibility 0s linear 0.32s;
   }
 
   .pr-controls-wrapper:not(.is-collapsed) .pr-controls-title {
@@ -311,7 +308,7 @@ main#content {
     visibility: visible;
     will-change: height;
     transition:
-      height 0.58s cubic-bezier(0.4, 0, 0.2, 1),
+      height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
       visibility 0s linear;
   }
 
@@ -321,15 +318,14 @@ main#content {
     width: 100%;
     min-height: 0;
     padding-top: 0.35rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
   }
 
   .pr-controls-wrapper.is-collapsed .pr-controls-body {
     height: 0;
     visibility: hidden;
     transition:
-      height 0.58s cubic-bezier(0.4, 0, 0.2, 1),
-      visibility 0s linear 0.58s;
+      height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      visibility 0s linear 0.4s;
   }
 }
 
@@ -345,12 +341,6 @@ main#content {
       contain: layout paint;
     }
 
-    .pr-controls-compact-summary,
-    .pr-controls-wrapper:not(.is-collapsed) .pr-controls-compact-summary {
-      transform: none;
-      transition: none;
-    }
-
     .pr-controls-body {
       contain: layout paint;
     }
@@ -359,8 +349,8 @@ main#content {
       opacity: 1;
       visibility: visible;
       transition:
-        opacity 0.38s ease 0.58s,
-        visibility 0s linear 0.58s;
+        opacity 0.24s ease 0.4s,
+        visibility 0s linear 0.4s;
       will-change: opacity;
     }
 
@@ -368,14 +358,14 @@ main#content {
       opacity: 0;
       visibility: hidden;
       transition:
-        opacity 0.32s ease,
-        visibility 0s linear 0.32s;
+        opacity 0.22s ease,
+        visibility 0s linear 0.22s;
     }
 
     .pr-controls-wrapper.is-collapsed .pr-controls-body {
       transition:
-        height 0.58s cubic-bezier(0.4, 0, 0.2, 1) 0.32s,
-        visibility 0s linear 0.9s;
+        height 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.22s,
+        visibility 0s linear 0.62s;
     }
   }
 }
@@ -768,11 +758,11 @@ main#content {
 }
 
 .pr-table tbody tr:nth-child(even) td {
-  background: rgba(255, 255, 255, 0.028);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .pr-table tbody tr.pr-row-counted td {
-  background: rgba(255, 237, 0, 0.055);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .pr-table tbody tr.pr-row-counted td:first-child {
@@ -784,6 +774,15 @@ main#content {
   overflow-wrap: anywhere;
   line-height: 1.2;
   color: rgba(218, 218, 224, 0.88);
+}
+
+.pr-disc-label,
+.pr-disc-record {
+  display: inline;
+}
+
+.pr-disc-record {
+  margin-left: 0.25rem;
 }
 
 .pr-time-input {
@@ -805,12 +804,18 @@ main#content {
   text-align: center;
 }
 
-.pr-summary-row td {
+.pr-table tfoot tr.pr-summary-row td {
   height: 3rem;
   font-weight: 700;
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(15, 15, 18, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: rgb(255, 237, 0);
   border-bottom: 0;
+}
+
+#pr-summary-label {
+  color: rgba(224, 224, 230, 0.88);
 }
 
 .pr-table td.pr-points-de-top3 {
@@ -1176,8 +1181,9 @@ main#content {
   }
 
   .pr-controls-wrapper {
-    margin: -21.6rem 0.5rem 1rem;
+    margin: -21.6rem 0 1rem;
     padding: 0.7rem;
+    border-radius: 0;
   }
 
   #pr-ath-search-mount {
@@ -1211,18 +1217,20 @@ main#content {
   }
 
   .pr-table-wrapper {
-    margin: 0 0.5rem 1.75rem;
+    margin: 0 0 1.75rem;
     overflow: hidden;
+    border-radius: 0;
     background: rgba(15, 15, 18, 0.7);
   }
 
   .pr-table {
-    --pr-mobile-points-column: clamp(5.7rem, 25vw, 6.3rem);
+    --pr-mobile-time-column: clamp(4.6rem, 21vw, 5rem);
+    --pr-mobile-points-column: clamp(4.35rem, 20vw, 5rem);
     width: 100%;
     min-width: 0;
     font-size: 0.84rem;
     table-layout: fixed;
-    border-radius: 6px;
+    border-radius: 0;
     background: rgba(15, 15, 18, 0.34);
   }
 
@@ -1242,11 +1250,14 @@ main#content {
   }
 
   .pr-table thead tr {
-    grid-template-columns: minmax(0, 1fr) var(--pr-mobile-points-column);
+    grid-template-columns:
+      minmax(0, 1fr)
+      var(--pr-mobile-time-column)
+      var(--pr-mobile-points-column);
     align-items: center;
     min-height: 2.8rem;
-    column-gap: 0.5rem;
-    padding: 0.5rem 0.65rem;
+    column-gap: 0.35rem;
+    padding: 0.5rem;
     background: rgba(15, 15, 18, 0.78);
     border-bottom: 1px solid rgba(255, 255, 255, 0.14);
   }
@@ -1272,38 +1283,42 @@ main#content {
   }
 
   #pr-discipline-header::after {
-    content: " / " attr(data-mobile-time);
+    content: none;
   }
 
   #pr-time-header {
-    display: none;
-  }
-
-  #pr-points-header {
+    display: block;
     grid-column: 2;
     justify-self: center;
     text-align: center;
   }
 
+  #pr-points-header {
+    grid-column: 3;
+    justify-self: center;
+    text-align: center;
+  }
+
   .pr-table tbody tr {
-    grid-template-columns: minmax(0, 1fr) var(--pr-mobile-points-column);
-    grid-template-areas:
-      "name points"
-      "input points";
+    grid-template-columns:
+      minmax(0, 1fr)
+      var(--pr-mobile-time-column)
+      var(--pr-mobile-points-column);
+    grid-template-areas: "name input points";
     align-items: center;
-    min-height: 4.35rem;
-    column-gap: 0.5rem;
-    row-gap: 0.3rem;
-    padding: 0.5rem 0.65rem;
+    min-height: 3.3rem;
+    column-gap: 0.35rem;
+    row-gap: 0;
+    padding: 0.28rem 0.5rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .pr-table tbody tr:nth-child(even) {
-    background: rgba(255, 255, 255, 0.028);
+    background: transparent;
   }
 
   .pr-table tbody tr.pr-row-counted {
-    background: rgba(255, 237, 0, 0.065);
+    background: transparent;
     box-shadow: inset 3px 0 0 rgba(255, 237, 0, 0.88);
   }
 
@@ -1318,71 +1333,101 @@ main#content {
     background: transparent;
   }
 
+  .pr-table tbody tr.pr-row-counted td {
+    background: transparent;
+  }
+
   .pr-table tbody tr.pr-row-counted td:first-child {
     box-shadow: none;
   }
 
   .pr-disc-name {
     grid-area: name;
-    white-space: normal;
-    line-height: 1.28;
-    font-size: 0.88rem;
+    min-width: 0;
+    line-height: 1.2;
+    font-size: 0.82rem;
+  }
+
+  .pr-disc-label,
+  .pr-disc-record {
+    display: block;
+  }
+
+  .pr-disc-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pr-disc-record {
+    margin: 0.18rem 0 0;
+    color: rgba(205, 205, 212, 0.68);
+    font-size: 0.76rem;
+    line-height: 1.15;
   }
 
   .pr-table tbody td:nth-child(2) {
     grid-area: input;
-    justify-self: start;
-    text-align: left;
+    justify-self: stretch;
+    min-width: 0;
+    text-align: center;
   }
 
   .pr-points-de {
     grid-area: points;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-end;
     justify-self: stretch;
     width: auto;
     min-width: 0;
     overflow: visible;
     white-space: nowrap;
-    text-align: center;
+    text-align: right;
     font-variant-numeric: tabular-nums;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     line-height: 1.2;
   }
 
   .pr-time-input-wrap {
     display: inline-flex;
+    width: 100%;
     transform: none;
   }
 
   .pr-time-input {
-    width: 6.15rem;
+    box-sizing: border-box;
+    width: 100%;
     max-width: 100%;
-    min-height: 2rem;
-    padding: 0.25rem 0.5rem;
-    font-size: 16px;
+    min-height: 1.85rem;
+    padding: 0.2rem 0.3rem;
+    font-size: 14px;
     line-height: 1.2;
   }
 
   .pr-table tfoot tr {
-    grid-template-columns: minmax(0, 1fr) var(--pr-mobile-points-column);
+    grid-template-columns:
+      minmax(0, 1fr)
+      var(--pr-mobile-time-column)
+      var(--pr-mobile-points-column);
     align-items: center;
     min-height: 3.35rem;
     column-gap: 0;
     row-gap: 0;
-    padding: 0;
-    background: rgba(255, 255, 255, 0.07);
+    padding: 0 0.5rem;
+    background: rgba(15, 15, 18, 0.78);
     border-top: 1px solid rgba(255, 255, 255, 0.14);
   }
 
-  .pr-table tfoot td {
+  .pr-table tfoot tr.pr-summary-row td {
     height: auto;
-    padding: 0.65rem;
-    font-size: 0.82rem;
+    padding: 0.65rem 0;
+    font-size: 0.84rem;
     line-height: 1.25;
     border-bottom: 0;
     background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     width: auto;
     min-width: 0;
     max-width: none;
@@ -1393,22 +1438,37 @@ main#content {
     text-align: left;
   }
 
-  .pr-table tfoot td:last-child {
-    grid-column: 2;
-    text-align: center;
+  .pr-table tfoot tr.pr-summary-row td:last-child {
+    grid-column: 2 / 4;
+    box-sizing: border-box;
+    justify-self: stretch;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding-right: 0;
+    padding-left: 0;
+    overflow: hidden;
+    text-align: right;
   }
 
   #pr-total-combined {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     line-height: 1.25;
-    text-align: center;
+    text-align: right;
   }
 
   #pr-total-combined .pr-total-part {
     display: block;
+    max-width: 100%;
+    font-size: inherit;
+    text-align: right;
+    white-space: nowrap;
   }
 
   #pr-total-combined .pr-total-separator {
@@ -1418,6 +1478,16 @@ main#content {
   .pr-table tbody td[colspan="3"] {
     grid-column: 1 / -1;
     padding: 0.35rem 0;
+    line-height: 1.4;
+  }
+
+  .pr-source-note,
+  .pr-source-note a {
+    font-size: 0.74rem;
+    font-weight: 400;
+  }
+
+  .pr-source-note {
     line-height: 1.4;
   }
 }
