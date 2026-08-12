@@ -263,12 +263,10 @@ main#content {
     font-weight: 400;
     line-height: 1.15;
     opacity: 1;
+    pointer-events: none;
     text-overflow: ellipsis;
-    visibility: visible;
     white-space: nowrap;
-    transition:
-      opacity 0.28s ease,
-      visibility 0s linear;
+    transition: opacity 0.28s ease;
   }
 
   .pr-controls-wrapper.is-collapsed .pr-controls-title {
@@ -277,10 +275,7 @@ main#content {
 
   .pr-controls-wrapper:not(.is-collapsed) .pr-controls-compact-summary {
     opacity: 0;
-    visibility: hidden;
-    transition:
-      opacity 0.28s ease,
-      visibility 0s linear 0.32s;
+    transition: opacity 0.28s ease;
   }
 
   .pr-controls-wrapper:not(.is-collapsed) .pr-controls-title {
@@ -345,6 +340,21 @@ main#content {
 
     .pr-controls-head-copy {
       contain: layout paint;
+    }
+
+    .pr-controls-title {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      transform: translate3d(0, 0, 0);
+      -webkit-transform: translate3d(0, 0, 0);
+    }
+
+    .pr-controls-compact-summary {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      transform: translate3d(0, 0, 0);
+      -webkit-transform: translate3d(0, 0, 0);
+      will-change: opacity;
     }
 
     .pr-controls-body {
