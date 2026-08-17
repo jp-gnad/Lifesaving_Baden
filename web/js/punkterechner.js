@@ -6,6 +6,24 @@ function prCreateHeroMarkup() {
     <section class="hero">
       <div class="hero-head">
         <h1 id="pr-page-title">Punkterechner</h1>
+        <div id="pr-hero-mode" class="hero-meta pr-hero-mode" role="group" aria-label="${prT("modeLabel")}">
+          <button
+            id="pr-hero-mode-individual"
+            class="pr-hero-mode-option is-selected"
+            type="button"
+            data-pr-hero-mode="Einzel"
+            aria-pressed="true"
+          >${prT("modeIndividual")}</button>
+          <span class="pr-hero-mode-separator" aria-hidden="true">・</span>
+          <button
+            id="pr-hero-mode-team"
+            class="pr-hero-mode-option"
+            type="button"
+            data-pr-hero-mode="Mannschaft"
+            aria-pressed="false"
+          >${prT("modeTeam")}</button>
+        </div>
+        <p id="pr-hero-info" class="hero-info pr-hero-info">${prT("heroInfoNational")}</p>
       </div>
     </section>
   `;

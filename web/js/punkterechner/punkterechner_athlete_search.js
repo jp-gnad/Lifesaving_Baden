@@ -55,9 +55,18 @@
 
     if (window.AthSearch && typeof window.AthSearch.mount === "function") {
       window.AthSearch.mount(mount, { openProfile: prApplyAthleteSelection });
+      prMountSettingsLauncherInSearch(mount);
     }
 
     prLoadAthleteSearchData();
+  }
+
+  function prMountSettingsLauncherInSearch(mount) {
+    const inputWrap = mount?.querySelector(".ath-input-wrap");
+    const launcher = document.getElementById("pr-controls-launcher");
+    if (!inputWrap || !launcher) return;
+
+    inputWrap.appendChild(launcher);
   }
 
   function prEnsureSearchMounted() {

@@ -7,6 +7,10 @@ const source = await readFile(
   new URL("../../../web/js/punkterechner/punkterechner_controls.js", import.meta.url),
   "utf8"
 );
+const pageSource = await readFile(
+  new URL("../../../web/js/punkterechner.js", import.meta.url),
+  "utf8"
+);
 
 const context = {
   console,
@@ -24,6 +28,32 @@ context.window.prGetIlsMasterAgeValues = () => ["30", "35", "50"];
 vm.createContext(context);
 vm.runInContext(source, context);
 
+const pageContext = {
+  prT: key => ({
+    modeLabel: "Disziplinen",
+    modeIndividual: "Einzel",
+    modeTeam: "Mannschaft",
+    heroInfoNational: "Hero-Info",
+    sourceNote: "Quellenhinweis",
+    sourceLinkText: "Quelle"
+  })[key] || key,
+  document: {
+    addEventListener: () => {}
+  }
+};
+pageContext.window = pageContext;
+vm.createContext(pageContext);
+vm.runInContext(pageSource, pageContext);
+
+test("renders the compact hero mode switch", () => {
+  const markup = pageContext.prCreateHeroMarkup();
+
+  assert.match(markup, /id="pr-hero-mode"[^>]*role="group"/);
+  assert.match(markup, /data-pr-hero-mode="Einzel"[^>]*aria-pressed="true"/s);
+  assert.match(markup, /data-pr-hero-mode="Mannschaft"[^>]*aria-pressed="false"/s);
+  assert.match(markup, />・<\/span>/);
+});
+
 test("renders mode, gender and record source as segmented controls", () => {
   const markup = context.prCreateControlsMarkup();
 
@@ -40,14 +70,41 @@ test("renders mode, gender and record source as segmented controls", () => {
   assert.ok(positions.every((position, index) => index === 0 || position > positions[index - 1]));
 });
 
+test("renders compact settings with a dedicated overlay launcher", () => {
+  const markup = context.prCreateControlsMarkup();
+
+  assert.match(markup, /id="pr-controls-launcher"/);
+  assert.match(markup, /id="pr-controls-launcher-label"[^>]*>Einstellungen<\/span>/);
+  assert.match(markup, /aria-controls="pr-controls-surface"/);
+  assert.match(markup, /id="pr-controls-surface"/);
+  assert.match(markup, /aria-labelledby="pr-settings-title"/);
+  assert.match(markup, /aria-hidden="true"\s+inert/);
+  assert.match(markup, /id="pr-controls-compact-summary"/);
+  assert.match(markup, /class="pr-controls-compact-summary ath-overview-chips is-filled"/);
+  assert.match(markup, /id="pr-controls-compact-summary"[^>]*role="group"/);
+  ["rule", "age", "gender"].forEach(action => {
+    assert.match(
+      markup,
+      new RegExp(`<button id="pr-summary-${action}-action" class="pr-controls-summary-chip ath-overview-chip" type="button"`)
+    );
+  });
+  assert.match(markup, /id="pr-summary-rule-value"/);
+  assert.match(markup, /id="pr-summary-age-value"/);
+  assert.match(markup, /id="pr-summary-gender-value"/);
+  assert.match(markup, /id="pr-controls-toggle"[\s\S]*aria-label="Einstellungen schließen"/);
+});
+
 test("shows the currently selected language in the language switch", () => {
   vm.runInContext('prLangState.current = "de"', context);
   assert.equal(context.prT("switchText"), "Deutsch");
   assert.match(context.prT("switchFlag"), /Deutschland\.svg$/);
+  assert.match(context.prT("heroInfoNational"), /Deutsche Meisterschaften/);
+  assert.match(context.prT("heroInfoInternational"), /Lifesaving Score/);
 
   vm.runInContext('prLangState.current = "en"', context);
   assert.equal(context.prT("switchText"), "English");
   assert.match(context.prT("switchFlag"), /Großbritannien\.svg$/);
+  assert.match(context.prT("heroInfoNational"), /German championships/);
   vm.runInContext('prLangState.current = "de"', context);
 });
 

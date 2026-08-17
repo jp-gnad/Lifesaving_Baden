@@ -4,8 +4,6 @@ const prLangState = {
   current: localStorage.getItem(PR_LANG_KEY) === "en" ? "en" : "de"
 };
 
-let prControlsResizeObserver = null;
-
 const PR_DISCIPLINE_LABELS_EN = {
   "50m Hindernisschwimmen": "50m obstacle swim",
   "50m Hindernisschwimmen ": "50m obstacle swim",
@@ -42,8 +40,13 @@ const prI18n = {
     switchFlag: "./assets/svg/Deutschland.svg",
     switchAlt: "Deutsch",
     settingsTitle: "Einstellungen",
-    settingsExpand: "Einstellungen ausklappen",
-    settingsCollapse: "Einstellungen einklappen",
+    settingsOpen: "Einstellungen \u00f6ffnen",
+    settingsClose: "Einstellungen schlie\u00dfen",
+    settingsSummary: "Einstellungs\u00fcbersicht",
+    summaryRuleSwitch: "Rekordwerte wechseln",
+    summaryAgeOpen: "Altersklassen-Einstellungen \u00f6ffnen",
+    summaryGenderSwitch: "Geschlecht wechseln",
+    summaryGenderOpen: "Geschlechts-Einstellungen \u00f6ffnen",
     languageLabel: "Sprache",
     modeLabel: "Disziplinen",
     modeIndividual: "Einzel",
@@ -102,6 +105,8 @@ const prI18n = {
     sourceLinkText: "Dennis Fabri",
     sourceNoteInternational: "Quellenhinweis: Die Weltrekorde werden live abgerufen von",
     sourceLinkInternational: "ILS Lifesaving Sport",
+    heroInfoNational: "Errechne deine Punkte f\u00fcr Wettk\u00e4mpfe wie Bezirks-, Landes- oder Deutsche Meisterschaften.",
+    heroInfoInternational: "Errechne deine Punkte f\u00fcr Bodenseepokal, Deutschlandpokal, Lifesaving Score und weitere Wettk\u00e4mpfe.",
     athletePoolQuestion: "Welche Bahnlänge?",
     athletePool25Title: "25m Bahn",
     athletePool50Title: "50m Bahn",
@@ -124,8 +129,13 @@ const prI18n = {
     switchFlag: "./assets/svg/Großbritannien.svg",
     switchAlt: "English",
     settingsTitle: "Settings",
-    settingsExpand: "Expand settings",
-    settingsCollapse: "Collapse settings",
+    settingsOpen: "Open settings",
+    settingsClose: "Close settings",
+    settingsSummary: "Settings overview",
+    summaryRuleSwitch: "Switch record values",
+    summaryAgeOpen: "Open age-group settings",
+    summaryGenderSwitch: "Switch gender",
+    summaryGenderOpen: "Open gender settings",
     languageLabel: "Language",
     modeLabel: "Disciplines",
     modeIndividual: "Individual",
@@ -184,6 +194,8 @@ const prI18n = {
     sourceLinkText: "Dennis Fabri",
     sourceNoteInternational: "Source note: World records are loaded live from",
     sourceLinkInternational: "ILS Lifesaving Sport",
+    heroInfoNational: "Calculate your points for competitions such as district, state or German championships.",
+    heroInfoInternational: "Calculate your points for the Bodensee Pokal, German Cup, Lifesaving Score and other competitions.",
     athletePoolQuestion: "Which pool length?",
     athletePool25Title: "25m pool",
     athletePool50Title: "50m pool",
@@ -250,6 +262,10 @@ function prRenderSegmentedControl(select) {
 
   if (select.id === "pr-gender" || select.id === "pr-rule") {
     prUpdateControlsCompactSummary();
+  }
+
+  if (select.id === "pr-mode") {
+    prUpdateHeroModeSwitch();
   }
 }
 
@@ -486,6 +502,13 @@ function prUpdateControlsCompactSummary() {
   const summary = document.getElementById("pr-controls-compact-summary");
   if (!summary) return;
 
+  const ruleValue = document.getElementById("pr-summary-rule-value");
+  const ageValue = document.getElementById("pr-summary-age-value");
+  const genderValue = document.getElementById("pr-summary-gender-value");
+  const ruleAction = document.getElementById("pr-summary-rule-action");
+  const ageAction = document.getElementById("pr-summary-age-action");
+  const genderAction = document.getElementById("pr-summary-gender-action");
+  const modeSel = document.getElementById("pr-mode");
   const ruleSel = document.getElementById("pr-rule");
   const ageSel = document.getElementById("pr-age");
   const genderSel = document.getElementById("pr-gender");
@@ -496,59 +519,106 @@ function prUpdateControlsCompactSummary() {
   const ageLabel = ageSel?.selectedOptions?.[0]?.textContent?.trim() || ageSel?.value || "–";
   const genderLabel = prGetCompactGenderLabel(genderSel?.value || "");
 
-  summary.textContent = `${ruleCode} · ${ageLabel} · ${genderLabel}`;
+  if (ruleValue) ruleValue.textContent = ruleCode;
+  if (ageValue) ageValue.textContent = ageLabel;
+  if (genderValue) genderValue.textContent = genderLabel;
+
+  if (ruleAction) {
+    ruleAction.setAttribute("aria-label", prT("summaryRuleSwitch"));
+    ruleAction.title = prT("summaryRuleSwitch");
+  }
+  if (ageAction) {
+    ageAction.setAttribute("aria-label", prT("summaryAgeOpen"));
+    ageAction.title = prT("summaryAgeOpen");
+  }
+  if (genderAction) {
+    const actionKey = modeSel?.value === "Einzel" ? "summaryGenderSwitch" : "summaryGenderOpen";
+    genderAction.setAttribute("aria-label", prT(actionKey));
+    genderAction.title = prT(actionKey);
+  }
 }
 
 function prUpdateControlsDisclosureState() {
   const wrapper = document.querySelector(".pr-controls-wrapper");
-  const toggle = document.getElementById("pr-controls-toggle");
-  if (!wrapper || !toggle) return;
+  const launcher = document.getElementById("pr-controls-launcher");
+  const closeButton = document.getElementById("pr-controls-toggle");
+  if (!wrapper || !launcher || !closeButton) return;
 
   const compactViewport = window.matchMedia("(max-width: 1279px)").matches;
-  const expanded = !compactViewport || !wrapper.classList.contains("is-collapsed");
-  toggle.setAttribute("aria-expanded", String(expanded));
-  toggle.setAttribute("aria-label", prT(expanded ? "settingsCollapse" : "settingsExpand"));
-  toggle.title = prT(expanded ? "settingsCollapse" : "settingsExpand");
+  const open = compactViewport && !wrapper.classList.contains("is-collapsed");
+
+  launcher.setAttribute("aria-expanded", String(open));
+  launcher.setAttribute("aria-label", prT("settingsOpen"));
+  launcher.title = prT("settingsOpen");
+  closeButton.setAttribute("aria-label", prT("settingsClose"));
+  closeButton.title = prT("settingsClose");
 }
 
-function prUpdateControlsBodyHeight() {
-  const controlsBody = document.getElementById("pr-controls-body");
-  const controlsGrid = document.getElementById("pr-controls-grid");
-  if (!controlsBody || !controlsGrid) return;
+function prGetControlsFocusableElements(surface) {
+  if (!surface) return [];
 
-  const gridHeight = Math.max(
-    controlsGrid.scrollHeight,
-    controlsGrid.getBoundingClientRect().height
-  );
-
-  controlsBody.style.setProperty(
-    "--pr-controls-body-height",
-    `${Math.ceil(gridHeight)}px`
-  );
+  return Array.from(surface.querySelectorAll(
+    'button:not([disabled]), select:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+  )).filter(element => !element.hidden && element.getClientRects().length > 0);
 }
 
-function prSetControlsCollapsed(collapsed) {
+function prSetControlsCollapsed(collapsed, options = {}) {
   const wrapper = document.querySelector(".pr-controls-wrapper");
+  const surface = document.getElementById("pr-controls-surface");
   const controlsGrid = document.getElementById("pr-controls-grid");
-  if (!wrapper) return;
+  const launcher = document.getElementById("pr-controls-launcher");
+  if (!wrapper || !surface) return;
 
-  prUpdateControlsBodyHeight();
-  wrapper.classList.toggle("is-collapsed", !!collapsed);
+  const compactViewport = window.matchMedia("(max-width: 1279px)").matches;
+  const shouldCollapse = !compactViewport || !!collapsed;
+
+  if (
+    compactViewport &&
+    shouldCollapse &&
+    options.restoreFocus !== false &&
+    surface.contains(document.activeElement)
+  ) {
+    launcher?.focus({ preventScroll: true });
+  }
+
+  wrapper.classList.toggle("is-collapsed", shouldCollapse);
+  surface.toggleAttribute("inert", shouldCollapse);
+  surface.setAttribute("aria-hidden", String(shouldCollapse));
   if (controlsGrid) {
-    controlsGrid.toggleAttribute("inert", !!collapsed);
-    controlsGrid.setAttribute("aria-hidden", String(!!collapsed));
+    controlsGrid.toggleAttribute("inert", shouldCollapse);
+    controlsGrid.setAttribute("aria-hidden", String(shouldCollapse));
   }
   prUpdateControlsDisclosureState();
+
+  if (!compactViewport) return;
+
+  if (shouldCollapse) {
+    if (options.restoreFocus !== false && document.activeElement !== launcher) {
+      launcher?.focus({ preventScroll: true });
+    }
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    document.getElementById("pr-controls-toggle")?.focus({ preventScroll: true });
+  });
 }
 
 function prPrepareControlsForDesktop() {
   const wrapper = document.querySelector(".pr-controls-wrapper");
+  const surface = document.getElementById("pr-controls-surface");
   const controlsGrid = document.getElementById("pr-controls-grid");
   if (!wrapper) return;
 
   // Desktop zeigt die Seitenleiste unabhängig von is-collapsed. Die Klasse
   // bleibt gesetzt, damit sie beim nächsten schmalen Viewport sofort minimiert ist.
   wrapper.classList.add("is-collapsed");
+  if (surface) {
+    surface.removeAttribute("inert");
+    surface.setAttribute("aria-hidden", "false");
+    surface.removeAttribute("role");
+    surface.removeAttribute("aria-modal");
+  }
   if (controlsGrid) {
     controlsGrid.removeAttribute("inert");
     controlsGrid.setAttribute("aria-hidden", "false");
@@ -557,30 +627,52 @@ function prPrepareControlsForDesktop() {
 }
 
 function prInitControlsDisclosure() {
-  const toggle = document.getElementById("pr-controls-toggle");
-  if (!toggle) return;
+  const launcher = document.getElementById("pr-controls-launcher");
+  const closeButton = document.getElementById("pr-controls-toggle");
+  const surface = document.getElementById("pr-controls-surface");
+  if (!launcher || !closeButton || !surface) return;
 
   const compactViewport = window.matchMedia("(max-width: 1279px)");
-  const controlsGrid = document.getElementById("pr-controls-grid");
 
-  prUpdateControlsBodyHeight();
-  if (controlsGrid && typeof ResizeObserver === "function") {
-    prControlsResizeObserver?.disconnect();
-    prControlsResizeObserver = new ResizeObserver(prUpdateControlsBodyHeight);
-    prControlsResizeObserver.observe(controlsGrid);
-  }
+  launcher.addEventListener("click", () => {
+    if (!compactViewport.matches) return;
+    prSetControlsCollapsed(false);
+  });
 
-  window.addEventListener("resize", prUpdateControlsBodyHeight, { passive: true });
+  closeButton.addEventListener("click", () => {
+    if (!compactViewport.matches) return;
+    prSetControlsCollapsed(true);
+  });
 
-  toggle.addEventListener("click", () => {
-    const wrapper = document.querySelector(".pr-controls-wrapper");
-    if (!wrapper || !compactViewport.matches) return;
-    prSetControlsCollapsed(!wrapper.classList.contains("is-collapsed"));
+  surface.addEventListener("keydown", event => {
+    if (!compactViewport.matches) return;
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      prSetControlsCollapsed(true);
+      return;
+    }
+
+    if (event.key !== "Tab") return;
+    const focusable = prGetControlsFocusableElements(surface);
+    if (!focusable.length) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   });
 
   const syncViewportState = event => {
     if (event.matches) {
-      prSetControlsCollapsed(true);
+      surface.setAttribute("role", "dialog");
+      surface.setAttribute("aria-modal", "true");
+      prSetControlsCollapsed(true, { restoreFocus: false });
     } else {
       prPrepareControlsForDesktop();
     }
@@ -593,7 +685,6 @@ function prInitControlsDisclosure() {
   }
 
   syncViewportState(compactViewport);
-  requestAnimationFrame(prUpdateControlsBodyHeight);
 }
 
 function prUpdatePointsHeader() {
@@ -619,6 +710,40 @@ function prUpdateSourceNote() {
   }
 }
 
+function prUpdateHeroInfo() {
+  const heroInfo = document.getElementById("pr-hero-info");
+  if (!heroInfo) return;
+
+  const useIls = prGetRule() === "International";
+  heroInfo.textContent = prT(useIls ? "heroInfoInternational" : "heroInfoNational");
+}
+
+function prUpdateHeroModeSwitch() {
+  const modeSwitch = document.getElementById("pr-hero-mode");
+  const modeSel = document.getElementById("pr-mode");
+  if (!modeSwitch) return;
+
+  const mode = modeSel ? modeSel.value : "Einzel";
+  const individualButton = document.getElementById("pr-hero-mode-individual");
+  const teamButton = document.getElementById("pr-hero-mode-team");
+
+  modeSwitch.setAttribute("aria-label", prT("modeLabel"));
+
+  if (individualButton) {
+    const isSelected = mode === "Einzel";
+    individualButton.textContent = prT("modeIndividual");
+    individualButton.classList.toggle("is-selected", isSelected);
+    individualButton.setAttribute("aria-pressed", String(isSelected));
+  }
+
+  if (teamButton) {
+    const isSelected = mode === "Mannschaft";
+    teamButton.textContent = prT("modeTeam");
+    teamButton.classList.toggle("is-selected", isSelected);
+    teamButton.setAttribute("aria-pressed", String(isSelected));
+  }
+}
+
 function prApplyLanguage() {
   const modeSel = document.getElementById("pr-mode");
   const ageSel = document.getElementById("pr-age");
@@ -634,6 +759,11 @@ function prApplyLanguage() {
 
   const title = document.getElementById("pr-page-title");
   const settingsTitle = document.getElementById("pr-settings-title");
+  const settingsSummary = document.getElementById("pr-controls-compact-summary");
+  const settingsLauncherLabel = document.getElementById("pr-controls-launcher-label");
+  const summaryRuleLabel = document.getElementById("pr-summary-rule-label");
+  const summaryAgeLabel = document.getElementById("pr-summary-age-label");
+  const summaryGenderLabel = document.getElementById("pr-summary-gender-label");
   const languageLabel = document.getElementById("pr-language-label");
   const modeLabel = document.getElementById("pr-mode-label");
   const scoreLabel = document.getElementById("pr-score-label");
@@ -646,6 +776,11 @@ function prApplyLanguage() {
 
   if (title) title.textContent = prT("title");
   if (settingsTitle) settingsTitle.textContent = prT("settingsTitle");
+  if (settingsSummary) settingsSummary.setAttribute("aria-label", prT("settingsSummary"));
+  if (settingsLauncherLabel) settingsLauncherLabel.textContent = prT("settingsTitle");
+  if (summaryRuleLabel) summaryRuleLabel.textContent = prT("ruleLabel");
+  if (summaryAgeLabel) summaryAgeLabel.textContent = prT("ageLabel");
+  if (summaryGenderLabel) summaryGenderLabel.textContent = prT("genderLabel");
   if (languageLabel) languageLabel.textContent = prT("languageLabel");
   if (modeLabel) modeLabel.textContent = prT("modeLabel");
   if (scoreLabel) scoreLabel.textContent = prT("scoreLabel");
@@ -680,6 +815,8 @@ function prApplyLanguage() {
   prUpdatePointsHeader();
   prUpdateSummaryLabel();
   prUpdateSourceNote();
+  prUpdateHeroInfo();
+  prUpdateHeroModeSwitch();
   prUpdateControlsCompactSummary();
   prUpdateControlsDisclosureState();
 
@@ -820,19 +957,51 @@ async function prToggleLanguage() {
 function prCreateControlsMarkup() {
   return `
     <aside class="pr-controls-wrapper is-collapsed" aria-labelledby="pr-settings-title">
-      <div class="pr-controls-surface">
+      <button
+        id="pr-controls-launcher"
+        class="pr-controls-launcher"
+        type="button"
+        aria-expanded="false"
+        aria-controls="pr-controls-surface"
+        aria-label="Einstellungen öffnen"
+      >
+        <span class="pr-controls-launcher-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M10 14v6"></path>
+          </svg>
+        </span>
+        <span id="pr-controls-launcher-label" class="pr-controls-launcher-label">Einstellungen</span>
+      </button>
+      <div id="pr-controls-compact-summary" class="pr-controls-compact-summary ath-overview-chips is-filled" aria-label="Einstellungsübersicht" role="group">
+        <button id="pr-summary-rule-action" class="pr-controls-summary-chip ath-overview-chip" type="button" aria-label="Rekordwerte wechseln">
+          <span id="pr-summary-rule-value" class="pr-controls-summary-value ath-overview-chip-value">DE</span>
+          <span id="pr-summary-rule-label" class="pr-controls-summary-label ath-overview-chip-label">Rekordwerte</span>
+        </button>
+        <button id="pr-summary-age-action" class="pr-controls-summary-chip ath-overview-chip" type="button" aria-label="Altersklassen-Einstellungen öffnen">
+          <span id="pr-summary-age-value" class="pr-controls-summary-value ath-overview-chip-value">Offen</span>
+          <span id="pr-summary-age-label" class="pr-controls-summary-label ath-overview-chip-label">Altersklasse</span>
+        </button>
+        <button id="pr-summary-gender-action" class="pr-controls-summary-chip ath-overview-chip" type="button" aria-label="Geschlecht wechseln">
+          <span id="pr-summary-gender-value" class="pr-controls-summary-value ath-overview-chip-value">weiblich</span>
+          <span id="pr-summary-gender-label" class="pr-controls-summary-label ath-overview-chip-label">Geschlecht</span>
+        </button>
+      </div>
+      <div
+        id="pr-controls-surface"
+        class="pr-controls-surface"
+        aria-labelledby="pr-settings-title"
+        aria-hidden="true"
+        inert
+      >
         <div class="pr-controls-head">
           <div class="pr-controls-head-copy">
             <h2 id="pr-settings-title" class="pr-controls-title">Einstellungen</h2>
-            <span id="pr-controls-compact-summary" class="pr-controls-compact-summary">DE · Offen · weiblich</span>
           </div>
           <button
             id="pr-controls-toggle"
             class="pr-controls-toggle"
             type="button"
-            aria-expanded="false"
-            aria-controls="pr-controls-grid"
-            aria-label="Einstellungen ausklappen"
+            aria-label="Einstellungen schließen"
           ><span aria-hidden="true"></span></button>
         </div>
         <div id="pr-controls-body" class="pr-controls-body">
@@ -904,6 +1073,48 @@ function prInitEvents() {
   const ageSel = document.getElementById("pr-age");
   const genderSel = document.getElementById("pr-gender");
   const ruleSel = document.getElementById("pr-rule");
+  const heroModeSwitch = document.getElementById("pr-hero-mode");
+  const summaryRuleAction = document.getElementById("pr-summary-rule-action");
+  const summaryAgeAction = document.getElementById("pr-summary-age-action");
+  const summaryGenderAction = document.getElementById("pr-summary-gender-action");
+
+  const selectValue = (select, nextValue) => {
+    if (!select || !nextValue || select.value === nextValue) return;
+    select.value = nextValue;
+    prRenderSegmentedControl(select);
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  };
+
+  summaryRuleAction?.addEventListener("click", () => {
+    const nextRule = ruleSel?.value === "International" ? "National" : "International";
+    selectValue(ruleSel, nextRule);
+  });
+
+  summaryAgeAction?.addEventListener("click", () => {
+    prSetControlsCollapsed(false);
+  });
+
+  summaryGenderAction?.addEventListener("click", () => {
+    if (modeSel?.value !== "Einzel") {
+      prSetControlsCollapsed(false);
+      return;
+    }
+
+    const nextGender = genderSel?.value === "weiblich" ? "männlich" : "weiblich";
+    selectValue(genderSel, nextGender);
+  });
+
+  if (heroModeSwitch && modeSel) {
+    heroModeSwitch.addEventListener("click", event => {
+      const button = event.target.closest("[data-pr-hero-mode]");
+      if (!button || !heroModeSwitch.contains(button)) return;
+
+      const nextMode = button.dataset.prHeroMode;
+      if (!nextMode || modeSel.value === nextMode) return;
+
+      selectValue(modeSel, nextMode);
+    });
+  }
 
   if (modeSel) {
     modeSel.addEventListener("change", () => {
@@ -963,6 +1174,7 @@ function prInitEvents() {
         prUpdateSummaryLabel();
         prUpdatePointsHeader();
         prUpdateSourceNote();
+        prUpdateHeroInfo();
         prUpdateControlsCompactSummary();
       });
     });
