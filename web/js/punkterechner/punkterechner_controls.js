@@ -106,7 +106,7 @@ const prI18n = {
     sourceNoteInternational: "Quellenhinweis: Die Weltrekorde werden live abgerufen von",
     sourceLinkInternational: "ILS Lifesaving Sport",
     heroInfoNational: "Errechne deine Punkte f\u00fcr Wettk\u00e4mpfe wie Bezirks-, Landes- oder Deutsche Meisterschaften.",
-    heroInfoInternational: "Errechne deine Punkte f\u00fcr Bodenseepokal, Deutschlandpokal, Lifesaving Score und weitere Wettk\u00e4mpfe.",
+    heroInfoInternational: "Errechne deine Punkte f\u00fcr Bodenseepokal, Deutschlandpokal, LSC und weitere Wettk\u00e4mpfe.",
     athletePoolQuestion: "Welche Bahnlänge?",
     athletePool25Title: "25m Bahn",
     athletePool50Title: "50m Bahn",

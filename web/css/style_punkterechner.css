@@ -366,8 +366,9 @@ main#content {
 
   .pr-controls-compact-summary {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 10px;
+    width: 100%;
     margin-top: 32px;
   }
 
@@ -375,8 +376,10 @@ main#content {
     display: inline-flex;
     align-items: center;
     justify-content: flex-start;
+    flex: 0 1 auto;
     gap: 8px;
-    width: max-content;
+    width: auto;
+    min-width: 0;
     padding: 10px 14px;
     overflow: hidden;
     white-space: nowrap;
@@ -415,12 +418,16 @@ main#content {
   }
 
   .pr-controls-summary-value {
+    flex: 0 0 auto;
     font-weight: 700;
   }
 
   .pr-controls-summary-label {
+    min-width: 0;
+    overflow: hidden;
     font-size: 0.85rem;
     line-height: 1;
+    text-overflow: ellipsis;
   }
 
   .pr-controls-compact-summary.is-filled .pr-controls-summary-value,
@@ -596,8 +603,8 @@ main#content {
   }
 
   .pr-controls-summary-chip {
-    gap: 6px;
-    padding: 7px 10px;
+    gap: 5px;
+    padding: 7px 9px;
   }
 
   .pr-controls-summary-value {
@@ -618,8 +625,8 @@ main#content {
   }
 
   .pr-controls-summary-chip {
-    gap: 5px;
-    padding: 6px 9px;
+    gap: 4px;
+    padding: 6px 7px;
   }
 
   .pr-controls-summary-value {
