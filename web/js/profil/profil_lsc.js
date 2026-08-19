@@ -19,6 +19,7 @@
   };
 
   const CACHE = new Map();
+  const LATEST_SINCE_CACHE = new Map();
   const HISTORY_CACHE = new Map();
   let renderRequestId = 0;
 
@@ -575,6 +576,50 @@
     }
   }
 
+  async function calculateLatestLscSince(athlete, cutoffMs) {
+    const flatRuns = flattenRuns(athlete);
+    if (!flatRuns.length) return null;
+
+    const safeCutoffMs = Number(cutoffMs);
+    const cacheKey = `${makeCacheKey(athlete, flatRuns)}|since:${Number.isFinite(safeCutoffMs) ? safeCutoffMs : "all"}`;
+    if (!LATEST_SINCE_CACHE.has(cacheKey)) {
+      LATEST_SINCE_CACHE.set(cacheKey, (async () => {
+        await ensureWrOpenIndex();
+
+        for (let i = flatRuns.length - 1; i >= 0; i--) {
+          const run = flatRuns[i];
+          const runMs = new Date(String(run?.date || "").slice(0, 10)).getTime();
+          if (!Number.isFinite(runMs)) continue;
+          if (Number.isFinite(safeCutoffMs) && runMs < safeCutoffMs) break;
+
+          const calc = calculateLscForTargetIndex(athlete, flatRuns, i);
+          if (!(Number(calc?.finalScore) > 0)) continue;
+
+          return {
+            athleteId: athlete?.id || "",
+            athleteName: athlete?.name || "",
+            jahrgang: athlete?.jahrgang || "",
+            date: String(run?.date || "").trim(),
+            meetName: String(run?.meet_name || "").trim(),
+            sortRun: Number(run?._sortRun || 0),
+            calculatedLsc: Number(calc.finalScore),
+            run,
+            calc
+          };
+        }
+
+        return null;
+      })());
+    }
+
+    try {
+      return await LATEST_SINCE_CACHE.get(cacheKey);
+    } catch (error) {
+      LATEST_SINCE_CACHE.delete(cacheKey);
+      throw error;
+    }
+  }
+
   function collapseHistorySeriesByMeet(series) {
     const byMeet = new Map();
 
@@ -1121,6 +1166,7 @@
   };
 
   ProfileLSC.calculateCurrentLsc = calculateCurrentLsc;
+  ProfileLSC.calculateLatestLscSince = calculateLatestLscSince;
   ProfileLSC.calculateHistorySeries = calculateHistorySeries;
 
   global.ProfileLSC = ProfileLSC;

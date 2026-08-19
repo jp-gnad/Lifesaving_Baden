@@ -12,52 +12,40 @@
     "USA", "Wadgassen", "Waghäusel", "Weil am Rhein", "Wettersbach", "WE", "WF", "WÜ"
   ]);
 
-  const TOP10_GROUPS = [
-    { key: "starts", label: "Starts" },
-    { key: "wettkaempfe", label: "Wettkämpfe" },
-    { key: "lsc_aktuell", label: "LSC aktuell" },
-    { key: "lsc_junioren_aktuell", label: "LSC Junioren aktuell" },
-    { key: "aktive_jahre", label: "Aktive Jahre" },
-    { key: "hoechster_lsc", label: "Höchster LSC" },
-    { key: "auslandswettkaempfe", label: "Auslandswettkämpfe" }
-  ];
+  const MODE_GROUPS = {
+    overall: [
+      { key: "starts", label: "Starts" },
+      { key: "wettkaempfe", label: "Wettkämpfe" },
+      { key: "lsc", label: "LSC" },
+      { key: "lsc_junioren", label: "LSC-Junioren" },
+      { key: "auslandswettkaempfe", label: "Auslandswettkämpfe" },
+      { key: "aktive_jahre", label: "Aktive Jahre" }
+    ],
+    current: [
+      { key: "starts", label: "Starts" },
+      { key: "wettkaempfe", label: "Wettkämpfe" },
+      { key: "lsc", label: "LSC" },
+      { key: "lsc_junioren", label: "LSC-Junioren" },
+      { key: "auslandswettkaempfe", label: "Auslandswettkämpfe" }
+    ]
+  };
 
   const JSON_GROUP_MAP = {
-    starts: "disciplines",
-    wettkaempfe: "competitions",
-    lsc_aktuell: "lscRecent2y",
-    lsc_junioren_aktuell: "juniorsCurrentLsc",
-    aktive_jahre: "activeYears",
-    hoechster_lsc: "lscAlltimeHigh",
-    auslandswettkaempfe: "foreignStarts"
+    lsc: "lscAlltimeHigh",
+    lsc_junioren: "juniorsAlltimeHigh"
   };
 
   const GROUP_VALUE_LABEL = {
     starts: "Starts",
     wettkaempfe: "Wettkämpfe",
-    lsc_aktuell: "LSC",
-    lsc_junioren_aktuell: "LSC",
+    lsc: "LSC",
+    lsc_junioren: "LSC",
     aktive_jahre: "Jahre",
-    hoechster_lsc: "LSC",
-    auslandswettkaempfe: "Starts"
+    auslandswettkaempfe: "Wettkämpfe"
   };
 
-  const GROUP_NOTES = {
-    starts:
-      "Es werden nur badische Athleten berücksichtigt. Gezählt werden 50m Retten, 100m Retten mit Flossen, 100m Kombi, 100m Lifesaver, 200m Super Lifesaver und 200m Hindernis.",
-    wettkaempfe:
-      "Es werden nur badische Athleten berücksichtigt. Gezählt werden eindeutige Wettkämpfe pro Person.",
-    lsc_aktuell:
-      "Es werden nur badische Athleten berücksichtigt. Gewertet wird der jeweils aktuellste berechnete LSC der letzten 2 Jahre relativ zum jüngsten Wettkampfdatum in der Datenbank.",
-    lsc_junioren_aktuell:
-      "Es werden nur badische Junioren berücksichtigt (jahrgangsbasiert < 19 Jahre). Gewertet wird der jeweils aktuellste berechnete LSC der letzten 2 Jahre relativ zu heute.",
-    aktive_jahre:
-      "Es werden nur badische Athleten berücksichtigt. Gezählt werden die Jahre, in denen eine Person in den Daten aufgetaucht ist.",
-    hoechster_lsc:
-      "In dieser Auswertung werden nur LifesavingScore-Werte ab dem Jahr 2001 berücksichtigt.",
-    auslandswettkaempfe:
-      "Es werden nur badische Athleten berücksichtigt. Gezählt werden eindeutige Wettkämpfe außerhalb von GER."
-  };
+  const STORAGE_KEY = "lifesaving-baden:athleten-top10-preferences";
+  const STORAGE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
   const FLAG_BASE_URL = "./assets/svg";
   const CAP_FALLBACK_FILE = "Cap-BA.svg";
@@ -95,15 +83,47 @@
 
   const State = {
     mount: null,
-    groups: null,
+    groups: { overall: {}, current: {} },
+    mode: "overall",
+    metric: "count",
     currentKey: "starts",
     top10Url: DEFAULT_TOP10_URL,
     openByName: null,
     liveAthletesPromise: null,
+    currentLscPromise: null,
+    dataMaxMs: NaN,
+    currentCutoffMs: NaN,
     liveCalcId: 0
   };
 
   const CapProbe = new Map();
+
+  function readPreferences() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const saved = JSON.parse(raw);
+      if (!Number.isFinite(Number(saved?.ts)) || Date.now() - Number(saved.ts) > STORAGE_TTL_MS) {
+        localStorage.removeItem(STORAGE_KEY);
+        return null;
+      }
+      return saved;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function savePreferences() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        ts: Date.now(),
+        mode: State.mode,
+        metric: State.metric
+      }));
+    } catch (_) {
+      // Die Rangliste funktioniert auch ohne verfügbaren Browser-Speicher.
+    }
+  }
 
   function probeCapFileExists(capFile) {
     if (!capFile) return Promise.resolve(false);
@@ -244,7 +264,7 @@
     const out = {};
     const g = top10?.groups || {};
 
-    for (const def of TOP10_GROUPS) {
+    for (const def of MODE_GROUPS.overall.filter((group) => JSON_GROUP_MAP[group.key])) {
       const jsonKey = JSON_GROUP_MAP[def.key];
       const rawArr = Array.isArray(g[jsonKey]) ? g[jsonKey] : [];
 
@@ -266,7 +286,7 @@
           rank: normalizeRank(it.rank, idx + 1),
           name: it.name,
           og: it.og,
-          value: it.value
+          value: formatLscValue(it.value)
         }));
 
       const rows = applyCompetitionRanks(sorted);
@@ -275,8 +295,9 @@
         key: def.key,
         label: def.label,
         valueLabel: GROUP_VALUE_LABEL[def.key] || "Wert",
-        note: GROUP_NOTES[def.key] || "",
-        rows
+        status: rows.length ? "ready" : "empty",
+        rows,
+        source: "json"
       };
     }
 
@@ -311,7 +332,9 @@
   }
 
   function ensureLscRuntime() {
-    if (!window.ProfileLSC || typeof window.ProfileLSC.calculateCurrentLsc !== "function") {
+    const canCalculateLatest = typeof window.ProfileLSC?.calculateLatestLscSince === "function";
+    const canCalculateHistory = typeof window.ProfileLSC?.calculateHistorySeries === "function";
+    if (!canCalculateLatest && !canCalculateHistory) {
       throw new Error("ProfileLSC fehlt für die Live-LSC-Berechnung.");
     }
 
@@ -395,13 +418,6 @@
     return Number.isFinite(birthYear) && (currentYear - birthYear) < 19;
   }
 
-  function buildTodayCutoffMs() {
-    const cutoff = new Date();
-    cutoff.setHours(0, 0, 0, 0);
-    cutoff.setFullYear(cutoff.getFullYear() - 2);
-    return cutoff.getTime();
-  }
-
   function pickLatestEligibleHistoryEntry(history, cutoffMs) {
     const entries = Array.isArray(history) ? history : [];
 
@@ -418,7 +434,7 @@
     return null;
   }
 
-  function pushLiveEntry(target, athlete, entry, og) {
+  function pushLscEntry(target, athlete, entry, og) {
     if (!entry || !(Number(entry?.calculatedLsc) > 0)) return;
 
     target.push({
@@ -429,81 +445,199 @@
     });
   }
 
-  function pushCountEntry(target, athlete, og, value) {
-    const numericValue = Number(value);
-    if (!(numericValue > 0)) return;
-
-    target.push({
-      name: String(athlete?.name || "").trim(),
-      og: String(og || athlete?.ortsgruppe || "").trim(),
-      valueRaw: numericValue,
-      value: String(numericValue)
-    });
-  }
-
-  function countStarts(meets) {
-    let count = 0;
-    const list = Array.isArray(meets) ? meets : [];
-
-    for (let i = 0; i < list.length; i++) {
-      const meet = list[i];
-      for (let j = 0; j < DISCIPLINE_TIME_KEYS.length; j++) {
-        if (String(meet?.[DISCIPLINE_TIME_KEYS[j]] || "").trim()) {
-          count += 1;
-        }
-      }
-    }
-
-    return count;
-  }
-
-  function countUniqueCompetitions(meets, predicate = null) {
-    const seen = new Set();
-    const list = Array.isArray(meets) ? meets : [];
-
-    for (let i = 0; i < list.length; i++) {
-      const meet = list[i];
-      if (typeof predicate === "function" && !predicate(meet)) continue;
-
-      const key = normalizeKey(meet?.meet_name);
-      if (!key) continue;
-      seen.add(key);
-    }
-
-    return seen.size;
-  }
-
-  function countActiveYears(meets) {
-    const years = new Set();
-    const list = Array.isArray(meets) ? meets : [];
-
-    for (let i = 0; i < list.length; i++) {
-      const year = Number(String(list[i]?.date || "").slice(0, 4));
-      if (Number.isFinite(year) && year > 0) {
-        years.add(year);
-      }
-    }
-
-    return years.size;
-  }
-
   function isForeignMeet(meet) {
     const country = String(meet?.Land || "").trim().toUpperCase();
     return !!country && country !== "GER";
   }
 
-  async function collectLiveGroupEntries() {
-    ensureLscRuntime();
+  function countStartsAtMeet(meet) {
+    let count = 0;
+    for (let i = 0; i < DISCIPLINE_TIME_KEYS.length; i++) {
+      if (String(meet?.[DISCIPLINE_TIME_KEYS[i]] || "").trim()) count += 1;
+    }
+    return count;
+  }
 
-    const athletes = await getLiveAthletesWithMeets();
+  function competitionKey(meet) {
+    const name = normalizeKey(meet?.meet_name);
+    if (!name) return "";
+    const date = String(meet?.date || "").slice(0, 10);
+    return `${name}|${date}`;
+  }
+
+  function isMeetInCurrentWindow(meet) {
+    const ms = dateIsoToMs(meet?.date);
+    return Number.isFinite(ms) &&
+      Number.isFinite(State.currentCutoffMs) &&
+      Number.isFinite(State.dataMaxMs) &&
+      ms >= State.currentCutoffMs &&
+      ms <= State.dataMaxMs;
+  }
+
+  function pushCountMetrics(target, athlete, og, countValue, averageValue = null) {
+    const countRaw = Number(countValue);
+    const averageRaw = Number(averageValue);
+    if (!(countRaw > 0)) return;
+    target.push({
+      name: String(athlete?.name || "").trim(),
+      og: String(og || athlete?.ortsgruppe || "").trim(),
+      countRaw,
+      averageRaw: Number.isFinite(averageRaw) && averageRaw > 0 ? averageRaw : null
+    });
+  }
+
+  function createComputedGroup(key, entries, supportsAverage = false) {
+    return {
+      key,
+      label: MODE_GROUPS.overall.find((group) => group.key === key)?.label || key,
+      valueLabel: GROUP_VALUE_LABEL[key] || "Wert",
+      status: entries.length ? "ready" : "empty",
+      entries,
+      supportsAverage,
+      source: "excel"
+    };
+  }
+
+  function collectCountGroups(athletes) {
+    State.dataMaxMs = getDataMaxDateMs(athletes);
+    State.currentCutoffMs = Number.isFinite(State.dataMaxMs)
+      ? State.dataMaxMs - (731 * DAY_MS)
+      : NaN;
+
+    const overall = { starts: [], wettkaempfe: [], auslandswettkaempfe: [], aktive_jahre: [] };
+    const current = { starts: [], wettkaempfe: [], auslandswettkaempfe: [] };
+
+    for (let i = 0; i < athletes.length; i++) {
+      const athlete = athletes[i];
+      if (!isBaAthlete(athlete)) continue;
+
+      const latestNationalMeet = getLastNationalMeet(athlete);
+      const displayOg = latestNationalMeet?.Ortsgruppe || athlete?.ortsgruppe;
+      const meets = Array.isArray(athlete?.meets) ? athlete.meets : [];
+      const activeYears = new Set();
+      const overallCompetitions = new Set();
+      const overallForeignCompetitions = new Set();
+      const currentCompetitions = new Set();
+      const currentForeignCompetitions = new Set();
+      let overallStarts = 0;
+      let currentStarts = 0;
+
+      for (let j = 0; j < meets.length; j++) {
+        const meet = meets[j];
+        const meetStarts = countStartsAtMeet(meet);
+        const key = competitionKey(meet);
+        const year = Number(String(meet?.date || "").slice(0, 4));
+        const isCurrent = isMeetInCurrentWindow(meet);
+
+        overallStarts += meetStarts;
+        if (key) overallCompetitions.add(key);
+        if (key && isForeignMeet(meet)) overallForeignCompetitions.add(key);
+        if (Number.isFinite(year) && year > 0) activeYears.add(year);
+
+        if (isCurrent) {
+          currentStarts += meetStarts;
+          if (key) currentCompetitions.add(key);
+          if (key && isForeignMeet(meet)) currentForeignCompetitions.add(key);
+        }
+      }
+
+      const activeYearCount = activeYears.size;
+      pushCountMetrics(overall.starts, athlete, displayOg, overallStarts, activeYearCount ? overallStarts / activeYearCount : null);
+      pushCountMetrics(
+        overall.wettkaempfe,
+        athlete,
+        displayOg,
+        overallCompetitions.size,
+        activeYearCount ? overallCompetitions.size / activeYearCount : null
+      );
+      pushCountMetrics(overall.auslandswettkaempfe, athlete, displayOg, overallForeignCompetitions.size);
+      pushCountMetrics(overall.aktive_jahre, athlete, displayOg, activeYearCount);
+
+      pushCountMetrics(current.starts, athlete, displayOg, currentStarts, currentStarts / 2);
+      pushCountMetrics(current.wettkaempfe, athlete, displayOg, currentCompetitions.size, currentCompetitions.size / 2);
+      pushCountMetrics(current.auslandswettkaempfe, athlete, displayOg, currentForeignCompetitions.size);
+    }
+
+    return {
+      overall: {
+        starts: createComputedGroup("starts", overall.starts, true),
+        wettkaempfe: createComputedGroup("wettkaempfe", overall.wettkaempfe, true),
+        auslandswettkaempfe: createComputedGroup("auslandswettkaempfe", overall.auslandswettkaempfe),
+        aktive_jahre: createComputedGroup("aktive_jahre", overall.aktive_jahre)
+      },
+      current: {
+        starts: createComputedGroup("starts", current.starts, true),
+        wettkaempfe: createComputedGroup("wettkaempfe", current.wettkaempfe, true),
+        auslandswettkaempfe: createComputedGroup("auslandswettkaempfe", current.auslandswettkaempfe),
+        lsc: { key: "lsc", label: "LSC", status: "idle", rows: [], source: "excel" },
+        lsc_junioren: { key: "lsc_junioren", label: "LSC-Junioren", status: "idle", rows: [], source: "excel" }
+      }
+    };
+  }
+
+  function formatAverageValue(value) {
+    return new Intl.NumberFormat("de-DE", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(Number(value) || 0);
+  }
+
+  function buildRankedRows(entries, valueKey, formatter) {
+    const sorted = (Array.isArray(entries) ? entries : [])
+      .filter((entry) => Number(entry?.[valueKey]) > 0)
+      .slice()
+      .sort((left, right) => {
+        const diff = Number(right?.[valueKey]) - Number(left?.[valueKey]);
+        return diff || String(left?.name || "").localeCompare(String(right?.name || ""), "de");
+      });
+    if (!sorted.length) return [];
+
+    const thresholdIndex = Math.min(10, sorted.length) - 1;
+    const threshold = Number(sorted[thresholdIndex]?.[valueKey]);
+    const rows = sorted
+      .filter((entry) => Number(entry?.[valueKey]) >= threshold)
+      .map((entry, index) => ({
+        rank: index + 1,
+        name: entry.name,
+        og: entry.og,
+        value: formatter(Number(entry[valueKey]))
+      }));
+    return applyCompetitionRanks(rows);
+  }
+
+  function buildDisplayGroup(group) {
+    if (!group) return null;
+    if (!Array.isArray(group.entries)) return group;
+
+    const useAverage = State.mode === "overall" && group.supportsAverage && State.metric === "average";
+    const rows = buildRankedRows(
+      group.entries,
+      useAverage ? "averageRaw" : "countRaw",
+      useAverage ? formatAverageValue : (value) => String(value)
+    );
+    return {
+      ...group,
+      rows,
+      status: rows.length ? "ready" : "empty",
+      valueLabel: useAverage ? "Ø pro Jahr" : (GROUP_VALUE_LABEL[group.key] || "Wert")
+    };
+  }
+
+  function buildLscGroup(key, entries) {
+    const rows = buildRankedRows(entries, "valueRaw", formatLscValue);
+    return {
+      key,
+      label: key === "lsc_junioren" ? "LSC-Junioren" : "LSC",
+      valueLabel: "LSC",
+      status: rows.length ? "ready" : "empty",
+      rows,
+      source: "excel"
+    };
+  }
+
+  async function collectCurrentLscGroups(athletes) {
+    ensureLscRuntime();
     const currentYear = new Date().getFullYear();
-    const maxDataMs = getDataMaxDateMs(athletes);
-    const currentCutoffMs = Number.isFinite(maxDataMs) ? maxDataMs - (731 * DAY_MS) : NaN;
-    const juniorCutoffMs = buildTodayCutoffMs();
-    const startsEntries = [];
-    const competitionEntries = [];
-    const activeYearEntries = [];
-    const foreignEntries = [];
     const currentEntries = [];
     const juniorEntries = [];
 
@@ -512,122 +646,63 @@
       if (!isBaAthlete(athlete)) continue;
       const latestNationalMeet = getLastNationalMeet(athlete);
       const displayOg = latestNationalMeet?.Ortsgruppe || athlete?.ortsgruppe;
-      const meets = Array.isArray(athlete?.meets) ? athlete.meets : [];
-
-      pushCountEntry(startsEntries, athlete, displayOg, countStarts(meets));
-      pushCountEntry(competitionEntries, athlete, displayOg, countUniqueCompetitions(meets));
-      pushCountEntry(activeYearEntries, athlete, displayOg, countActiveYears(meets));
-      pushCountEntry(foreignEntries, athlete, displayOg, countUniqueCompetitions(meets, isForeignMeet));
 
       try {
-        const history = await window.ProfileLSC.calculateHistorySeries(athlete);
-        const currentEntry = pickLatestEligibleHistoryEntry(history, currentCutoffMs);
-
-        if (currentEntry) {
-          pushLiveEntry(
-            currentEntries,
-            athlete,
-            currentEntry,
-            displayOg
-          );
-        }
-
-        if (isJuniorAthlete(athlete, currentYear)) {
-          const juniorEntry = pickLatestEligibleHistoryEntry(history, juniorCutoffMs);
-          if (juniorEntry) {
-            pushLiveEntry(
-              juniorEntries,
-              athlete,
-              juniorEntry,
-              juniorEntry?.run?.Ortsgruppe || athlete?.ortsgruppe
+        const latestEntry = typeof window.ProfileLSC.calculateLatestLscSince === "function"
+          ? await window.ProfileLSC.calculateLatestLscSince(athlete, State.currentCutoffMs)
+          : pickLatestEligibleHistoryEntry(
+              await window.ProfileLSC.calculateHistorySeries(athlete),
+              State.currentCutoffMs
             );
-          }
+        if (latestEntry) pushLscEntry(currentEntries, athlete, latestEntry, displayOg);
+        if (latestEntry && isJuniorAthlete(athlete, currentYear)) {
+          pushLscEntry(
+            juniorEntries,
+            athlete,
+            latestEntry,
+            latestEntry?.run?.Ortsgruppe || displayOg
+          );
         }
       } catch (error) {
         console.error("Live-LSC für Athlet fehlgeschlagen:", athlete?.name || athlete?.id || "unbekannt", error);
       }
 
-      if ((i + 1) % 12 === 0) {
-        await new Promise((resolve) => setTimeout(resolve, 0));
-      }
+      if ((i + 1) % 12 === 0) await new Promise((resolve) => setTimeout(resolve, 0));
     }
 
-    const byScoreDesc = (l, r) => {
-      if (r.valueRaw !== l.valueRaw) return r.valueRaw - l.valueRaw;
-      return l.name.localeCompare(r.name, "de");
-    };
-
-    startsEntries.sort(byScoreDesc);
-    competitionEntries.sort(byScoreDesc);
-    activeYearEntries.sort(byScoreDesc);
-    foreignEntries.sort(byScoreDesc);
-    currentEntries.sort(byScoreDesc);
-    juniorEntries.sort(byScoreDesc);
-
     return {
-      startsEntries,
-      competitionEntries,
-      activeYearEntries,
-      foreignEntries,
-      currentEntries,
-      juniorEntries
+      lsc: buildLscGroup("lsc", currentEntries),
+      lsc_junioren: buildLscGroup("lsc_junioren", juniorEntries)
     };
   }
 
-  function getThresholdValue(entries, limit = 10) {
-    const rows = Array.isArray(entries) ? entries : [];
-    if (!rows.length) return null;
-    const safeIndex = Math.min(limit, rows.length) - 1;
-    return safeIndex >= 0 ? Number(rows[safeIndex]?.valueRaw) : null;
-  }
+  function ensureCurrentLscGroups() {
+    if (State.currentLscPromise) return State.currentLscPromise;
+    const lscGroup = State.groups.current?.lsc;
+    if (lscGroup?.status === "ready" || lscGroup?.status === "empty") return Promise.resolve();
 
-  function buildLiveRows(entries) {
-    const threshold = getThresholdValue(entries, 10);
-    if (!(threshold > 0)) return [];
-
-    return entries
-      .filter((entry) => Number(entry?.valueRaw) >= threshold)
-      .map((entry, index) => ({
-        rank: index + 1,
-        name: entry.name,
-        og: entry.og,
-        value: entry.value
-      }));
-  }
-
-  function buildLiveGroup(key, entries) {
-    return {
-      key,
-      label: TOP10_GROUPS.find((group) => group.key === key)?.label || key,
-      valueLabel: GROUP_VALUE_LABEL[key] || "Wert",
-      note: GROUP_NOTES[key] || "",
-      rows: applyCompetitionRanks(buildLiveRows(entries))
-    };
-  }
-
-  async function hydrateLiveTop10Groups() {
-    const requestId = ++State.liveCalcId;
-    const {
-      startsEntries,
-      competitionEntries,
-      activeYearEntries,
-      foreignEntries,
-      currentEntries,
-      juniorEntries
-    } = await collectLiveGroupEntries();
-    if (requestId !== State.liveCalcId || !State.groups) return;
-
-    State.groups = {
-      ...State.groups,
-      starts: buildLiveGroup("starts", startsEntries),
-      wettkaempfe: buildLiveGroup("wettkaempfe", competitionEntries),
-      lsc_aktuell: buildLiveGroup("lsc_aktuell", currentEntries),
-      lsc_junioren_aktuell: buildLiveGroup("lsc_junioren_aktuell", juniorEntries),
-      aktive_jahre: buildLiveGroup("aktive_jahre", activeYearEntries),
-      auslandswettkaempfe: buildLiveGroup("auslandswettkaempfe", foreignEntries)
-    };
-
+    const requestId = State.liveCalcId;
+    State.groups.current.lsc = { ...lscGroup, status: "loading" };
+    State.groups.current.lsc_junioren = { ...State.groups.current.lsc_junioren, status: "loading" };
     renderTop10();
+
+    State.currentLscPromise = getLiveAthletesWithMeets()
+      .then((athletes) => collectCurrentLscGroups(athletes))
+      .then((groups) => {
+        if (requestId !== State.liveCalcId) return;
+        State.groups.current = { ...State.groups.current, ...groups };
+      })
+      .catch((error) => {
+        console.error("Live-Top-10 konnten nicht berechnet werden:", error);
+        if (requestId !== State.liveCalcId) return;
+        State.groups.current.lsc = { ...State.groups.current.lsc, status: "error" };
+        State.groups.current.lsc_junioren = { ...State.groups.current.lsc_junioren, status: "error" };
+      })
+      .finally(() => {
+        if (requestId === State.liveCalcId) renderTop10();
+      });
+
+    return State.currentLscPromise;
   }
 
   function setFallbackTransparency(imgEl, wrapperEl, isFallback) {
@@ -706,6 +781,7 @@
     select.addEventListener("change", (e) => {
       State.currentKey = e.target.value;
       renderTop10();
+      maybeLoadSelectedLsc();
     });
 
     return select;
@@ -727,6 +803,7 @@
             onclick: () => {
               State.currentKey = g.key;
               renderTop10();
+              maybeLoadSelectedLsc();
             }
           },
           g.label
@@ -735,6 +812,89 @@
     );
 
     return h("div", { class: "ath10-toolbar" }, tabs);
+  }
+
+  function renderSegmentedSwitch({ label, options, value, onChange, className = "" }) {
+    return h(
+      "div",
+      { class: `ath10-switch-wrap ${className}`.trim() },
+      h("span", { class: "ath10-switch-label" }, label),
+      h(
+        "div",
+        { class: "ath10-switch", role: "group", "aria-label": label },
+        options.map((option) => h(
+          "button",
+          {
+            class: `ath10-switch-option${option.value === value ? " is-active" : ""}`,
+            type: "button",
+            "aria-pressed": option.value === value ? "true" : "false",
+            onclick: () => {
+              if (option.value === value) return;
+              onChange(option.value);
+            }
+          },
+          option.label
+        ))
+      )
+    );
+  }
+
+  function renderModeSwitch(placement = "desktop") {
+    return renderSegmentedSwitch({
+      label: "Zeitraum",
+      value: State.mode,
+      options: [
+        { value: "overall", label: "Gesamt" },
+        { value: "current", label: "Aktuell" }
+      ],
+      className: `ath10-mode-switch ath10-mode-switch--${placement}`,
+      onChange: (mode) => {
+        State.mode = mode;
+        const allowed = MODE_GROUPS[mode].some((group) => group.key === State.currentKey);
+        if (!allowed) State.currentKey = "starts";
+        savePreferences();
+        renderTop10();
+        maybeLoadSelectedLsc();
+      }
+    });
+  }
+
+  function renderMetricSwitch(placement = "panel") {
+    const averageLabel = placement === "mobile" ? "Schnitt" : "Ø pro Jahr";
+    return renderSegmentedSwitch({
+      label: "Wertung",
+      value: State.metric,
+      options: [
+        { value: "count", label: "Anzahl" },
+        { value: "average", label: averageLabel }
+      ],
+      className: `ath10-metric-switch ath10-metric-switch--${placement}`,
+      onChange: (metric) => {
+        State.metric = metric;
+        savePreferences();
+        renderTop10();
+      }
+    });
+  }
+
+  function renderMobileControls(group, available, currentKey) {
+    const showMetric = State.mode === "overall" && group?.supportsAverage;
+    return h(
+      "div",
+      { class: "ath10-mobile-controls", "aria-label": "Rangliste einstellen" },
+      renderModeSwitch("mobile"),
+      h(
+        "div",
+        { class: "ath10-mobile-metric-slot" },
+        showMetric ? renderMetricSwitch("mobile") : null
+      ),
+      h(
+        "label",
+        { class: "ath10-mobile-category" },
+        h("span", { class: "ath10-switch-label" }, "Kategorie"),
+        renderCategorySelect(available, currentKey)
+      )
+    );
   }
 
   function podiumPlaceClass(displayRank) {
@@ -795,30 +955,40 @@
     );
   }
 
+  function getRowDisplayRank(row, fallback) {
+    return normalizeRank(row?.displayRank ?? row?.rank, fallback);
+  }
+
   function renderPodium(group) {
     const rows = Array.isArray(group?.rows) ? group.rows : [];
     if (!rows.length) return null;
 
-    const topRows = rows.slice(0, 3);
-    const left = topRows[1] || null;
-    const center = topRows[0] || null;
-    const right = topRows[2] || null;
+    const podiumRows = [2, 1, 3].flatMap((rank) =>
+      rows.filter((row, index) => getRowDisplayRank(row, index + 1) === rank)
+    );
+    if (!podiumRows.length) return null;
 
     return h(
       "section",
-      { class: "ath10-podium-section", "aria-label": "Podest Top 3" },
+      { class: "ath10-podium-section", "aria-label": "Podest Plätze 1 bis 3" },
       h(
         "div",
-        { class: "ath10-podium-grid" },
-        renderPodiumCard(left, 2, group.valueLabel),
-        renderPodiumCard(center, 1, group.valueLabel),
-        renderPodiumCard(right, 3, group.valueLabel)
+        {
+          class: `ath10-podium-grid${podiumRows.length > 3 ? " ath10-podium-grid--scrollable" : ""}`,
+          dataset: { count: String(podiumRows.length) },
+          style: `--ath10-podium-count: ${Math.max(3, podiumRows.length)}`
+        },
+        podiumRows.map((row, index) =>
+          renderPodiumCard(row, getRowDisplayRank(row, index + 1), group.valueLabel)
+        )
       )
     );
   }
 
   function renderRemainingTable(group) {
-    const rows = Array.isArray(group?.rows) ? group.rows.slice(3) : [];
+    const rows = (Array.isArray(group?.rows) ? group.rows : []).filter(
+      (row, index) => getRowDisplayRank(row, index + 1) > 3
+    );
     if (!rows.length) return null;
 
     return h(
@@ -890,32 +1060,100 @@
     );
   }
 
+  function formatDataDate(ms) {
+    if (!Number.isFinite(ms)) return "";
+    return new Intl.DateTimeFormat("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    }).format(new Date(ms));
+  }
+
+  function getGroupNote(group) {
+    const isCurrent = State.mode === "current";
+    const isAverage = State.mode === "overall" && group?.supportsAverage && State.metric === "average";
+    const dataEnd = formatDataDate(State.dataMaxMs);
+    const dataStart = formatDataDate(State.currentCutoffMs);
+    const range = dataStart && dataEnd ? ` vom ${dataStart} bis ${dataEnd}` : " der letzten 731 Tage";
+    const averageSuffix = isAverage
+      ? (isCurrent ? " Der Durchschnitt wird durch zwei Jahre geteilt." : " Der Durchschnitt wird durch die aktiven Jahre der Person geteilt.")
+      : "";
+
+    if (group?.key === "starts") {
+      return `Es werden nur badische Athleten berücksichtigt. Gezählt werden die sechs Einzeldisziplinen${isCurrent ? range : " im gesamten Datenbestand"}.${averageSuffix}`;
+    }
+    if (group?.key === "wettkaempfe") {
+      return `Es werden nur badische Athleten berücksichtigt. Wettkämpfe werden pro Person eindeutig über Name und Datum gezählt${isCurrent ? range : " im gesamten Datenbestand"}.${averageSuffix}`;
+    }
+    if (group?.key === "lsc") {
+      return isCurrent
+        ? `Gewertet wird pro badischer Person der zeitlich aktuellste berechnete LSC${range}; ein früherer höherer Wert bleibt unberücksichtigt.`
+        : "Gewertet wird der höchste in der JSON-Gesamtwertung gespeicherte LSC. Berücksichtigt werden Werte ab dem Jahr 2001.";
+    }
+    if (group?.key === "lsc_junioren") {
+      return isCurrent
+        ? `Gewertet wird bei aktuell jahrgangsbasiert unter 19-jährigen badischen Athleten der zeitlich aktuellste berechnete LSC${range}.`
+        : "Diese Gesamtwertung wird ausschließlich aus der JSON-Gruppe juniorsAlltimeHigh geladen.";
+    }
+    if (group?.key === "aktive_jahre") {
+      return "Es werden nur badische Athleten berücksichtigt. Gezählt werden die aktiven Kalenderjahre im gesamten Datenbestand.";
+    }
+    if (group?.key === "auslandswettkaempfe") {
+      return `Es werden nur badische Athleten berücksichtigt. Gezählt werden eindeutige Wettkämpfe außerhalb von GER${isCurrent ? range : " im gesamten Datenbestand"}.`;
+    }
+    return "";
+  }
+
   function renderNote(group) {
-    if (!group?.note) return null;
+    const note = getGroupNote(group);
+    if (!note) return null;
     return h(
       "div",
       { class: "ath10-note", role: "note" },
       h("div", { class: "ath10-note-title" }, "Hinweis"),
-      h("div", { class: "ath10-note-text" }, group.note)
+      h("div", { class: "ath10-note-text" }, note)
     );
+  }
+
+  function renderGroupBody(group) {
+    if (group?.status === "loading" || group?.status === "idle") {
+      return h("div", { class: "ath10-panel-status" }, "Rangliste wird berechnet …");
+    }
+    if (group?.status === "error") {
+      return h("div", { class: "ath10-panel-status ath10-panel-status--error" }, "Diese Rangliste konnte nicht geladen werden.");
+    }
+    if (!Array.isArray(group?.rows) || !group.rows.length) {
+      const message = State.mode === "overall" && group?.key === "lsc_junioren"
+        ? "Für LSC-Junioren Gesamt sind noch keine Daten in juniorsAlltimeHigh vorhanden."
+        : "Für diese Rangliste sind keine Daten vorhanden.";
+      return h("div", { class: "ath10-panel-status" }, message);
+    }
+    return [renderPodium(group), renderRemainingTable(group)];
+  }
+
+  function maybeLoadSelectedLsc() {
+    if (State.mode !== "current") return;
+    if (State.currentKey !== "lsc" && State.currentKey !== "lsc_junioren") return;
+    ensureCurrentLscGroups();
   }
 
   function renderTop10() {
     const mount = State.mount;
     if (!mount) return;
 
-    const groups = State.groups || {};
-    const available = TOP10_GROUPS
-      .map((def) => groups[def.key])
-      .filter((g) => g && Array.isArray(g.rows) && g.rows.length > 0);
-
-    if (!available.length) {
-      mount.innerHTML = '<div class="ath10-status ath10-status--empty">Keine Top-10 Daten vorhanden.</div>';
-      return;
-    }
+    const groups = State.groups?.[State.mode] || {};
+    const available = MODE_GROUPS[State.mode].map((def) => buildDisplayGroup(
+      groups[def.key] || {
+        key: def.key,
+        label: def.label,
+        valueLabel: GROUP_VALUE_LABEL[def.key] || "Wert",
+        status: "loading",
+        rows: []
+      }
+    ));
 
     if (!available.some((g) => g.key === State.currentKey)) {
-      State.currentKey = available[0].key;
+      State.currentKey = "starts";
     }
 
     const current = available.find((g) => g.key === State.currentKey) || available[0];
@@ -930,15 +1168,25 @@
           "div",
           { class: "ath10-header-text" },
           h("div", { class: "ath10-kicker" }, "Athletenstatistik"),
-          h("h2", { class: "ath10-title" }, "Top-10 Ranglisten")
+          h("h2", { class: "ath10-title" }, "Top-10 Ranglisten"),
+          h(
+            "div",
+            { class: "ath10-desktop-controls" },
+            renderModeSwitch("desktop"),
+            h(
+              "div",
+              { class: "ath10-desktop-metric-slot" },
+              State.mode === "overall" && current?.supportsAverage ? renderMetricSwitch("desktop") : null
+            )
+          ),
+          renderMobileControls(current, available, State.currentKey)
         )
       ),
       h(
         "section",
         { class: "ath10-panel" },
         renderPanelHeader(current, available, State.currentKey),
-        renderPodium(current),
-        renderRemainingTable(current)
+        renderGroupBody(current)
       ),
       renderNote(current)
     );
@@ -951,18 +1199,40 @@
   async function init() {
     const mount = State.mount;
     if (!mount) return;
+    const requestId = State.liveCalcId;
+    const [athleteResult, jsonResult] = await Promise.allSettled([
+      getLiveAthletesWithMeets(),
+      loadTop10Json()
+    ]);
+    if (requestId !== State.liveCalcId) return;
 
-    try {
-      const top10 = await loadTop10Json();
-      State.groups = buildTop10GroupsFromJson(top10);
-      renderTop10();
-      hydrateLiveTop10Groups().catch((error) => {
-        console.error("Live-Top10 konnten nicht berechnet werden:", error);
-      });
-    } catch (err) {
-      console.error(err);
-      mount.innerHTML = '<div class="ath10-status ath10-status--error">Top-10 konnten nicht geladen werden.</div>';
+    const nextGroups = { overall: {}, current: {} };
+    if (athleteResult.status === "fulfilled") {
+      const computed = collectCountGroups(athleteResult.value);
+      Object.assign(nextGroups.overall, computed.overall);
+      Object.assign(nextGroups.current, computed.current);
+    } else {
+      console.error("Top-10 aus Excel konnten nicht geladen werden:", athleteResult.reason);
+      for (const def of MODE_GROUPS.overall.filter((group) => !JSON_GROUP_MAP[group.key])) {
+        nextGroups.overall[def.key] = { ...def, status: "error", rows: [], source: "excel" };
+      }
+      for (const def of MODE_GROUPS.current) {
+        nextGroups.current[def.key] = { ...def, status: "error", rows: [], source: "excel" };
+      }
     }
+
+    if (jsonResult.status === "fulfilled") {
+      Object.assign(nextGroups.overall, buildTop10GroupsFromJson(jsonResult.value));
+    } else {
+      console.error("LSC-Gesamtwertungen aus JSON konnten nicht geladen werden:", jsonResult.reason);
+      for (const def of MODE_GROUPS.overall.filter((group) => JSON_GROUP_MAP[group.key])) {
+        nextGroups.overall[def.key] = { ...def, status: "error", rows: [], source: "json" };
+      }
+    }
+
+    State.groups = nextGroups;
+    renderTop10();
+    maybeLoadSelectedLsc();
   }
 
   function mountComponent(mountEl, options = {}) {
@@ -972,8 +1242,14 @@
     State.mount = el;
     State.top10Url = typeof options.top10Url === "string" ? options.top10Url : DEFAULT_TOP10_URL;
     State.openByName = typeof options.openByName === "function" ? options.openByName : null;
+    const preferences = readPreferences();
+    State.mode = preferences?.mode === "current" ? "current" : "overall";
+    State.metric = preferences?.metric === "average" ? "average" : "count";
     State.currentKey = "starts";
-    State.groups = null;
+    State.groups = { overall: {}, current: {} };
+    State.currentLscPromise = null;
+    State.dataMaxMs = NaN;
+    State.currentCutoffMs = NaN;
     State.liveCalcId += 1;
 
     el.innerHTML = '<div class="ath10-status ath10-status--loading">Top-10 wird geladen …</div>';

@@ -144,12 +144,12 @@ Relevantes Sheet:
 
 ## JSON-Quelle: `top10.json`
 
-`web/data/top10.json` ist keine vollstaendige Single Source of Truth mehr. Aktuell gilt:
+`web/data/top10.json` liefert bei den Athleten nur noch die Gesamtwertungen fuer:
 
-- Einige Athleten-Top-10 werden bereits live aus Excel-Daten berechnet.
-- Andere Gruppen greifen noch auf `top10.json` zurueck.
+- `lscAlltimeHigh` -> `LSC` im Modus `Gesamt`
+- `juniorsAlltimeHigh` -> `LSC-Junioren` im Modus `Gesamt` (der Schluessel ist vorbereitet, enthaelt aber noch keine Daten)
 
-Damit existiert fuer Top-10-Daten momentan ein Mischbetrieb aus Live-Berechnung und Legacy-JSON.
+Starts, Wettkaempfe, Auslandswettkaempfe und aktive Jahre werden fuer die Gesamtwertung direkt aus `Tabelle2` berechnet. Im Modus `Aktuell` kommen alle Kategorien aus `Tabelle2`; das Zeitfenster umfasst inklusive Grenztag 731 Tage rueckwaerts ab dem juengsten Wettkampfdatum. Die aktuelle LSC-Berechnung wird erst beim Oeffnen einer LSC-Kategorie gestartet.
 
 ## Caching und Persistenz
 
@@ -164,6 +164,8 @@ Damit existiert fuer Top-10-Daten momentan ein Mischbetrieb aus Live-Berechnung 
   - cached die GitHub-Verzeichnislisten fuer PDF-Bibliotheken
 - `web/js/punkterechner/punkterechner_controls.js`
   - speichert die aktuelle Sprache des Punkterechner-UI
+- `web/js/athleten/ath_top10.js`
+  - speichert Zeitraum- und Durchschnittsschalter der Athleten-Top-10 fuer sieben Tage
 
 ## Wichtige Risiken beim Aendern der Daten
 

@@ -17,7 +17,7 @@ Diese Datei ordnet jede HTML-Seite ihrem fachlichen Zweck, ihren Hauptskripten u
 | `web/punkterechner.html` | Punkterechner mit Athletenuebernahme | `web/js/punkterechner.js`, `web/js/punkterechner/` | `ExcelLoader`, `Tabelle2`, Live-Weltrekorde ueber den ILS-Records-Worker | zentraler datengetriebener Bereich |
 | `web/wettkaempfe.html` | Landing-Page fuer Wettbewerbe | `web/js/wettkaempfe.js` | statische Karten + Bildrotation | verweist auf DP, BP, JRP und DEM |
 | `web/clubs.html` | Clubs-Overview mit Suche und Top-10 | `web/js/clubs.js`, `web/js/clubs/clubs_data.js`, `web/js/clubs/clubs_search.js`, `web/js/clubs/clubs_top10.js` | `ExcelLoader`, `Tabelle2` | nutzt eigene Datenaufbereitung fuer Gliederungen |
-| `web/athleten.html` | Athletensuche, Statistiken und Top-10 | `web/js/athleten.js`, `web/js/athleten/ath_data_smal.js`, `web/js/athleten/ath_search.js`, `web/js/athleten/ath_top10.js` | `ExcelLoader`, `Tabelle2`, teilweise `top10.json` | nutzt bereits `profil_lsc.js` fuer Live-Top-10 |
+| `web/athleten.html` | Athletensuche, Statistiken und Top-10 | `web/js/athleten.js`, `web/js/athleten/ath_data_smal.js`, `web/js/athleten/ath_search.js`, `web/js/athleten/ath_top10.js` | `ExcelLoader`, `Tabelle2`; nur LSC-Gesamtwerte aus `top10.json` | aktueller LSC wird ueber `profil_lsc.js` bedarfsgesteuert berechnet |
 | `web/landeskader.html` | Uebersicht zum Landeskader mit Termin-Karussell | `web/js/landeskader.js`, `web/js/0_gadges/info_karussel.js` | `records_kriterien.xlsx`, Sheet `LK Kalender` | liest Termine direkt aus Excel |
 
 ## Unterseiten aus der Hauptnavigation
