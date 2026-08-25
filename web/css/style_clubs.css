@@ -366,6 +366,14 @@ main#content {
   }
 }
 
+@media (max-width: 760px) {
+  /* Athleten rendern eigene Mobile-Controls und blenden den gemeinsamen
+     Panelkopf aus. Clubs brauchen ihn weiterhin fuer die Kategorieauswahl. */
+  .clubs-top10 .ath10-panel-head {
+    display: block;
+  }
+}
+
 @media (max-width: 720px) {
   .hero {
     height: 360px;
