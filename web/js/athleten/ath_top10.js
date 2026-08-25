@@ -17,7 +17,7 @@
       { key: "starts", label: "Starts" },
       { key: "wettkaempfe", label: "Wettkämpfe" },
       { key: "lsc", label: "LSC" },
-      { key: "lsc_junioren", label: "LSC-Junioren" },
+      { key: "lsc_junioren", label: "LSC U19" },
       { key: "auslandswettkaempfe", label: "Auslandswettkämpfe" },
       { key: "aktive_jahre", label: "Aktive Jahre" }
     ],
@@ -25,14 +25,14 @@
       { key: "starts", label: "Starts" },
       { key: "wettkaempfe", label: "Wettkämpfe" },
       { key: "lsc", label: "LSC" },
-      { key: "lsc_junioren", label: "LSC-Junioren" },
+      { key: "lsc_junioren", label: "LSC U19" },
       { key: "auslandswettkaempfe", label: "Auslandswettkämpfe" }
     ]
   };
 
   const JSON_GROUP_MAP = {
     lsc: "lscAlltimeHigh",
-    lsc_junioren: "juniorsAlltimeHigh"
+    lsc_junioren: "lscU19AlltimeHigh"
   };
 
   const GROUP_VALUE_LABEL = {
@@ -570,7 +570,7 @@
         wettkaempfe: createComputedGroup("wettkaempfe", current.wettkaempfe, true),
         auslandswettkaempfe: createComputedGroup("auslandswettkaempfe", current.auslandswettkaempfe),
         lsc: { key: "lsc", label: "LSC", status: "idle", rows: [], source: "excel" },
-        lsc_junioren: { key: "lsc_junioren", label: "LSC-Junioren", status: "idle", rows: [], source: "excel" }
+        lsc_junioren: { key: "lsc_junioren", label: "LSC U19", status: "idle", rows: [], source: "excel" }
       }
     };
   }
@@ -627,7 +627,7 @@
     const rows = buildRankedRows(entries, "valueRaw", formatLscValue);
     return {
       key,
-      label: key === "lsc_junioren" ? "LSC-Junioren" : "LSC",
+      label: key === "lsc_junioren" ? "LSC U19" : "LSC",
       valueLabel: "LSC",
       status: rows.length ? "ready" : "empty",
       rows,
@@ -1093,7 +1093,7 @@
     if (group?.key === "lsc_junioren") {
       return isCurrent
         ? `Gewertet wird bei aktuell jahrgangsbasiert unter 19-jährigen badischen Athleten der zeitlich aktuellste berechnete LSC${range}.`
-        : "Diese Gesamtwertung wird ausschließlich aus der JSON-Gruppe juniorsAlltimeHigh geladen.";
+        : "Gewertet wird der höchste LSC, den ein badischer Athlet bei einem Wettkampf als U19 erzielt hat. Berücksichtigt werden Werte ab dem Jahr 2001.";
     }
     if (group?.key === "aktive_jahre") {
       return "Es werden nur badische Athleten berücksichtigt. Gezählt werden die aktiven Kalenderjahre im gesamten Datenbestand.";
@@ -1124,7 +1124,7 @@
     }
     if (!Array.isArray(group?.rows) || !group.rows.length) {
       const message = State.mode === "overall" && group?.key === "lsc_junioren"
-        ? "Für LSC-Junioren Gesamt sind noch keine Daten in juniorsAlltimeHigh vorhanden."
+        ? "Für LSC U19 Gesamt sind noch keine Daten vorhanden."
         : "Für diese Rangliste sind keine Daten vorhanden.";
       return h("div", { class: "ath10-panel-status" }, message);
     }
