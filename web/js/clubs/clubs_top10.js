@@ -12,6 +12,7 @@
     meetName: 10,
     yy2: 11,
     ortsgruppe: 12,
+    lvState: 13,
     pMehrkampf: 14,
     p100l: 15,
     p50r: 16,
@@ -40,6 +41,7 @@
     ageGroup: "open"
   });
   const CLUB_LSC_DENOMINATOR = 120;
+  const MIN_DQ_RATE_STARTS = 100;
   const CLUB_LSC_WR_SHEET_NAME = "WR-Open";
   const CLUB_LSC_WR_HEADER_ROW = 3;
   const CLUB_LSC_WR_FIRST_DATA_ROW = 4;
@@ -50,6 +52,7 @@
   const TOP10_GROUPS = [
     { key: "competition_presence", label: "Wettkämpfe besucht" },
     { key: "start_count", label: "Starts je Ortsgruppe" },
+    { key: "dq_rate", label: "Niedrigste DQ-Quote" },
     { key: "athlete_count", label: "Sportler je Ortsgruppe" },
     { key: "club_score", label: "Bester Club-Score" },
     { key: "foreign_competitions", label: "Wettkämpfe im Ausland" },
@@ -62,6 +65,7 @@
     club_score: "Punkte",
     competition_presence: "Wettkämpfe",
     start_count: "Starts",
+    dq_rate: "DQ-Quote",
     athlete_count: "Sportler",
     foreign_competitions: "Wettkämpfe",
     pool50_competitions: "Wettkämpfe",
@@ -76,6 +80,8 @@
       "Gezählt werden eindeutige Wettkämpfe pro Ortsgruppe. Mehrere Sportler derselben Ortsgruppe bei einem Wettkampf werden nur einmal gewertet. Ettlingen und der St\u00fctzpunkt Wettersbach zählen dabei gemeinsam als eine Ortsgruppe.",
     start_count:
       "Gezählt wird jede Disziplin pro Ortsgruppe, sobald dort eine Zeit, eine Platzierung oder ein DQ-/Strafmarker vorhanden ist. Eine Tabellenzeile kann mehrere Starts enthalten, wenn mehrere Disziplinen erfasst sind. Ettlingen und der St\u00fctzpunkt Wettersbach zählen dabei gemeinsam als eine Ortsgruppe.",
+    dq_rate:
+      "Die DQ-Quote entspricht der Club-Profil-Statistik: DQ-, DSQ-, DISQ- und Ausg.-Marker werden pro Disziplin gezählt und durch alle Starts der Ortsgruppe geteilt. Berücksichtigt werden ausschließlich Ortsgruppen aus dem Landesverband Baden (BA) mit mindestens 100 Starts. Ettlingen und der St\u00fctzpunkt Wettersbach zählen dabei gemeinsam als eine Ortsgruppe.",
     athlete_count:
       "Gezählt werden eindeutige Sportler pro Ortsgruppe. Mehrere Starts derselben Person für dieselbe Ortsgruppe zählen nur einmal.",
     foreign_competitions:
@@ -239,6 +245,15 @@
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(num);
+  }
+
+  function formatDqRate(value) {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return "0,00 %";
+    return `${new Intl.NumberFormat("de-DE", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(num)} %`;
   }
 
   function normalizeGender(value) {
@@ -457,6 +472,18 @@
       const hasPlace = hasDisciplineStartMarker(row?.[discipline.placeCol]);
       return sum + (hasResultOrStatus || hasPlace ? 1 : 0);
     }, 0);
+  }
+
+  function countRowDqs(row) {
+    return DISCIPLINES.reduce((sum, discipline) => {
+      const hasDqMarker = isInvalidResultMark(row?.[discipline.col]) ||
+        isInvalidResultMark(row?.[discipline.placeCol]);
+      return sum + (hasDqMarker ? 1 : 0);
+    }, 0);
+  }
+
+  function isBadenRow(row) {
+    return String(row?.[COLS.lvState] || "").trim().toUpperCase() === "BA";
   }
 
   function tieKeyFromValue(value) {
@@ -1024,6 +1051,69 @@
     };
   }
 
+  function buildDqRateGroup(rows, allGroups) {
+    const groupByName = new Map(
+      (Array.isArray(allGroups) ? allGroups : [])
+        .filter((group) => group?.kind === "og")
+        .map((group) => [String(group.name || "").trim(), group])
+    );
+
+    const counts = new Map();
+    const startIndex = rows.length && isHeaderRow(rows[0]) ? 1 : 0;
+
+    for (let index = startIndex; index < rows.length; index++) {
+      const row = rows[index] || [];
+      if (!isBadenRow(row)) continue;
+
+      const ogName = window.ClubsData?.normalizeOrtsgruppeName
+        ? window.ClubsData.normalizeOrtsgruppeName(row[COLS.ortsgruppe])
+        : String(row[COLS.ortsgruppe] || "").trim();
+      const startCount = countRowStarts(row);
+      const dqCount = countRowDqs(row);
+
+      if (!ogName || startCount <= 0) continue;
+      if (!counts.has(ogName)) {
+        counts.set(ogName, { starts: 0, dqs: 0 });
+      }
+
+      const entry = counts.get(ogName);
+      entry.starts += startCount;
+      entry.dqs += dqCount;
+    }
+
+    const sortedRows = Array.from(counts.entries())
+      .filter(([, entry]) => Number(entry.starts) >= MIN_DQ_RATE_STARTS)
+      .map(([name, entry]) => {
+        const group = groupByName.get(name) || null;
+        const rate = entry.starts ? (entry.dqs / entry.starts) * 100 : 0;
+
+        return {
+          name,
+          subtitle: "Ortsgruppe · Baden",
+          startCount: entry.starts,
+          dqCount: entry.dqs,
+          value: rate,
+          displayValue: formatDqRate(rate),
+          group
+        };
+      })
+      .sort((left, right) => {
+        const diff = Number(left.value) - Number(right.value);
+        if (diff !== 0) return diff;
+        return String(left.name || "").localeCompare(String(right.name || ""), "de", { sensitivity: "base" });
+      })
+      .slice(0, 10)
+      .map((row, index) => ({ ...row, rank: index + 1 }));
+
+    return {
+      key: "dq_rate",
+      label: getTop10GroupLabel("dq_rate"),
+      valueLabel: GROUP_VALUE_LABEL.dq_rate,
+      note: GROUP_NOTES.dq_rate,
+      rows: applyRanks(sortedRows)
+    };
+  }
+
   async function buildClubScoreGroup(rows, allGroups) {
     const groupByName = new Map(
       (Array.isArray(allGroups) ? allGroups : [])
@@ -1154,6 +1244,7 @@
       club_score: clubScoreGroup,
       competition_presence: buildCompetitionPresenceGroup(rows, allGroups),
       start_count: buildStartCountGroup(rows, allGroups),
+      dq_rate: buildDqRateGroup(rows, allGroups),
       athlete_count: buildAthleteCountGroup(rows, allGroups),
       foreign_competitions: buildForeignCompetitionGroup(rows, allGroups),
       pool50_competitions: buildPool50CompetitionGroup(rows, allGroups),
