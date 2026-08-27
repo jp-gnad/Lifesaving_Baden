@@ -81,7 +81,7 @@
     start_count:
       "Gezählt wird jede Disziplin pro Ortsgruppe, sobald dort eine Zeit, eine Platzierung oder ein DQ-/Strafmarker vorhanden ist. Eine Tabellenzeile kann mehrere Starts enthalten, wenn mehrere Disziplinen erfasst sind. Ettlingen und der St\u00fctzpunkt Wettersbach zählen dabei gemeinsam als eine Ortsgruppe.",
     dq_rate:
-      "Die DQ-Quote entspricht der Club-Profil-Statistik: DQ-, DSQ-, DISQ- und Ausg.-Marker werden pro Disziplin gezählt und durch alle Starts der Ortsgruppe geteilt. Berücksichtigt werden ausschließlich Ortsgruppen aus dem Landesverband Baden (BA) mit mindestens 100 Starts. Ettlingen und der St\u00fctzpunkt Wettersbach zählen dabei gemeinsam als eine Ortsgruppe.",
+      "Die DQ-Quote entspricht der Club-Profil-Statistik: DQ-, DSQ-, DISQ- und Ausg.-Marker werden pro Disziplin gezählt und durch alle Starts der Ortsgruppe geteilt. OMS-Wettkämpfe werden nicht mitgerechnet. Berücksichtigt werden ausschließlich Ortsgruppen aus dem Landesverband Baden (BA) mit mindestens 100 Starts. Ettlingen und der St\u00fctzpunkt Wettersbach zählen dabei gemeinsam als eine Ortsgruppe.",
     athlete_count:
       "Gezählt werden eindeutige Sportler pro Ortsgruppe. Mehrere Starts derselben Person für dieselbe Ortsgruppe zählen nur einmal.",
     foreign_competitions:
@@ -203,6 +203,10 @@
       .replace(/\s+/g, " ")
       .replace(/\s+-\s+.*$/, "")
       .trim();
+  }
+
+  function isOmsMeetName(value) {
+    return /^OMS\s*-/i.test(String(value || "").replace(/\s+/g, " ").trim());
   }
 
   function normalizeLand(value) {
@@ -1064,6 +1068,7 @@
     for (let index = startIndex; index < rows.length; index++) {
       const row = rows[index] || [];
       if (!isBadenRow(row)) continue;
+      if (isOmsMeetName(row[COLS.meetName])) continue;
 
       const ogName = window.ClubsData?.normalizeOrtsgruppeName
         ? window.ClubsData.normalizeOrtsgruppeName(row[COLS.ortsgruppe])
