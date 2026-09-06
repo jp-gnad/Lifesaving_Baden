@@ -101,7 +101,8 @@
     Ägypten: "EGY",
     Großbritannien: "GBR",
     Australien: "AUS",
-    Schweden: "SWE"
+    Schweden: "SWE",
+    Irland: "IRL"
   };
 
   const ISO3_TO_EN = {
@@ -118,7 +119,8 @@
     EGY: "EGYPT",
     GBR: "GREAT BRITAIN",
     AUS: "AUSTRALIA",
-    SWE: "SWEDEN"
+    SWE: "SWEDEN",
+    IRL: "IRELAND"
   };
 
   const LV_STATE_LABEL = {

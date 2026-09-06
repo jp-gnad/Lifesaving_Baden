@@ -104,7 +104,8 @@ document.addEventListener("DOMContentLoaded", () => {
     Ägypten: "EGY",
     Großbritannien: "GBR",
     Australien: "AUS",
-    Schweden: "SWE"
+    Schweden: "SWE",
+    Irland: "IRL"
   };
   let PROFILE_GROUPS = [];
   const LV_CODES_BY_GROUP = {

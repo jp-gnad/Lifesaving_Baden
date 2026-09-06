@@ -86,7 +86,8 @@
     Dänemark: "DEN",
     Ägypten: "EGY",
     Großbritannien: "GBR",
-    Australien: "AUS"
+    Australien: "AUS",
+    Irland: "IRL"
   };
 
   function iso3FromLand(landName) {
