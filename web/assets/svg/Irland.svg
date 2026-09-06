@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1000" height="1000" viewBox="0 0 1000 1000"
+     role="img" aria-labelledby="title desc">
+  <title id="title">Runde Irland-Flagge</title>
+  <desc id="desc">Kreisrunde irische Trikolore mit gleich breiten vertikalen Streifen in Grün, Weiß und Orange.</desc>
+
+  <defs>
+    <clipPath id="circleClip">
+      <circle cx="500" cy="500" r="500"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#circleClip)">
+    <rect x="0" y="0" width="333.333333" height="1000" fill="#169B62"/>
+    <rect x="333.333333" y="0" width="333.333334" height="1000" fill="#FFFFFF"/>
+    <rect x="666.666667" y="0" width="333.333333" height="1000" fill="#FF883E"/>
+  </g>
+</svg>
