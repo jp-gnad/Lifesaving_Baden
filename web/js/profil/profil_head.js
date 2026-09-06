@@ -350,18 +350,21 @@
     WG: "World Games",
   };
 
+  function hasHistorieToken(value, token) {
+    return new RegExp(`(?:^|[^a-z0-9])${token}(?=$|[^a-z0-9])`, "i").test(String(value || ""));
+  }
+
   function classifyHistorie(meet) {
     const raw = meet.meet_name || meet.name || "";
     if (!raw) return null;
 
     const name = raw.toLowerCase();
-    const hasWord = (token) => new RegExp(`\\b${token}\\b`, "i").test(raw);
 
-    if (hasWord("wg") || name.includes("world-games")) return "WG";
-    if (hasWord("wm") || name.includes("weltmeisterschaft")) return "WM";
-    if (hasWord("em") || name.includes("europameisterschaft")) return "EM";
-    if (hasWord("jrp")) return "JRP";
-    if (hasWord("dp") || hasWord("dt")) return "DP";
+    if (hasHistorieToken(raw, "wg") || name.includes("world-games")) return "WG";
+    if (hasHistorieToken(raw, "lwc") || hasHistorieToken(raw, "wm") || name.includes("weltmeisterschaft")) return "WM";
+    if (hasHistorieToken(raw, "elc") || hasHistorieToken(raw, "eylc") || hasHistorieToken(raw, "em") || name.includes("europameisterschaft")) return "EM";
+    if (hasHistorieToken(raw, "jrp")) return "JRP";
+    if (hasHistorieToken(raw, "dp") || hasHistorieToken(raw, "dt")) return "DP";
 
     return null;
   }
@@ -400,7 +403,9 @@
       let key;
       if (cat === "WM" || cat === "EM") {
         let kind = "other";
-        if (name.includes("interclub")) kind = "interclub";
+        const isNationalCode = ["lwc", "elc", "eylc"].some((token) => hasHistorieToken(name, token));
+        if (isNationalCode) kind = "national";
+        else if (name.includes("interclub")) kind = "interclub";
         else if (name.includes("national")) kind = "national";
         key = `${year}-${kind}`;
       } else {
