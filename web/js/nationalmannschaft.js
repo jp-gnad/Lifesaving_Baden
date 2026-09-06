@@ -83,6 +83,12 @@ window.CompetitionPage.init({
   carousel: {
     slides: [
       {
+        year: 2026,
+        img: "./assets/png/Natio-Team/2026.JPG",
+        text: "Malina Dziacko - Junioren Europameisterschaft (Ocean) - Irland",
+        bgPos: "center 40%",
+      },
+      {
         year: 2024,
         img: "./assets/png/Natio-Team/2024.JPG",
         text: "Johanna Gnad - Junioren Europameisterschaft - Deutschland",
