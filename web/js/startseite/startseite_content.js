@@ -9,15 +9,15 @@
     {
       title: "Willkommen beim Lifesaving Team Baden",
       meta: "DLRG ・ Landeskader Baden ・ Leistungssport",
-      text: "Willkommen auf der inoffiziellen Internetseite des Lifesaving Team Badens. Hier findest du nuetzliche Informationen rund um den Rettungssport in Baden.",
+      text: "Willkommen auf der inoffiziellen Internetseite des Lifesaving Team Badens. Hier findest du nützliche Informationen rund um den Rettungssport in Baden.",
       icon: { src: "./assets/png/icons/Baden2.png", href: "https://baden.dlrg.de/mitmachen/rettungssport/", alt: "DLRG Rettungssport" },
       img: "./assets/png/hintergrund1.JPG",
       bgY: "50%",
     },
     {
       title: "Kalender",
-      meta: "DLRG ・ Wettkaempfe ・ Landeskader ・ Bundeskader",
-      text: "Uebersicht zu den wichtigsten Wettkampfterminen sowie Massnahmen vom Landes- und Bundeskader.",
+      meta: "DLRG ・ Wettkämpfe ・ Landeskader ・ Bundeskader",
+      text: "Übersicht zu den wichtigsten Wettkampfterminen sowie Maßnahmen vom Landes- und Bundeskader.",
       img: "./assets/png/karussel/bild3.jpg",
       cta: { label: "Mehr Informationen", href: "./kalender.html" },
       bgY: "25%",
@@ -31,9 +31,9 @@
       bgY: "50%",
     },
     {
-      title: "Dopingpraevention",
+      title: "Dopingprävention",
       meta: "NADA ・ WADA ・ Sport ・ Sicher und sauber",
-      text: "Auch in der DLRG wird Leistungssport betrieben. Deshalb gelten fuer Rettungssportler die Anti-Doping-Regeln von NADA und WADA.",
+      text: "Auch in der DLRG wird Leistungssport betrieben. Deshalb gelten für Rettungssportler die Anti-Doping-Regeln von NADA und WADA.",
       img: "./assets/png/karussel/bild4.jpg",
       icon: { src: "./assets/png/icons/nada.png", href: "https://lifesaving2026.com/", alt: "DLRG Rettungssport" },
       cta: {
@@ -45,7 +45,7 @@
     {
       title: "Lifesaving World Championships",
       meta: "ILS ・ Weltmeisterschaft ・ Lifesaving Sport ・ 2026",
-      text: "Die LWC finden 2026 vom 25. Nov bis 13. Dez in Port Elizabeth / Suedafrika statt. Das groesste Highlight im Jahr.",
+      text: "Die LWC finden 2026 vom 25. Nov bis 13. Dez in Port Elizabeth / Südafrika statt. Das größte Highlight im Jahr.",
       img: "./assets/png/karussel/bild6.JPG",
       video: {
         src: HERO_VIDEO_SRC,
@@ -91,6 +91,19 @@
                   <h2>${slide.title}</h2>
                   ${slide.meta ? `<div class="wide-carousel__meta">${slide.meta}</div>` : ""}
                   <p>${slide.text}</p>
+                  ${index === 0 ? `
+                    <button
+                      type="button"
+                      class="wide-carousel__latest-competition"
+                      data-latest-competition
+                      aria-busy="true"
+                      aria-expanded="false"
+                      aria-live="polite"
+                    >
+                      <span class="wide-carousel__latest-label">Neu:</span>
+                      <span class="wide-carousel__latest-skeleton" aria-hidden="true"></span>
+                    </button>
+                  ` : ""}
                   ${slide.cta ? `<a class="wide-carousel__cta" href="${slide.cta.href}">${slide.cta.label}</a>` : ""}
                 </div>
               </article>
@@ -98,9 +111,9 @@
           </div>
 
           <button class="wide-carousel__nav wide-carousel__nav--prev" type="button" aria-label="Vorherige Folie"></button>
-          <button class="wide-carousel__nav wide-carousel__nav--next" type="button" aria-label="Naechste Folie"></button>
+          <button class="wide-carousel__nav wide-carousel__nav--next" type="button" aria-label="Nächste Folie"></button>
 
-          <div class="wide-carousel__dots" role="tablist" aria-label="Folie auswaehlen">
+          <div class="wide-carousel__dots" role="tablist" aria-label="Folie auswählen">
             ${WIDE_SLIDES.map((_, index) => `
               <button class="wide-carousel__dot ${index === 0 ? "is-active" : ""}" type="button" role="tab"
                       aria-label="Folie ${index + 1}"
@@ -112,27 +125,28 @@
         </div>
       </section>
 
-      <section class="home-links" aria-label="Athletenprofile">
+      <section class="home-links" aria-labelledby="home-highlights-title">
         <div class="container">
+          <h2 class="home-links__title" id="home-highlights-title">Highlights</h2>
           <div class="home-cards">
             <a class="home-card" href="./athleten.html" aria-label="Dein Athletenprofil">
-              <img class="home-card__img" src="./assets/png/Bild2.png" alt="" loading="lazy" decoding="async">
+              <img class="home-card__img" src="./assets/png/Bild2.png" alt="" loading="eager" decoding="async">
             </a>
 
             <a class="home-card" href="./punkterechner.html" aria-label="DLRG Punkterechner">
-              <img class="home-card__img" src="./assets/png/Bild4.png" alt="" loading="lazy" decoding="async">
+              <img class="home-card__img" src="./assets/png/Bild4.png" alt="" loading="eager" decoding="async">
             </a>
 
-            <a class="home-card" href="./wettkaempfe.html" aria-label="Wettkaempfe und Nominierung">
-              <img class="home-card__img" src="./assets/png/Bild1.png" alt="" loading="lazy" decoding="async">
+            <a class="home-card" href="./wettkaempfe.html" aria-label="Wettkämpfe und Nominierung">
+              <img class="home-card__img" src="./assets/png/Bild1.png" alt="" loading="eager" decoding="async">
             </a>
 
             <a class="home-card" href="./landeskader.html" aria-label="Landeskader">
-              <img class="home-card__img" src="./assets/png/Bild5.png" alt="" loading="lazy" decoding="async">
+              <img class="home-card__img" src="./assets/png/Bild5.png" alt="" loading="eager" decoding="async">
             </a>
 
             <a class="home-card" href="./clubs.html" aria-label="Clubs und Bestenlisten">
-              <img class="home-card__img" src="./assets/png/Bild3.png" alt="" loading="lazy" decoding="async">
+              <img class="home-card__img" src="./assets/png/Bild3.png" alt="" loading="eager" decoding="async">
             </a>
           </div>
         </div>

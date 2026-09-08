@@ -14,4 +14,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.StartseiteContent.render(main);
   window.StartseiteCarousel.init();
+
+  if (window.StartseiteLatestCompetitions?.init) {
+    window.StartseiteLatestCompetitions.init();
+  }
+
+  if (window.StartseiteHomeCards?.init) {
+    window.StartseiteHomeCards.init();
+  }
 });

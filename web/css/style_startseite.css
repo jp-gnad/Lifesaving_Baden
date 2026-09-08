@@ -15,21 +15,64 @@ main#content{
   padding: 0 20px;
 }
 
+.home-links__title{
+  margin:0 0 .75rem;
+  color:#fff;
+  font-size:clamp(1.1rem, 1.5vw, 1.3rem);
+  font-weight:400;
+  line-height:1.25;
+  text-align:left;
+}
+
 .home-cards{
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
+  display:flex;
+  gap:18px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  padding-bottom:4px;
+  scroll-behavior:smooth;
+  scroll-snap-type:x mandatory;
+  overscroll-behavior-inline:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  cursor:grab;
+  user-select:none;
+}
+
+.home-cards::before,
+.home-cards::after{
+  content:"";
+  flex:0 0 calc(36% - 18px);
+}
+
+.home-cards::-webkit-scrollbar{
+  display:none;
+}
+
+.home-cards.is-dragging{
+  cursor:grabbing;
+}
+
+.home-cards.is-dragging .home-card{
+  pointer-events:none;
+}
+
+.home-cards.is-initial .home-card[data-home-card-first="true"]{
+  scroll-snap-align:start;
 }
 
 .home-card{
   position: relative;
   display: block;
+  flex:0 0 28%;
   border-radius: 10px;
   overflow: hidden;
   text-decoration: none;
   color: inherit;
-  background: #eee;
+  background:rgba(255, 255, 255, .08);
   aspect-ratio: 4.5 / 3;
+  scroll-snap-align:center;
+  scroll-snap-stop:always;
 }
 
 .home-card__img{
@@ -306,16 +349,161 @@ main#content{
 }
 
 .wide-carousel__dot{
-  width: 20px;
+  position:relative;
+  width: 28px;
   height: 20px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0);
-  background: rgba(255,255,255,0.28);
+  border:0;
+  border-radius:0;
+  background:transparent;
   cursor: pointer;
   padding: 0;
+  transition:width 220ms ease;
+}
+
+.wide-carousel__latest-competition{
+  display:inline-flex;
+  align-items:center;
+  gap:0;
+  width:auto;
+  max-width:100%;
+  min-height:0;
+  margin-top:clamp(14px, 2.2vw, 22px);
+  padding:clamp(8px, 1.8vw, 10px) clamp(12px, 2.6vw, 18px);
+  overflow:hidden;
+  border:0;
+  border-radius:999px;
+  background:rgba(105, 105, 105, .329);
+  box-shadow:none;
+  -webkit-backdrop-filter:blur(5px);
+  backdrop-filter:blur(5px);
+  box-sizing:border-box;
+  font-family:inherit;
+  font-size:clamp(.8rem, 1.4vw, 1rem);
+  font-weight:500;
+  line-height:1;
+  text-align:left;
+  cursor:pointer;
+  transition:filter 220ms ease;
+}
+
+.wide-carousel__latest-competition::before{
+  content:none;
+}
+
+.wide-carousel__latest-label{
+  flex:0 0 auto;
+  color:rgba(255, 255, 255, .72);
+  font-size:inherit;
+  font-weight:inherit;
+  line-height:inherit;
+  margin-right:.42rem;
+}
+
+.wide-carousel__latest-year,
+.wide-carousel__latest-date{
+  flex:0 0 auto;
+  color:#fff;
+  font-size:inherit;
+  line-height:inherit;
+  white-space:nowrap;
+  overflow:hidden;
+  transition:
+    max-width 320ms ease,
+    margin-left 320ms ease,
+    opacity 220ms ease,
+    transform 320ms ease;
+}
+
+.wide-carousel__latest-year{
+  max-width:3.2rem;
+  margin-left:.32rem;
+  opacity:1;
+  transform:translateX(0);
+}
+
+.wide-carousel__latest-date{
+  max-width:0;
+  margin-left:0;
+  opacity:0;
+  transform:translateX(-5px);
+}
+
+.wide-carousel__latest-date::before{
+  content:"-";
+  margin-right:.42rem;
+  color:#fff;
+}
+
+.wide-carousel__latest-competition[aria-expanded="true"] .wide-carousel__latest-year{
+  max-width:0;
+  margin-left:0;
+  opacity:0;
+  transform:translateX(-5px);
+}
+
+.wide-carousel__latest-competition[aria-expanded="true"] .wide-carousel__latest-date{
+  max-width:9rem;
+  margin-left:.42rem;
+  opacity:1;
+  transform:translateX(0);
+}
+
+.wide-carousel__latest-title{
+  flex:0 1 auto;
+  min-width:0;
+  overflow:hidden;
+  color:#fff;
+  font-size:inherit;
+  font-weight:inherit;
+  line-height:inherit;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.wide-carousel__latest-skeleton{
+  width:8rem;
+  height:.65rem;
+  border-radius:999px;
+  background:rgba(255, 255, 255, .11);
+}
+
+.wide-carousel__latest-error{
+  color:rgba(255, 255, 255, .72);
+  font-size:.75rem;
+}
+
+.wide-carousel__latest-competition:hover{
+  filter:brightness(1.15);
+}
+
+.wide-carousel__latest-competition:focus-visible{
+  outline:3px solid rgba(255, 255, 255, .45);
+  outline-offset:3px;
+}
+
+.wide-carousel__latest-competition:disabled{
+  cursor:default;
+  filter:none;
+}
+
+.wide-carousel__dot::before{
+  content:"";
+  position:absolute;
+  top:50%;
+  right:0;
+  left:0;
+  height:5px;
+  border-radius:999px;
+  background:rgba(255,255,255,0.28);
+  transform:translateY(-50%);
+  transition:background-color 220ms ease;
 }
 
 .wide-carousel__dot.is-active{
+  width: 38px;
+}
+
+.wide-carousel__dot.is-active::before{
   background: rgb(255, 237, 0);
 }
 
@@ -454,11 +642,32 @@ main#content{
 
 
 @media (max-width: 1024px){
-  .home-cards{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-cards::before,
+  .home-cards::after{
+    flex-basis:calc(28% - 18px);
+  }
+
+  .home-card{
+    flex-basis:44%;
+  }
 }
 
 @media (max-width: 720px){
-  .home-links .container{ padding: 0 12px; }
+  .home-links .container{ padding: 0 10px; }
+
+  .home-links__title{
+    margin-bottom:.65rem;
+    font-size:1.15rem;
+  }
+
+  .home-cards::before,
+  .home-cards::after{
+    flex-basis:calc(18% - 18px);
+  }
+
+  .home-card{
+    flex-basis:64%;
+  }
   .wide-carousel__viewport{
     --wide-min-h: 500px;
     --wide-max-h: 720px;
@@ -472,13 +681,34 @@ main#content{
     max-width: 300px;
     max-height: 90px;
   }
+
+  .wide-carousel__latest-competition{
+    margin-top:12px;
+    padding:8px 12px;
+  }
+
 }
 
 @media (max-width: 520px){
-  .home-cards{ grid-template-columns: 1fr; }
+  .home-cards{
+    gap:14px;
+  }
+
+  .home-cards::before,
+  .home-cards::after{
+    content:"";
+    flex:0 0 calc(12% - 14px);
+  }
+
+  .home-card{
+    flex:0 0 76%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce){
+  .home-cards{
+    scroll-behavior:auto;
+  }
   .home-card__img,
   .home-card__overlay,
   .home-card__box--more{
@@ -493,6 +723,17 @@ main#content{
   .wide-carousel__slide,
   .wide-carousel__content{
     transition: none;
+  }
+  .wide-carousel__dot,
+  .wide-carousel__dot::before{
+    transition:none;
+  }
+  .wide-carousel__latest-competition{
+    transition:none;
+  }
+  .wide-carousel__latest-year,
+  .wide-carousel__latest-date{
+    transition:none;
   }
   .wide-carousel__yt{
     transition: none;
