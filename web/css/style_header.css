@@ -481,6 +481,11 @@ body{
     stroke-linejoin:round;
   }
 
+  .hdr-nav.open .nav .nav-icon svg .nav-icon-silhouette{
+    fill:currentColor;
+    stroke:none;
+  }
+
   .hdr-nav.open .nav .nav-label{
     min-width:0;
     overflow:hidden;

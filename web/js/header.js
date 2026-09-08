@@ -40,18 +40,20 @@ document.addEventListener("DOMContentLoaded", () => {
       <path d="M8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 12v5M8 21h8M9 17h6"></path>
     `,
     clubs: `
-      <circle cx="9" cy="8" r="3"></circle>
-      <path d="M3.5 20v-1.5A4.5 4.5 0 0 1 8 14h2a4.5 4.5 0 0 1 4.5 4.5V20"></path>
-      <circle cx="17" cy="9" r="2.5"></circle>
-      <path d="M15.5 14.5H17a4 4 0 0 1 4 4V20"></path>
+      <path d="m3 11 9-7 9 7"></path>
+      <path d="M5 10v10h14V10M9 20v-6h6v6"></path>
     `,
     kader: `
-      <path d="M12 2.5 19 5v6c0 4.6-2.8 8.3-7 10.5C7.8 19.3 5 15.6 5 11V5l7-2.5Z"></path>
-      <path d="m12 7 1.2 2.4 2.7.4-2 1.9.5 2.7-2.4-1.3-2.4 1.3.5-2.7-2-1.9 2.7-.4L12 7Z"></path>
+      <defs>
+        <mask id="nav-kader-elk" x="0" y="3.9" width="24" height="16.2" maskUnits="userSpaceOnUse" style="mask-type:alpha">
+          <image href="./assets/png/icons/elch.png" x="0" y="3.9" width="24" height="16.2" preserveAspectRatio="xMidYMid meet"></image>
+        </mask>
+      </defs>
+      <rect class="nav-icon-silhouette" x="0" y="3.9" width="24" height="16.2" mask="url(#nav-kader-elk)"></rect>
     `,
     athleten: `
-      <circle cx="14.5" cy="5" r="2"></circle>
-      <path d="m12.5 8.5-2.5 3 3 2 2 3.5M12 10l3.5 2 2.5-1M10.5 13.5 8 18l-4 2M15 17l3 3"></path>
+      <circle cx="12" cy="8" r="4"></circle>
+      <path d="M4 21a8 8 0 0 1 16 0"></path>
     `,
   };
 
