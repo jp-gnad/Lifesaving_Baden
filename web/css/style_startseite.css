@@ -57,10 +57,6 @@ main#content{
   pointer-events:none;
 }
 
-.home-cards.is-initial .home-card[data-home-card-first="true"]{
-  scroll-snap-align:start;
-}
-
 .home-card{
   position: relative;
   display: block;
@@ -73,6 +69,12 @@ main#content{
   aspect-ratio: 4.5 / 3;
   scroll-snap-align:center;
   scroll-snap-stop:always;
+}
+
+@media (min-width: 721px){
+  .home-cards.is-initial .home-card[data-home-card-first="true"]{
+    scroll-snap-align:start;
+  }
 }
 
 .home-card__img{

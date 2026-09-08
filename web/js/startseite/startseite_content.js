@@ -130,23 +130,23 @@
           <h2 class="home-links__title" id="home-highlights-title">Highlights</h2>
           <div class="home-cards">
             <a class="home-card" href="./athleten.html" aria-label="Dein Athletenprofil">
-              <img class="home-card__img" src="./assets/png/Bild2.png" alt="" loading="eager" decoding="async">
+              <img class="home-card__img" src="./assets/png/Bild2.card.jpg" alt="" loading="eager" decoding="async" fetchpriority="high">
             </a>
 
             <a class="home-card" href="./punkterechner.html" aria-label="DLRG Punkterechner">
-              <img class="home-card__img" src="./assets/png/Bild4.png" alt="" loading="eager" decoding="async">
+              <img class="home-card__img" src="./assets/png/Bild4.card.jpg" alt="" loading="eager" decoding="async" fetchpriority="high">
             </a>
 
             <a class="home-card" href="./wettkaempfe.html" aria-label="Wettkämpfe und Nominierung">
-              <img class="home-card__img" src="./assets/png/Bild1.png" alt="" loading="eager" decoding="async">
+              <img class="home-card__img" src="./assets/png/Bild1.card.jpg" alt="" loading="eager" decoding="async" fetchpriority="high">
             </a>
 
             <a class="home-card" href="./landeskader.html" aria-label="Landeskader">
-              <img class="home-card__img" src="./assets/png/Bild5.png" alt="" loading="eager" decoding="async">
+              <img class="home-card__img" src="./assets/png/Bild5.card.jpg" alt="" loading="eager" decoding="async" fetchpriority="high">
             </a>
 
             <a class="home-card" href="./clubs.html" aria-label="Clubs und Bestenlisten">
-              <img class="home-card__img" src="./assets/png/Bild3.png" alt="" loading="eager" decoding="async">
+              <img class="home-card__img" src="./assets/png/Bild3.card.jpg" alt="" loading="eager" decoding="async" fetchpriority="high">
             </a>
           </div>
         </div>

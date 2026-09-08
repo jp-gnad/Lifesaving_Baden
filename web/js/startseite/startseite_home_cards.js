@@ -25,6 +25,11 @@
   }
 
   function jumpToInitialCard(track, card) {
+    if (global.matchMedia("(max-width: 720px)").matches) {
+      jumpToCard(track, card);
+      return;
+    }
+
     const trackRect = track.getBoundingClientRect();
     const cardRect = card.getBoundingClientRect();
     const previousBehavior = track.style.scrollBehavior;
