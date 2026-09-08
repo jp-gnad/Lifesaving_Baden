@@ -30,8 +30,41 @@ document.addEventListener("DOMContentLoaded", () => {
     { key: "athleten", label: "Athleten", href: "athleten.html" },
   ];
 
+  const NAV_ICON_PATHS = {
+    punkterechner: `
+      <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+      <path d="M8 6h8M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"></path>
+    `,
+    wettkaempfe: `
+      <path d="M8 4h8v4a4 4 0 0 1-8 0V4Z"></path>
+      <path d="M8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 12v5M8 21h8M9 17h6"></path>
+    `,
+    clubs: `
+      <circle cx="9" cy="8" r="3"></circle>
+      <path d="M3.5 20v-1.5A4.5 4.5 0 0 1 8 14h2a4.5 4.5 0 0 1 4.5 4.5V20"></path>
+      <circle cx="17" cy="9" r="2.5"></circle>
+      <path d="M15.5 14.5H17a4 4 0 0 1 4 4V20"></path>
+    `,
+    kader: `
+      <path d="M12 2.5 19 5v6c0 4.6-2.8 8.3-7 10.5C7.8 19.3 5 15.6 5 11V5l7-2.5Z"></path>
+      <path d="m12 7 1.2 2.4 2.7.4-2 1.9.5 2.7-2.4-1.3-2.4 1.3.5-2.7-2-1.9 2.7-.4L12 7Z"></path>
+    `,
+    athleten: `
+      <circle cx="14.5" cy="5" r="2"></circle>
+      <path d="m12.5 8.5-2.5 3 3 2 2 3.5M12 10l3.5 2 2.5-1M10.5 13.5 8 18l-4 2M15 17l3 3"></path>
+    `,
+  };
+
   const BREAKPOINT_PX = 1000;
+  const MENU_ANIMATION = {
+    rowInStart: 80,
+    rowInStagger: 85,
+    rowOutDuration: 220,
+    rowOutStagger: 85,
+    backdropOutDuration: 130,
+  };
   const isMobile = () => window.matchMedia(`(max-width:${BREAKPOINT_PX}px)`).matches;
+  const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   headerEl.innerHTML = `
     <div class="hdr-bg">
@@ -48,7 +81,8 @@ document.addEventListener("DOMContentLoaded", () => {
       <nav aria-label="Hauptnavigation" class="hdr-nav">
         <button class="menu-toggle" aria-expanded="false" aria-controls="primary-menu" aria-label="Menü öffnen">
           <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
-            <path d="M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z"></path>
+            <path class="menu-icon-bars" d="M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z"></path>
+            <path class="menu-icon-close" d="M6.7 5.3 12 10.6l5.3-5.3 1.4 1.4-5.3 5.3 5.3 5.3-1.4 1.4-5.3-5.3-5.3 5.3-1.4-1.4 5.3-5.3-5.3-5.3z"></path>
           </svg>
         </button>
         <ul id="primary-menu" class="nav"></ul>
@@ -61,6 +95,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const menu = headerEl.querySelector("#primary-menu");
 
   let stack = [];
+  let closeAnimationTimer = null;
+  let wasMobile = isMobile();
 
   function normalizeFileName(pathOrHref) {
     if (!pathOrHref) return "";
@@ -99,11 +135,111 @@ document.addEventListener("DOMContentLoaded", () => {
     return null;
   }
 
-  function closeMenu() {
-    nav.classList.remove("open");
-    toggle.setAttribute("aria-expanded", "false");
+  function renderMobileItemContent(item) {
+    const iconPaths = NAV_ICON_PATHS[item.key];
+    const icon = iconPaths
+      ? `<span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false">${iconPaths}</svg></span>`
+      : "";
+
+    return `${icon}<span class="nav-label">${item.label}</span>`;
+  }
+
+  function prepareMobileRowAnimations() {
+    if (!isMobile()) return;
+
+    const rows = Array.from(menu.children);
+    rows.forEach((row, index) => {
+      row.style.setProperty(
+        "--nav-row-in-delay",
+        `${MENU_ANIMATION.rowInStart + index * MENU_ANIMATION.rowInStagger}ms`
+      );
+      row.style.setProperty(
+        "--nav-row-out-delay",
+        `${(rows.length - index - 1) * MENU_ANIMATION.rowOutStagger}ms`
+      );
+    });
+
+    const lastRowEnd = Math.max(0, rows.length - 1) * MENU_ANIMATION.rowOutStagger
+      + MENU_ANIMATION.rowOutDuration;
+    const backdropOutDelay = Math.max(0, lastRowEnd - 20);
+    menu.style.setProperty("--nav-backdrop-out-delay", `${backdropOutDelay}ms`);
+    menu.dataset.closeAnimationMs = String(
+      backdropOutDelay + MENU_ANIMATION.backdropOutDuration
+    );
+  }
+
+  function syncMenuState() {
+    const visible = isMobile() && nav.classList.contains("open");
+    const expanded = visible && !nav.classList.contains("is-closing");
+    toggle.setAttribute("aria-expanded", String(expanded));
+    toggle.setAttribute("aria-label", expanded ? "Menü schließen" : "Menü öffnen");
+    menu.setAttribute("aria-hidden", String(isMobile() && !visible));
+    document.documentElement.classList.toggle("mobile-menu-open", visible);
+  }
+
+  function finishClosingMenu({ restoreFocus = false } = {}) {
+    if (closeAnimationTimer) {
+      window.clearTimeout(closeAnimationTimer);
+      closeAnimationTimer = null;
+    }
+
+    nav.classList.remove("open", "is-closing");
     stack = [];
     renderMenu();
+    syncMenuState();
+
+    if (restoreFocus && isMobile()) {
+      requestAnimationFrame(() => toggle.focus({ preventScroll: true }));
+    }
+  }
+
+  function closeMenu({ restoreFocus = false, immediate = false } = {}) {
+    if (!nav.classList.contains("open")) {
+      syncMenuState();
+      return;
+    }
+
+    if (restoreFocus && isMobile()) {
+      toggle.focus({ preventScroll: true });
+    }
+
+    if (immediate || !isMobile() || prefersReducedMotion()) {
+      finishClosingMenu({ restoreFocus });
+      return;
+    }
+
+    nav.classList.add("is-closing");
+    syncMenuState();
+
+    const closeDuration = Number(menu.dataset.closeAnimationMs) || 500;
+    closeAnimationTimer = window.setTimeout(() => {
+      finishClosingMenu({ restoreFocus });
+    }, closeDuration + 40);
+  }
+
+  function openMenu() {
+    if (closeAnimationTimer) {
+      window.clearTimeout(closeAnimationTimer);
+      closeAnimationTimer = null;
+    }
+
+    nav.classList.remove("is-closing");
+    nav.classList.add("open");
+    renderMenu();
+    syncMenuState();
+  }
+
+  function resetMenuImmediately() {
+    if (closeAnimationTimer) {
+      window.clearTimeout(closeAnimationTimer);
+      closeAnimationTimer = null;
+    }
+
+    nav.classList.remove("open");
+    nav.classList.remove("is-closing");
+    stack = [];
+    renderMenu();
+    syncMenuState();
   }
 
   function renderMenu() {
@@ -131,6 +267,7 @@ document.addEventListener("DOMContentLoaded", () => {
           })
           .join("")}
       `;
+      prepareMobileRowAnimations();
       return;
     }
 
@@ -144,11 +281,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const isInActiveChain = activeChain.includes(item.key);
       const activeClass = isItemActive ? "active" : "";
       const activeParentClass = !isItemActive && isInActiveChain ? "active-parent" : "";
+      const itemContent = isMobile() ? renderMobileItemContent(item) : item.label;
 
       if (isMobile() && hasChildren) {
         return `
           <li class="nav-row has-arrow">
-            <a class="nav-mainlink ${activeClass} ${activeParentClass}" href="${item.href || "#"}">${item.label}</a>
+            <a class="nav-mainlink ${activeClass} ${activeParentClass}" href="${item.href || "#"}">${itemContent}</a>
             <button type="button" class="nav-arrow ${activeClass} ${activeParentClass}" data-action="drill" data-key="${item.key}" aria-label="${item.label} Untermenü öffnen">›</button>
           </li>
         `;
@@ -175,20 +313,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
       return `
         <li class="nav-row no-arrow">
-          <a class="nav-mainlink ${activeClass}" href="${item.href || "#"}">${item.label}</a>
+          <a class="nav-mainlink ${activeClass}" href="${item.href || "#"}">${itemContent}</a>
         </li>
       `;
 
     }).join("");
+    prepareMobileRowAnimations();
   }
 
   renderMenu();
+  syncMenuState();
 
   toggle.addEventListener("click", (e) => {
     e.stopPropagation();
-    nav.classList.toggle("open");
-    toggle.setAttribute("aria-expanded", nav.classList.contains("open") ? "true" : "false");
-    renderMenu();
+    if (nav.classList.contains("open") && !nav.classList.contains("is-closing")) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
   });
 
   menu.addEventListener("click", (e) => {
@@ -213,15 +355,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   document.addEventListener("click", (e) => {
-    if (!nav.contains(e.target)) closeMenu();
+    if (nav.classList.contains("open") && !nav.contains(e.target)) closeMenu();
   });
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeMenu();
+    if (e.key === "Escape" && nav.classList.contains("open")) {
+      closeMenu({ restoreFocus: true });
+    }
   });
 
   window.addEventListener("resize", () => {
-    if (!isMobile() && stack.length) stack = [];
-    renderMenu();
+    const mobile = isMobile();
+    if (mobile === wasMobile) return;
+
+    wasMobile = mobile;
+    if (!mobile) {
+      resetMenuImmediately();
+    } else {
+      renderMenu();
+      syncMenuState();
+    }
   });
 });
