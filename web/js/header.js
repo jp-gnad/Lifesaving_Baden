@@ -1,3 +1,29 @@
+(() => {
+  const viewport = document.querySelector('meta[name="viewport"]');
+  if (!viewport) return;
+
+  const baseContent = viewport.content
+    .replace(/\s*,?\s*viewport-fit\s*=\s*(?:auto|contain|cover)/gi, "")
+    .replace(/\s*,\s*,/g, ",")
+    .replace(/^\s*,|,\s*$/g, "")
+    .trim();
+  const landscape = window.matchMedia("(orientation: landscape)");
+
+  const syncViewportFit = () => {
+    const content = landscape.matches
+      ? `${baseContent}, viewport-fit=cover`
+      : baseContent;
+    if (viewport.content !== content) viewport.content = content;
+  };
+
+  syncViewportFit();
+  if (typeof landscape.addEventListener === "function") {
+    landscape.addEventListener("change", syncViewportFit);
+  } else {
+    landscape.addListener(syncViewportFit);
+  }
+})();
+
 document.addEventListener("DOMContentLoaded", () => {
   const headerEl = document.getElementById("site-header");
   if (!headerEl) return;
