@@ -1,13 +1,25 @@
 (function (global) {
   "use strict";
 
-  function getCenteredScrollLeft(track, card) {
+  function getSnapInset(track) {
+    if (global.matchMedia("(max-width: 720px)").matches) return 0;
+
+    const value = parseFloat(
+      global.getComputedStyle(track).getPropertyValue("--home-card-snap-inset")
+    );
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  function getCardScrollLeft(track, card) {
     const trackRect = track.getBoundingClientRect();
     const cardRect = card.getBoundingClientRect();
-    return track.scrollLeft
+    const leftAligned = track.scrollLeft
       + cardRect.left
-      - trackRect.left
-      - (track.clientWidth - cardRect.width) / 2;
+      - trackRect.left;
+
+    return global.matchMedia("(max-width: 720px)").matches
+      ? leftAligned - (track.clientWidth - cardRect.width) / 2
+      : leftAligned - getSnapInset(track);
   }
 
   function jumpToCard(track, card) {
@@ -16,7 +28,7 @@
 
     track.style.scrollBehavior = "auto";
     track.style.scrollSnapType = "none";
-    track.scrollLeft = getCenteredScrollLeft(track, card);
+    track.scrollLeft = getCardScrollLeft(track, card);
 
     requestAnimationFrame(() => {
       track.style.scrollBehavior = previousBehavior;
@@ -25,35 +37,32 @@
   }
 
   function jumpToInitialCard(track, card) {
-    if (global.matchMedia("(max-width: 720px)").matches) {
-      jumpToCard(track, card);
-      return;
-    }
-
-    const trackRect = track.getBoundingClientRect();
-    const cardRect = card.getBoundingClientRect();
-    const previousBehavior = track.style.scrollBehavior;
-    const previousSnapType = track.style.scrollSnapType;
-
-    track.style.scrollBehavior = "auto";
-    track.style.scrollSnapType = "none";
-    track.scrollLeft += cardRect.left - trackRect.left;
-
-    requestAnimationFrame(() => {
-      track.style.scrollBehavior = previousBehavior;
-      track.style.scrollSnapType = previousSnapType;
-    });
+    jumpToCard(track, card);
   }
 
   function getNearestCard(track) {
-    const center = track.getBoundingClientRect().left + track.clientWidth / 2;
+    const trackRect = track.getBoundingClientRect();
+    const isNarrow = global.matchMedia("(max-width: 720px)").matches;
+    const anchor = isNarrow
+      ? trackRect.left + track.clientWidth / 2
+      : trackRect.left + getSnapInset(track);
     const cards = Array.from(track.querySelectorAll(".home-card"));
 
     return cards.reduce((nearest, card) => {
       const rect = card.getBoundingClientRect();
-      const distance = Math.abs(rect.left + rect.width / 2 - center);
+      const cardAnchor = isNarrow ? rect.left + rect.width / 2 : rect.left;
+      const distance = Math.abs(cardAnchor - anchor);
       return !nearest || distance < nearest.distance ? { card, distance } : nearest;
     }, null)?.card || null;
+  }
+
+  function createBufferedCard(card, index) {
+    const clone = card.cloneNode(true);
+    clone.dataset.homeCardIndex = String(index);
+    clone.dataset.homeCardBuffer = "true";
+    clone.setAttribute("aria-hidden", "true");
+    clone.tabIndex = -1;
+    return clone;
   }
 
   function init(root = document.querySelector(".home-cards")) {
@@ -64,90 +73,91 @@
 
     cards.forEach((card, index) => {
       card.dataset.homeCardIndex = String(index);
-      card.querySelectorAll("img").forEach((image) => {
-        image.loading = "eager";
-        image.decoding = "async";
-      });
     });
-
     cards[0].dataset.homeCardFirst = "true";
+
+    const beforeCards = cards.map(createBufferedCard);
+    const afterCards = cards.map(createBufferedCard);
+    const beforeFragment = document.createDocumentFragment();
+    const afterFragment = document.createDocumentFragment();
+    beforeCards.forEach((card) => beforeFragment.append(card));
+    afterCards.forEach((card) => afterFragment.append(card));
+    root.prepend(beforeFragment);
+    root.append(afterFragment);
+
     root.dataset.homeCardsCarousel = "true";
     root.classList.add("is-initial");
 
-    const cardCount = cards.length;
-    let currentIndex = 0;
-    let scrollTimer = 0;
     let resizeTimer = 0;
+    let scrollTimer = 0;
+    let touchEffectTimer = 0;
+    let activePointerId = null;
     let pointerId = null;
     let pointerStartX = 0;
     let pointerStartScroll = 0;
     let isDragging = false;
-    let isReordering = false;
+    let isLoopJumping = false;
     let suppressClick = false;
 
-    function normalizedIndex(index) {
-      return (index + cardCount) % cardCount;
+    function getLoopWidth() {
+      return afterCards[0].offsetLeft - cards[0].offsetLeft;
     }
 
-    function appendOrder(order) {
-      const fragment = document.createDocumentFragment();
-      order.forEach((index) => fragment.append(cards[normalizedIndex(index)]));
-      root.append(fragment);
-    }
+    function shiftLoop(delta) {
+      if (!Number.isFinite(delta) || Math.abs(delta) < 1) return;
 
-    function arrangeAround(index) {
-      currentIndex = normalizedIndex(index);
-      appendOrder([
-        currentIndex - 2,
-        currentIndex - 1,
-        currentIndex,
-        currentIndex + 1,
-        currentIndex + 2,
-      ]);
-      jumpToCard(root, cards[currentIndex]);
-    }
+      const previousBehavior = root.style.scrollBehavior;
+      const previousSnapType = root.style.scrollSnapType;
+      isLoopJumping = true;
+      root.style.scrollBehavior = "auto";
+      root.style.scrollSnapType = "none";
+      root.scrollLeft += delta;
+      if (pointerId !== null) pointerStartScroll += delta;
 
-    function arrangeInitialOrder() {
-      appendOrder([
-        cardCount - 1,
-        ...Array.from({ length: cardCount - 1 }, (_, index) => index),
-      ]);
-      jumpToInitialCard(root, cards[0]);
-    }
-
-    function normalizeLoopPosition() {
-      if (isDragging || isReordering || root.classList.contains("is-initial")) return;
-
-      const nearest = getNearestCard(root);
-      if (!nearest) return;
-
-      const nearestIndex = Number(nearest.dataset.homeCardIndex);
-      const targetLeft = getCenteredScrollLeft(root, nearest);
-      if (nearestIndex === currentIndex && Math.abs(root.scrollLeft - targetLeft) < 1) return;
-
-      isReordering = true;
-      arrangeAround(nearestIndex);
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          isReordering = false;
-        });
+        root.style.scrollBehavior = previousBehavior;
+        root.style.scrollSnapType = previousSnapType;
+        isLoopJumping = false;
       });
     }
 
-    function handleScroll() {
-      global.clearTimeout(scrollTimer);
-      scrollTimer = global.setTimeout(normalizeLoopPosition, 140);
+    function keepInsideBuffer() {
+      if (
+        isLoopJumping
+        || activePointerId !== null
+        || root.classList.contains("is-initial")
+      ) return;
+
+      const loopWidth = getLoopWidth();
+      if (loopWidth <= 0) return;
+
+      const middle = getCardScrollLeft(root, cards[0]);
+      const threshold = loopWidth * 0.9;
+
+      if (root.scrollLeft < middle - threshold) {
+        shiftLoop(loopWidth);
+      } else if (root.scrollLeft > middle + threshold) {
+        shiftLoop(-loopWidth);
+      }
     }
 
     function handleResize() {
       global.clearTimeout(resizeTimer);
       resizeTimer = global.setTimeout(() => {
         if (root.classList.contains("is-initial")) {
-          arrangeInitialOrder();
-        } else {
-          arrangeAround(currentIndex);
+          jumpToInitialCard(root, cards[0]);
+          return;
         }
+
+        const nearest = getNearestCard(root);
+        const index = Number(nearest?.dataset.homeCardIndex);
+        jumpToCard(root, cards[Number.isFinite(index) ? index : 0]);
       }, 120);
+    }
+
+    function handleScroll() {
+      global.clearTimeout(scrollTimer);
+      scrollTimer = global.setTimeout(keepInsideBuffer, 140);
     }
 
     function activateCarousel() {
@@ -156,7 +166,17 @@
 
     function handlePointerDown(event) {
       activateCarousel();
-      if (event.pointerType !== "mouse" || event.button !== 0) return;
+      activePointerId = event.pointerId;
+
+      if (event.pointerType !== "mouse") {
+        global.clearTimeout(touchEffectTimer);
+        root.classList.add("is-touch-input");
+        return;
+      }
+
+      root.classList.remove("is-touch-input");
+      if (event.button !== 0) return;
+
       pointerId = event.pointerId;
       pointerStartX = event.clientX;
       pointerStartScroll = root.scrollLeft;
@@ -181,6 +201,15 @@
     }
 
     function handlePointerEnd(event) {
+      if (event.pointerId === activePointerId) activePointerId = null;
+
+      if (event.pointerType !== "mouse") {
+        global.clearTimeout(touchEffectTimer);
+        touchEffectTimer = global.setTimeout(() => {
+          root.classList.remove("is-touch-input");
+        }, 800);
+      }
+
       if (event.pointerId !== pointerId) return;
 
       if (isDragging) {
@@ -192,7 +221,7 @@
         const nearest = getNearestCard(root);
         if (nearest) {
           root.scrollTo({
-            left: getCenteredScrollLeft(root, nearest),
+            left: getCardScrollLeft(root, nearest),
             behavior: global.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
           });
         }
@@ -200,7 +229,7 @@
         suppressClick = true;
         global.setTimeout(() => {
           suppressClick = false;
-          normalizeLoopPosition();
+          keepInsideBuffer();
         }, 420);
       }
 
@@ -216,7 +245,7 @@
     }
 
     root.addEventListener("scroll", handleScroll, { passive: true });
-    root.addEventListener("scrollend", normalizeLoopPosition);
+    root.addEventListener("scrollend", keepInsideBuffer);
     root.addEventListener("pointerdown", handlePointerDown);
     root.addEventListener("pointermove", handlePointerMove);
     root.addEventListener("pointerup", handlePointerEnd);
@@ -227,7 +256,7 @@
     global.addEventListener("resize", handleResize, { passive: true });
 
     requestAnimationFrame(() => {
-      requestAnimationFrame(arrangeInitialOrder);
+      requestAnimationFrame(() => jumpToInitialCard(root, cards[0]));
     });
   }
 
