@@ -1,3 +1,17 @@
+function resetProfilePageScroll() {
+  try {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  } catch (error) {
+    window.scrollTo(0, 0);
+  }
+}
+
+if ("scrollRestoration" in history) {
+  history.scrollRestoration = "manual";
+}
+resetProfilePageScroll();
+window.addEventListener("pageshow", resetProfilePageScroll);
+
 document.addEventListener("DOMContentLoaded", () => {
   const main = document.getElementById("content");
   if (!main) return;
@@ -473,6 +487,10 @@ document.addEventListener("DOMContentLoaded", () => {
       u.hash = "";
       history.replaceState(null, "", u.toString());
     }
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(resetProfilePageScroll);
+    });
   }
 
   document.addEventListener("DOMContentLoaded", async () => {

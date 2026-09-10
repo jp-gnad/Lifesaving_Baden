@@ -2143,9 +2143,17 @@
       ul.style.left = btn.offsetLeft + "px";
     }
     function scrollTabIntoView(btn, behavior = "smooth") {
+      const maxScrollLeft = Math.max(0, bar.scrollWidth - bar.clientWidth);
+      const targetLeft = Math.max(
+        0,
+        Math.min(maxScrollLeft, btn.offsetLeft + btn.offsetWidth / 2 - bar.clientWidth / 2)
+      );
+
       try {
-        btn.scrollIntoView({ block: "nearest", inline: "center", behavior });
-      } catch (e) {}
+        bar.scrollTo({ left: targetLeft, behavior });
+      } catch (e) {
+        bar.scrollLeft = targetLeft;
+      }
     }
     function setActive(btn, key) {
       list.querySelectorAll(".ath-tab").forEach(b => b.classList.remove("active"));
@@ -2216,8 +2224,16 @@
       const activeBtn = wrap.querySelector(".ath-tab.active") || wrap.querySelector(".ath-tab");
       if (activeBtn) {
         const ul = wrap.querySelector(".ath-tabs-underline");
+        const tabsScroller = wrap.querySelector(".ath-tabs");
         try {
-          activeBtn.scrollIntoView({ block: "nearest", inline: "center", behavior: "auto" });
+          const maxScrollLeft = Math.max(0, tabsScroller.scrollWidth - tabsScroller.clientWidth);
+          tabsScroller.scrollLeft = Math.max(
+            0,
+            Math.min(
+              maxScrollLeft,
+              activeBtn.offsetLeft + activeBtn.offsetWidth / 2 - tabsScroller.clientWidth / 2
+            )
+          );
         } catch (e) {}
         ul.style.width = activeBtn.offsetWidth + "px";
         ul.style.left = activeBtn.offsetLeft + "px";
