@@ -125,6 +125,8 @@
 
   const LV_STATE_LABEL = {
     BA: "LV Baden",
+    BW: "LV Baden-Württemberg",
+    BAY: "LV Bayern",
     BY: "LV Bayern",
     BE: "LV Berlin",
     BB: "LV Brandenburg",
@@ -134,6 +136,10 @@
     MV: "LV Mecklenburg-Vorp.",
     NI: "LV Niedersachsen",
     NR: "LV Nordrhein",
+    NRH: "LV Nordrhein",
+    NO: "LV Nordrhein",
+    NW: "LV Nordrhein",
+    NRW: "LV Nordrhein-Westfalen",
     WE: "LV Westfalen",
     WF: "LV Westfalen",
     WL: "LV Westfalen",
@@ -142,7 +148,10 @@
     SN: "LV Sachsen",
     ST: "LV Sachsen-Anhalt",
     SH: "LV Schleswig-Holstein",
-    TH: "LV Thüringen"
+    TH: "LV Thüringen",
+    WU: "LV Württemberg",
+    WUE: "LV Württemberg",
+    "WÜ": "LV Württemberg"
   };
 
   function iso3FromLand(landName) {
