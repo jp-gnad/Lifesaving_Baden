@@ -3,14 +3,6 @@
   const FLAG_BASE_URL = "./assets/svg";
   const CAP_FALLBACK_FILE = "Cap-Baden_light.svg";
   const CAP_FALLBACK_URL = `${FLAG_BASE_URL}/${encodeURIComponent(CAP_FALLBACK_FILE)}`;
-  const KNOWN_CAP_KEYS = new Set([
-    "AUS", "BA", "Baden", "Baden_light", "BB", "BE", "BEL", "Bietigheim-Bissingen", "BRA", "BUL", "Bühl-Bühlertal", "BY",
-    "CAN", "CZE", "DEN", "Deutschland", "Durlach", "EGY", "ESP", "Ettlingen", "FRA", "GBR", "GER", "HE",
-    "HH", "HKG", "ITA", "JPN", "Karlsruhe", "Kelkheim", "Luckenwalde", "Malsch", "MV", "Neckargemünd", "Neustadt an der Weinstraße", "NED", "NI", "Nieder-Olm/Wörrstadt", "Nieder-OlmWörrstadt",
-    "none", "NOR", "NR", "NZL", "Pankow", "POL", "Rheinböllen", "RP", "Schwerte", "SH", "SIN", "SL", "SN", "ST", "SUI", "SWE", "TH",
-    "USA", "Wadgassen", "Waghäusel", "Weil am Rhein", "Wettersbach", "WE", "WF", "WÜ"
-  ]);
-
   const IS_COARSE_POINTER = window.matchMedia?.("(pointer: coarse)").matches ?? false;
   const TAP_MAX_MOVE = 10;
   const TAP_MAX_DURATION = 500;
@@ -202,8 +194,10 @@
   }
 
   function applyCapFallback(img, hostEl, seq, overlayClass = "search-cap-overlay") {
+    // Try every affiliation key. The image error handler remains the source of
+    // truth, allowing new Cap-<name>.svg assets to be picked up automatically.
     const filteredSeq = (Array.isArray(seq) ? seq : []).filter((entry) =>
-      KNOWN_CAP_KEYS.has(String(entry?.key || "").trim())
+      String(entry?.key || "").trim().length > 0
     );
 
     if (!filteredSeq.length) {

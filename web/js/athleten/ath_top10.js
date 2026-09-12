@@ -4,14 +4,6 @@
     "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/data/top10.json";
   const LEGACY_TOP10_URL =
     "https://raw.githubusercontent.com/jp-gnad/Lifesaving_Baden/main/web/utilities/top10.json";
-  const KNOWN_CAP_KEYS = new Set([
-    "AUS", "BA", "Baden", "Baden_light", "BB", "BE", "BEL", "Bietigheim-Bissingen", "BRA", "BUL", "Bühl-Bühlertal", "BY",
-    "CAN", "CZE", "DEN", "Deutschland", "Durlach", "EGY", "ESP", "Ettlingen", "FRA", "GBR", "GER", "HE",
-    "HH", "HKG", "ITA", "JPN", "Karlsruhe", "Kelkheim", "Luckenwalde", "Malsch", "MV", "Neckargemünd", "Neustadt an der Weinstraße", "NED", "NI", "Nieder-Olm/Wörrstadt", "Nieder-OlmWörrstadt",
-    "none", "NOR", "NR", "NZL", "Pankow", "POL", "Rheinböllen", "RP", "Schwerte", "SH", "SIN", "SL", "SN", "ST", "SUI", "SWE", "TH",
-    "USA", "Wadgassen", "Waghäusel", "Weil am Rhein", "Wettersbach", "WE", "WF", "WÜ"
-  ]);
-
   const MODE_GROUPS = {
     overall: [
       { key: "starts", label: "Starts" },
@@ -145,7 +137,7 @@
     const og = String(rawOG || "").trim();
     if (!og) return CAP_FALLBACK_FILE;
     if (og === "Nieder-Olm/Wörrstadt") return "Cap-Nieder-OlmWörrstadt.svg";
-    if (!KNOWN_CAP_KEYS.has(og)) return CAP_FALLBACK_FILE;
+    // Existence is checked by probeCapFileExists; no static asset list needed.
     return `Cap-${og}.svg`;
   }
 
