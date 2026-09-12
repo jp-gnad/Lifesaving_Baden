@@ -171,21 +171,25 @@
     })();
   }
 
-  function setSingleCapWithFallback(imgEl, hostEl, capFile) {
-    const file = String(capFile || "").trim();
+  function setSingleCapWithFallback(imgEl, hostEl, capFiles) {
+    const files = (Array.isArray(capFiles) ? capFiles : [capFiles])
+      .map((file) => String(file || "").trim())
+      .filter(Boolean);
 
     hostEl?.classList.remove("cap-overlay");
     imgEl.src = CAP_FALLBACK_URL;
 
-    if (!file || file === CAP_FALLBACK_FILE) {
+    if (!files.length || files.every((file) => file === CAP_FALLBACK_FILE)) {
       hostEl?.classList.add("cap-overlay");
       return;
     }
 
     (async () => {
-      const ok = await probeCapFileExists(file);
+      for (const file of files) {
+        if (file === CAP_FALLBACK_FILE) continue;
+        const ok = await probeCapFileExists(file);
+        if (!ok) continue;
 
-      if (ok) {
         hostEl?.classList.remove("cap-overlay");
         imgEl.src = `${FLAG_BASE_URL}/${encodeURIComponent(file)}`;
         return;
@@ -631,11 +635,11 @@
     return aff.ogKey || String(a?.ortsgruppe || "").trim();
   }
 
-  function capFileFromOrtsgruppe(rawOG) {
+  function capFilesFromOrtsgruppe(rawOG) {
     const og = String(rawOG || "").trim();
-    if (!og) return CAP_FALLBACK_FILE;
-    if (og === "Nieder-Olm/Wörrstadt") return "Cap-Nieder-OlmWörrstadt.svg";
-    return `Cap-${og}.svg`;
+    if (!og) return [CAP_FALLBACK_FILE];
+    const keys = [og.replace(/[\/\\]/g, "-"), og.replace(/[\/\\]/g, "")];
+    return [...new Set(keys.filter(Boolean))].map((key) => `Cap-${key}.svg`);
   }
 
   function capFileFromLVCode(rawCode) {
@@ -659,7 +663,7 @@
     const ogNow = aff.ogKey || String(a?.ortsgruppe || "").trim();
 
     const candidates = [
-      { file: capFileFromOrtsgruppe(aff.ogKey || ogNow), toned: false },
+      ...capFilesFromOrtsgruppe(aff.ogKey || ogNow).map((file) => ({ file, toned: false })),
       { file: capFileFromLVCode(aff.lvCode), toned: true },
       { file: capFileFromBVCode(aff.bvCode), toned: true }
     ].filter((x) => String(x.file || "").trim());
@@ -720,7 +724,7 @@
         const ogName = String(og || "").trim();
         if (!ogName) return;
 
-        const capFile = capFileFromOrtsgruppe(ogName);
+        const capFiles = capFilesFromOrtsgruppe(ogName);
         const capWrap = h("span", { class: "og-cap" });
         const capImg = h("img", {
           class: "og-cap-img",
@@ -729,7 +733,7 @@
           decoding: "async"
         });
 
-        setSingleCapWithFallback(capImg, capWrap, capFile);
+        setSingleCapWithFallback(capImg, capWrap, capFiles);
         capWrap.appendChild(capImg);
 
         const row = h(

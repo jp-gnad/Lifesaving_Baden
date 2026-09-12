@@ -124,12 +124,17 @@
   }
 
   function buildIconUrlCandidates(key) {
-    const value = String(key || "").trim();
-    if (!value) return [];
+    const rawValue = String(key || "").trim();
+    if (!rawValue) return [];
 
     // Probe the asset directly so newly added Cap-<name>.svg files work without
     // maintaining a second, easily outdated allowlist in JavaScript.
-    const variants = [value, value.replace(/[\/\\]/g, "")].filter(Boolean);
+    // Slashes in club names are represented by hyphens in asset filenames. The
+    // slash-free variant keeps older assets such as Nieder-OlmWörrstadt working.
+    const variants = [
+      rawValue.replace(/[\/\\]/g, "-"),
+      rawValue.replace(/[\/\\]/g, "")
+    ].filter(Boolean);
     const urls = [];
 
     for (const variant of variants) {

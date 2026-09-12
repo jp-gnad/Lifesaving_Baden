@@ -133,12 +133,13 @@
     return p;
   }
 
-  function capFileFromOrtsgruppe(rawOG) {
+  function capFilesFromOrtsgruppe(rawOG) {
     const og = String(rawOG || "").trim();
-    if (!og) return CAP_FALLBACK_FILE;
-    if (og === "Nieder-Olm/Wörrstadt") return "Cap-Nieder-OlmWörrstadt.svg";
+    if (!og) return [];
+
+    const keys = [og.replace(/[\/\\]/g, "-"), og.replace(/[\/\\]/g, "")];
     // Existence is checked by probeCapFileExists; no static asset list needed.
-    return `Cap-${og}.svg`;
+    return [...new Set(keys.filter(Boolean))].map((key) => `Cap-${key}.svg`);
   }
 
   function formatOrtsgruppe(raw) {
@@ -703,21 +704,25 @@
     wrapperEl?.classList.toggle("is-fallback", !!isFallback);
   }
 
-  function setCapWithCache(imgEl, capFile, wrapperEl) {
+  function setCapWithCache(imgEl, capFiles, wrapperEl) {
     imgEl.src = CAP_FALLBACK_URL;
     setFallbackTransparency(imgEl, wrapperEl, true);
 
-    const file = String(capFile || "").trim();
-    if (!file || file === CAP_FALLBACK_FILE) {
-      return;
-    }
+    const files = (Array.isArray(capFiles) ? capFiles : [capFiles])
+      .map((file) => String(file || "").trim())
+      .filter((file) => file && file !== CAP_FALLBACK_FILE);
+    if (!files.length) return;
 
-    probeCapFileExists(file).then((ok) => {
-      if (!ok) return;
+    (async () => {
+      for (const file of files) {
+        const ok = await probeCapFileExists(file);
+        if (!ok) continue;
 
-      imgEl.src = `${FLAG_BASE_URL}/${encodeURIComponent(file)}`;
-      setFallbackTransparency(imgEl, wrapperEl, false);
-    });
+        imgEl.src = `${FLAG_BASE_URL}/${encodeURIComponent(file)}`;
+        setFallbackTransparency(imgEl, wrapperEl, false);
+        return;
+      }
+    })();
   }
 
   function renderCap(rawOG, size = "md") {
@@ -736,7 +741,7 @@
     });
 
     wrapper.appendChild(img);
-    setCapWithCache(img, capFileFromOrtsgruppe(og), wrapper);
+    setCapWithCache(img, capFilesFromOrtsgruppe(og), wrapper);
 
     return wrapper;
   }

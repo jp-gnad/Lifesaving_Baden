@@ -208,12 +208,12 @@
       pushUnique(out, "WÜ");
     }
 
-    pushUnique(out, value);
-    pushUnique(out, ascii);
-    pushUnique(out, value.replace(/[\/\\]/g, ""));
-    pushUnique(out, ascii.replace(/[\/\\]/g, ""));
+    // Club slashes map to hyphens in SVG filenames (e.g. A/B -> Cap-A-B.svg).
     pushUnique(out, value.replace(/[\/\\]/g, "-"));
     pushUnique(out, ascii.replace(/[\/\\]/g, "-"));
+    // Retain the historical slash-free spelling as a secondary fallback.
+    pushUnique(out, value.replace(/[\/\\]/g, ""));
+    pushUnique(out, ascii.replace(/[\/\\]/g, ""));
     pushUnique(out, value.replace(/\s+/g, ""));
     pushUnique(out, ascii.replace(/\s+/g, ""));
 

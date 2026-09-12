@@ -262,6 +262,15 @@
     return aff.ogKey || String(a?.ortsgruppe || "").trim();
   }
 
+  function capKeyVariantsFromOrtsgruppe(rawOG) {
+    const og = String(rawOG || "").trim();
+    if (!og) return [];
+    return [...new Set([
+      og.replace(/[\/\\]/g, "-"),
+      og.replace(/[\/\\]/g, "")
+    ].filter(Boolean))];
+  }
+
   function capCandidatesAvatar(aff) {
     const ogKey = String(aff?.ogKey || "").trim();
     const lvCode = String(aff?.lvCode || "").trim().toUpperCase();
@@ -269,10 +278,7 @@
     const sr = String(aff?.startrecht || "").trim().toUpperCase();
 
     const out = [];
-    if (ogKey) out.push({ key: ogKey, overlay: false });
-    if (ogKey === "Nieder-Olm/Wörrstadt") {
-      out.push({ key: "Nieder-OlmWörrstadt", overlay: false });
-    }
+    capKeyVariantsFromOrtsgruppe(ogKey).forEach((key) => out.push({ key, overlay: false }));
 
     const pushOverlay = (k) => {
       const kk = String(k || "").trim();
@@ -370,13 +376,6 @@
     });
   }
 
-  function capFileFromOrtsgruppe(rawOG) {
-    const og = String(rawOG || "").trim();
-    if (!og) return "Cap-Baden_light.svg";
-    if (og === "Nieder-Olm/Wörrstadt") return "Cap-Nieder-OlmWörrstadt.svg";
-    return `Cap-${og}.svg`;
-  }
-
   function ogInfoFromMeet(m) {
     const ogRaw = m.Ortsgruppe ?? m.ortsgruppe ?? "";
     const lvRaw = m.LV_state ?? m.lv_state ?? "";
@@ -410,30 +409,31 @@
     const cell = h("span", { class: "m-ogcap-cell" });
 
     const { ogKey, lvCode, bvCode, startrecht, label } = ogInfo;
+    const ogEntries = (overlay) => capKeyVariantsFromOrtsgruppe(ogKey).map((key) => ({ key, overlay }));
 
     let seq = [];
 
     if (startrecht === "OG") {
       seq = [
-        { key: ogKey, overlay: false },
+        ...ogEntries(false),
         { key: lvCode, overlay: true },
         { key: bvCode, overlay: true }
       ];
     } else if (startrecht === "LV") {
       seq = [
         { key: lvCode, overlay: false },
-        { key: ogKey, overlay: true },
+        ...ogEntries(true),
         { key: bvCode, overlay: true }
       ];
     } else if (startrecht === "BV") {
       seq = [
         { key: bvCode, overlay: false },
-        { key: ogKey, overlay: true },
+        ...ogEntries(true),
         { key: lvCode, overlay: true }
       ];
     } else {
       seq = [
-        { key: ogKey, overlay: false },
+        ...ogEntries(false),
         { key: lvCode, overlay: true },
         { key: bvCode, overlay: true }
       ];

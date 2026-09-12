@@ -183,9 +183,11 @@
       out.push({ key: k, overlay: !!overlay });
     };
 
-    push(aff?.ogKey, false);
-    if (String(aff?.ogKey || "").trim() === "Nieder-Olm/Wörrstadt") {
-      push("Nieder-OlmWörrstadt", false);
+    const rawOgKey = String(aff?.ogKey || "").trim();
+    if (rawOgKey) {
+      push(rawOgKey.replace(/[\/\\]/g, "-"), false);
+      // Compatibility with historical filenames that removed the slash.
+      push(rawOgKey.replace(/[\/\\]/g, ""), false);
     }
     push(aff?.lvCode, true);
     push(aff?.bvCode, true);

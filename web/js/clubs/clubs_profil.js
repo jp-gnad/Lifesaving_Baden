@@ -168,7 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
       );
     }
 
-    const iconKey = normalize(iconKeys[0] || point?.name);
+    const iconKey = normalize(iconKeys[0] || point?.name).replace(/[\/\\]/g, "-");
     return iconKey
       ? h("img", {
           class: "hero-support-point-cap",
@@ -660,11 +660,11 @@ document.addEventListener("DOMContentLoaded", () => {
     return Number.isFinite(place) ? String(place) : text;
   }
 
-  function capFileFromOrtsgruppe(rawOG) {
+  function capFilesFromOrtsgruppe(rawOG) {
     const og = normalize(rawOG).replace(/^og\s+/i, "");
-    if (!og) return "";
-    if (og === "Nieder-Olm/Wörrstadt") return "Cap-Nieder-OlmWörrstadt.svg";
-    return `Cap-${og}.svg`;
+    if (!og) return [];
+    const keys = [og.replace(/[\/\\]/g, "-"), og.replace(/[\/\\]/g, "")];
+    return [...new Set(keys.filter(Boolean))].map((key) => `Cap-${key}.svg`);
   }
 
   function getClubMeetStartrechtCap(row) {
@@ -672,8 +672,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (startrecht === "OG") {
       const ogName = normalize(row?.[COLS.ortsgruppe]).replace(/^og\s+/i, "");
-      const file = capFileFromOrtsgruppe(ogName);
-      return file ? { key: `OG|${ogName}`, file, label: `OG ${ogName}` } : null;
+      const [file, fallbackFile = ""] = capFilesFromOrtsgruppe(ogName);
+      return file ? { key: `OG|${ogName}`, file, fallbackFile, label: `OG ${ogName}` } : null;
     }
 
     if (startrecht === "LV") {
@@ -1433,12 +1433,10 @@ document.addEventListener("DOMContentLoaded", () => {
       .replace(/\u00fc/gi, "ue")
       .replace(/\u00df/g, "ss");
 
-    pushPdfUnique(out, value);
-    pushPdfUnique(out, ascii);
-    pushPdfUnique(out, value.replace(/[\/\\]/g, ""));
-    pushPdfUnique(out, ascii.replace(/[\/\\]/g, ""));
     pushPdfUnique(out, value.replace(/[\/\\]/g, "-"));
     pushPdfUnique(out, ascii.replace(/[\/\\]/g, "-"));
+    pushPdfUnique(out, value.replace(/[\/\\]/g, ""));
+    pushPdfUnique(out, ascii.replace(/[\/\\]/g, ""));
     pushPdfUnique(out, value.replace(/\s+/g, ""));
     pushPdfUnique(out, ascii.replace(/\s+/g, ""));
 
@@ -2829,7 +2827,15 @@ document.addEventListener("DOMContentLoaded", () => {
           title: cap.label || "",
           loading: "lazy",
           decoding: "async",
-          onerror: (event) => event.currentTarget.remove()
+          onerror: (event) => {
+            const image = event.currentTarget;
+            if (cap.fallbackFile && image.dataset.fallback !== "1") {
+              image.dataset.fallback = "1";
+              image.src = `./assets/svg/${encodeURIComponent(cap.fallbackFile)}`;
+              return;
+            }
+            image.remove();
+          }
         })
       )
     );
