@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   const footer = document.getElementById("site-footer");
   if (!footer) return;
+  const year = new Date().getFullYear();
 
   if (footer.dataset.footerVariant === "dark") {
     footer.innerHTML = `
@@ -54,11 +55,54 @@ document.addEventListener("DOMContentLoaded", () => {
         </nav>
       </div>
 
+      <div class="footer-dark-content">
+        <div class="footer-dark-content-column footer-dark-content-column--1">
+          <div class="footer-dark-brand">
+            <img class="footer-dark-brand__mascot"
+                 src="./assets/png/icons/elch.png"
+                 alt=""
+                 aria-hidden="true"
+                 draggable="false">
+            <span class="footer-dark-brand__title">
+              <span class="footer-dark-brand__lifesaving">Lifesaving</span>
+              <span class="footer-dark-brand__baden">Baden</span>
+            </span>
+          </div>
+        </div>
+        <div class="footer-dark-content-column footer-dark-content-column--2">
+          <nav class="footer-dark-section" aria-label="Lifesaving Baden">
+            <span class="footer-dark-section__title">Lifesaving Baden</span>
+            <a href="athleten.html">Athleten</a>
+            <a href="punkterechner.html">Punkterechner</a>
+            <a href="wettkaempfe.html">Wettkämpfe</a>
+            <a href="landeskader.html">Kader</a>
+            <a href="clubs.html">Club</a>
+          </nav>
+        </div>
+        <div class="footer-dark-content-column footer-dark-content-column--3">
+          <nav class="footer-dark-section" aria-label="Wettkämpfe">
+            <span class="footer-dark-section__title">Wettkämpfe</span>
+            <a href="deutschlandpokal.html">Deutschlandpokal</a>
+            <a href="bodenseepokal.html">Bodensee Pokal</a>
+            <a href="juniorenrettungspokal.html">Junioren Rettungspokal</a>
+            <a href="dem.html">Deutsche Einzelstrecken Meisterschaften</a>
+            <a href="nationalmannschaft.html">Nationalmannschaft</a>
+          </nav>
+        </div>
+        <div class="footer-dark-content-column footer-dark-content-column--4">
+          <img class="footer-dark-content-logo"
+               src="./assets/svg/logo.svg"
+               alt="Lifesaving Baden"
+               draggable="false">
+        </div>
+      </div>
+
       <div class="footer-dark-divider" aria-hidden="true"></div>
 
       <nav class="footer-dark-legal" aria-label="Rechtliche Hinweise">
         <a href="datenschutz.html">Datenschutz</a>
         <a href="impressum.html">Impressum</a>
+        <span class="footer-dark-copyright">© ${year} Lifesaving Baden</span>
       </nav>
 
       <nav class="footer-dark-affiliations" aria-label="Verbände">
@@ -143,8 +187,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     return;
   }
-
-  const year = new Date().getFullYear();
 
   footer.innerHTML = `
     <!-- TOP (grau) -->
