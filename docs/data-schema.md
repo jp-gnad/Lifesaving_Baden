@@ -6,11 +6,10 @@ Diese Datei dokumentiert die wichtigsten Laufzeitdaten der Anwendung. Schwerpunk
 
 | Quelle | Pfad | Zweck | Hauptnutzer |
 | --- | --- | --- | --- |
-| Haupt-Workbook | `web/data/test (1).xlsx` | Wettkampf- und Athletendaten | Athleten, Profil, Clubs, Punkterechner, Kaderstatus, Wettbewerbsseiten |
+| Haupt-Workbook | `web/data/test (1).xlsx` | Wettkampf- und Athletendaten | Uebersicht, Athleten, Profil, Clubs, Punkterechner, Kaderstatus, Wettbewerbsseiten |
 | Rekord-/Konfig-Workbook | `web/data/records_kriterien.xlsx` | Rekorde, Referenzwerte, Konfigurationstabellen, Kaderkalender | Profil-LSC, Kaderstatus, DP/BP/JRP/DEM, Landeskader |
 | ILS-Weltrekorde | `https://ils-records.jp-gnad.workers.dev/` | Live-Weltrekorde aus der offiziellen ILS-Uebersicht | Punkterechner |
 | Legacy-Fallback | `web/data/top10.json` | Teilweise statische Athleten-Top-10 | `web/js/athleten/ath_top10.js` |
-| Dokumentbibliothek | `content/Infoschreiben/` | PDF-Infoschreiben | `web/js/info.js` ueber `DocumentLibraryPage` |
 | Dokumentbibliothek | `content/kaderkriterien/` | PDF-Kaderrichtlinien | `web/js/kriterien.js` ueber `DocumentLibraryPage` |
 
 ## Primare Faktentabelle: `Tabelle2`

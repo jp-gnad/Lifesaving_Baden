@@ -98,6 +98,9 @@
     let isDragging = false;
     let isLoopJumping = false;
     let suppressClick = false;
+    const carousel = root.closest(".home-cards-carousel");
+    const prevButton = carousel?.querySelector(".home-cards__nav--prev");
+    const nextButton = carousel?.querySelector(".home-cards__nav--next");
 
     function getLoopWidth() {
       return afterCards[0].offsetLeft - cards[0].offsetLeft;
@@ -162,6 +165,21 @@
 
     function activateCarousel() {
       root.classList.remove("is-initial");
+    }
+
+    function scrollByCard(direction) {
+      activateCarousel();
+
+      const allCards = Array.from(root.querySelectorAll(".home-card"));
+      const nearest = getNearestCard(root);
+      const currentIndex = allCards.indexOf(nearest);
+      const target = allCards[currentIndex + direction];
+      if (!target) return;
+
+      root.scrollTo({
+        left: getCardScrollLeft(root, target),
+        behavior: global.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      });
     }
 
     function handlePointerDown(event) {
@@ -253,6 +271,8 @@
     root.addEventListener("wheel", activateCarousel, { passive: true, once: true });
     root.addEventListener("keydown", activateCarousel, { once: true });
     root.addEventListener("click", handleClick, true);
+    prevButton?.addEventListener("click", () => scrollByCard(-1));
+    nextButton?.addEventListener("click", () => scrollByCard(1));
     global.addEventListener("resize", handleResize, { passive: true });
 
     requestAnimationFrame(() => {

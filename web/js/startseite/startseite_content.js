@@ -22,11 +22,11 @@
       bgY: "25%",
     },
     {
-      title: "Infoschreiben",
-      meta: "DLRG ・ Neuigkeiten ・ Landeskader ・ Rettungssport",
-      text: "Aktuelles Jahres-Infoschreiben vom Landeskader Baden.",
+      title: "Übersicht",
+      meta: "DLRG ・ Rettungssport ・ Baden ・ Orientierung",
+      text: "Alle wichtigen Bereiche von Lifesaving Baden auf einen Blick.",
       img: "./assets/png/karussel/bild5.JPG",
-      cta: { label: "Mehr Informationen", href: "./info.html" },
+      cta: { label: "Mehr Informationen", href: "./uebersicht.html" },
       bgY: "100%",
     },
     {
@@ -125,26 +125,42 @@
       <section class="home-links" aria-labelledby="home-highlights-title">
         <div class="container">
           <h2 class="home-links__title" id="home-highlights-title">Highlights</h2>
-          <div class="home-cards">
-            <a class="home-card" href="./athleten.html" aria-label="Dein Athletenprofil">
-              <span class="home-card__media home-card__media--athleten" aria-hidden="true"></span>
-            </a>
+          <div class="home-cards-carousel">
+            <button
+              class="home-cards__nav home-cards__nav--prev"
+              type="button"
+              aria-label="Vorherige Highlight-Karte"
+              aria-controls="home-cards-track"
+            ></button>
 
-            <a class="home-card" href="./punkterechner.html" aria-label="DLRG Punkterechner">
-              <span class="home-card__media home-card__media--punkte" aria-hidden="true"></span>
-            </a>
+            <div class="home-cards" id="home-cards-track">
+              <a class="home-card" href="./athleten.html" aria-label="Dein Athletenprofil">
+                <span class="home-card__media home-card__media--athleten" aria-hidden="true"></span>
+              </a>
 
-            <a class="home-card" href="./wettkaempfe.html" aria-label="Wettkämpfe und Nominierung">
-              <span class="home-card__media home-card__media--wettkaempfe" aria-hidden="true"></span>
-            </a>
+              <a class="home-card" href="./punkterechner.html" aria-label="DLRG Punkterechner">
+                <span class="home-card__media home-card__media--punkte" aria-hidden="true"></span>
+              </a>
 
-            <a class="home-card" href="./landeskader.html" aria-label="Landeskader">
-              <span class="home-card__media home-card__media--kader" aria-hidden="true"></span>
-            </a>
+              <a class="home-card" href="./wettkaempfe.html" aria-label="Wettkämpfe und Nominierung">
+                <span class="home-card__media home-card__media--wettkaempfe" aria-hidden="true"></span>
+              </a>
 
-            <a class="home-card" href="./clubs.html" aria-label="Clubs und Bestenlisten">
-              <span class="home-card__media home-card__media--clubs" aria-hidden="true"></span>
-            </a>
+              <a class="home-card" href="./landeskader.html" aria-label="Landeskader">
+                <span class="home-card__media home-card__media--kader" aria-hidden="true"></span>
+              </a>
+
+              <a class="home-card" href="./clubs.html" aria-label="Clubs und Bestenlisten">
+                <span class="home-card__media home-card__media--clubs" aria-hidden="true"></span>
+              </a>
+            </div>
+
+            <button
+              class="home-cards__nav home-cards__nav--next"
+              type="button"
+              aria-label="Nächste Highlight-Karte"
+              aria-controls="home-cards-track"
+            ></button>
           </div>
         </div>
       </section>

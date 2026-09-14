@@ -39,11 +39,11 @@ Diese Datei ordnet jede HTML-Seite ihrem fachlichen Zweck, ihren Hauptskripten u
 | `web/juniorenrettungspokal.html` | Wettbewerbseite mit Historienkarussell und Pflichtzeiten | `web/js/shared/competition_page.js`, `web/js/0_gadges/PW.js`, `web/js/0_gadges/picture_karussel.js`, `web/js/0_gadges/PZ_tabellen.js`, `web/js/juniorenrettungspokal.js` | `Tabelle2`, `records_kriterien.xlsx`, Bilder aus `web/assets/png/JRP-Team/` | nutzt Pflichtzeiten-Engine statt Punkte-Engine |
 | `web/dem.html` | Uebersicht aller erreichten DEM-Pflichtzeiten | `web/js/dem.js`, `web/js/0_gadges/PZ_tabellen.js` | `Tabelle2`, `records_kriterien.xlsx` | einfache Seite, aber fachlich wichtig |
 
-## Dokumente, Info und einfache Seiten
+## Dokumente, Uebersichten und einfache Seiten
 
 | Seite | Zweck | Hauptskripte | Daten/Abhaengigkeiten | Hinweise |
 | --- | --- | --- | --- | --- |
-| `web/info.html` | Bibliothek fuer Infoschreiben | `web/js/shared/document_library.js`, `web/js/info.js` | GitHub API auf `content/Infoschreiben/`, `localStorage` Cache | strukturell analog zu `kriterien.html` |
+| `web/uebersicht.html` | Datenbank-Statistik mit vier Kennzahlen, Geschlechter- und Altersverteilung | `web/js/uebersicht.js`, `web/js/uebersicht/uebersicht_data.js`, `web/js/clubs/clubs_data.js` | `ExcelLoader`, `Tabelle2` | gesamte Datenbank; Alter jeder Person beim letzten erfassten Wettkampf |
 | `web/kalender.html` | Kalender-Platzhalter | `web/js/kalender.js` | keine | aktuell nur Dummy-Inhalt |
 | `web/datenschutz.html` | Datenschutzseite | `web/js/datenschutz.js` | keine | eher statischer Inhalt |
 | `web/impressum.html` | Impressumsseite | `web/js/impressum.js` | keine | eher statischer Inhalt |
@@ -53,7 +53,6 @@ Diese Datei ordnet jede HTML-Seite ihrem fachlichen Zweck, ihren Hauptskripten u
 ### Shared-Page-Muster
 
 - `DocumentLibraryPage`
-  - `web/info.html`
   - `web/kriterien.html`
 
 - `CompetitionPage`
@@ -63,6 +62,7 @@ Diese Datei ordnet jede HTML-Seite ihrem fachlichen Zweck, ihren Hauptskripten u
 
 ### Excel-getriebene Hauptbereiche
 
+- `web/uebersicht.html`
 - `web/athleten.html`
 - `web/profil.html`
 - `web/clubs.html`

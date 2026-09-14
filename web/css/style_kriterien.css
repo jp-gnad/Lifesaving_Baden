@@ -77,7 +77,7 @@ main#content {
 }
 
 /* =========================
-   Aktuelles Infoschreiben (alt: Icon-only)
+   Aktuelles Dokument (alt: Icon-only)
    ========================= */
 
 .info-card--icononly {
@@ -97,7 +97,7 @@ main#content {
 }
 
 /* =========================
-   Aktuelles Infoschreiben (Brief + Overlay)
+   Aktuelles Dokument (Brief + Overlay)
    ========================= */
 
 .info-brief {

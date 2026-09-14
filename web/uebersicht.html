@@ -3,44 +3,35 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- optionale Farben für UI-Chrome -->
   <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Lifesaving Baden – Infoschreiben</title>
+  <title>Lifesaving Baden – Übersicht</title>
 
-  <!-- CSS -->
   <link rel="stylesheet" href="./css/style_header.css?v=20260322-2" />
   <link rel="stylesheet" href="./css/style_note.css?v=20260913-27" />
-  <link rel="stylesheet" href="./css/style_info.css?v=20260322-2" />
+  <link rel="stylesheet" href="./css/style_uebersicht.css?v=20260915-1" />
 
-  <!-- Favicon (SVG + PNG-Fallbacks) -->
   <link rel="icon" href="./assets/svg/logo.svg" type="image/svg+xml">
   <link rel="icon" href="./assets/png/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="icon" href="./assets/png/favicon-16.png" sizes="16x16" type="image/png">
-
-  <!-- iOS / Safari Homescreen -->
   <link rel="apple-touch-icon" href="./assets/png/apple-touch-icon.png" sizes="180x180">
-
-  <!-- Safari „Pinned Tab“ (monochrom; ggf. separate vereinfachte SVG verwenden) -->
   <link rel="mask-icon" href="./assets/svg/logo.svg" color="#000000">
-
-  <!-- PWA/Android Homescreen -->
   <link rel="manifest" href="./site.webmanifest?v=20260322-2">
-
 </head>
 <body>
   <header id="site-header"></header>
 
-  <main id="content" tabindex="-1"></main>
+  <main id="content" tabindex="-1"><noscript>Bitte aktiviere JavaScript, um die Datenbank-Statistiken anzuzeigen.</noscript></main>
 
   <footer id="site-footer" data-footer-variant="dark"></footer>
 
-  <!-- JS -->
   <script src="./js/particles_snow.js?v=20260322-2" defer></script>
   <script src="./js/header.js?v=20260910-1" defer></script>
-  <script src="./js/shared/document_library.js?v=20260322-2" defer></script>
-  <script src="./js/info.js?v=20260322-2" defer></script>
+  <script src="./js/shared/excel_loader.js?v=20260323-3" defer></script>
+  <script src="./js/clubs/clubs_data.js?v=20260915-1" defer></script>
+  <script src="./js/uebersicht/uebersicht_data.js?v=20260915-1" defer></script>
+  <script src="./js/uebersicht.js?v=20260915-1" defer></script>
   <script src="./js/note.js?v=20260913-26" defer></script>
 </body>
 </html>

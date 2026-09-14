@@ -30,11 +30,14 @@ Die README ist als schneller Einstieg fuer Menschen und KI gedacht. Sie beantwor
 - Gemeinsame Infrastruktur: `web/js/shared/excel_loader.js`, `web/js/shared/document_library.js`, `web/js/shared/competition_page.js`
 - Hauptfeatures:
   - Startseite: `web/startseite.html`, `web/js/startseite.js`, `web/js/startseite/`
+  - Uebersicht: `web/uebersicht.html`, `web/js/uebersicht.js`, `web/js/uebersicht/` (Kennzahlen und Verteilungen fuer die gesamte Datenbank)
   - Athleten: `web/athleten.html`, `web/js/athleten.js`, `web/js/athleten/`
   - Profil: `web/profil.html`, `web/js/profil.js`, `web/js/profil/`
   - Clubs: `web/clubs.html`, `web/js/clubs.js`, `web/js/clubs/`
   - Punkterechner: `web/punkterechner.html`, `web/js/punkterechner.js`, `web/js/punkterechner/`
 - Live-Weltrekorde: `cloudflare/ils-records-worker/`
+
+Die Statistikregeln der Uebersicht lassen sich mit `node --test scripts/test_overview_data.cjs` pruefen.
 
 ## Repo-Struktur
 

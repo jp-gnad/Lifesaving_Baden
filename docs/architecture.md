@@ -49,13 +49,15 @@ Fast alle Seiten nutzen dieselben Grundbausteine:
   - Kapselt Excel-URLs.
   - Bietet Workbook-Cache pro Seitenaufruf.
 - `document_library.js`
-  - Gemeinsames Geruest fuer PDF-Bibliotheken wie Infoschreiben und Kaderrichtlinien.
+  - Gemeinsames Geruest fuer die PDF-Bibliothek der Kaderrichtlinien.
   - Nutzt GitHub API und `localStorage`-Cache.
 - `competition_page.js`
   - Gemeinsames Geruest fuer Wettbewerbsseiten mit Bildkarussell, optionalem Passwort-Gate und geschuetztem Inhaltsbereich.
 
 ### 4. Feature-Bereiche
 
+- `web/js/uebersicht/`
+  - Aggregiert den gesamten Datenbestand fuer die Uebersicht: Personen, Ortsgruppen, Wettkaempfe, Starts sowie Geschlechter- und Altersverteilung. Pro Person zaehlt das Alter beim letzten erfassten Wettkampf; Namens- und Jahrgangszuordnung sowie Startwertung orientieren sich am Club-Profil. Die Ortsgruppen-Normalisierung stammt aus `ClubsData`.
 - `web/js/startseite/`
   - Startseiteninhalt und Hero-/Carousel-Logik
 - `web/js/athleten/`
@@ -75,7 +77,7 @@ Fast alle Seiten nutzen dieselben Grundbausteine:
 
 - `web/assets/png/`, `web/assets/svg/`, `web/assets/fonts/`, `web/assets/MP4/`
   - Visuelle Assets
-- `content/Infoschreiben/`, `content/kaderkriterien/`
+- `content/kaderkriterien/`
   - PDF-Dokumente ausserhalb des Web-Roots
 - `web/data/`
   - Excel-Dateien und JSON-Daten
@@ -100,7 +102,7 @@ Da viele Module ueber `window.*` gekoppelt sind, ist die Reihenfolge der `<scrip
 
 Einige neuere Bereiche sind bereits besser strukturiert:
 
-- `info.js` und `kriterien.js` konfigurieren nur noch `DocumentLibraryPage`.
+- `kriterien.js` konfiguriert `DocumentLibraryPage`.
 - `deutschlandpokal.js`, `bodenseepokal.js` und `juniorenrettungspokal.js` konfigurieren `CompetitionPage`.
 - `startseite.js` ist auf einen kleinen Bootstrap reduziert.
 

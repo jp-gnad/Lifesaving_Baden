@@ -11,7 +11,7 @@ Diese Anpassungen wurden direkt im Projekt umgesetzt.
 
 ### 2. Gemeinsame Helfer
 
-- Die Logik fuer `info.js` und `kriterien.js` wurde in `web/js/shared/document_library.js` gebuendelt.
+- Die Logik fuer `kriterien.js` wurde in `web/js/shared/document_library.js` gebuendelt.
 - Die gemeinsame Struktur fuer `deutschlandpokal.js`, `bodenseepokal.js` und `juniorenrettungspokal.js` wurde in `web/js/shared/competition_page.js` gebuendelt.
 - Die Seitendateien selbst enthalten jetzt nur noch ihre jeweilige Konfiguration und fachliche Besonderheiten.
 
