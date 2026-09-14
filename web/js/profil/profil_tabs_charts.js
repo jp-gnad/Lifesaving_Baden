@@ -99,12 +99,22 @@
   }
   function renderDisciplinePieCard(a) {
     const counts = countStartsPerDisciplineAll(a);
+    const chartOrder = new Map([
+      "50_retten",
+      "100_kombi",
+      "100_retten_flosse",
+      "100_lifesaver",
+      "200_super",
+      "200_hindernis"
+    ].map((key, index) => [key, index]));
 
     const ordered = DISCIPLINES.map(d => ({
       key: d.key,
       label: d.label,
       count: Number(counts[d.key] || 0)
-    })).filter(x => x.count > 0);
+    }))
+      .filter(x => x.count > 0)
+      .sort((a, b) => (chartOrder.get(a.key) ?? 999) - (chartOrder.get(b.key) ?? 999));
 
     const total = ordered.reduce((s, x) => s + x.count, 0);
 
@@ -130,8 +140,8 @@
     wrap.className = "pie-wrap";
     card.appendChild(wrap);
 
-    const W = 360, H = 360, cx = W / 2, cy = H / 2;
-    const R = 140, r = 80;
+    const W = 420, H = 380, cx = W / 2, cy = H / 2;
+    const R = 125, r = 72;
     const svgNS = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(svgNS, "svg");
     svg.setAttribute("class", "pie-svg");
@@ -157,18 +167,178 @@
       "200_hindernis": "pie-c-100rf"
     };
 
+    const OUTSIDE_LABELS = {
+      "50_retten": { text: "50 m Retten", lines: ["50 m", "Retten"] },
+      "100_retten_flosse": { text: "100 m Retten Fl.", lines: ["100 m", "Retten Fl."] },
+      "100_kombi": { text: "100 m Kombi", lines: ["100 m", "Kombi"] },
+      "100_lifesaver": { text: "100 m Lifesaver", lines: ["100 m", "Lifesaver"] },
+      "200_super": { text: "200 m SLS", lines: ["200 m SLS"] },
+      "200_hindernis": { text: "200 m Hindernis", lines: ["200 m", "Hindernis"] }
+    };
+
+    const segmentNodes = [];
+    const segmentAnchors = [];
+    const calloutItems = [];
+    let lockedIndex = null;
+
+    const tooltip = document.createElement("div");
+    tooltip.className = "pie-tooltip";
+    tooltip.hidden = true;
+    tooltip.setAttribute("role", "status");
+    tooltip.setAttribute("aria-live", "polite");
+    const tooltipTitle = document.createElement("strong");
+    tooltipTitle.className = "pie-tooltip-title";
+    const tooltipValue = document.createElement("span");
+    tooltipValue.className = "pie-tooltip-value";
+    tooltip.append(tooltipTitle, tooltipValue);
+
+    function positionTooltip(index) {
+      const anchor = segmentAnchors[index];
+      if (!anchor) return;
+      const svgRect = svg.getBoundingClientRect();
+      const wrapRect = wrap.getBoundingClientRect();
+      const x = (svgRect.left - wrapRect.left) + (anchor.x / W) * svgRect.width;
+      const y = (svgRect.top - wrapRect.top) + (anchor.y / H) * svgRect.height;
+      const halfWidth = tooltip.offsetWidth / 2;
+      const safeX = Math.max(halfWidth + 8, Math.min(wrapRect.width - halfWidth - 8, x));
+      const placeBelow = y < tooltip.offsetHeight + 20;
+
+      tooltip.style.left = `${safeX}px`;
+      tooltip.style.top = `${placeBelow ? y + 13 : y - 13}px`;
+      tooltip.classList.toggle("is-below", placeBelow);
+    }
+
+    function showTooltip(index) {
+      const item = ordered[index];
+      if (!item) return;
+      const countLabel = item.count === 1 ? "Start" : "Starts";
+      tooltipTitle.textContent = OUTSIDE_LABELS[item.key]?.text
+        || String(item.label || "").replace(/^(\d+)m\b/, "$1 m");
+      tooltipValue.textContent = `${item.count} ${countLabel} · ${item.pct} % Anteil`;
+      tooltip.hidden = false;
+      segmentNodes.forEach((node, nodeIndex) => {
+        node.toggleAttribute("data-active", nodeIndex === index);
+      });
+      positionTooltip(index);
+    }
+
+    function hideTooltip() {
+      tooltip.hidden = true;
+      segmentNodes.forEach((node) => node.removeAttribute("data-active"));
+    }
+
     let angle = -Math.PI / 2;
-    ordered.forEach(it => {
+    ordered.forEach((it, index) => {
       const sweep = (it.count / total) * Math.PI * 2;
       if (sweep <= 0) return;
+
+      const start = angle;
+      const end = angle + sweep;
+      const mid = start + sweep / 2;
+      const segment = document.createElementNS(svgNS, "g");
+      const countLabel = it.count === 1 ? "Start" : "Starts";
+      segment.setAttribute("class", "pie-segment");
+      segment.setAttribute("tabindex", "0");
+      segment.setAttribute("role", "img");
+      segment.setAttribute("aria-label", `${it.label}: ${it.pct} Prozent, ${it.count} ${countLabel}`);
+      segment.style.setProperty("--pie-hover-x", `${(Math.cos(mid) * 4).toFixed(2)}px`);
+      segment.style.setProperty("--pie-hover-y", `${(Math.sin(mid) * 4).toFixed(2)}px`);
+
       const path = document.createElementNS(svgNS, "path");
-      path.setAttribute("d", segPath(cx, cy, R, r, angle, angle + sweep));
+      path.setAttribute("d", segPath(cx, cy, R, r, start, end));
       path.setAttribute("class", `pie-slice ${CLASS_MAP[it.key] || ""}`);
-      const title = document.createElementNS(svgNS, "title");
-      title.textContent = `${it.label}: ${it.pct}% (${it.count})`;
-      path.appendChild(title);
-      svg.appendChild(path);
-      angle += sweep;
+      segment.appendChild(path);
+
+      calloutItems.push({
+        item: it,
+        segment,
+        mid,
+        side: Math.cos(mid) >= 0 ? "right" : "left",
+        desiredY: cy + (R + 25) * Math.sin(mid)
+      });
+
+      segmentAnchors[index] = {
+        x: cx + (R + 3) * Math.cos(mid),
+        y: cy + (R + 3) * Math.sin(mid)
+      };
+      segment.addEventListener("pointerenter", () => {
+        if (lockedIndex == null) showTooltip(index);
+      });
+      segment.addEventListener("pointerleave", () => {
+        if (lockedIndex == null) hideTooltip();
+      });
+      segment.addEventListener("focus", () => showTooltip(index));
+      segment.addEventListener("blur", () => {
+        if (lockedIndex == null) hideTooltip();
+      });
+      segment.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (lockedIndex === index) {
+          lockedIndex = null;
+          hideTooltip();
+        } else {
+          lockedIndex = index;
+          showTooltip(index);
+        }
+      });
+
+      segmentNodes[index] = segment;
+      svg.appendChild(segment);
+      angle = end;
+    });
+
+    function spreadCallouts(items) {
+      const minY = 28;
+      const maxY = H - 28;
+      const gap = 38;
+      items.sort((a, b) => a.desiredY - b.desiredY);
+      items.forEach((entry, index) => {
+        entry.labelY = Math.max(entry.desiredY, index === 0 ? minY : items[index - 1].labelY + gap);
+      });
+      if (items.length && items[items.length - 1].labelY > maxY) {
+        items[items.length - 1].labelY = maxY;
+        for (let index = items.length - 2; index >= 0; index -= 1) {
+          items[index].labelY = Math.min(items[index].labelY, items[index + 1].labelY - gap);
+        }
+      }
+    }
+
+    spreadCallouts(calloutItems.filter((entry) => entry.side === "left"));
+    spreadCallouts(calloutItems.filter((entry) => entry.side === "right"));
+
+    calloutItems.forEach((entry) => {
+      const direction = entry.side === "right" ? 1 : -1;
+      const label = OUTSIDE_LABELS[entry.item.key] || {
+        text: entry.item.label,
+        lines: [entry.item.label]
+      };
+      const startX = cx + (R + 2) * Math.cos(entry.mid);
+      const startY = cy + (R + 2) * Math.sin(entry.mid);
+      const bendX = cx + (R + 14) * Math.cos(entry.mid);
+      const bendY = cy + (R + 14) * Math.sin(entry.mid);
+      const lineEndX = entry.side === "right" ? W - 78 : 78;
+      const textX = lineEndX + direction * 6;
+      const line = document.createElementNS(svgNS, "polyline");
+      line.setAttribute("points", `${startX},${startY} ${bendX},${bendY} ${lineEndX},${entry.labelY}`);
+      line.setAttribute("class", "pie-callout-line");
+      line.setAttribute("aria-hidden", "true");
+
+      const text = document.createElementNS(svgNS, "text");
+      text.setAttribute("x", textX);
+      text.setAttribute("y", entry.labelY);
+      text.setAttribute("text-anchor", entry.side === "right" ? "start" : "end");
+      text.setAttribute("class", "pie-callout-label");
+      text.setAttribute("aria-hidden", "true");
+      const firstLineY = entry.labelY - ((label.lines.length - 1) * 7);
+      label.lines.forEach((lineText, lineIndex) => {
+        const tspan = document.createElementNS(svgNS, "tspan");
+        tspan.setAttribute("x", textX);
+        tspan.setAttribute("y", firstLineY + lineIndex * 14);
+        tspan.textContent = lineText;
+        text.appendChild(tspan);
+      });
+      entry.segment.append(line, text);
     });
 
     const center = document.createElementNS(svgNS, "g");
@@ -184,29 +354,394 @@
     center.append(t1, t2);
     svg.appendChild(center);
 
-    const legend = document.createElement("div");
-    legend.className = "pie-legend";
-    ordered.forEach(it => {
-      const row = document.createElement("div");
-      row.className = "pie-leg-row";
-
-      const dot = document.createElement("span");
-      dot.className = `pie-dot ${CLASS_MAP[it.key] || ""}`;
-
-      const label = document.createElement("span");
-      label.className = "pie-leg-label";
-      label.textContent = it.label;
-
-      const val = document.createElement("span");
-      val.className = "pie-leg-val";
-      val.textContent = `${it.pct}%  •  ${it.count}`;
-
-      row.append(dot, label, val);
-      legend.appendChild(row);
+    wrap.addEventListener("pointerdown", (event) => {
+      if (event.target.closest?.(".pie-segment")) return;
+      lockedIndex = null;
+      hideTooltip();
     });
 
-    wrap.appendChild(svg);
-    wrap.appendChild(legend);
+    wrap.append(svg, tooltip);
+    return card;
+  }
+
+  function renderDisciplineRadarCard(a, comparisonState) {
+    const card = document.createElement("div");
+    card.className = "ath-radar-card";
+
+    const head = document.createElement("div");
+    head.className = "radar-head";
+    const heading = document.createElement("h4");
+    heading.textContent = "Disziplinen-Punkte";
+    head.appendChild(heading);
+
+    const wrap = document.createElement("div");
+    wrap.className = "radar-wrap";
+    const loading = document.createElement("div");
+    loading.className = "best-empty radar-status";
+    loading.textContent = "Punkte werden berechnet …";
+    wrap.appendChild(loading);
+    const legend = document.createElement("div");
+    legend.className = "radar-legend";
+    legend.hidden = true;
+    legend.setAttribute("aria-label", "Legende der Bestzeiten-Punkte");
+    card.append(head, wrap, legend);
+
+    const AXES = [
+      { key: "50_retten", shortLabel: "50 m Retten", lines: ["50 m Retten"] },
+      { key: "100_kombi", shortLabel: "100 m Kombi", lines: ["100 m Kombi"] },
+      { key: "100_retten_flosse", shortLabel: "100 m Retten Fl.", lines: ["100 m", "Retten Fl."] },
+      { key: "100_lifesaver", shortLabel: "100 m Lifesaver", lines: ["100 m", "Lifesaver"] },
+      { key: "200_super", shortLabel: "200 m SLS", lines: ["200 m SLS"] },
+      { key: "200_hindernis", shortLabel: "200 m Hindernis", lines: ["200 m", "Hindernis"] }
+    ];
+    const fmtPoints = (value) => new Intl.NumberFormat("de-DE", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(Number(value || 0));
+    const s = (tag, attrs = {}) => {
+      const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      Object.entries(attrs).forEach(([key, value]) => {
+        if (value != null) node.setAttribute(key, value);
+      });
+      return node;
+    };
+
+    function paint(result, comparisonResult = null, comparisonAthlete = null) {
+      const byKey = new Map((result?.disciplines || []).map((item) => [item.key, item]));
+      const comparisonByKey = new Map(
+        (comparisonResult?.disciplines || []).map((item) => [item.key, item])
+      );
+      const values = AXES.map((axis) => ({
+        ...axis,
+        ...(byKey.get(axis.key) || {
+          points: 0,
+          averagePoints: 0,
+          bestTimeSeconds: null,
+          wrSeconds: null
+        })
+      }));
+      const comparisonValues = AXES.map((axis) => ({
+        ...axis,
+        ...(comparisonByKey.get(axis.key) || { points: 0 })
+      }));
+      const hasComparisonPoints = comparisonValues.some((item) => Number(item.points) > 0);
+      const hasAnyValue = values.some((item) => Number(item.points) > 0);
+
+      legend.replaceChildren();
+      legend.hidden = !hasComparisonPoints;
+      if (hasComparisonPoints) {
+        const legendItem = (tone, label) => {
+          const item = document.createElement("span");
+          item.className = "radar-legend-item";
+          const swatch = document.createElement("span");
+          swatch.className = `radar-legend-swatch is-${tone}`;
+          swatch.setAttribute("aria-hidden", "true");
+          const text = document.createElement("span");
+          text.textContent = label;
+          item.append(swatch, text);
+          return item;
+        };
+        legend.append(
+          legendItem("own", a?.name || "Profil-Athlet"),
+          legendItem("comparison", comparisonAthlete?.name || "Vergleichsperson")
+        );
+      }
+
+      wrap.replaceChildren();
+      if (!hasAnyValue) {
+        const empty = document.createElement("div");
+        empty.className = "best-empty radar-status";
+        empty.textContent = "Keine gültigen Bestzeiten für das Disziplinen-Netz vorhanden.";
+        wrap.appendChild(empty);
+        return;
+      }
+
+      const W = 420;
+      const H = 430;
+      const cx = 210;
+      const cy = 214;
+      const radius = 132;
+      const labelRadius = 164;
+      const ringLevels = [
+        { points: 400, radiusRatio: 0.2 },
+        { points: 600, radiusRatio: 0.4667 },
+        { points: 800, radiusRatio: 0.7333 },
+        { points: 1000, radiusRatio: 1 }
+      ];
+      const pointsToRadiusRatio = (rawPoints) => {
+        const points = Math.max(0, Math.min(1000, Number(rawPoints) || 0));
+        if (points <= 400) return (points / 400) * ringLevels[0].radiusRatio;
+        return ringLevels[0].radiusRatio
+          + ((points - 400) / 600) * (1 - ringLevels[0].radiusRatio);
+      };
+      const angleFor = (index) => (-Math.PI / 2) + index * (Math.PI * 2 / AXES.length);
+      const pointAt = (index, distance) => {
+        const angle = angleFor(index);
+        return {
+          x: cx + Math.cos(angle) * distance,
+          y: cy + Math.sin(angle) * distance
+        };
+      };
+      const pointsAttr = (distance) => AXES
+        .map((_, index) => {
+          const point = pointAt(index, distance);
+          return `${point.x.toFixed(2)},${point.y.toFixed(2)}`;
+        })
+        .join(" ");
+
+      const svg = s("svg", {
+        class: "radar-svg",
+        viewBox: `0 0 ${W} ${H}`,
+        role: "img",
+        "aria-label": "Disziplinen-Punkte aus den persönlichen Bestzeiten im Verhältnis zum aktuellen WR Open"
+      });
+
+      ringLevels.forEach((level) => {
+        svg.appendChild(s("polygon", {
+          points: pointsAttr(radius * level.radiusRatio),
+          class: "radar-grid-ring",
+          "aria-label": `${level.points} Punkte`
+        }));
+      });
+
+      const axisNodes = [];
+      AXES.forEach((_, index) => {
+        const outer = pointAt(index, radius);
+        const axisNode = s("line", {
+          x1: cx,
+          y1: cy,
+          x2: outer.x,
+          y2: outer.y,
+          class: "radar-axis"
+        });
+        axisNodes[index] = axisNode;
+        svg.appendChild(axisNode);
+      });
+
+      const polygonPoints = values.map((item, index) => {
+        return pointAt(index, radius * pointsToRadiusRatio(item.points));
+      });
+      svg.appendChild(s("polygon", {
+        points: polygonPoints.map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(" "),
+        class: "radar-value-area"
+      }));
+
+      const averagePolygonPoints = values.map((item, index) => {
+        return pointAt(index, radius * pointsToRadiusRatio(item.averagePoints));
+      });
+      svg.appendChild(s("polygon", {
+        points: averagePolygonPoints
+          .map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`)
+          .join(" "),
+        class: "radar-average-line",
+        "aria-label": "Durchschnittliche Punktzahl je Disziplin"
+      }));
+
+      if (hasComparisonPoints) {
+        const comparisonPolygonPoints = comparisonValues.map((item, index) => {
+          return pointAt(index, radius * pointsToRadiusRatio(item.points));
+        });
+        svg.appendChild(s("polygon", {
+          points: comparisonPolygonPoints
+            .map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`)
+            .join(" "),
+          class: "radar-comparison-line",
+          "aria-label": `${comparisonAthlete?.name || "Vergleichsperson"}: Bestzeiten-Punkte`
+        }));
+      }
+
+      AXES.forEach((axis, index) => {
+        const labelPoint = pointAt(index, labelRadius);
+        const angle = angleFor(index);
+        const cos = Math.cos(angle);
+        const label = s("text", {
+          x: labelPoint.x,
+          y: labelPoint.y - ((axis.lines.length - 1) * 7),
+          class: "radar-axis-label",
+          "text-anchor": cos > 0.25 ? "start" : (cos < -0.25 ? "end" : "middle"),
+          "aria-hidden": "true"
+        });
+        axis.lines.forEach((line, lineIndex) => {
+          const tspan = s("tspan", { x: labelPoint.x });
+          if (lineIndex > 0) tspan.setAttribute("dy", 14);
+          tspan.textContent = line;
+          label.appendChild(tspan);
+        });
+        svg.appendChild(label);
+      });
+
+      const tooltip = document.createElement("div");
+      tooltip.className = "radar-tooltip";
+      tooltip.hidden = true;
+      tooltip.setAttribute("role", "status");
+      tooltip.setAttribute("aria-live", "polite");
+      const tooltipTitle = document.createElement("strong");
+      tooltipTitle.className = "radar-tooltip-title";
+      const tooltipValue = document.createElement("span");
+      tooltipValue.className = "radar-tooltip-value";
+      tooltip.append(tooltipTitle, tooltipValue);
+
+      const pointNodes = [];
+      let lockedIndex = null;
+      let activeIndex = null;
+
+      function positionTooltip(index) {
+        const point = polygonPoints[index];
+        const svgRect = svg.getBoundingClientRect();
+        const wrapRect = wrap.getBoundingClientRect();
+        const x = (svgRect.left - wrapRect.left) + (point.x / W) * svgRect.width;
+        const y = (svgRect.top - wrapRect.top) + (point.y / H) * svgRect.height;
+        const halfWidth = tooltip.offsetWidth / 2;
+        const safeX = Math.max(halfWidth + 8, Math.min(wrapRect.width - halfWidth - 8, x));
+        const placeBelow = y < tooltip.offsetHeight + 20;
+
+        tooltip.style.left = `${safeX}px`;
+        tooltip.style.top = `${placeBelow ? y + 13 : y - 13}px`;
+        tooltip.classList.toggle("is-below", placeBelow);
+      }
+
+      function showTooltip(index) {
+        const item = values[index];
+        activeIndex = index;
+        tooltipTitle.textContent = item.shortLabel;
+        tooltipValue.textContent = `Punkte: ${fmtPoints(item.points)} P`;
+        tooltip.hidden = false;
+        pointNodes.forEach((node, nodeIndex) => {
+          node.toggleAttribute("data-active", nodeIndex === index);
+        });
+        axisNodes.forEach((node, nodeIndex) => {
+          node.toggleAttribute("data-active", nodeIndex === index);
+        });
+        positionTooltip(index);
+      }
+
+      function hideTooltip() {
+        activeIndex = null;
+        tooltip.hidden = true;
+        pointNodes.forEach((node) => node.removeAttribute("data-active"));
+        axisNodes.forEach((node) => node.removeAttribute("data-active"));
+      }
+
+      values.forEach((item, index) => {
+        if (!(Number(item.points) > 0)) return;
+        const point = polygonPoints[index];
+        const group = s("g", {
+          class: "radar-point",
+          tabindex: "0",
+          role: "graphics-symbol",
+          "aria-label": `${item.shortLabel}, Punkte ${fmtPoints(item.points)} P`
+        });
+        group.appendChild(s("rect", {
+          x: point.x - 17,
+          y: point.y - 17,
+          width: 34,
+          height: 34,
+          class: "radar-point-hit"
+        }));
+        group.appendChild(s("circle", {
+          cx: point.x,
+          cy: point.y,
+          r: 4.5,
+          class: "radar-point-dot",
+          "aria-hidden": "true"
+        }));
+
+        group.addEventListener("focus", () => showTooltip(index));
+        group.addEventListener("blur", () => {
+          if (lockedIndex == null) hideTooltip();
+        });
+
+        pointNodes[index] = group;
+        svg.appendChild(group);
+      });
+
+      const hoverArea = s("polygon", {
+        points: pointsAttr(radius),
+        class: "radar-hover-area",
+        "aria-hidden": "true"
+      });
+      const sectorIndexFromPointer = (event) => {
+        const rect = svg.getBoundingClientRect();
+        const pointerX = ((event.clientX - rect.left) / rect.width) * W;
+        const pointerY = ((event.clientY - rect.top) / rect.height) * H;
+        const clockwiseFromTop = (
+          Math.atan2(pointerY - cy, pointerX - cx) + Math.PI / 2 + Math.PI * 2
+        ) % (Math.PI * 2);
+        return Math.floor((clockwiseFromTop + Math.PI / 6) / (Math.PI / 3)) % AXES.length;
+      };
+      hoverArea.addEventListener("pointermove", (event) => {
+        if (lockedIndex != null) return;
+        const index = sectorIndexFromPointer(event);
+        if (activeIndex !== index) showTooltip(index);
+      });
+      hoverArea.addEventListener("pointerleave", () => {
+        if (lockedIndex == null) hideTooltip();
+      });
+      hoverArea.addEventListener("pointerdown", (event) => {
+        event.stopPropagation();
+      });
+      hoverArea.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const index = sectorIndexFromPointer(event);
+        if (lockedIndex === index) {
+          lockedIndex = null;
+          hideTooltip();
+        } else {
+          lockedIndex = index;
+          showTooltip(index);
+        }
+      });
+      svg.appendChild(hoverArea);
+
+      wrap.addEventListener("pointerdown", (event) => {
+        lockedIndex = null;
+        hideTooltip();
+      });
+      global.addEventListener("resize", () => {
+        if (activeIndex != null) positionTooltip(activeIndex);
+      }, { passive: true });
+
+      wrap.append(svg, tooltip);
+    }
+
+    let updateRequestId = 0;
+    let ownResultPromise = null;
+    async function updateRadar(comparisonAthlete) {
+      const requestId = ++updateRequestId;
+      try {
+        if (!global.ProfileLSC || typeof global.ProfileLSC.calculateBestDisciplinePoints !== "function") {
+          throw new Error("LSC-Punkteberechnung ist nicht verfügbar.");
+        }
+        ownResultPromise ||= global.ProfileLSC.calculateBestDisciplinePoints(a);
+        const ownResult = await ownResultPromise;
+        let comparisonResult = null;
+        if (comparisonAthlete) {
+          try {
+            comparisonResult = await global.ProfileLSC.calculateBestDisciplinePoints(comparisonAthlete);
+          } catch (error) {
+            console.error("Vergleichs-Punkte konnten nicht berechnet werden:", error);
+          }
+        }
+        if (requestId !== updateRequestId) return;
+        paint(ownResult, comparisonResult, comparisonAthlete);
+      } catch (error) {
+        if (requestId !== updateRequestId) return;
+        console.error("Disziplinen-Netz konnte nicht berechnet werden:", error);
+        wrap.replaceChildren();
+        legend.hidden = true;
+        legend.replaceChildren();
+        const message = document.createElement("div");
+        message.className = "best-empty radar-status";
+        message.textContent = "Disziplinen-Punkte konnten nicht berechnet werden.";
+        wrap.appendChild(message);
+      }
+    }
+
+    comparisonState?.subscribe?.((nextAthlete) => {
+      updateRadar(nextAthlete || null);
+    });
+    updateRadar(comparisonState?.get?.() || null);
+
     return card;
   }
 
@@ -1782,6 +2317,7 @@
 
 
   ProfileTabsCharts.renderDisciplinePieCard = renderDisciplinePieCard;
+  ProfileTabsCharts.renderDisciplineRadarCard = renderDisciplineRadarCard;
   ProfileTabsCharts.renderLSCChart = renderLSCChart;
   ProfileTabsCharts.renderTimeChart = renderTimeChart;
   ProfileTabsCharts.renderBestTimeDistributionChart = renderBestTimeDistributionChart;

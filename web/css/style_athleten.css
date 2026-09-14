@@ -2205,25 +2205,69 @@ main#content {
   margin-top: 2rem;
 }
 
-.pie-head h4 {
+.ath-discipline-charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+  align-items: start;
+  margin-top: 2rem;
+}
+
+.ath-discipline-charts .ath-pie-card {
+  margin-top: 0;
+}
+
+.pie-head,
+.radar-head {
+  text-align: center;
+}
+
+.pie-head h4,
+.radar-head h4 {
   margin: 0;
   font-size: 1.8rem;
 }
 
 .pie-wrap {
+  position: relative;
   display: flex;
-  flex-wrap: wrap;
-  gap: 1.2rem;
   align-items: center;
+  justify-content: center;
+  margin-top: 0.6rem;
 }
 
 .pie-svg {
-  max-width: 260px;
+  display: block;
+  width: min(100%, 460px);
+  height: auto;
+  overflow: visible;
+}
+
+.pie-segment {
+  cursor: pointer;
+  transition: transform 180ms ease;
+}
+
+.pie-segment:hover,
+.pie-segment:focus-visible,
+.pie-segment[data-active] {
+  transform: translate(var(--pie-hover-x), var(--pie-hover-y));
+}
+
+.pie-segment:focus-visible {
+  outline: none;
 }
 
 .pie-slice {
   stroke: #ffffff;
-  stroke-width: 1;
+  stroke-width: 1.5;
+  transition: filter 180ms ease;
+}
+
+.pie-segment:hover .pie-slice,
+.pie-segment:focus-visible .pie-slice,
+.pie-segment[data-active] .pie-slice {
+  filter: drop-shadow(0 3px 5px rgba(17, 24, 39, 0.2));
 }
 
 .pie-c-50r {
@@ -2261,57 +2305,220 @@ main#content {
   fill: #6b7280;
 }
 
-.pie-legend {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  font-size: 0.8rem;
-  color: #4b5563;
+.pie-callout-line {
+  fill: none;
+  stroke: #9ca3af;
+  stroke-width: 1.15;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+  transition: stroke 180ms ease, stroke-width 180ms ease;
 }
 
-.pie-leg-row {
+.pie-callout-label {
+  fill: #5f6b7a;
+  font-size: 13px;
+  font-weight: 500;
+  pointer-events: none;
+  user-select: none;
+  transition: fill 180ms ease;
+}
+
+.pie-segment:hover .pie-callout-line,
+.pie-segment:focus-visible .pie-callout-line,
+.pie-segment[data-active] .pie-callout-line {
+  stroke: #374151;
+  stroke-width: 1.5;
+}
+
+.pie-segment:hover .pie-callout-label,
+.pie-segment:focus-visible .pie-callout-label,
+.pie-segment[data-active] .pie-callout-label {
+  fill: #111827;
+}
+
+.radar-wrap {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.6rem;
 }
 
-.pie-dot {
-  width: 0.65rem;
-  height: 0.65rem;
-  border-radius: 999px;
+.radar-svg {
+  display: block;
+  width: min(100%, 430px);
+  height: auto;
+  overflow: visible;
 }
 
-.pie-dot.pie-c-50r {
-  background-color: #e2001a;
+.radar-grid-ring {
+  fill: none;
+  stroke: #dfe4eb;
+  stroke-width: 1.5;
 }
 
-.pie-dot.pie-c-200h {
-  background-color: #ffd400;
+.radar-axis {
+  stroke: #e3e7ed;
+  stroke-width: 1.25;
+  transition: stroke 160ms ease, stroke-width 160ms ease;
 }
 
-.pie-dot.pie-c-100rf {
-  background-color: #b50014;
+.radar-axis[data-active] {
+  stroke: #b8c0ca;
+  stroke-width: 1.5;
 }
 
-.pie-dot.pie-c-100k {
-  background-color: #f0b400;
+.radar-value-area {
+  fill: rgba(227, 6, 19, 0.2);
+  stroke: rgb(227, 6, 19);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  pointer-events: none;
 }
 
-.pie-dot.pie-c-100l {
-  background-color: #ff9800;
+.radar-average-line {
+  fill: none;
+  stroke: rgba(227, 6, 19, 0.52);
+  stroke-width: 1.15;
+  stroke-dasharray: 6 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
 }
 
-.pie-dot.pie-c-200s {
-  background-color: #e88500;
+.radar-comparison-line {
+  fill: rgba(5, 105, 180, 0.07);
+  stroke: rgb(5, 105, 180);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
 }
 
-.pie-leg-label {
-  flex: 1;
+.radar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem 1rem;
+  margin-top: -0.15rem;
+  color: #5f6b7a;
+  font-size: 0.76rem;
 }
 
-.pie-leg-val {
+.radar-legend[hidden] {
+  display: none;
+}
+
+.radar-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+}
+
+.radar-legend-swatch {
+  display: inline-block;
+  width: 1.5rem;
+  height: 0;
+}
+
+.radar-legend-swatch.is-own {
+  border-top: 2px solid rgb(227, 6, 19);
+}
+
+.radar-legend-swatch.is-comparison {
+  border-top: 2px solid rgb(5, 105, 180);
+}
+
+.radar-axis-label {
+  fill: #5f6b7a;
+  font-size: 13px;
+  font-weight: 500;
+  pointer-events: none;
+  user-select: none;
+}
+
+.radar-point {
+  cursor: pointer;
+  outline: none;
+}
+
+.radar-point-hit {
+  fill: transparent;
+}
+
+.radar-hover-area {
+  fill: transparent;
+  cursor: pointer;
+  pointer-events: all;
+  touch-action: pan-y;
+}
+
+.radar-point-dot {
+  fill: #e30613;
+  stroke: #ffffff;
+  stroke-width: 1.5;
+  opacity: 0;
+  transform: scale(0.65);
+  transform-box: fill-box;
+  transform-origin: center;
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.radar-point:hover .radar-point-dot,
+.radar-point:focus-visible .radar-point-dot,
+.radar-point[data-active] .radar-point-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.pie-tooltip,
+.radar-tooltip {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 132px;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid rgba(226, 232, 240, 0.96);
+  border-radius: 0.7rem;
+  background: rgba(17, 24, 39, 0.96);
+  color: #ffffff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.2);
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.pie-tooltip[hidden],
+.radar-tooltip[hidden] {
+  display: none;
+}
+
+.pie-tooltip.is-below,
+.radar-tooltip.is-below {
+  transform: translate(-50%, 0);
+}
+
+.pie-tooltip-title,
+.radar-tooltip-title {
+  font-size: 0.76rem;
+  line-height: 1.15;
+}
+
+.pie-tooltip-value,
+.radar-tooltip-value {
+  color: #facc15;
+  font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
-  color: #111827;
+}
+
+.radar-status {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .ath-profile-section.meets {
@@ -2665,23 +2872,70 @@ main#content {
     grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
   }
 
+  .ath-discipline-charts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    margin-top: 0;
+  }
+
+  .ath-pie-card,
+  .ath-radar-card {
+    box-sizing: border-box;
+    width: 100%;
+    margin-top: 0;
+    padding: 1.15rem 0.9rem 0.85rem;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    background: #fcfcfd;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+  }
+
+  .pie-head,
+  .radar-head {
+    width: 100%;
+    text-align: center;
+  }
+
   .pie-wrap {
-    flex-direction: column;
-    align-items: flex-start;
+    width: 100%;
+    margin-top: 0.45rem;
+  }
+
+  .pie-svg {
+    width: min(100%, 370px);
+    margin-inline: auto;
+  }
+
+  .radar-wrap {
+    margin-top: 0.4rem;
+  }
+
+  .radar-svg {
+    width: min(100%, 340px);
+    margin-inline: auto;
   }
 
   .m-place {
     grid-column: 2;
   }
 
-  .pie-legend {
-    margin-left: 35px;
-    margin-top: -80px;
-  }
-
-  .pie-head h4 {
+  .pie-head h4,
+  .radar-head h4 {
     margin: 0;
     font-size: 1.4rem;
+    line-height: 1.2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pie-segment,
+  .pie-slice,
+  .pie-callout-line,
+  .pie-callout-label,
+  .radar-axis,
+  .radar-point-dot {
+    transition: none;
   }
 }
 

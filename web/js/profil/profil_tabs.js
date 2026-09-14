@@ -1217,6 +1217,10 @@
     return global.ProfileTabsCharts.renderDisciplinePieCard(a);
   }
 
+  function renderDisciplineRadarCard(a, comparisonState) {
+    return global.ProfileTabsCharts.renderDisciplineRadarCard(a, comparisonState);
+  }
+
   function renderLSCChart(a) {
     return global.ProfileTabsCharts.renderLSCChart(a);
   }
@@ -1283,8 +1287,7 @@
     return h("div", { class: "seg" }, b50, b25);
   }
 
-  function renderBestzeitenSection(athlete, refs) {
-    const comparisonState = createChartComparisonState();
+  function renderBestzeitenSection(athlete, refs, comparisonState) {
     const header = h("div", { class: "ath-bests-header" },
       h("h3", {}, ""),
       renderBahnSwitch(athlete, refs)
@@ -1747,7 +1750,7 @@
     }
   }
 
-  function renderOverviewSection(a) {
+  function renderOverviewSection(a, comparisonState) {
     const header = h("div", { class: "ath-info-header" }, h("h3", {}, ""));
     const grid = h("div", { class: "ath-info-grid" });
 
@@ -1758,6 +1761,8 @@
     const dqLane = computeLaneDQProb(a);
     const totalMeters = sumWettkampfMeter(a);
     const pieCard = renderDisciplinePieCard(a);
+    const radarCard = renderDisciplineRadarCard(a, comparisonState);
+    const disciplineCharts = h("div", { class: "ath-discipline-charts" }, pieCard, radarCard);
     grid.appendChild(infoTileWettkaempfeFlip(a, meets));
     grid.appendChild(infoTileStartsFlip(totalStarts, startsPer));
     grid.appendChild(infoTileDQFlip(totalDQ, dqLane));
@@ -1771,7 +1776,7 @@
       { class: "ath-profile-section info" },
       header,
       grid,
-      pieCard
+      disciplineCharts
     );
 
     function renderBahnverteilungTile(a) {
@@ -2188,6 +2193,7 @@
   }
 
   function renderAthTabsAndPanels(ax, refs) {
+    const comparisonState = createChartComparisonState();
     const calcParts =
       global.ProfileLSC && typeof global.ProfileLSC.createOverviewParts === "function"
         ? global.ProfileLSC.createOverviewParts(ax)
@@ -2206,8 +2212,8 @@
         : h("div", { class: "best-empty" }, "LSC-Berechnung nicht verfügbar."));
 
     const panels = h("div", { class: "ath-tab-panels" },
-      h("div", { class: "ath-tab-panel", "data-key": "bests" }, renderBestzeitenSection(ax, refs)),
-      h("div", { class: "ath-tab-panel", "data-key": "info" }, renderOverviewSection(ax)),
+      h("div", { class: "ath-tab-panel", "data-key": "bests" }, renderBestzeitenSection(ax, refs, comparisonState)),
+      h("div", { class: "ath-tab-panel", "data-key": "info" }, renderOverviewSection(ax, comparisonState)),
       h("div", { class: "ath-tab-panel", "data-key": "lsc" },
         h("div", { class: "ath-lsc-tab-stack" },
           lscCurrentTile,

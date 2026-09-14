@@ -21,6 +21,7 @@
   const CACHE = new Map();
   const LATEST_SINCE_CACHE = new Map();
   const HISTORY_CACHE = new Map();
+  const DISCIPLINE_BEST_POINTS_CACHE = new Map();
   let renderRequestId = 0;
 
   const DISCIPLINE_META = {
@@ -572,6 +573,83 @@
       return await promise;
     } catch (error) {
       CACHE.delete(cacheKey);
+      throw error;
+    }
+  }
+
+  async function calculateBestDisciplinePoints(athlete) {
+    const flatRuns = flattenRuns(athlete);
+    const cacheKey = `${makeCacheKey(athlete, flatRuns)}|discipline-best-average-current-wr-v2`;
+    if (DISCIPLINE_BEST_POINTS_CACHE.has(cacheKey)) {
+      return DISCIPLINE_BEST_POINTS_CACHE.get(cacheKey);
+    }
+
+    const promise = (async () => {
+      await ensureWrOpenIndex();
+
+      const genderKey = normalizeGender(athlete?.geschlecht);
+      const latestWrYear = WR_STATE.years.length
+        ? WR_STATE.years[WR_STATE.years.length - 1]
+        : null;
+
+      const disciplines = getDisciplines().map((disc) => {
+        const meta = DISCIPLINE_META[disc.key] || { recordKeys: [disc.label] };
+        let bestEntry = null;
+        const validTimes = [];
+
+        for (const run of flatRuns) {
+          const raw = String(run?.[disc.meetZeit] || "").trim();
+          const placeRaw = String(run?.[disc.meetPlatz] || "").trim();
+          if (!raw || isExcludedRun(run) || isDqLikeValue(raw) || isDqLikeValue(placeRaw)) continue;
+
+          const timeSeconds = parseTimeToSec(raw);
+          if (!Number.isFinite(timeSeconds) || timeSeconds <= 0) continue;
+          validTimes.push(timeSeconds);
+          if (bestEntry && timeSeconds >= bestEntry.timeSeconds) continue;
+
+          bestEntry = {
+            timeSeconds: round2(timeSeconds),
+            rawTime: raw,
+            date: String(run?.date || "").trim(),
+            meetName: String(run?.meet_name || "").trim()
+          };
+        }
+
+        const wrSeconds = latestWrYear == null
+          ? null
+          : readWrSeconds(latestWrYear, genderKey, meta.recordKeys);
+        const points = bestEntry && Number.isFinite(wrSeconds)
+          ? calcPoints(bestEntry.timeSeconds, wrSeconds)
+          : 0;
+        const startPoints = Number.isFinite(wrSeconds)
+          ? validTimes.map((timeSeconds) => calcPoints(timeSeconds, wrSeconds))
+          : [];
+        const averagePoints = startPoints.length
+          ? Math.min(points, round2(startPoints.reduce((sum, value) => sum + value, 0) / startPoints.length))
+          : 0;
+
+        return {
+          key: disc.key,
+          label: disc.label,
+          bestTimeSeconds: bestEntry?.timeSeconds ?? null,
+          bestTimeRaw: bestEntry?.rawTime || "",
+          bestDate: bestEntry?.date || "",
+          bestMeetName: bestEntry?.meetName || "",
+          wrSeconds: Number.isFinite(wrSeconds) ? wrSeconds : null,
+          points: Number.isFinite(points) ? round2(points) : 0,
+          averagePoints: Number.isFinite(averagePoints) ? round2(averagePoints) : 0,
+          validStartCount: validTimes.length
+        };
+      });
+
+      return { latestWrYear, disciplines };
+    })();
+
+    DISCIPLINE_BEST_POINTS_CACHE.set(cacheKey, promise);
+    try {
+      return await promise;
+    } catch (error) {
+      DISCIPLINE_BEST_POINTS_CACHE.delete(cacheKey);
       throw error;
     }
   }
@@ -1166,6 +1244,7 @@
   };
 
   ProfileLSC.calculateCurrentLsc = calculateCurrentLsc;
+  ProfileLSC.calculateBestDisciplinePoints = calculateBestDisciplinePoints;
   ProfileLSC.calculateLatestLscSince = calculateLatestLscSince;
   ProfileLSC.calculateHistorySeries = calculateHistorySeries;
 
