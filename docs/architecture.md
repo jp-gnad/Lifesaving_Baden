@@ -57,7 +57,7 @@ Fast alle Seiten nutzen dieselben Grundbausteine:
 ### 4. Feature-Bereiche
 
 - `web/js/uebersicht/`
-  - Aggregiert den gesamten Datenbestand fuer die Uebersicht: Personen, Ortsgruppen, Wettkaempfe, Starts sowie Geschlechter- und Altersverteilung. Pro Person zaehlt das Alter beim letzten erfassten Wettkampf; Namens- und Jahrgangszuordnung sowie Startwertung orientieren sich am Club-Profil. Die Ortsgruppen-Normalisierung stammt aus `ClubsData`.
+  - Aggregiert den gesamten Datenbestand fuer die Uebersicht: Personen, Ortsgruppen, Wettkaempfe, Starts sowie Geschlechter- und Altersverteilung. Pro Person zaehlt das Alter beim letzten erfassten Wettkampf. Die Altersverteilung zeigt jedes Jahr einzeln bis 29 und fasst hoehere Alter als `30+` zusammen. Die Ortsgruppen-Normalisierung stammt aus `ClubsData`.
 - `web/js/startseite/`
   - Startseiteninhalt und Hero-/Carousel-Logik
 - `web/js/athleten/`
