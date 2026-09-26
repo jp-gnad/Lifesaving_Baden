@@ -637,6 +637,13 @@ document.addEventListener("DOMContentLoaded", () => {
     return LAND_TO_ISO3[land] || land.slice(0, 3).toUpperCase();
   }
 
+  function eventFallbackIconForLand(landName) {
+    const iso3 = iso3FromLand(landName);
+    if (iso3 === "GER" || iso3 === "DEU") return "DLRG.png";
+    if (iso3 === "ESP") return "RFSS.png";
+    return "";
+  }
+
   function poolLabel(pool) {
     const value = normalize(pool);
     if (value === "25") return "25 m";
@@ -2960,9 +2967,10 @@ document.addEventListener("DOMContentLoaded", () => {
               decoding: "async",
               onerror: (event) => {
                 const img = event.currentTarget;
-                if (!img.dataset.fallback) {
+                const fallbackIcon = eventFallbackIconForLand(meet.land);
+                if (!img.dataset.fallback && fallbackIcon) {
                   img.dataset.fallback = "1";
-                  img.src = "./assets/png/events/DLRG.png";
+                  img.src = `./assets/png/events/${fallbackIcon}`;
                 } else {
                   img.remove();
                 }

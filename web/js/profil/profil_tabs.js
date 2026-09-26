@@ -158,6 +158,14 @@
     return LAND_TO_ISO3[String(landName || "").trim()] || "—";
   }
 
+  function eventFallbackIconForLand(landName) {
+    const land = String(landName || "").trim();
+    const iso3 = /^[A-Z]{3}$/i.test(land) ? land.toUpperCase() : iso3FromLand(land);
+    if (iso3 === "GER" || iso3 === "DEU") return "DLRG.png";
+    if (iso3 === "ESP") return "RFSS.png";
+    return "";
+  }
+
   function normalizeBVCode(bvRaw) {
     const s = String(bvRaw ?? "").trim();
     if (!s) return "";
@@ -1580,9 +1588,10 @@
               decoding: "async",
               onerror: (e) => {
                 const img = e.currentTarget;
-                if (!img.dataset.fallback) {
+                const fallbackIcon = eventFallbackIconForLand(landName);
+                if (!img.dataset.fallback && fallbackIcon) {
                   img.dataset.fallback = "1";
-                  img.src = "./assets/png/events/DLRG.png";
+                  img.src = `./assets/png/events/${fallbackIcon}`;
                 } else {
                   img.remove();
                 }
