@@ -229,4 +229,8 @@ test("Spanish federation data creates the profile id used by the overview", asyn
   assert.ok(federation);
   assert.equal(federation.name, "Spanien");
   assert.equal(federation.searchKeys.includes("ESP"), true);
+  assert.deepEqual(Array.from(federation.bvCodes), ["ESP"]);
+  assert.equal(sandbox.window.ClubsData.groupMatchesBV(federation, "ESP"), true);
+  assert.equal(sandbox.window.ClubsData.groupMatchesBV(federation, " Spanien "), false);
+  assert.equal(sandbox.window.ClubsData.groupMatchesBV(federation, "GER"), false);
 });

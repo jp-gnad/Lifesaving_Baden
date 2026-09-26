@@ -187,6 +187,16 @@
     return { code, name: value };
   }
 
+  function groupMatchesBV(group, rawBV) {
+    if (!group || group.kind !== "bv") return false;
+
+    const rowCode = normalize(rawBV).toUpperCase().replace(/\s+/g, "");
+    if (!rowCode) return false;
+
+    const groupCodes = Array.isArray(group.bvCodes) ? group.bvCodes : [];
+    return groupCodes.some((code) => normalize(code).toUpperCase().replace(/\s+/g, "") === rowCode);
+  }
+
   function pushUnique(list, value) {
     const normalizedValue = normalize(value);
     if (!normalizedValue || list.includes(normalizedValue)) return;
@@ -495,8 +505,12 @@
     }
 
     for (const [name, entry] of bvMap.entries()) {
-      const code = Array.from(entry.codes)[0] || "GER";
-      const avatar = createSingleAvatar([...buildCapKeyVariants(code), ...buildCapKeyVariants(name)]);
+      const codes = Array.from(entry.codes);
+      const code = codes[0] || "GER";
+      const avatar = createSingleAvatar([
+        ...codes.flatMap(buildCapKeyVariants),
+        ...buildCapKeyVariants(name)
+      ]);
 
       groups.push({
         ...createGroupRecord({
@@ -505,6 +519,7 @@
           subtitle: "Bundesverband",
           searchKeys: [code]
         }),
+        bvCodes: codes,
         avatar
       });
     }
@@ -558,6 +573,7 @@
     loadWorkbookArray,
     loadGroupsAndStats,
     findGroupById,
+    groupMatchesBV,
     kindLabel,
     getDisplayNameForGroup,
     normalizeOrtsgruppeName: mapOrtsgruppe

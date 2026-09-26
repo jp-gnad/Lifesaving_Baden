@@ -1031,11 +1031,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (group.kind === "bv") {
-      const rowCode = normalizeBvCode(row[COLS.bvNatio]);
-      const codes = new Set([
-        ...(Array.isArray(group.searchKeys) ? group.searchKeys : [])
-      ].map(normalizeBvCode).filter(Boolean));
-      return codes.has(rowCode);
+      if (window.ClubsData && typeof window.ClubsData.groupMatchesBV === "function") {
+        return window.ClubsData.groupMatchesBV(group, row[COLS.bvNatio]);
+      }
+
+      const rowCode = normalize(row[COLS.bvNatio]).toUpperCase().replace(/\s+/g, "");
+      const codes = (Array.isArray(group.bvCodes) ? group.bvCodes : [])
+        .map((code) => normalize(code).toUpperCase().replace(/\s+/g, ""));
+      return codes.includes(rowCode);
     }
 
     return false;
