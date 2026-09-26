@@ -37,7 +37,8 @@
 
   const BV_MAP = {
     GER: "Deutschland",
-    DEU: "Deutschland"
+    DEU: "Deutschland",
+    ESP: "Spanien"
   };
 
   const State = {

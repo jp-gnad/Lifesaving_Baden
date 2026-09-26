@@ -1033,7 +1033,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (group.kind === "bv") {
       const rowCode = normalizeBvCode(row[COLS.bvNatio]);
       const codes = new Set([
-        "GER",
         ...(Array.isArray(group.searchKeys) ? group.searchKeys : [])
       ].map(normalizeBvCode).filter(Boolean));
       return codes.has(rowCode);

@@ -214,3 +214,19 @@ test("empty data and optional header do not create phantom people", () => {
   assert.equal(stats.firstDate, "");
   assertTotals(stats);
 });
+
+test("Spanish federation data creates the profile id used by the overview", async () => {
+  sandbox.window.ExcelLoader = {
+    loadSheetRows: async () => [row({ club: "Madrid", lv: "", bv: "ESP" })],
+    getUrlCandidates: () => []
+  };
+
+  const { groups } = await sandbox.window.ClubsData.loadGroupsAndStats({
+    excelUrl: "test://spanish-federation"
+  });
+  const federation = sandbox.window.ClubsData.findGroupById(groups, "group_bv_spanien");
+
+  assert.ok(federation);
+  assert.equal(federation.name, "Spanien");
+  assert.equal(federation.searchKeys.includes("ESP"), true);
+});
