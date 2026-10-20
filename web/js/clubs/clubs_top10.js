@@ -651,7 +651,11 @@
     if (group && window.ClubsSearch?.renderAvatar) {
       cap.appendChild(window.ClubsSearch.renderAvatar(group, "sm", "clubs10-region-avatar"));
     } else {
-      cap.appendChild(h("img", { src: "./assets/svg/Cap-none.svg", alt: "", draggable: "false" }));
+      cap.appendChild(h("img", {
+        src: filter.key === "all" ? "./assets/svg/Cap-World.svg" : "./assets/svg/Cap-none.svg",
+        alt: "",
+        draggable: "false"
+      }));
     }
     return cap;
   }
