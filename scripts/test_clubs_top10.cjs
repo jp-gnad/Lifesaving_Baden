@@ -161,7 +161,10 @@ test("public dropdown applies to all categories, preserves category and survives
   const mount = new Element("div");
   ClubsTop10.mount(mount);
   await flush();
-  assert.equal(api.State.regionKey, "all");
+  assert.equal(api.State.regionKey, "lv:baden");
+  for (const ranking of Object.values(api.State.groups)) {
+    assert.deepEqual(Array.from(ranking.rows, (r) => r.name), ["Badenclub"]);
+  }
   const regionSelect = () => find(mount, (el) => el.className?.includes("clubs10-region-select"));
   const list = find(mount, (el) => el.attributes?.role === "listbox");
   assert.deepEqual(list.children.filter((el) => el.attributes?.role === "group").map((el) => el.attributes["aria-label"]), ["Länder", "Bundesländer"]);
@@ -217,11 +220,11 @@ test("region menu supports keyboard navigation, Escape and closing outside", asy
   trigger.focus();
   key(trigger, "ArrowDown");
   assert.equal(dropdown.open, true);
-  assert.equal(document.activeElement.attributes["data-region-key"], "all");
+  assert.equal(document.activeElement.attributes["data-region-key"], "lv:baden");
   dropdown.listeners.toggle();
   assert.equal(trigger.attributes["aria-expanded"], "true");
   key(list, "ArrowDown");
-  assert.equal(document.activeElement.attributes["data-region-key"], "bv:deutschland");
+  assert.equal(document.activeElement.attributes["data-region-key"], "lv:bayern");
   key(list, "End");
   assert.equal(document.activeElement.attributes["data-region-key"], "lv:catalunya");
   key(list, "Home");

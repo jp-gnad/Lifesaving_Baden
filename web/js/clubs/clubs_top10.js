@@ -124,13 +124,15 @@
     return getGroupDisplayName(row?.group, row?.name) || "—";
   }
 
+  const DEFAULT_REGION_FILTER = Object.freeze({ key: "lv:baden", kind: "lv", label: "Baden" });
+
   const State = {
     mount: null,
     groups: null,
     rows: [],
     allGroups: [],
     regionFilters: [],
-    regionKey: "all",
+    regionKey: DEFAULT_REGION_FILTER.key,
     loading: false,
     error: "",
     requestId: 0,
@@ -532,7 +534,8 @@
 
   function renderRegionFilter() {
     const all = { key: "all", label: "Gesamt" };
-    const current = State.regionFilters.find((filter) => filter.key === State.regionKey) || all;
+    const current = State.regionFilters.find((filter) => filter.key === State.regionKey) ||
+      (State.regionKey === DEFAULT_REGION_FILTER.key ? DEFAULT_REGION_FILTER : all);
     const dropdown = h("details", { class: "clubs10-region-dropdown" });
     const trigger = h(
       "summary",
@@ -1521,7 +1524,7 @@
     State.rows = [];
     State.allGroups = [];
     State.regionFilters = [];
-    State.regionKey = "all";
+    State.regionKey = DEFAULT_REGION_FILTER.key;
     State.loading = true;
     State.error = "";
     State.requestId += 1;
