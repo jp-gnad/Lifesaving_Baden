@@ -66,6 +66,7 @@ Fast alle Seiten nutzen dieselben Grundbausteine:
   - Profilkopf, Tabs, Charts, LSC-Berechnung
 - `web/js/clubs/`
   - Club-Daten, Suche, Profilansicht, Top-10
+  - Alle neun Club-Top-10 nutzen eine gemeinsame Regionsauswahl: Gesamt, Laender (BV, Spalte 27) oder Bundeslaender/Landesverbaende (LV, Spalte 13). Optionen stammen aus `Tabelle2` und verwenden die Normalisierung von `ClubsData`. Das Dropdown zeigt die Cap-SVGs ueber `ClubsSearch.renderAvatar` und unterstuetzt Tastaturbedienung. Die Auswahl filtert die Daten vor der Berechnung; auch DQ-Mindeststarts und Club-Score gelten innerhalb dieser Auswahl.
 - `web/js/punkterechner/`
   - Rechnerlogik, Controls, Athletenuebernahme und Client fuer ILS-Weltrekorde
 - `cloudflare/ils-records-worker/`

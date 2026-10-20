@@ -215,6 +215,13 @@
       .replace(/ß/g, "ss");
 
     const folded = normalizeForSearch(value).replace(/\s+/g, "");
+    const capAlias = {
+      bay: "BY", bayern: "BY",
+      deu: "GER",
+      nw: "NR", no: "NR", nrh: "NR", nordrhein: "NR",
+      wf: "WE", wl: "WE", westfalen: "WE"
+    }[folded];
+    if (capAlias) pushUnique(out, capAlias);
     if (folded === "wu" || folded === "wue" || folded === "wurttemberg" || folded === "wuerttemberg") {
       pushUnique(out, "WÜ");
     }
@@ -574,6 +581,8 @@
     loadGroupsAndStats,
     findGroupById,
     groupMatchesBV,
+    normalizeLV,
+    normalizeBV,
     kindLabel,
     getDisplayNameForGroup,
     normalizeOrtsgruppeName: mapOrtsgruppe

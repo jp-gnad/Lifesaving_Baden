@@ -123,6 +123,114 @@ main#content {
   margin-top: 1rem;
 }
 
+.clubs-top10 .ath10-header {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+  align-items: end;
+  gap: 16px;
+}
+
+.clubs10-region-filter {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.clubs10-region-dropdown {
+  position: relative;
+  min-width: 0;
+}
+
+.clubs10-region-select,
+.clubs10-region-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+
+.clubs10-region-select {
+  box-sizing: border-box;
+  list-style: none;
+  height: 44px;
+}
+
+.clubs10-region-select::-webkit-details-marker {
+  display: none;
+}
+
+.clubs10-region-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clubs10-region-cap {
+  display: block;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+}
+
+.clubs10-region-cap > img,
+.clubs10-region-cap > .clubs10-region-avatar {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: transparent;
+}
+
+.clubs10-region-options {
+  position: absolute;
+  z-index: 100;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: min(360px, 60vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  background: rgb(22, 22, 25);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+}
+
+.clubs10-region-group {
+  padding: 14px 10px 6px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.clubs10-region-option {
+  width: 100%;
+  min-height: 44px;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.clubs10-region-option[aria-selected="true"] {
+  color: var(--ath10-yellow);
+  background: rgba(255, 237, 0, 0.09);
+}
+
+.clubs10-region-option:hover,
+.clubs10-region-option:focus-visible {
+  outline: 2px solid rgba(255, 237, 0, 0.6);
+  outline-offset: -2px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .clubs-top10 .ath10-toolbar,
 .clubs-top10 .ath10-panel-tabs-wrap,
 .clubs-top10 .ath10-panel-title-wrap {
@@ -367,6 +475,11 @@ main#content {
 }
 
 @media (max-width: 760px) {
+  .clubs-top10 .ath10-header {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
   /* Athleten rendern eigene Mobile-Controls und blenden den gemeinsamen
      Panelkopf aus. Clubs brauchen ihn weiterhin fuer die Kategorieauswahl. */
   .clubs-top10 .ath10-panel-head {

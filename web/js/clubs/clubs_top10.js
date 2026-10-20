@@ -22,7 +22,8 @@
     p200h: 20,
     pool: 21,
     land: 23,
-    startrecht: 24
+    startrecht: 24,
+    bvNatio: 27
   };
 
   const DISCIPLINES = [
@@ -81,7 +82,7 @@
     start_count:
       "Gezählt wird jede Disziplin pro Ortsgruppe, sobald dort eine Zeit, eine Platzierung oder ein DQ-/Strafmarker vorhanden ist. Eine Tabellenzeile kann mehrere Starts enthalten, wenn mehrere Disziplinen erfasst sind. Ettlingen und der St\u00fctzpunkt Wettersbach zählen dabei gemeinsam als eine Ortsgruppe.",
     dq_rate:
-      "Die DQ-Quote entspricht der Club-Profil-Statistik: DQ-, DSQ-, DISQ- und Ausg.-Marker werden pro Disziplin gezählt und durch alle Starts der Ortsgruppe geteilt. OMS-Wettkämpfe werden nicht mitgerechnet. Berücksichtigt werden ausschließlich Ortsgruppen aus dem Landesverband Baden (BA) mit mindestens 100 Starts. Ettlingen und der St\u00fctzpunkt Wettersbach zählen dabei gemeinsam als eine Ortsgruppe.",
+      "Die DQ-Quote entspricht der Club-Profil-Statistik: DQ-, DSQ-, DISQ- und Ausg.-Marker werden pro Disziplin gezählt und durch alle Starts der Ortsgruppe geteilt. OMS-Wettkämpfe werden nicht mitgerechnet. Berücksichtigt werden nur Ortsgruppen mit mindestens 100 Starts innerhalb der aktuellen Filterauswahl. Ettlingen und der St\u00fctzpunkt Wettersbach zählen dabei gemeinsam als eine Ortsgruppe.",
     athlete_count:
       "Gezählt werden eindeutige Sportler pro Ortsgruppe. Mehrere Starts derselben Person für dieselbe Ortsgruppe zählen nur einmal.",
     foreign_competitions:
@@ -126,6 +127,13 @@
   const State = {
     mount: null,
     groups: null,
+    rows: [],
+    allGroups: [],
+    regionFilters: [],
+    regionKey: "all",
+    loading: false,
+    error: "",
+    requestId: 0,
     currentKey: "competition_presence",
     openProfile: null
   };
@@ -486,8 +494,163 @@
     }, 0);
   }
 
-  function isBadenRow(row) {
-    return String(row?.[COLS.lvState] || "").trim().toUpperCase() === "BA";
+  function getRowRegion(row, kind) {
+    return kind === "bv"
+      ? window.ClubsData.normalizeBV(row?.[COLS.bvNatio])
+      : window.ClubsData.normalizeLV(row?.[COLS.lvState]);
+  }
+
+  function getRegionKey(kind, region) {
+    return `${kind}:${normalizeText(region.name)}`;
+  }
+
+  function buildRegionFilters(rows) {
+    const filters = new Map();
+    const startIndex = rows.length && isHeaderRow(rows[0]) ? 1 : 0;
+
+    for (let index = startIndex; index < rows.length; index++) {
+      for (const kind of ["bv", "lv"]) {
+        const region = getRowRegion(rows[index], kind);
+        if (!region.name) continue;
+        const key = getRegionKey(kind, region);
+        if (!filters.has(key)) {
+          filters.set(key, { key, kind, label: region.name });
+        }
+      }
+    }
+
+    return Array.from(filters.values()).sort((left, right) =>
+      left.label.localeCompare(right.label, "de", { sensitivity: "base" })
+    );
+  }
+
+  function filterRegionRows(rows, regionKey) {
+    if (regionKey === "all") return rows;
+    const kind = regionKey.split(":", 1)[0];
+    return rows.filter((row) => getRegionKey(kind, getRowRegion(row, kind)) === regionKey);
+  }
+
+  function renderRegionFilter() {
+    const all = { key: "all", label: "Gesamt" };
+    const current = State.regionFilters.find((filter) => filter.key === State.regionKey) || all;
+    const dropdown = h("details", { class: "clubs10-region-dropdown" });
+    const trigger = h(
+      "summary",
+      {
+        class: "ath10-select clubs10-region-select",
+        "aria-label": `Club-Top-10 nach Region filtern: ${current.label}`,
+        "aria-haspopup": "listbox",
+        "aria-expanded": "false",
+        "aria-controls": "clubs10-region-options"
+      },
+      renderRegionCap(current),
+      h("span", { class: "clubs10-region-name" }, current.label)
+    );
+    const options = [];
+    const filters = [all, ...["bv", "lv"].flatMap((kind) => State.regionFilters.filter((filter) => filter.kind === kind))];
+    const renderOption = (filter) => {
+      const option = h(
+        "button",
+        {
+          type: "button",
+          class: "clubs10-region-option",
+          role: "option",
+          "aria-selected": String(filter.key === State.regionKey),
+          "data-region-key": filter.key,
+          tabindex: "-1",
+          onclick: () => {
+            dropdown.open = false;
+            trigger.focus();
+            State.regionKey = filter.key;
+            refreshGroups();
+          }
+        },
+        renderRegionCap(filter),
+        h("span", { class: "clubs10-region-name" }, filter.label)
+      );
+      options.push(option);
+      return option;
+    };
+    const list = h(
+      "div",
+      { class: "clubs10-region-options", id: "clubs10-region-options", role: "listbox", "aria-label": "Region" },
+      renderOption(all),
+      [{ kind: "bv", label: "Länder" }, { kind: "lv", label: "Bundesländer" }].map(({ kind, label }) => h(
+        "div",
+        { role: "group", "aria-label": label },
+        h("div", { class: "clubs10-region-group", "aria-hidden": "true" }, label),
+        State.regionFilters.filter((filter) => filter.kind === kind).map(renderOption)
+      ))
+    );
+
+    const focusOption = (index) => {
+      options[index]?.focus();
+      options[index]?.scrollIntoView({ block: "nearest" });
+    };
+    dropdown.addEventListener("toggle", () => {
+      trigger.setAttribute("aria-expanded", String(dropdown.open));
+      if (dropdown.open) focusOption(Math.max(0, filters.findIndex((filter) => filter.key === State.regionKey)));
+    });
+    trigger.addEventListener("keydown", (event) => {
+      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+      event.preventDefault();
+      dropdown.open = true;
+      focusOption(Math.max(0, filters.findIndex((filter) => filter.key === State.regionKey)));
+    });
+    let search = "";
+    let searchTime = 0;
+    list.addEventListener("keydown", (event) => {
+      const index = options.indexOf(document.activeElement);
+      let next = index;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        dropdown.open = false;
+        trigger.focus();
+        return;
+      }
+      if (event.key === "ArrowDown") next = (index + 1) % options.length;
+      else if (event.key === "ArrowUp") next = (index - 1 + options.length) % options.length;
+      else if (event.key === "Home") next = 0;
+      else if (event.key === "End") next = options.length - 1;
+      else if (event.key.length === 1 && event.key !== " " && !event.ctrlKey && !event.altKey && !event.metaKey) {
+        search = Date.now() - searchTime < 700 ? search + event.key : event.key;
+        searchTime = Date.now();
+        for (let offset = 1; offset <= filters.length; offset++) {
+          const candidate = (index + offset) % filters.length;
+          if (normalizeText(filters[candidate].label).startsWith(normalizeText(search))) {
+            next = candidate;
+            break;
+          }
+        }
+      } else return;
+      event.preventDefault();
+      focusOption(next);
+    });
+    dropdown.addEventListener("focusout", (event) => {
+      if (!dropdown.contains(event.relatedTarget)) dropdown.open = false;
+    });
+    dropdown.appendChild(trigger);
+    dropdown.appendChild(list);
+
+    return h(
+      "div",
+      { class: "clubs10-region-filter" },
+      h("span", { class: "ath10-panel-kicker" }, "Region"),
+      dropdown
+    );
+  }
+
+  function renderRegionCap(filter) {
+    const cap = h("span", { class: "clubs10-region-cap", "aria-hidden": "true" });
+    const group = State.allGroups.find((group) =>
+      group.kind === filter.kind && normalizeText(group.name) === normalizeText(filter.label)
+    );
+    if (group && window.ClubsSearch?.renderAvatar) {
+      cap.appendChild(window.ClubsSearch.renderAvatar(group, "sm", "clubs10-region-avatar"));
+    } else {
+      cap.appendChild(h("img", { src: "./assets/svg/Cap-none.svg", alt: "", draggable: "false" }));
+    }
+    return cap;
   }
 
   function tieKeyFromValue(value) {
@@ -1067,7 +1230,6 @@
 
     for (let index = startIndex; index < rows.length; index++) {
       const row = rows[index] || [];
-      if (!isBadenRow(row)) continue;
       if (isOmsMeetName(row[COLS.meetName])) continue;
 
       const ogName = window.ClubsData?.normalizeOrtsgruppeName
@@ -1094,7 +1256,7 @@
 
         return {
           name,
-          subtitle: "Ortsgruppe · Baden",
+          subtitle: group?.subtitle || "Ortsgruppe",
           startCount: entry.starts,
           dqCount: entry.dqs,
           value: rate,
@@ -1234,10 +1396,7 @@
     };
   }
 
-  async function buildGroups() {
-    const rows = await window.ClubsData.loadWorkbookArray("Tabelle2");
-    const { groups: allGroups } = await window.ClubsData.loadGroupsAndStats({ sheetName: "Tabelle2" });
-
+  async function buildGroups(rows, allGroups) {
     let clubScoreGroup = null;
     try {
       clubScoreGroup = await buildClubScoreGroup(rows, allGroups);
@@ -1261,18 +1420,14 @@
   function renderTop10() {
     const mount = State.mount;
     if (!mount) return;
+    const restoreRegionFocus = document.activeElement?.classList.contains("clubs10-region-select");
 
     const groups = State.groups || {};
     const available = TOP10_GROUPS
       .map((def) => groups[def.key])
-      .filter((group) => group && Array.isArray(group.rows) && group.rows.length > 0);
+      .filter((group) => group && Array.isArray(group.rows));
 
-    if (!available.length) {
-      mount.innerHTML = '<div class="ath10-status ath10-status--empty">Keine Top-10 Daten vorhanden.</div>';
-      return;
-    }
-
-    if (!available.some((group) => group.key === State.currentKey)) {
+    if (available.length && !available.some((group) => group.key === State.currentKey)) {
       State.currentKey = available[0].key;
     }
 
@@ -1289,14 +1444,20 @@
           { class: "ath10-header-text" },
           h("div", { class: "ath10-kicker" }, "Clubstatistik"),
           h("h2", { class: "ath10-title" }, "Top-10 Ranglisten")
-        )
+        ),
+        renderRegionFilter()
       ),
       h(
         "section",
-        { class: "ath10-panel" },
-        renderPanelHeader(current, available, State.currentKey),
-        renderPodium(current),
-        renderRemainingTable(current)
+        { class: "ath10-panel", "aria-busy": State.loading ? "true" : "false" },
+        current ? renderPanelHeader(current, available, State.currentKey) : null,
+        State.loading
+          ? h("div", { class: "ath10-status ath10-status--loading", role: "status" }, "Top-10 wird geladen ...")
+          : State.error
+            ? h("div", { class: "ath10-status ath10-status--error", role: "alert" }, State.error)
+            : current?.rows.length
+              ? [renderPodium(current), renderRemainingTable(current)]
+              : h("div", { class: "ath10-status ath10-status--empty", role: "status" }, "Keine Top-10 Daten für diese Auswahl vorhanden.")
       ),
       renderNote(current)
     );
@@ -1304,18 +1465,48 @@
     mount.innerHTML = "";
     mount.classList.add("ath10-root");
     mount.appendChild(shell);
+    if (restoreRegionFocus) mount.querySelector(".clubs10-region-select")?.focus();
+  }
+
+  async function refreshGroups() {
+    const requestId = ++State.requestId;
+    State.loading = true;
+    State.error = "";
+    renderTop10();
+
+    try {
+      const rows = filterRegionRows(State.rows, State.regionKey);
+      const groups = await buildGroups(rows, State.allGroups);
+      if (requestId !== State.requestId) return;
+      State.groups = groups;
+    } catch (error) {
+      if (requestId !== State.requestId) return;
+      console.error(error);
+      State.error = "Top-10 konnten nicht geladen werden.";
+    }
+
+    State.loading = false;
+    renderTop10();
   }
 
   async function init() {
-    const mount = State.mount;
-    if (!mount) return;
-
+    const requestId = State.requestId;
     try {
-      State.groups = await buildGroups();
-      renderTop10();
+      const [rows, { groups }] = await Promise.all([
+        window.ClubsData.loadWorkbookArray("Tabelle2"),
+        window.ClubsData.loadGroupsAndStats({ sheetName: "Tabelle2" })
+      ]);
+      if (requestId !== State.requestId) return;
+      State.rows = rows;
+      State.allGroups = groups;
+      State.regionFilters = buildRegionFilters(rows);
+      await refreshGroups();
     } catch (error) {
+      if (requestId !== State.requestId) return;
       console.error(error);
-      mount.innerHTML = '<div class="ath10-status ath10-status--error">Top-10 konnten nicht geladen werden.</div>';
+      State.loading = false;
+      State.error = "Top-10 konnten nicht geladen werden.";
+      renderTop10();
     }
   }
 
@@ -1327,10 +1518,22 @@
     State.openProfile = typeof options.openProfile === "function" ? options.openProfile : null;
     State.currentKey = "competition_presence";
     State.groups = null;
+    State.rows = [];
+    State.allGroups = [];
+    State.regionFilters = [];
+    State.regionKey = "all";
+    State.loading = true;
+    State.error = "";
+    State.requestId += 1;
 
-    el.innerHTML = '<div class="ath10-status ath10-status--loading">Top-10 wird geladen ...</div>';
+    renderTop10();
     init();
   }
+
+  document.addEventListener("pointerdown", (event) => {
+    const dropdown = State.mount?.querySelector(".clubs10-region-dropdown");
+    if (dropdown && !dropdown.contains(event.target)) dropdown.open = false;
+  });
 
   window.ClubsTop10 = { mount: mountComponent };
 })();
