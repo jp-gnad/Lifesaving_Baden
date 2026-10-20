@@ -778,8 +778,7 @@
           h(
             "div",
             { class: "ath10-podium-meta" },
-            h("div", { class: "ath10-podium-name" }, getRowDisplayName(row)),
-            h("div", { class: "ath10-podium-og" }, row.subtitle || "Ortsgruppe")
+            h("div", { class: "ath10-podium-name" }, getRowDisplayName(row))
           )
         ),
         h(
@@ -852,8 +851,7 @@
                     h(
                       "div",
                       { class: "ath10-athlete-meta" },
-                      h("div", { class: "ath10-athlete-name" }, getRowDisplayName(row)),
-                      h("div", { class: "ath10-athlete-og" }, row.subtitle || "Ortsgruppe")
+                      h("div", { class: "ath10-athlete-name" }, getRowDisplayName(row))
                     )
                   )
                 ),
