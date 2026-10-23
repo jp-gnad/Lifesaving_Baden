@@ -678,7 +678,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const startrecht = normalize(row?.[COLS.startrecht]).toUpperCase();
 
     if (startrecht === "OG") {
-      const ogName = normalize(row?.[COLS.ortsgruppe]).replace(/^og\s+/i, "");
+      const ogName = window.ClubNames.affiliation(row?.[COLS.ortsgruppe]).replace(/^og\s+/i, "");
       const [file, fallbackFile = ""] = capFilesFromOrtsgruppe(ogName);
       return file ? { key: `OG|${ogName}`, file, fallbackFile, label: `OG ${ogName}` } : null;
     }
@@ -887,19 +887,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const meetYear = getYearFromISO(dateIso);
     const bornYear = Number(birthYear);
-    if (!Number.isFinite(meetYear) || !Number.isFinite(bornYear)) return false;
+    if (!Number.isFinite(meetYear) || !Number.isFinite(bornYear) || bornYear <= 0) return false;
 
     return meetYear - bornYear <= 18;
   }
 
   function parseTwoDigitYearWithMeetYear(twoDigit, meetISO) {
+    const text = String(twoDigit ?? "").trim();
+    if (!/^\d{1,4}$/.test(text)) return null;
     const yy = Number(twoDigit);
     const meetYear = Number((meetISO || "").slice(0, 4));
-    if (!Number.isFinite(yy) || !Number.isFinite(meetYear)) return "";
+    if (yy >= 1900) return yy;
+    if (yy > 99 || !Number.isInteger(meetYear) || meetYear < 1900) return null;
 
     let year = 1900 + yy;
     while (meetYear - year > 100) year += 100;
-    return year;
+    return year <= meetYear ? year : null;
   }
 
   function splitNameParts(name) {
@@ -1051,7 +1054,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function getRowAffiliation(row) {
     const rawAffiliation = normalize(row?.[COLS.ortsgruppe]).replace(/^og\s+/i, "");
     const foldedAffiliation = normalizeForCompare(rawAffiliation);
-    if (foldedAffiliation === "ettlingen" || foldedAffiliation === "wettersbach") {
+    if (foldedAffiliation === "ettlingen" || foldedAffiliation === "wettersbach" ||
+      window.ClubNames.preservesAffiliation(rawAffiliation)) {
       return rawAffiliation;
     }
 
@@ -1063,17 +1067,23 @@ document.addEventListener("DOMContentLoaded", () => {
   function createSingleOgAffiliationGroup(affiliation) {
     const name = normalize(affiliation);
     const folded = normalizeForCompare(name);
-    if (folded !== "ettlingen" && folded !== "wettersbach") return null;
+    if (folded !== "ettlingen" && folded !== "wettersbach" &&
+      !window.ClubNames.preservesAffiliation(name)) return null;
+
+    const parentGroup = window.ClubNames.preservesAffiliation(name) ? findAffiliationGroup(name) : null;
+    const iconKeys = Array.from(new Set([name, ...(parentGroup?.avatar?.iconKeys || [])]));
 
     return {
+      ...parentGroup,
       id: `group_og_${folded}`,
       kind: "og",
       name,
+      displayName: name,
       label: "Ortsgruppe",
       searchKeys: [name],
       avatar: {
         mode: "single",
-        iconKeys: [name]
+        iconKeys
       }
     };
   }

@@ -259,12 +259,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function parseTwoDigitYearWithMeetYear(twoDigit, meetISO) {
+    const text = String(twoDigit ?? "").trim();
+    if (!/^\d{1,4}$/.test(text)) return null;
     const yy = Number(twoDigit);
     const meetYear = Number((meetISO || "").slice(0, 4));
-    if (!Number.isFinite(yy) || !Number.isFinite(meetYear)) return null;
+    if (yy >= 1900) return yy;
+    if (yy > 99 || !Number.isInteger(meetYear) || meetYear < 1900) return null;
     let y = 1900 + yy;
     while (meetYear - y > 100) y += 100;
-    return y;
+    return y <= meetYear ? y : null;
   }
 
   function makeAthleteId(name, gender, birthYear) {
@@ -284,7 +287,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const iso = excelSerialToISO(row[COLS.excelDate]);
     const yy2 = row[COLS.yy2];
     const by = parseTwoDigitYearWithMeetYear(yy2, iso);
-    const og = String(row[COLS.ortsgruppe] || "").trim();
+    const og = window.ClubNames.affiliation(row[COLS.ortsgruppe]);
 
     return {
       id: makeAthleteId(name, gender, by),
@@ -303,7 +306,7 @@ document.addEventListener("DOMContentLoaded", () => {
       meet_name: String(row[COLS.meet_name] || "").trim(),
       date: iso,
       pool: normalizePool(row[COLS.pool]),
-      Ortsgruppe: String(row[COLS.ortsgruppe] || "").trim(),
+      Ortsgruppe: window.ClubNames.affiliation(row[COLS.ortsgruppe]),
       LV_state: String(row[COLS.LV_state] ?? "").trim(),
       BV_natio: String(row[COLS.BV_natio] ?? "").trim(),
       Regelwerk: normalizeRegelwerk(row[COLS.regelwerk]),

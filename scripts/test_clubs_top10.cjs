@@ -4,7 +4,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 const { test } = require("node:test");
 
-function row({ club = "Testclub", lv = "BA", bv = "GER", name = "Alex Beispiel", meet = "LMS", time = 60 } = {}) {
+function row({ club = "Testclub", lv = "BA", bv = "GER", land = "Spanien", name = "Alex Beispiel", meet = "LMS", time = 60 } = {}) {
   const values = Array(28).fill("");
   values[0] = "w";
   values[1] = name;
@@ -15,7 +15,7 @@ function row({ club = "Testclub", lv = "BA", bv = "GER", name = "Alex Beispiel",
   values[12] = club;
   values[13] = lv;
   values[21] = "50";
-  values[23] = "Spanien";
+  values[23] = land;
   values[24] = "BV";
   values[27] = bv;
   return values;
@@ -69,6 +69,7 @@ function setup(rows) {
     getUrlCandidates: () => ["fixture.xlsx"]
   };
   const read = (file) => fs.readFileSync(path.join(__dirname, "..", file), "utf8");
+  vm.runInNewContext(read("web/js/shared/club_names.js"), sandbox);
   vm.runInNewContext(read("web/js/clubs/clubs_data.js"), sandbox);
   vm.runInNewContext(read("web/js/clubs/clubs_search.js"), sandbox);
   // Expose private calculations only in this test context; the browser API stays unchanged.
@@ -90,7 +91,7 @@ function rankingRows() {
   return [
     { club: "Badenclub", lv: "BA", bv: "GER" },
     { club: "Bayernclub", lv: "BAY", bv: "DEU" },
-    { club: "Spanienclub", lv: "Catalunya", bv: "ESP" }
+    { club: "Spanienclub", lv: "Catalunya", bv: "ESP", land: "Deutschland" }
   ].flatMap((club) => Array.from({ length: 100 }, (_, i) => row({
     ...club, name: `Person ${i % 10}`, meet: `Cup ${Math.floor(i / 10)}`
   })));
@@ -156,6 +157,80 @@ test("a club's counts, DQ threshold and club score use only matching rows", asyn
   assert.equal(all.club_score.rows[0].value, bayern.club_score.rows[0].value);
 });
 
+for (const names of [["Bodman", "Ludwigshafen", "Bodman-Ludwigshafen"], ["Müllheim", "Staufen", "Müllheim-Neuenburg"],
+  ["Nimburg", "Nimburg-Teningen", "Köndringen", "Teningen"], ["Waldshut", "Tiengen", "Waldshut-Tiengen"],
+  ["Villingen", "Schwenningen", "Villingen-Schwenningen"]]) {
+const mergedName = names.at(-1);
+test(`all nine club rankings combine ${mergedName}, including DQ eligibility and personal bests`, async () => {
+  const rows = Array.from({ length: 100 }, (_, i) => row({
+    club: names[i % names.length],
+    name: `Person ${Math.floor(i / 4) % 10}`,
+    meet: `Cup ${i % 4}`,
+    time: i === 0 ? "DQ" : 50 + (i % 10)
+  }));
+  const { api, ClubsData } = setup(rows);
+  const { groups, stats } = await ClubsData.loadGroupsAndStats();
+  assert.equal(stats.ortsgruppen, 1);
+  const result = await api.buildGroups(rows, groups);
+  const canonicalRows = rows.map((values) => {
+    const copy = [...values];
+    copy[12] = mergedName;
+    return copy;
+  });
+  const expected = await api.buildGroups(canonicalRows, groups);
+  for (const [key, ranking] of Object.entries(result)) {
+    assert.equal(ranking.rows.length, 1, key);
+    assert.equal(ranking.rows[0].name, mergedName, key);
+    assert.equal(ranking.rows[0].group.name, mergedName, key);
+    assert.equal(ranking.rows[0].value, expected[key].rows[0].value, key);
+  }
+  assert.equal(result.competition_presence.rows[0].value, 4);
+  assert.equal(result.start_count.rows[0].value, 100);
+  assert.equal(result.athlete_count.rows[0].value, 10);
+  assert.equal(result.dq_rate.rows[0].value, 1);
+  assert.equal(result.bv_startrecht.rows[0].value, 40);
+  assert.equal(result.loyalty_average.rows[0].value, 4);
+});
+}
+
+test("foreign competitions compare each club's origin with the meet country and count each meet once", async () => {
+  const rows = [
+    row({ club: "Badenclub", bv: "GER", land: " GER ", meet: "Heimcup" }),
+    row({ club: "Badenclub", bv: "DEU", land: "deutschland", meet: "Heimcup" }),
+    row({ club: "Badenclub", bv: "Deutschland", land: "DEU", meet: "Heimcup" }),
+    row({ club: "Badenclub", bv: "GER", land: "Spanien", meet: "Spaniencup" }),
+    row({ club: "Badenclub", bv: "GER", land: "ESP", meet: "Spaniencup", name: "Andere Person" }),
+    row({ club: "Badenclub", bv: "GER", land: "Frankreich", meet: "Frankreichcup" }),
+    row({ club: "Spanienclub", bv: "ESP", land: "Spanien", meet: "Spaniencup" }),
+    row({ club: "Spanienclub", bv: "Spanien", land: " esp ", meet: "Spaniencup" }),
+    row({ club: "Spanienclub", bv: "esp", land: "SPANiEN", meet: "Spaniencup" }),
+    row({ club: "Spanienclub", bv: "ESP", land: "Deutschland", meet: "Heimcup" }),
+    row({ club: "Spanienclub", bv: "ESP", land: "GER", meet: "Heimcup", name: "Andere Person" }),
+    row({ club: "Spanienclub", bv: "ESP", land: "DEU", meet: "Heimcup" }),
+    row({ club: "Spanienclub", bv: "ESP", land: "Frankreich", meet: "Frankreichcup" }),
+    row({ club: "Frankreichclub", bv: "FRA", land: " Frankreich ", meet: "Frankreichcup" }),
+    row({ club: "Frankreichclub", bv: "Frankreich", land: "fra", meet: "Frankreichcup" }),
+    row({ club: "Frankreichclub", bv: "FRA", land: "Spanien", meet: "Spaniencup" }),
+    row({ club: "Schweizclub", bv: "SUI", land: "Schweiz", meet: "Heimcup" }),
+    row({ club: "Schweizclub", bv: "SUI", land: "CHE", meet: "Heimcup" }),
+    row({ club: "Schweizclub", bv: "CHE", land: "Deutschland", meet: "Auslandscup" }),
+    row({ club: "OhneHerkunft", bv: "", land: "Spanien" }),
+    row({ club: "OhneWettkampfland", bv: "GER", land: "" })
+  ];
+  const { api, ClubsData } = setup(rows);
+  const { groups } = await ClubsData.loadGroupsAndStats();
+  const result = await api.buildGroups(rows, groups);
+  assert.deepEqual(Array.from(result.foreign_competitions.rows, (r) => [r.name, r.value]), [
+    ["Badenclub", 2], ["Spanienclub", 2], ["Frankreichclub", 1], ["Schweizclub", 1]
+  ]);
+  const spanish = await api.buildGroups(api.filterRegionRows(rows, "bv:spanien"), groups);
+  assert.deepEqual(Array.from(spanish.foreign_competitions.rows, (r) => [r.name, r.value]), [["Spanienclub", 2]]);
+  const spanishHome = await api.buildGroups(rows.slice(6, 9), groups);
+  assert.equal(spanishHome.foreign_competitions.rows.length, 0);
+  const spanishInGermany = await api.buildGroups(rows.slice(9, 12), groups);
+  assert.deepEqual(Array.from(spanishInGermany.foreign_competitions.rows, (r) => [r.name, r.value]), [["Spanienclub", 1]]);
+});
+
 test("public dropdown applies to all categories, preserves category and survives empty results", async () => {
   const { api, ClubsTop10 } = setup(rankingRows());
   const mount = new Element("div");
@@ -181,11 +256,71 @@ test("public dropdown applies to all categories, preserves category and survives
 
   // Simulate a region with insufficient starts for DQ eligibility.
   api.State.rows = [row({ lv: "BAY" })];
+  choose("bv:deutschland");
+  await flush();
   choose("lv:bayern");
   await flush();
   assert.equal(api.State.currentKey, "dq_rate");
   assert.ok(find(mount, (el) => el.className === "ath10-status ath10-status--empty"));
   assert.ok(regionSelect());
+});
+
+test("region menu scopes states and rankings to the selected country from database rows", async () => {
+  const rows = [
+    ...rankingRows(),
+    row({ club: "Spanienbaden", lv: "BA", bv: "ESP" }),
+    row({ club: "Frankreichclub", lv: "Bretagne", bv: "FRA" }),
+    row({ club: "Italienclub", lv: "", bv: "ITA" }),
+    row({ club: "OhneLand", lv: "Unzugeordnet", bv: "" })
+  ];
+  const { api, ClubsTop10 } = setup(rows);
+  const mount = new Element("div");
+  const option = (key) => find(mount, (el) => el.attributes?.["data-region-key"] === key);
+  const choose = async (key) => {
+    assert.ok(option(key), `visible option: ${key}`);
+    option(key).listeners.click();
+    await flush();
+  };
+  const states = () => {
+    const group = find(mount, (el) => el.attributes?.["aria-label"] === "Bundesländer");
+    return group.children.filter((el) => el.attributes?.role === "option").map((el) => el.attributes["data-region-key"]);
+  };
+  ClubsTop10.mount(mount);
+  await flush();
+  assert.equal(api.State.countryKey, "bv:deutschland");
+  assert.equal(api.State.regionKey, "lv:baden");
+  assert.deepEqual(states(), ["lv:baden", "lv:bayern"]);
+  assert.deepEqual(Array.from(api.State.groups.start_count.rows, (r) => r.name), ["Badenclub"]);
+
+  await choose("bv:spanien");
+  assert.deepEqual(states(), ["lv:baden", "lv:catalunya"]);
+  await choose("lv:baden");
+  assert.equal(api.State.countryKey, "bv:spanien");
+  assert.deepEqual(Array.from(api.State.groups.start_count.rows, (r) => r.name), ["Spanienbaden"]);
+  await choose("lv:catalunya");
+  assert.deepEqual(Array.from(api.State.groups.start_count.rows, (r) => r.name), ["Spanienclub"]);
+
+  await choose("bv:fra");
+  assert.deepEqual(states(), ["lv:bretagne"]);
+  await choose("lv:bretagne");
+  assert.deepEqual(Array.from(api.State.groups.start_count.rows, (r) => r.name), ["Frankreichclub"]);
+  await choose("bv:ita");
+  assert.deepEqual(states(), []);
+  assert.deepEqual(Array.from(api.State.groups.start_count.rows, (r) => r.name), ["Italienclub"]);
+
+  await choose("bv:deutschland");
+  assert.deepEqual(states(), ["lv:baden", "lv:bayern"]);
+  await choose("all");
+  assert.deepEqual(Array.from(api.State.groups.start_count.rows, (r) => r.name).sort(), [
+    "Badenclub", "Bayernclub", "Frankreichclub", "Italienclub", "OhneLand", "Spanienbaden", "Spanienclub"
+  ]);
+  assert.deepEqual(states(), ["lv:baden", "lv:bayern"]);
+  await choose("bv:spanien");
+  ClubsTop10.mount(mount);
+  await flush();
+  assert.equal(api.State.countryKey, "bv:deutschland");
+  assert.equal(api.State.regionKey, "lv:baden");
+  assert.deepEqual(states(), ["lv:baden", "lv:bayern"]);
 });
 
 test("region menu shows existing cap SVGs, including code aliases and the selected cap", async () => {
@@ -226,7 +361,7 @@ test("region menu supports keyboard navigation, Escape and closing outside", asy
   key(list, "ArrowDown");
   assert.equal(document.activeElement.attributes["data-region-key"], "lv:bayern");
   key(list, "End");
-  assert.equal(document.activeElement.attributes["data-region-key"], "lv:catalunya");
+  assert.equal(document.activeElement.attributes["data-region-key"], "lv:bayern");
   key(list, "Home");
   assert.equal(document.activeElement.attributes["data-region-key"], "all");
   key(list, "Escape");

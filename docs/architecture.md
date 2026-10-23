@@ -48,6 +48,10 @@ Fast alle Seiten nutzen dieselben Grundbausteine:
   - Laedt `xlsx.full.min.js` bei Bedarf.
   - Kapselt Excel-URLs.
   - Bietet Workbook-Cache pro Seitenaufruf.
+- `club_names.js`
+  - Gemeinsame Club-Zuordnungen fuer Clubs, Athleten und Tabellen: Bodman-Ludwigshafen, Muellheim-Neuenburg, Teningen, Waldshut-Tiengen und Villingen-Schwenningen mit ihren jeweiligen Vorgaengern.
+  - `normalize` liefert den gemeinsamen Clubnamen; `affiliation` bewahrt bei entsprechend konfigurierten Zusammenschluessen die historische Ortsgruppe fuer einzelne Leistungen und Athleten-Wettkaempfe.
+  - Wird vor den jeweiligen Datenlesern geladen; die Stuetzpunkt-Zuordnung bleibt in `ClubsData`.
 - `document_library.js`
   - Gemeinsames Geruest fuer die PDF-Bibliothek der Kaderrichtlinien.
   - Nutzt GitHub API und `localStorage`-Cache.

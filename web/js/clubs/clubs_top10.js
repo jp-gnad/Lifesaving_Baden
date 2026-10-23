@@ -86,7 +86,7 @@
     athlete_count:
       "Gezählt werden eindeutige Sportler pro Ortsgruppe. Mehrere Starts derselben Person für dieselbe Ortsgruppe zählen nur einmal.",
     foreign_competitions:
-      "Gezählt werden eindeutige Auslands-Wettkämpfe pro Ortsgruppe. Mehrere Sportler derselben Ortsgruppe bei einem Wettkampf werden nur einmal gewertet.",
+      "Gezählt werden eindeutige Wettkämpfe außerhalb des Herkunftslandes der jeweiligen Ortsgruppe. Wettkampfland und Herkunftsland müssen bekannt sein. Mehrere Sportler derselben Ortsgruppe bei einem Wettkampf werden nur einmal gewertet.",
     pool50_competitions:
       "Gezählt werden eindeutige Wettkämpfe auf 50m-Bahn pro Ortsgruppe. Mehrere Sportler derselben Ortsgruppe bei einem Wettkampf werden nur einmal gewertet.",
     bv_startrecht:
@@ -125,6 +125,7 @@
   }
 
   const DEFAULT_REGION_FILTER = Object.freeze({ key: "lv:baden", kind: "lv", label: "Baden" });
+  const DEFAULT_COUNTRY_KEY = "bv:deutschland";
 
   const State = {
     mount: null,
@@ -133,6 +134,7 @@
     allGroups: [],
     regionFilters: [],
     regionKey: DEFAULT_REGION_FILTER.key,
+    countryKey: DEFAULT_COUNTRY_KEY,
     loading: false,
     error: "",
     requestId: 0,
@@ -162,13 +164,16 @@
   }
 
   function parseTwoDigitYearWithMeetYear(twoDigit, meetISO) {
+    const text = String(twoDigit ?? "").trim();
+    if (!/^\d{1,4}$/.test(text)) return null;
     const yy = Number(twoDigit);
     const meetYear = Number((meetISO || "").slice(0, 4));
-    if (!Number.isFinite(yy) || !Number.isFinite(meetYear)) return null;
+    if (yy >= 1900) return yy;
+    if (yy > 99 || !Number.isInteger(meetYear) || meetYear < 1900) return null;
 
     let year = 1900 + yy;
     while (meetYear - year > 100) year += 100;
-    return year;
+    return year <= meetYear ? year : null;
   }
 
   function splitNameParts(name) {
@@ -219,11 +224,27 @@
     return /^OMS\s*-/i.test(String(value || "").replace(/\s+/g, " ").trim());
   }
 
-  function normalizeLand(value) {
-    const land = String(value || "").trim();
-    if (!land) return "";
-    if (land.toUpperCase() === "GER") return "Deutschland";
-    return land;
+  function normalizeCountryKey(value) {
+    const country = normalizeText(value);
+    // Use the country codes already used by club profiles, including ISO aliases.
+    const aliases = {
+      deutschland: "ger", deu: "ger",
+      schweiz: "sui", che: "sui",
+      italien: "ita",
+      frankreich: "fra",
+      belgien: "bel",
+      niederlande: "ned", nld: "ned",
+      spanien: "esp",
+      polen: "pol",
+      japan: "jpn",
+      danemark: "den", dnk: "den",
+      agypten: "egy",
+      großbritannien: "gbr",
+      australien: "aus",
+      schweden: "swe",
+      irland: "irl"
+    };
+    return aliases[country] || country;
   }
 
   function buildMeetKey(row) {
@@ -511,12 +532,17 @@
     const startIndex = rows.length && isHeaderRow(rows[0]) ? 1 : 0;
 
     for (let index = startIndex; index < rows.length; index++) {
+      const country = getRowRegion(rows[index], "bv");
+      const countryKey = country.name ? getRegionKey("bv", country) : "";
       for (const kind of ["bv", "lv"]) {
         const region = getRowRegion(rows[index], kind);
         if (!region.name) continue;
         const key = getRegionKey(kind, region);
         if (!filters.has(key)) {
-          filters.set(key, { key, kind, label: region.name });
+          filters.set(key, { key, kind, label: region.name, countryKeys: [] });
+        }
+        if (kind === "lv" && countryKey && !filters.get(key).countryKeys.includes(countryKey)) {
+          filters.get(key).countryKeys.push(countryKey);
         }
       }
     }
@@ -526,15 +552,21 @@
     );
   }
 
-  function filterRegionRows(rows, regionKey) {
+  function filterRegionRows(rows, regionKey, countryKey = "") {
     if (regionKey === "all") return rows;
     const kind = regionKey.split(":", 1)[0];
-    return rows.filter((row) => getRegionKey(kind, getRowRegion(row, kind)) === regionKey);
+    return rows.filter((row) =>
+      getRegionKey(kind, getRowRegion(row, kind)) === regionKey &&
+      (kind !== "lv" || !countryKey || getRegionKey("bv", getRowRegion(row, "bv")) === countryKey)
+    );
   }
 
   function renderRegionFilter() {
     const all = { key: "all", label: "Gesamt" };
-    const current = State.regionFilters.find((filter) => filter.key === State.regionKey) ||
+    const visibleFilters = State.regionFilters.filter((filter) =>
+      filter.kind === "bv" || filter.countryKeys.includes(State.countryKey)
+    );
+    const current = visibleFilters.find((filter) => filter.key === State.regionKey) ||
       (State.regionKey === DEFAULT_REGION_FILTER.key ? DEFAULT_REGION_FILTER : all);
     const dropdown = h("details", { class: "clubs10-region-dropdown" });
     const trigger = h(
@@ -550,7 +582,7 @@
       h("span", { class: "clubs10-region-name" }, current.label)
     );
     const options = [];
-    const filters = [all, ...["bv", "lv"].flatMap((kind) => State.regionFilters.filter((filter) => filter.kind === kind))];
+    const filters = [all, ...["bv", "lv"].flatMap((kind) => visibleFilters.filter((filter) => filter.kind === kind))];
     const renderOption = (filter) => {
       const option = h(
         "button",
@@ -565,6 +597,7 @@
             dropdown.open = false;
             trigger.focus();
             State.regionKey = filter.key;
+            if (filter.kind === "bv") State.countryKey = filter.key;
             refreshGroups();
           }
         },
@@ -582,7 +615,7 @@
         "div",
         { role: "group", "aria-label": label },
         h("div", { class: "clubs10-region-group", "aria-hidden": "true" }, label),
-        State.regionFilters.filter((filter) => filter.kind === kind).map(renderOption)
+        visibleFilters.filter((filter) => filter.kind === kind).map(renderOption)
       ))
     );
 
@@ -1076,8 +1109,9 @@
       valueLabel: GROUP_VALUE_LABEL.foreign_competitions,
       note: GROUP_NOTES.foreign_competitions,
       filter: (row) => {
-        const land = normalizeLand(row?.[COLS.land]);
-        return !!land && land !== "Deutschland";
+        const meetCountry = normalizeCountryKey(row?.[COLS.land]);
+        const clubCountry = normalizeCountryKey(row?.[COLS.bvNatio]);
+        return !!meetCountry && !!clubCountry && meetCountry !== clubCountry;
       }
     });
   }
@@ -1480,7 +1514,7 @@
     renderTop10();
 
     try {
-      const rows = filterRegionRows(State.rows, State.regionKey);
+      const rows = filterRegionRows(State.rows, State.regionKey, State.countryKey);
       const groups = await buildGroups(rows, State.allGroups);
       if (requestId !== State.requestId) return;
       State.groups = groups;
@@ -1527,6 +1561,7 @@
     State.allGroups = [];
     State.regionFilters = [];
     State.regionKey = DEFAULT_REGION_FILTER.key;
+    State.countryKey = DEFAULT_COUNTRY_KEY;
     State.loading = true;
     State.error = "";
     State.requestId += 1;

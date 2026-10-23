@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 (function () {
   const $ = (s, r = document) => r.querySelector(s);
-  const ATH_TOP10_SCRIPT_URL = "./js/athleten/ath_top10.js?v=20260912-2";
+  const ATH_TOP10_SCRIPT_URL = "./js/athleten/ath_top10.js?v=20261023-2";
   let top10ScriptPromise = null;
 
   const h = (tag, props = {}, ...children) => {

@@ -5,7 +5,7 @@ const vm = require("node:vm");
 const { test } = require("node:test");
 
 const sandbox = { window: {} };
-for (const file of ["web/js/clubs/clubs_data.js", "web/js/uebersicht/uebersicht_data.js"]) {
+for (const file of ["web/js/shared/club_names.js", "web/js/clubs/clubs_data.js", "web/js/uebersicht/uebersicht_data.js"]) {
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, "..", file), "utf8"), sandbox);
 }
 const build = (rows) => sandbox.window.OverviewData.buildStats(rows, sandbox.window.ClubsData.normalizeOrtsgruppeName);
@@ -30,6 +30,38 @@ function assertTotals(stats) {
   assert.equal(stats.ages.reduce((total, group) => total + group.count, 0), stats.athletes);
   assert.equal(stats.ageClasses.reduce((total, group) => total + group.count, 0), stats.athletes);
   assert.equal(stats.genders.reduce((total, group) => total + group.count, 0), stats.athletes);
+}
+
+test("merged clubs count as one OG in totals and rankings with the canonical profile link", () => {
+  const stats = build([
+    row({ club: "Bodman", meet: "LMS", times: ["1:00"] }),
+    row({ club: "Ludwigshafen", meet: "LMS", times: ["DQ"] }),
+    row({ club: "Bodman-Ludwigshafen", meet: "DMS", times: ["1:01"] })
+  ]);
+  assert.equal(stats.clubs, 1);
+  assert.equal(stats.athletes, 1);
+  assert.equal(stats.rankings.clubsByStarts.length, 1);
+  assert.equal(stats.rankings.clubsByStarts[0].count, 3);
+  assert.equal(stats.rankings.clubsByStarts[0].label, "Bodman-Ludwigshafen");
+  assert.equal(stats.rankings.clubsByStarts[0].profileId, "group_og_bodman-ludwigshafen");
+  assert.equal(stats.rankings.clubsByCompetitions[0].count, 2);
+});
+
+for (const names of [["Nimburg", "Nimburg-Teningen", "Köndringen", "Teningen"], ["Waldshut", "Tiengen", "Waldshut-Tiengen"],
+  ["Villingen", "Schwenningen", "Villingen-Schwenningen"]]) {
+test(`${names.at(-1)} combines predecessor clubs in overview totals and rankings`, () => {
+  const mergedName = names.at(-1);
+  const stats = build(names.map((club, i) => row({
+    club, meet: i === names.length - 1 ? "DMS" : "LMS", times: ["1:00"]
+  })));
+  assert.equal(stats.clubs, 1);
+  assert.equal(stats.athletes, 1);
+  assert.equal(stats.rankings.clubsByStarts.length, 1);
+  assert.equal(stats.rankings.clubsByStarts[0].label, mergedName);
+  assert.equal(stats.rankings.clubsByStarts[0].count, names.length);
+  assert.equal(stats.rankings.clubsByStarts[0].profileId, `group_og_${mergedName.toLowerCase()}`);
+  assert.equal(stats.rankings.clubsByCompetitions[0].count, 2);
+});
 }
 
 test("latest competition determines age once, regardless of row order or club changes", () => {

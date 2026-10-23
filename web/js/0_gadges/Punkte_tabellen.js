@@ -183,14 +183,16 @@
   }
 
   function birthYearFromYY2(yy2, refYear) {
+    if (!/^\d{1,2}$/.test(String(yy2 ?? "").trim())) return null;
     const yy = Number(yy2);
-    if (!Number.isFinite(yy)) return refYear;
+    if (!Number.isFinite(yy)) return null;
     let y = 2000 + yy;
     if (y > refYear) y -= 100;
     return y;
   }
 
   function determineAKFromAge(age) {
+    if (!Number.isFinite(age)) return "–";
     if (age <= 10) return "10";
     if (age <= 12) return "12";
     if (age <= 14) return "13/14";
@@ -757,8 +759,9 @@
 
       const yy2 = fmtYY2(r[COLS.yy2]);
       const birthYear = birthYearFromYY2(yy2, ageRefYear);
-      const age = ageRefYear - birthYear;
+      const age = birthYear == null ? null : ageRefYear - birthYear;
 
+      if (age == null && (Number.isFinite(cfg.AGE_MIN) || Number.isFinite(cfg.AGE_MAX))) continue;
       if (Number.isFinite(cfg.AGE_MIN) && age < cfg.AGE_MIN) continue;
       if (Number.isFinite(cfg.AGE_MAX) && age > cfg.AGE_MAX) continue;
 
@@ -794,7 +797,7 @@
         a = {
           gender,
           name: display,
-          ak: `${ak} - ${age}`,
+          ak: age == null ? "–" : `${ak} - ${age}`,
           og: "",
           ogDate: null,
           ogRowIndex: -1,
@@ -820,7 +823,7 @@
       }
 
       const rwRowNorm = normalizeRulebook(r[COLS.regelwerk]);
-      const ogCandidate = String(r[COLS.ortsgruppe] ?? "").trim();
+      const ogCandidate = window.ClubNames.affiliation(r[COLS.ortsgruppe]);
 
       const isNewer = (d, bestD, rowIdx, bestRowIdx) => {
         const newerByDate = d && (!bestD || d.getTime() > bestD.getTime());

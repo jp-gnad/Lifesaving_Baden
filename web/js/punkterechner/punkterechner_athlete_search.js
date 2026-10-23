@@ -134,7 +134,7 @@
     try {
       const birthYear = Number(athlete.jahrgang);
       const currentYear = new Date().getFullYear();
-      const age = Number.isFinite(birthYear) ? currentYear - birthYear : NaN;
+      const age = Number.isFinite(birthYear) && birthYear > 0 ? currentYear - birthYear : NaN;
 
       if (!Number.isFinite(age)) {
         return;
@@ -212,12 +212,16 @@
     const gender = String(row[COLS.gender] || "").trim();
     const birthYear = prParseTwoDigitYearWithMeetYear(row[COLS.yy2], row[COLS.excelDate]);
 
-    if (!name || !birthYear) return "";
+    if (!name) return "";
     return prMakeAthleteId(name, gender, birthYear);
   }
 
   function prParseTwoDigitYearWithMeetYear(twoDigit, excelDate) {
+    const text = String(twoDigit ?? "").trim();
+    if (!/^\d{1,4}$/.test(text)) return null;
     const yy = Number(twoDigit);
+    if (yy >= 1900) return yy;
+    if (yy > 99 || excelDate == null || String(excelDate).trim() === "") return null;
     const meetDate = Number(excelDate);
 
     if (!Number.isFinite(yy) || !Number.isFinite(meetDate)) return null;
@@ -226,11 +230,11 @@
     const meet = new Date(base.getTime() + meetDate * 86400000);
     const meetYear = meet.getUTCFullYear();
 
-    if (!Number.isFinite(meetYear)) return null;
+    if (!Number.isInteger(meetYear) || meetYear < 1900) return null;
 
     let year = 1900 + yy;
     while (meetYear - year > 100) year += 100;
-    return year;
+    return year <= meetYear ? year : null;
   }
 
   function prMakeAthleteId(name, gender, birthYear) {

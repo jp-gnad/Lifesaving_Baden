@@ -252,7 +252,7 @@
 
   function formatYearShort(yearRaw) {
     const s = String(yearRaw ?? "").trim();
-    if (!s) return "";
+    if (!s) return "–";
     const digits = s.replace(/\D/g, "");
     if (!digits) return s;
     return digits.slice(-2).padStart(2, "0");

@@ -75,6 +75,16 @@ Die folgende Spaltenbelegung ist aus dem aktuellen Code abgeleitet, vor allem au
 - Club-Top-10
 - Club-Detailansichten
 
+Die Fusionsregel in `web/js/shared/club_names.js` ordnet `Bodman`, `Bodmann` und `Ludwigshafen` gemeinsam `Bodman-Ludwigshafen` zu. Es handelt sich um eine einzige OG ohne Stuetzpunkte. Alle Club-Auswertungen, Athletenzuordnungen (einschliesslich Profilhistorie und JSON-Top-10) sowie Nominierungs-, Pflichtzeiten- und Qualifikationslisten nutzen diesen gemeinsamen Namen. Clubsuche und bestehende Profillinks akzeptieren weiterhin die alten Namen. Die Rohdaten bleiben unveraendert.
+
+`Muellheim`/`Müllheim`, `Müllheim-Neuenburg` (auch die Schreibweise `Neunburg`) und `Staufen` werden bei Clubsuche, Profillinks, Rankings und Statistiken gemeinsam als `Müllheim-Neuenburg` gefuehrt. An einzelnen Leistungen und in Athletenprofilen bleiben die erfassten Ortsgruppen erhalten; Club-Bestenlisten und deren Exporte zeigen deshalb auch `Müllheim` oder `Staufen`. Athleten-Wettkampfeintraege verschiedener dieser Ortsgruppen bleiben selbst bei gleichem Wettkampfnamen und Datum getrennt; Vor- und Endlaeufe derselben Ortsgruppe werden weiterhin zusammengefasst. Dazu trennt `ClubNames.normalize` die Club-Zuordnung von `ClubNames.affiliation` fuer die Anzeige. Es werden keine aktuellen Stuetzpunkte angelegt. Laut [Chronik der OG](https://muellheim.dlrg.de/index.php?L=0&id=521758) wurden die Mitglieder aus Staufen 2005 wieder integriert; die Umbenennung in Muellheim-Neuenburg erfolgte 2009.
+
+`Nimburg`, `Nimburg-Teningen`, `Köndringen`/`Koendringen` und `Teningen` werden gemeinsam als `Teningen` gewertet und in der Clubsuche nur als diese eine OG angeboten. `Tenningen` ist ebenfalls ein Suchalias. Die urspruenglichen Ortsgruppen bleiben an einzelnen Leistungen, in Bestenlisten und Athleten-Wettkaempfen sichtbar; historische Wettkampfeintraege verschiedener Ortsgruppen bleiben getrennt. Es werden keine Stuetzpunkte angelegt. Alte Club-Profillinks werden auf die gemeinsame OG aufgeloest. Die [offizielle Mitteilung zur Verschmelzung](https://nimburg-teningen.dlrg.de/news/abschlossen-verschmelzung-der-dlrg-og-134454-n/) bestaetigt die vorherige Umbenennung Nimburg-Teningen zu Teningen und die Registereintragung der Verschmelzung mit Koendringen am 11.12.2025.
+
+`Waldshut`, `Tiengen` und `Waldshut-Tiengen` werden gemeinsam unter `Waldshut-Tiengen` gewertet. Die Clubsuche und alte Profillinks fuehren zur gemeinsamen OG ohne Stuetzpunkt-Darstellung. An einzelnen Leistungen, in Bestenlisten und Athleten-Wettkaempfen bleiben die urspruenglichen Vereinsnamen erhalten; Wettkampfeintraege verschiedener Vorgaenger werden im Athletenprofil nicht zusammengefuehrt. Fuer historische Vereinsnamen bleibt die regulaere SVG-Ersatzkette der gemeinsamen OG erhalten.
+
+`Villingen`, `Schwenningen` und `Villingen-Schwenningen` werden gemeinsam unter `Villingen-Schwenningen` gewertet. Die Clubsuche und alte Profillinks fuehren zur gemeinsamen OG ohne Stuetzpunkt-Darstellung. Urspruengliche Vereinsnamen bleiben in Bestenlisten, an einzelnen Leistungen und in den Athleten-Wettkaempfen erhalten; Wettkampfeintraege verschiedener Vorgaenger bleiben im Athletenprofil getrennt. Historische Vereinsnamen nutzen die regulaere SVG-Ersatzkette der gemeinsamen OG.
+
 ### Punkterechner
 
 - Athleten-Suche fuer automatische Uebernahme
