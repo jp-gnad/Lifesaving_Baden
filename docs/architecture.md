@@ -48,6 +48,10 @@ Fast alle Seiten nutzen dieselben Grundbausteine:
   - Laedt `xlsx.full.min.js` bei Bedarf.
   - Kapselt Excel-URLs.
   - Bietet Workbook-Cache pro Seitenaufruf.
+- `club_names.js`
+  - Gemeinsame Club-Zuordnungen fuer Clubs, Athleten und Tabellen: Bodman-Ludwigshafen, Muellheim-Neuenburg, Teningen, Waldshut-Tiengen und Villingen-Schwenningen mit ihren jeweiligen Vorgaengern.
+  - `normalize` liefert den gemeinsamen Clubnamen; `affiliation` bewahrt bei entsprechend konfigurierten Zusammenschluessen die historische Ortsgruppe fuer einzelne Leistungen und Athleten-Wettkaempfe.
+  - Wird vor den jeweiligen Datenlesern geladen; die Stuetzpunkt-Zuordnung bleibt in `ClubsData`.
 - `document_library.js`
   - Gemeinsames Geruest fuer die PDF-Bibliothek der Kaderrichtlinien.
   - Nutzt GitHub API und `localStorage`-Cache.
@@ -66,6 +70,7 @@ Fast alle Seiten nutzen dieselben Grundbausteine:
   - Profilkopf, Tabs, Charts, LSC-Berechnung
 - `web/js/clubs/`
   - Club-Daten, Suche, Profilansicht, Top-10
+  - Alle neun Club-Top-10 nutzen eine gemeinsame Regionsauswahl: Gesamt, Laender (BV, Spalte 27) oder Bundeslaender/Landesverbaende (LV, Spalte 13). Optionen stammen aus `Tabelle2` und verwenden die Normalisierung von `ClubsData`. Das Dropdown zeigt die Cap-SVGs ueber `ClubsSearch.renderAvatar` und unterstuetzt Tastaturbedienung. Die Auswahl filtert die Daten vor der Berechnung; auch DQ-Mindeststarts und Club-Score gelten innerhalb dieser Auswahl.
 - `web/js/punkterechner/`
   - Rechnerlogik, Controls, Athletenuebernahme und Client fuer ILS-Weltrekorde
 - `cloudflare/ils-records-worker/`

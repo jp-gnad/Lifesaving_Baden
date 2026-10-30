@@ -547,7 +547,7 @@
 
   function assumedBirthDate(jahrgang) {
     const y = Number(jahrgang);
-    if (!Number.isFinite(y)) return null;
+    if (!Number.isFinite(y) || y <= 0) return null;
     return new Date(y, 6, 1);
   }
 
@@ -883,7 +883,10 @@
   function meetKey(m) {
     const name = String(m?.meet_name || "").trim().toLowerCase();
     const date = String(m?.date || "").trim();
-    return name + "||" + date;
+    // Preserve separate historical club entries while still combining their heats.
+    const og = String(m?.Ortsgruppe || "").trim();
+    const affiliation = window.ClubNames.preservesAffiliation(og) ? og : "";
+    return name + "||" + date + "||" + affiliation;
   }
 
   function mergeDuplicateMeets(meets) {
@@ -1131,7 +1134,7 @@
     const dMeta = DISCIPLINES.find(d => d.key === discKey);
     if (!dMeta) return [];
     const jahrgang = Number(a?.jahrgang);
-    if (!Number.isFinite(jahrgang)) return [];
+    if (!Number.isFinite(jahrgang) || jahrgang <= 0) return [];
 
     const lanesWanted = new Set(
       Array.isArray(opts.lanes) || (opts.lanes instanceof Set)
@@ -1669,7 +1672,7 @@
     }
 
     function ageLabelAtMeet(dateStr) {
-      if (!Number.isFinite(jahrgang)) return "";
+      if (!Number.isFinite(jahrgang) || jahrgang <= 0) return "";
       const v = ageAt(dateStr, jahrgang);
       if (!Number.isFinite(v)) return "";
       const years = Math.floor(v + 1e-6);

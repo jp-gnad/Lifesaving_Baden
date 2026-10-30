@@ -474,12 +474,13 @@
   const REF_YEAR = new Date().getFullYear();
 
   function ageFromJahrgang(jahrgang, refYear = REF_YEAR) {
+    if (jahrgang == null || String(jahrgang).trim() === "") return null;
     const age = refYear - Number(jahrgang);
-    return isNaN(age) ? null : age;
+    return Number.isFinite(age) && Number(jahrgang) > 0 ? age : null;
   }
 
   function akDE(age) {
-    if (age == null) return "?";
+    if (age == null) return "–";
     if (age <= 10) return "10";
     if (age <= 12) return "12";
     if (age === 13 || age === 14) return "13/14";
@@ -868,7 +869,7 @@
         "div",
         { class: "ath-profile-meta" },
         renderOrtsgruppeMeta(ax),
-        KV("Jahrgang", String(ax.jahrgang)),
+        KV("Jahrgang", ax.jahrgang ? String(ax.jahrgang) : "–"),
         KV("Länderpins", renderCountryFlagsInline(ax) || "—"),
         KV("Historie", renderhistorieInline(ax) || "—")
       )

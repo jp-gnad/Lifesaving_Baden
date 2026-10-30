@@ -128,7 +128,7 @@
   }
 
   function mapOrtsgruppe(raw) {
-    const trimmed = normalize(raw).replace(/^og\s+/i, "");
+    const trimmed = normalize(window.ClubNames.normalize(raw)).replace(/^og\s+/i, "");
     if (!trimmed) return "";
 
     const folded = normalizeForSearch(trimmed);
@@ -215,6 +215,13 @@
       .replace(/ß/g, "ss");
 
     const folded = normalizeForSearch(value).replace(/\s+/g, "");
+    const capAlias = {
+      bay: "BY", bayern: "BY",
+      deu: "GER",
+      nw: "NR", no: "NR", nrh: "NR", nordrhein: "NR",
+      wf: "WE", wl: "WE", westfalen: "WE"
+    }[folded];
+    if (capAlias) pushUnique(out, capAlias);
     if (folded === "wu" || folded === "wue" || folded === "wurttemberg" || folded === "wuerttemberg") {
       pushUnique(out, "WÜ");
     }
@@ -248,7 +255,7 @@
   }
 
   function getDisplayNameForGroup(name) {
-    return isEttlingenWettersbachGroup(name) ? ETTLINGEN_DISPLAY_NAME : normalize(name);
+    return isEttlingenWettersbachGroup(name) ? ETTLINGEN_DISPLAY_NAME : normalize(window.ClubNames.normalize(name));
   }
 
   function getSupportPointsForGroup(name) {
@@ -368,6 +375,7 @@
 
         const ogEntry = ogMap.get(ogName);
         ogEntry.rawNames.add(normalize(row[COLS.ortsgruppe]));
+        window.ClubNames.getAliases(ogName).forEach((alias) => ogEntry.rawNames.add(alias));
         if (isEttlingenWettersbachGroup(ogName)) {
           ogEntry.rawNames.add("Ettlingen");
           ogEntry.rawNames.add("Wettersbach");
@@ -566,7 +574,10 @@
   function findGroupById(groups, id) {
     const target = normalize(id);
     if (!target) return null;
-    return (Array.isArray(groups) ? groups : []).find((group) => String(group.id) === target) || null;
+    const list = Array.isArray(groups) ? groups : [];
+    return list.find((group) => String(group.id) === target) || list.find((group) =>
+      group.kind === "og" && window.ClubNames.getAliases(group.name).some((alias) => createGroupId("og", alias) === target)
+    ) || null;
   }
 
   const api = {
@@ -574,6 +585,8 @@
     loadGroupsAndStats,
     findGroupById,
     groupMatchesBV,
+    normalizeLV,
+    normalizeBV,
     kindLabel,
     getDisplayNameForGroup,
     normalizeOrtsgruppeName: mapOrtsgruppe

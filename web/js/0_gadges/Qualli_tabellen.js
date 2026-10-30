@@ -627,7 +627,7 @@
           if (rwRow !== want) continue;
         }
 
-        const og = String(row[DATA_COLS.ortsgruppe] ?? "").trim();
+        const og = window.ClubNames.affiliation(row[DATA_COLS.ortsgruppe]);
 
         const key = `${nm}|${g}|${birthYear}`;
         const rec = dict.get(key) ?? initPersonRec({ name: nm, gender: g, ortsgruppe: "", birthYear });

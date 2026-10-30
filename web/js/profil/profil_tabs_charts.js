@@ -836,7 +836,7 @@
 
   function buildLSCSeries(a) {
     const jahrgang = Number(a?.jahrgang);
-    if (!Number.isFinite(jahrgang)) return [];
+    if (!Number.isFinite(jahrgang) || jahrgang <= 0) return [];
     const meets = Array.isArray(a?.meets) ? a.meets : [];
     const birth = new Date(`${jahrgang}-07-01T00:00:00Z`);
 
@@ -875,7 +875,7 @@
     }
 
     const jahrgang = Number(a?.jahrgang);
-    if (!Number.isFinite(jahrgang)) return [];
+    if (!Number.isFinite(jahrgang) || jahrgang <= 0) return [];
 
     const birth = new Date(`${jahrgang}-07-01T00:00:00Z`);
     const history = await global.ProfileLSC.calculateHistorySeries(a, { byMeet: true });
@@ -1037,7 +1037,7 @@
         });
         item.appendChild(renderCapAvatarForSuggest(ax, "sm", "lsc-suggest-avatar"));
         const name = hEl("div", { class: "lsc-suggest-name" }, ax.name, " ",
-          hEl("span", { class: "lsc-year" }, `(${ax.jahrgang})`));
+          hEl("span", { class: "lsc-year" }, `(${ax.jahrgang || "–"})`));
         const og = currentOrtsgruppeFromMeets(ax) || ax.ortsgruppe || "";
         const sub = hEl("div", { class: "lsc-suggest-sub" }, "DLRG ", og);
         item.appendChild(hEl("div", { class: "lsc-suggest-text" }, name, sub));
@@ -1644,7 +1644,7 @@
         const item = el("div", { class: "time-suggest-item" + (idx === cmpActive ? " active" : ""), role: "option", "aria-selected": idx === cmpActive ? "true" : "false" });
         item.appendChild(renderCapAvatarForSuggest(ax, "sm", "time-suggest-avatar"));
         const text = el("div", { class: "time-suggest-text" },
-          el("div", { class: "time-suggest-name" }, ax.name, " ", el("span", { class: "time-year" }, `(${ax.jahrgang})`)),
+          el("div", { class: "time-suggest-name" }, ax.name, " ", el("span", { class: "time-year" }, `(${ax.jahrgang || "–"})`)),
           el("div", { class: "time-suggest-sub" }, "DLRG ", currentOrtsgruppeFromMeets(ax) || ax.ortsgruppe || "")
         );
         item.appendChild(text);

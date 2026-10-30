@@ -266,7 +266,7 @@
           _idx: idx,
           rank: it?.rank,
           name: String(it?.name ?? "").trim(),
-          og: String(it?.og ?? "").trim(),
+          og: window.ClubNames.affiliation(it?.og),
           value: it?.value ?? ""
         }))
         .sort((a, b) => {
@@ -408,7 +408,7 @@
 
   function isJuniorAthlete(athlete, currentYear) {
     const birthYear = Number(athlete?.jahrgang);
-    return Number.isFinite(birthYear) && (currentYear - birthYear) < 19;
+    return Number.isFinite(birthYear) && birthYear > 0 && (currentYear - birthYear) < 19;
   }
 
   function pickLatestEligibleHistoryEntry(history, cutoffMs) {
@@ -432,7 +432,7 @@
 
     target.push({
       name: String(athlete?.name || "").trim(),
-      og: String(og || athlete?.ortsgruppe || entry?.run?.Ortsgruppe || "").trim(),
+      og: window.ClubNames.affiliation(og || athlete?.ortsgruppe || entry?.run?.Ortsgruppe),
       valueRaw: Number(entry.calculatedLsc),
       value: formatLscValue(entry.calculatedLsc)
     });
@@ -473,7 +473,7 @@
     if (!(countRaw > 0)) return;
     target.push({
       name: String(athlete?.name || "").trim(),
-      og: String(og || athlete?.ortsgruppe || "").trim(),
+      og: window.ClubNames.affiliation(og || athlete?.ortsgruppe),
       countRaw,
       averageRaw: Number.isFinite(averageRaw) && averageRaw > 0 ? averageRaw : null
     });

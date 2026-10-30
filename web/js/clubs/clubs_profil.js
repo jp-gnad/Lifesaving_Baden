@@ -678,7 +678,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const startrecht = normalize(row?.[COLS.startrecht]).toUpperCase();
 
     if (startrecht === "OG") {
-      const ogName = normalize(row?.[COLS.ortsgruppe]).replace(/^og\s+/i, "");
+      const ogName = window.ClubNames.affiliation(row?.[COLS.ortsgruppe]).replace(/^og\s+/i, "");
       const [file, fallbackFile = ""] = capFilesFromOrtsgruppe(ogName);
       return file ? { key: `OG|${ogName}`, file, fallbackFile, label: `OG ${ogName}` } : null;
     }
@@ -887,19 +887,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const meetYear = getYearFromISO(dateIso);
     const bornYear = Number(birthYear);
-    if (!Number.isFinite(meetYear) || !Number.isFinite(bornYear)) return false;
+    if (!Number.isFinite(meetYear) || !Number.isFinite(bornYear) || bornYear <= 0) return false;
 
     return meetYear - bornYear <= 18;
   }
 
   function parseTwoDigitYearWithMeetYear(twoDigit, meetISO) {
+    const text = String(twoDigit ?? "").trim();
+    if (!/^\d{1,4}$/.test(text)) return null;
     const yy = Number(twoDigit);
     const meetYear = Number((meetISO || "").slice(0, 4));
-    if (!Number.isFinite(yy) || !Number.isFinite(meetYear)) return "";
+    if (yy >= 1900) return yy;
+    if (yy > 99 || !Number.isInteger(meetYear) || meetYear < 1900) return null;
 
     let year = 1900 + yy;
     while (meetYear - year > 100) year += 100;
-    return year;
+    return year <= meetYear ? year : null;
   }
 
   function splitNameParts(name) {
@@ -1051,7 +1054,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function getRowAffiliation(row) {
     const rawAffiliation = normalize(row?.[COLS.ortsgruppe]).replace(/^og\s+/i, "");
     const foldedAffiliation = normalizeForCompare(rawAffiliation);
-    if (foldedAffiliation === "ettlingen" || foldedAffiliation === "wettersbach") {
+    if (foldedAffiliation === "ettlingen" || foldedAffiliation === "wettersbach" ||
+      window.ClubNames.preservesAffiliation(rawAffiliation)) {
       return rawAffiliation;
     }
 
@@ -1063,17 +1067,23 @@ document.addEventListener("DOMContentLoaded", () => {
   function createSingleOgAffiliationGroup(affiliation) {
     const name = normalize(affiliation);
     const folded = normalizeForCompare(name);
-    if (folded !== "ettlingen" && folded !== "wettersbach") return null;
+    if (folded !== "ettlingen" && folded !== "wettersbach" &&
+      !window.ClubNames.preservesAffiliation(name)) return null;
+
+    const parentGroup = window.ClubNames.preservesAffiliation(name) ? findAffiliationGroup(name) : null;
+    const iconKeys = Array.from(new Set([name, ...(parentGroup?.avatar?.iconKeys || [])]));
 
     return {
+      ...parentGroup,
       id: `group_og_${folded}`,
       kind: "og",
       name,
+      displayName: name,
       label: "Ortsgruppe",
       searchKeys: [name],
       avatar: {
         mode: "single",
-        iconKeys: [name]
+        iconKeys
       }
     };
   }
@@ -1586,7 +1596,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return new Set(primaryKeys.map(normalizeForCompare));
   }
 
-  async function buildPdfAvatarAssets(data) {
+  async function buildPdfAvatarAssets(data, headerGroup = null, showAffiliationAvatars = true) {
     const cache = {
       byUrl: new Map(),
       resources: []
@@ -1594,7 +1604,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const groupsById = new Map();
     const avatarsByGroupId = new Map();
 
-    data.forEach((discipline) => {
+    if (headerGroup?.id) groupsById.set(headerGroup.id, headerGroup);
+
+    (showAffiliationAvatars ? data : []).forEach((discipline) => {
       [...(discipline.women || []), ...(discipline.men || [])].forEach((entry) => {
         if (entry.affiliationGroup?.id) groupsById.set(entry.affiliationGroup.id, entry.affiliationGroup);
       });
@@ -1636,6 +1648,15 @@ document.addEventListener("DOMContentLoaded", () => {
     { resourceName: "F1", fontName: "DLRG-Regular", fileName: "LT_50141_regular.woff", weight: 400 },
     { resourceName: "F2", fontName: "DLRG-Heavy", fileName: "LT_50140_heavy.woff", weight: 800 }
   ];
+  const PDF_COLORS = Object.freeze({
+    red: "0.89 0.024 0.075",
+    blue: "0 0.412 0.706",
+    text: "0.15 0.15 0.15",
+    muted: "0.38 0.38 0.38",
+    tableHead: "0.96 0.96 0.96",
+    tableRule: "0.76 0.76 0.76",
+    rowRule: "0.88 0.88 0.88"
+  });
 
   function buildPdfFontUrlCandidates(fileName) {
     const encoded = encodeURIComponent(fileName);
@@ -2054,7 +2075,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function createBestenlistePdfBlob(group, data, generatedAt = new Date(), fileName = "", standDate = generatedAt, scoreData = null) {
-    const pdfAvatarAssets = await buildPdfAvatarAssets(data);
+    const showAffiliationAvatars = group?.kind === "lv" || group?.kind === "bv";
+    const pdfAvatarAssets = await buildPdfAvatarAssets(data, group, showAffiliationAvatars);
+    const pdfFontAssets = await loadBestenlistePdfFonts();
+    const headerAvatar = pdfAvatarAssets.avatarsByGroupId.get(group?.id);
     const pdfMetaSummary = `${getBestenlisteSettingsSummary()} | ${getBestenlisteStandSummary(standDate)}`;
     const pdfKicker = getBestenlisteHeaderKicker(group, scoreData);
     const displayName = getGroupDisplayName(group);
@@ -2081,35 +2105,58 @@ document.addEventListener("DOMContentLoaded", () => {
     let writer = createPdfWriter(commands, pageHeight);
     let y = margin;
 
-    const addPage = (genderTitle, continued = false) => {
+    const headingFont = pdfFontAssets.find((font) => font.resourceName === "F2");
+    const headingWidth = (value, size) => Array.from(value).reduce((width, char) => {
+      const byte = WIN_ANSI_MAP[char] ?? char.charCodeAt(0);
+      return width + (headingFont?.widths[byte - 32] ?? 550) * size / 1000;
+    }, 0);
+
+    const addPage = (genderTitle, genderColor) => {
       if (commands.length) pages.push(commands);
       commands = [];
       writer = createPdfWriter(commands, pageHeight);
       y = margin;
-      writer.text(margin, y, pdfKicker, 7, "F2", "0.35 0.35 0.4");
+      let headerTextX = margin;
+      if (headerAvatar?.images?.length) {
+        const paired = headerAvatar.images.length > 1;
+        const size = paired ? 26 : 28;
+        const offset = paired ? 18 : 0;
+        headerAvatar.images.forEach((image, index) => {
+          writer.image(margin + index * offset, margin - 10, size, size, image);
+        });
+        headerTextX += size + offset + 10;
+      }
+      writer.text(headerTextX, y, pdfKicker, 7, "F1", PDF_COLORS.muted);
       y += 15;
-      writer.text(margin, y, `${displayName} - Bestenliste`, 14, "F2", "0.08 0.08 0.1");
+      const genderX = pageWidth - margin - headingWidth(genderTitle, 12);
+      const titleWidth = genderX - headerTextX - 20;
+      let title = `${displayName} - Bestenliste`;
+      if (headingWidth(title, 14) > titleWidth) {
+        while (title.length && headingWidth(`${title}...`, 14) > titleWidth) title = title.slice(0, -1);
+        title += "...";
+      }
+      writer.text(headerTextX, y, title, 14, "F2", PDF_COLORS.text);
+      writer.text(genderX, y, genderTitle, 12, "F2", genderColor);
       y += 12;
-      writer.text(margin, y, pdfMetaSummary, 7, "F1", "0.35 0.35 0.4");
-      y += 20;
-      writer.text(margin, y, genderTitle, 12, "F2", "0.08 0.08 0.1");
-      y += 16;
+      writer.text(margin, y, pdfMetaSummary, 7, "F1", PDF_COLORS.muted);
+      writer.line(margin, y + 7, pageWidth - margin, y + 7, genderColor, 0.6);
+      y += 28;
     };
 
-    const ensureSpace = (height, genderTitle) => {
-      if (y + height > bottom) addPage(genderTitle, true);
+    const ensureSpace = (height, genderTitle, genderColor) => {
+      if (y + height > bottom) addPage(genderTitle, genderColor);
     };
 
     const drawTableHeader = (genderKey) => {
       const swimmerLabel = genderKey === "women" ? "Schwimmerin" : "Schwimmer";
       let x = margin;
-      writer.rect(margin, y, tableWidth, headHeight, "0.93 0.93 0.93");
-      writer.line(margin, y, margin + tableWidth, y, "0.72 0.72 0.72", 0.5);
-      writer.line(margin, y + headHeight, margin + tableWidth, y + headHeight, "0.72 0.72 0.72", 0.5);
+      writer.rect(margin, y, tableWidth, headHeight, PDF_COLORS.tableHead);
+      writer.line(margin, y, margin + tableWidth, y, PDF_COLORS.tableRule, 0.5);
+      writer.line(margin, y + headHeight, margin + tableWidth, y + headHeight, PDF_COLORS.tableRule, 0.5);
 
       columns.forEach((column, index) => {
         const label = index === 1 ? swimmerLabel : column.label;
-        writer.text(x + 3, y + 9, label, 7, "F2", "0.24 0.25 0.28");
+        writer.text(x + 3, y + 9, label, 7, "F2", PDF_COLORS.text);
         x += column.width;
       });
       y += headHeight;
@@ -2117,14 +2164,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const drawRows = (entries, genderKey) => {
       if (!entries.length) {
-        writer.text(margin + 3, y + 9, "Keine gültigen Zeiten.", 7, "F1", "0.45 0.45 0.5");
+        writer.text(margin + 3, y + 9, "Keine gültigen Zeiten.", 7, "F1", PDF_COLORS.muted);
         y += rowHeight;
         return;
       }
 
       for (const entry of entries) {
         let x = margin;
-        writer.line(margin, y, margin + tableWidth, y, "0.86 0.86 0.88", 0.35);
+        writer.line(margin, y, margin + tableWidth, y, PDF_COLORS.rowRule, 0.35);
         const name = `${entry.name}${entry.birthYear ? ` (${formatBirthYearShort(entry.birthYear)})` : ""}`;
         const values = [
           String(entry.rank),
@@ -2137,7 +2184,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         values.forEach((value, index) => {
           if (index === 3) {
-            const avatar = pdfAvatarAssets.avatarsByGroupId.get(entry.affiliationGroup?.id);
+            const avatar = showAffiliationAvatars
+              ? pdfAvatarAssets.avatarsByGroupId.get(entry.affiliationGroup?.id)
+              : null;
             const iconSize = 10.5;
             const iconY = y + (rowHeight - iconSize) / 2;
             let textX = x + 3;
@@ -2162,14 +2211,14 @@ document.addEventListener("DOMContentLoaded", () => {
               fitPdfText(entry.affiliation || "-", textWidth, 7.2),
               7.2,
               "F1",
-              "0.12 0.16 0.21"
+              PDF_COLORS.text
             );
             x += columns[index].width;
             return;
           }
 
-          const font = index === 1 || index === 2 ? "F2" : "F1";
-          writer.text(x + 3, y + 9, value, index === 1 || index === 2 ? 7.4 : 7.2, font, "0.12 0.16 0.21");
+          const font = index === 2 ? "F2" : "F1";
+          writer.text(x + 3, y + 9, value, index === 1 || index === 2 ? 7.4 : 7.2, font, PDF_COLORS.text);
           x += columns[index].width;
         });
         y += rowHeight;
@@ -2177,16 +2226,16 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const renderGender = (genderKey, genderTitle) => {
-      addPage(genderTitle);
-      const disciplineTitleColor = genderKey === "women" ? "0.89 0.024 0.075" : "0 0.412 0.706";
+      const genderColor = genderKey === "men" ? PDF_COLORS.blue : PDF_COLORS.red;
+      addPage(genderTitle, genderColor);
 
       data.forEach((discipline, index) => {
         const entries = genderKey === "women" ? discipline.women : discipline.men;
         const topGap = index > 0 ? disciplineTopGap : 0;
         const tableHeight = topGap + titleHeight + headHeight + Math.max(1, entries.length) * rowHeight + gap;
-        ensureSpace(tableHeight, genderTitle);
+        ensureSpace(tableHeight, genderTitle, genderColor);
         y += topGap;
-        writer.text(margin, y, discipline.label, 10, "F2", disciplineTitleColor);
+        writer.text(margin, y, discipline.label, 10, "F2", genderColor);
         y += titleHeight;
         drawTableHeader(genderKey);
         drawRows(entries, genderKey);
@@ -2197,7 +2246,6 @@ document.addEventListener("DOMContentLoaded", () => {
     renderGender("women", "Frauen");
     renderGender("men", "Männer");
     if (commands.length) pages.push(commands);
-    const pdfFontAssets = await loadBestenlistePdfFonts();
     return buildPdfBlob(pages, pdfAvatarAssets.resources, pdfFontAssets, {
       title: fileName ? fileName.replace(/\.pdf$/i, "") : `${displayName} - Bestenliste`
     });
