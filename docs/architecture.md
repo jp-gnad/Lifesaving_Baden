@@ -70,6 +70,7 @@ Fast alle Seiten nutzen dieselben Grundbausteine:
   - Profilkopf, Tabs, Charts, LSC-Berechnung
 - `web/js/clubs/`
   - Club-Daten, Suche, Profilansicht, Top-10
+  - `clubs_profile_achievements.js` rendert im Clubprofil die Wettkampfbeteiligungen und Gold-/Silber-/Bronzebilanz. Das Modul wird vor `clubs_profil.js` geladen und erhaelt dessen Datenloader und Gliederungs-/Athletennormalisierung als Hilfsfunktionen. Die Berechnung arbeitet unabhaengig von der Anzeige auf `Tabelle2`; Tests: `node --test scripts/test_club_achievements.cjs`.
   - Alle neun Club-Top-10 nutzen eine gemeinsame Regionsauswahl: Gesamt, Laender (BV, Spalte 27) oder Bundeslaender/Landesverbaende (LV, Spalte 13). Optionen stammen aus `Tabelle2` und verwenden die Normalisierung von `ClubsData`. Das Dropdown zeigt die Cap-SVGs ueber `ClubsSearch.renderAvatar` und unterstuetzt Tastaturbedienung. Die Auswahl filtert die Daten vor der Berechnung; auch DQ-Mindeststarts und Club-Score gelten innerhalb dieser Auswahl.
 - `web/js/punkterechner/`
   - Rechnerlogik, Controls, Athletenuebernahme und Client fuer ILS-Weltrekorde

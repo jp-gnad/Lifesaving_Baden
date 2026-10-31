@@ -2301,17 +2301,27 @@ document.addEventListener("DOMContentLoaded", () => {
         "table",
         { class: `club-bests-table${showCapColumn ? " has-club-caps" : ""}` },
         h(
+          "colgroup",
+          {},
+          h("col", { class: "club-bests-col-rank" }),
+          showCapColumn ? h("col", { class: "club-bests-cap-head" }) : null,
+          h("col"),
+          h("col", { class: "club-bests-col-time" }),
+          h("col", { class: "club-bests-col-meet" }),
+          h("col", { class: "club-bests-col-date" })
+        ),
+        h(
           "thead",
           {},
           h(
             "tr",
             {},
-            h("th", {}, "#"),
-            showCapColumn ? h("th", { class: "club-bests-cap-head", "aria-label": "Club" }, "") : null,
-            h("th", {}, "Name"),
-            h("th", {}, "Zeit"),
-            h("th", {}, "Wettkampf"),
-            h("th", {}, "Datum")
+            h("th", { class: "club-bests-col-rank", scope: "col" }, "#"),
+            showCapColumn ? h("th", { class: "club-bests-cap-head", scope: "col", "aria-label": "Club" }, "") : null,
+            h("th", { scope: "col" }, "Name"),
+            h("th", { class: "club-bests-col-time", scope: "col" }, "Zeit"),
+            h("th", { class: "club-bests-col-meet", scope: "col" }, "Wettkampf"),
+            h("th", { class: "club-bests-col-date", scope: "col" }, "Datum")
           )
         ),
         h(
@@ -2527,33 +2537,107 @@ document.addEventListener("DOMContentLoaded", () => {
     root?.querySelectorAll(".club-bests-gender-grid").forEach(ensureGenderPager);
   }
 
-  function renderBestenlisteGrid(data) {
+  function initDisciplineAnimation(card) {
+    const summary = card.querySelector("summary");
+    const body = card.querySelector(".club-bests-disclosure-body");
+    let expanded = card.open;
+    let animation = null;
+
+    summary.addEventListener("click", (event) => {
+      event.preventDefault();
+      expanded = !expanded;
+
+      const startHeight = card.open ? body.getBoundingClientRect().height : 0;
+      const startOpacity = card.open ? getComputedStyle(body).opacity : 0;
+      if (animation) {
+        animation.cancel();
+        animation = null;
+      }
+
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || typeof body.animate !== "function") {
+        card.open = expanded;
+        card.removeAttribute("data-closing");
+        return;
+      }
+
+      // Keep the native details content visible until its closing animation finishes.
+      card.open = true;
+      card.toggleAttribute("data-closing", !expanded);
+      const currentAnimation = body.animate(
+        [
+          { height: `${startHeight}px`, opacity: startOpacity },
+          { height: `${expanded ? body.scrollHeight : 0}px`, opacity: expanded ? 1 : 0 }
+        ],
+        { duration: 500, easing: "cubic-bezier(0.25, 0.8, 0.25, 1)", fill: "both" }
+      );
+      animation = currentAnimation;
+      currentAnimation.onfinish = () => {
+        if (animation !== currentAnimation) return;
+        card.open = expanded;
+        card.removeAttribute("data-closing");
+        animation = null;
+        // Return to the natural height so resizing and filter changes remain responsive.
+        currentAnimation.cancel();
+      };
+    });
+  }
+
+  function renderBestenlisteGrid(data, expandedDisciplines = new Set()) {
     return h(
       "div",
       { class: "club-bests-grid" },
-      data.map((discipline) =>
-        h(
-          "article",
-          { class: "club-bests-card" },
-          h("header", { class: "club-bests-card-head" }, h("h3", {}, discipline.label)),
+      data.map((discipline) => {
+        const card = h(
+          "details",
+          { class: "club-bests-card", dataset: { discipline: discipline.key } },
+          h(
+            "summary",
+            { class: "club-bests-card-head" },
+            h("h3", {}, discipline.label),
+            h("span", { class: "club-bests-disclosure-icon", "aria-hidden": "true" })
+          ),
           h(
             "div",
-            { class: "club-bests-gender-grid" },
+            { class: "club-bests-disclosure-body" },
             h(
-              "section",
-              { class: "club-bests-gender-section", "aria-label": `${discipline.label} weiblich` },
-              h("div", { class: "club-bests-gender-title" }, "Frauen"),
-              renderBestRows(discipline.women)
-            ),
-            h(
-              "section",
-              { class: "club-bests-gender-section", "aria-label": `${discipline.label} männlich` },
-              h("div", { class: "club-bests-gender-title" }, "Männer"),
-              renderBestRows(discipline.men)
+              "div",
+              { class: "club-bests-disclosure-content" },
+              h(
+                "div",
+                { class: "club-bests-gender-grid" },
+                h(
+                  "section",
+                  { class: "club-bests-gender-section", "aria-label": `${discipline.label} weiblich` },
+                  h("div", { class: "club-bests-gender-title" }, "Frauen"),
+                  renderBestRows(discipline.women)
+                ),
+                h(
+                  "section",
+                  { class: "club-bests-gender-section", "aria-label": `${discipline.label} männlich` },
+                  h("div", { class: "club-bests-gender-title" }, "Männer"),
+                  renderBestRows(discipline.men)
+                )
+              )
             )
           )
-        )
-      )
+        );
+        card.open = expandedDisciplines.has(discipline.key);
+        initDisciplineAnimation(card);
+        card.addEventListener("toggle", () => {
+          if (!card.open) return;
+          requestAnimationFrame(() => {
+            const pager = card.querySelector(".club-bests-gender-pager");
+            if (!pager) return;
+            updateGenderPager(
+              pager.querySelector(".club-bests-gender-grid"),
+              Array.from(pager.querySelectorAll(".club-bests-page-dot")),
+              pager.querySelector(".club-bests-pager-arrow--prev"),
+              pager.querySelector(".club-bests-pager-arrow--next")
+            );
+          });
+        });
+        return card;
+      })
     );
   }
 
@@ -2654,6 +2738,9 @@ document.addEventListener("DOMContentLoaded", () => {
   async function renderBestenliste(panel, group) {
     if (!panel || !group) return;
 
+    const expandedDisciplines = new Set(
+      Array.from(panel.querySelectorAll(".club-bests-card[open]:not([data-closing])"), (card) => card.dataset.discipline)
+    );
     panel.innerHTML = "";
     const printHeader = renderBestenlistePrintHeader(group);
     panel.appendChild(printHeader);
@@ -2672,7 +2759,7 @@ document.addEventListener("DOMContentLoaded", () => {
           console.warn("Club-LSC konnte für den Bestenlisten-Druckkopf nicht berechnet werden:", error);
         });
       content.innerHTML = "";
-      content.appendChild(renderBestenlisteGrid(data));
+      content.appendChild(renderBestenlisteGrid(data, expandedDisciplines));
       initGenderPagers(content);
       content.appendChild(renderBestenlistePrintLayout(data));
     } catch (error) {
@@ -3252,6 +3339,10 @@ document.addEventListener("DOMContentLoaded", () => {
     activateProfileTab(shell, getActiveTabKey(), false);
     renderBestenliste(panels.querySelector('[data-key="bestenliste"]'), group);
     renderStatsPanel(panels.querySelector('[data-key="stats"]'), group);
+    window.ClubsProfileAchievements.render(panels.querySelector('[data-key="erfolge"]'), group, {
+      h, COLS, DISCIPLINES, groupMatchesRow, normalizeForCompare,
+      excelSerialToISO, parseTwoDigitYearWithMeetYear, makeAthleteId, getBestenlisteRows
+    });
     renderClubMeets(panels.querySelector('[data-key="wettkaempfe"]'), group);
   }
 

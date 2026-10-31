@@ -74,6 +74,11 @@ Die folgende Spaltenbelegung ist aus dem aktuellen Code abgeleitet, vor allem au
 - Clubsuche
 - Club-Top-10
 - Club-Detailansichten
+- Clubprofil-Erfolge: Teilnahmen und Medaillen ausschliesslich fuer OMS, BMS, LMS, DMM, DEM, JRP, DP, BP und World Games. Fuer beide Auswertungen muss neben der historischen Gliederungszugehoerigkeit auch das Startrecht zur Profilart passen (`og`/`OG`, `lv`/`LV`, `bv`/`BV`). Einsaetze fuer eine uebergeordnete Gliederung werden nicht beim Heimatverein mitgezaehlt.
+
+`clubs_profile_achievements.js` fasst jede Austragung nach normalisiertem Veranstaltungsnamen, Austragungsjahr und Veranstaltungsland zusammen. Orts-/Bezirkszusaetze bleiben erhalten; mehrere Personen, Datumswerte, Bahnlängen und Runden erhoehen die Teilnahmezahl nicht. `WG` und `World-Games` werden gemeinsam gefuehrt, `WG-Quali` bleibt ausgeschlossen. Das Austragungsjahr stammt vorrangig aus dem Wettkampfnamen, ersatzweise aus dem Datum.
+
+Medaillen werden je Person, Austragung, Bahnlänge und Wertung einmal gezaehlt. Einzelmedaillen setzen eine Einzelwertung voraus; Mehrkampfmedaillen eine Mehrkampf-, 2Kampf- oder 6-Kampf-Wertung. Kombinierte Einzel-/Mehrkampf-Wertungen ermoeglichen beides. Pro Einzeldisziplin gilt die letzte erfasste Runde dieser Disziplin, beim Mehrkampf die letzte Runde der Person bei dieser Austragung. Fehlende abschliessende Platzierungen, DQ/DNS/DNF sowie widerspruechliche abschliessende Platzierungen erzeugen keine Medaille; identische Dubletten werden zusammengefasst. Ergebnisse ohne Geburtsjahr bleiben enthalten. Es gibt keine Team-/Staffelergebnisse in diesem Spaltenmodell.
 
 Die Fusionsregel in `web/js/shared/club_names.js` ordnet `Bodman`, `Bodmann` und `Ludwigshafen` gemeinsam `Bodman-Ludwigshafen` zu. Es handelt sich um eine einzige OG ohne Stuetzpunkte. Alle Club-Auswertungen, Athletenzuordnungen (einschliesslich Profilhistorie und JSON-Top-10) sowie Nominierungs-, Pflichtzeiten- und Qualifikationslisten nutzen diesen gemeinsamen Namen. Clubsuche und bestehende Profillinks akzeptieren weiterhin die alten Namen. Die Rohdaten bleiben unveraendert.
 

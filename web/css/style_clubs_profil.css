@@ -898,6 +898,201 @@ main#content {
   background: rgba(248, 113, 113, 0.92);
 }
 
+.club-achievements {
+  display: grid;
+  gap: 1rem;
+}
+
+.club-achievements-scope {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.club-achievements-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 1.25rem;
+}
+
+.club-achievements-card {
+  min-width: 0;
+  padding: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.club-achievements-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.club-achievements-card-head h3 {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 1.1rem;
+  line-height: 1.3;
+}
+
+.club-achievements-total {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.club-achievements-total strong {
+  margin-right: 0.25rem;
+  color: rgba(255, 237, 0, 0.94);
+  font-size: 1.3rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.club-achievements-caption {
+  margin: 0.5rem 0 1.25rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.club-achievements-participations {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.club-achievements-participations li {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr) 3rem;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.club-achievements-event,
+.club-achievements-count {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.club-achievements-count {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.club-achievements-track {
+  display: block;
+  height: 0.45rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.club-achievements-bar {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: rgba(255, 237, 0, 0.82);
+}
+
+.club-achievements-medals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.club-achievements-medal {
+  --medal-color: #e6c75c;
+  min-width: 0;
+  text-align: center;
+}
+
+.club-achievements-medal--silver {
+  --medal-color: #bcc5d0;
+}
+
+.club-achievements-medal--bronze {
+  --medal-color: #c69268;
+}
+
+.club-achievements-medal-count {
+  display: block;
+  margin-bottom: 0.75rem;
+  color: var(--medal-color);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-variant-numeric: tabular-nums;
+}
+
+.club-achievements-medal-track {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 8rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.club-achievements-medal-bar {
+  display: block;
+  width: min(65%, 4rem);
+  border-radius: 5px 5px 0 0;
+  background: var(--medal-color);
+  opacity: 0.85;
+}
+
+.club-achievements-medal-label {
+  display: block;
+  margin-top: 0.75rem;
+  color: var(--medal-color);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.club-achievements-medal-types {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin-top: 1.5rem;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.club-achievements-empty {
+  margin: 0;
+  padding: 0.8rem 1rem;
+  border-left: 2px solid rgba(255, 237, 0, 0.7);
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .club-achievements-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .club-achievements-card {
+    padding: 1rem;
+  }
+
+  .club-achievements-participations li {
+    grid-template-columns: 5.5rem minmax(0, 1fr) 2.5rem;
+    gap: 0.5rem;
+  }
+}
+
 .club-bests-controls {
   display: flex;
   flex-wrap: wrap;
@@ -1032,8 +1227,74 @@ main#content {
 }
 
 .club-bests-card-head {
+  min-height: 44px;
+  box-sizing: border-box;
+  cursor: pointer;
+  list-style: none;
   padding: 0.9rem 1rem 0.75rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.club-bests-card-head::-webkit-details-marker {
+  display: none;
+}
+
+.club-bests-card-head::after {
+  order: 1;
+}
+
+.club-bests-card-head:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.club-bests-card-head:focus-visible {
+  outline: 2px solid rgba(255, 237, 0, 0.75);
+  outline-offset: 4px;
+}
+
+.club-bests-card > .club-bests-card-head {
+  margin-bottom: 0;
+}
+
+.club-bests-disclosure-body {
+  overflow: hidden;
+}
+
+.club-bests-disclosure-content {
+  padding-top: 0.85rem;
+}
+
+.club-bests-disclosure-icon {
+  order: 2;
+  display: inline-flex;
+  flex: 0 0 1.8rem;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 50%;
+  color: rgba(255, 237, 0, 0.92);
+}
+
+.club-bests-disclosure-icon::before {
+  content: "";
+  width: 0.4rem;
+  height: 0.4rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateX(-0.1rem) rotate(-45deg);
+  transition: transform 0.5s ease;
+}
+
+.club-bests-card[open]:not([data-closing]) > .club-bests-card-head .club-bests-disclosure-icon::before {
+  transform: translateY(-0.1rem) rotate(45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .club-bests-disclosure-icon::before {
+    transition: none;
+  }
 }
 
 .club-bests-card-head h3,
@@ -1189,41 +1450,150 @@ main#content {
   height: 2.35rem;
 }
 
-.club-bests-table th:nth-child(1),
-.club-bests-table td:nth-child(1) {
-  width: 2.6rem;
+/* Keep enough room for both text columns before placing the tables side by side. */
+@media screen and (min-width: 721px) {
+  .club-bests-grid {
+    gap: 2.5rem;
+  }
+
+  .club-bests-card {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .club-bests-card-head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.85rem;
+    padding: 0.1rem 0 0.1rem 0.75rem;
+    border-bottom: 0;
+    border-left: 3px solid rgba(255, 237, 0, 0.88);
+  }
+
+  .club-bests-card-head::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .club-bests-card-head h3,
+  .club-bests-card-head h4 {
+    font-size: 1.3rem;
+    line-height: 1.3;
+  }
+
+  .club-bests-gender-grid {
+    gap: 1.25rem;
+    align-items: start;
+    padding: 0;
+  }
+
+  .club-bests-gender-section,
+  .club-bests-gender-section + .club-bests-gender-section {
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.045);
+  }
+
+  .club-bests-table th,
+  .club-bests-table td {
+    box-sizing: border-box;
+    padding: 0.75rem 0.65rem;
+    vertical-align: middle;
+    overflow-wrap: normal;
+    line-height: 1.4;
+  }
+
+  .club-bests-table th {
+    padding-block: 0.6rem;
+    background: rgba(255, 255, 255, 0.025);
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+  }
+
+  /* Keep column labels available to assistive technology without a visible header row. */
+  .club-bests-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .club-bests-table .club-bests-col-rank {
+    width: 2.75rem;
+  }
+
+  .club-bests-table .club-bests-cap-head {
+    width: 3.25rem;
+  }
+
+  .club-bests-table .club-bests-col-time {
+    width: 5.25rem;
+  }
+
+  .club-bests-table .club-bests-col-meet {
+    width: 26%;
+  }
+
+  .club-bests-table .club-bests-col-date {
+    width: 6.25rem;
+  }
+
+  .club-bests-table .club-bests-col-rank,
+  .club-bests-table .club-bests-rank {
+    text-align: center;
+  }
+
+  .club-bests-table .club-bests-col-time,
+  .club-bests-table .club-bests-time {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .club-bests-rank,
+  .club-bests-time,
+  .club-bests-date {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .club-bests-name-main,
+  .club-bests-affiliation-text,
+  .club-bests-meet {
+    overflow-wrap: break-word;
+  }
+
+  .club-bests-birth-year {
+    display: inline-block;
+    margin-left: 0.2em;
+    white-space: nowrap;
+  }
+
+  .club-bests-meet,
+  .club-bests-date {
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.78rem;
+  }
+
+  .club-bests-table tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.018);
+  }
+
+  .club-bests-table tbody tr:hover {
+    background: rgba(255, 237, 0, 0.045);
+  }
 }
 
-.club-bests-table th:nth-child(3),
-.club-bests-table td:nth-child(3) {
-  width: 4.6rem;
-}
-
-.club-bests-table th:nth-child(5),
-.club-bests-table td:nth-child(5) {
-  width: 6.4rem;
-}
-
-.club-bests-table.has-club-caps th:nth-child(2),
-.club-bests-table.has-club-caps td:nth-child(2) {
-  width: 3.25rem;
-}
-
-.club-bests-table.has-club-caps th:nth-child(3),
-.club-bests-table.has-club-caps td:nth-child(3),
-.club-bests-table.has-club-caps th:nth-child(5),
-.club-bests-table.has-club-caps td:nth-child(5) {
-  width: auto;
-}
-
-.club-bests-table.has-club-caps th:nth-child(4),
-.club-bests-table.has-club-caps td:nth-child(4) {
-  width: 4.6rem;
-}
-
-.club-bests-table.has-club-caps th:nth-child(6),
-.club-bests-table.has-club-caps td:nth-child(6) {
-  width: 6.4rem;
+@media screen and (min-width: 721px) and (max-width: 1279px) {
+  .club-bests-gender-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .club-bests-date {
@@ -2145,10 +2515,52 @@ main#content {
     margin-left: 0;
   }
 
+  .club-bests-grid {
+    gap: 1.75rem;
+  }
+
+  .club-bests-disclosure-content {
+    padding-top: 0.7rem;
+  }
+
+  .club-bests-card {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .club-bests-card-head {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 0.7rem;
+    padding: 0.1rem 0 0.1rem 0.6rem;
+    border-bottom: 0;
+    border-left: 3px solid rgba(255, 237, 0, 0.88);
+  }
+
+  .club-bests-card-head::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .club-bests-card-head h3,
+  .club-bests-card-head h4 {
+    min-width: 0;
+    font-size: 1.1rem;
+    line-height: 1.3;
+  }
+
   .club-bests-gender-grid {
     display: flex;
     grid-template-columns: none;
     column-gap: 0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.045);
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scroll-behavior: smooth;

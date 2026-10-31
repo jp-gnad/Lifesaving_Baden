@@ -33,6 +33,7 @@ Die README ist als schneller Einstieg fuer Menschen und KI gedacht. Sie beantwor
   - Uebersicht: `web/uebersicht.html`, `web/js/uebersicht.js`, `web/js/uebersicht/` (Kennzahlen und Verteilungen fuer die gesamte Datenbank)
   - Athleten: `web/athleten.html`, `web/js/athleten.js`, `web/js/athleten/`
   - Profil: `web/profil.html`, `web/js/profil.js`, `web/js/profil/`
+  - Clubprofil: `web/clubs_profil.html`, `web/js/clubs/clubs_profil.js`; Erfolge mit Wettkampfbeteiligungen und Medaillen in `web/js/clubs/clubs_profile_achievements.js`
   - Clubs: `web/clubs.html`, `web/js/clubs.js`, `web/js/clubs/`
   - Punkterechner: `web/punkterechner.html`, `web/js/punkterechner.js`, `web/js/punkterechner/`
 - Live-Weltrekorde: `cloudflare/ils-records-worker/`

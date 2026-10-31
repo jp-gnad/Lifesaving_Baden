@@ -25,7 +25,7 @@ Diese Datei ordnet jede HTML-Seite ihrem fachlichen Zweck, ihren Hauptskripten u
 | Seite | Zweck | Hauptskripte | Daten/Abhaengigkeiten | Hinweise |
 | --- | --- | --- | --- | --- |
 | `web/profil.html` | Detailprofil eines Athleten | `web/js/profil.js`, `web/js/profil/profil_head.js`, `web/js/profil/profil_tabs.js`, `web/js/profil/profil_lsc.js`, `web/js/profil/profil_tabs_charts.js`, `web/js/profil/profil_note.js` | `ExcelLoader`, `Tabelle2`, `records_kriterien.xlsx` | einer der komplexesten Bereiche |
-| `web/clubs_profil.html` | Detailansicht einer Gliederung | `web/js/clubs/clubs_profil.js`, `web/js/clubs/clubs_data.js`, `web/js/clubs/clubs_search.js` | `ExcelLoader`, `Tabelle2` | eigene Zielseite fuer OG/LV/BV |
+| `web/clubs_profil.html` | Detailansicht einer Gliederung | `web/js/clubs/clubs_profil.js`, `web/js/clubs/clubs_data.js`, `web/js/clubs/clubs_search.js`, `web/js/clubs/clubs_profile_stats.js`, `web/js/clubs/clubs_profile_achievements.js` | `ExcelLoader`, `Tabelle2` | OG/LV/BV; Erfolge zaehlen Teilnahmen und Medaillen ausschliesslich nach passendem Startrecht |
 | `web/kaderstatus.html` | Passwort-geschuetzte Live-Kaderqualifikationen | `web/js/kaderstatus.js`, `web/js/0_gadges/PW.js`, `web/js/0_gadges/Qualli_tabellen.js` | `Tabelle2`, `records_kriterien.xlsx` | Kadernormen, keine Platzierungen |
 | `web/kriterien.html` | Bibliothek fuer Kaderrichtlinien | `web/js/shared/document_library.js`, `web/js/kriterien.js` | GitHub API auf `content/kaderkriterien/`, `localStorage` Cache | relativ sauber abstrahiert |
 | `web/trainingsplaene.html` | Platzhalterseite fuer Trainingsinhalte | `web/js/trainingsplaene.js` | keine | aktuell Zwischenloesung |
